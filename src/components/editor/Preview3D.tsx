@@ -160,9 +160,24 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
 
   }, [boothConfig, isSceneReady]);
 
+  const lastSyncRef = useRef<number>(0);
+
   // 3. Sync Elements
   useEffect(() => {
     if (!isSceneReady || !elements || !boothConfig) return;
+    
+    // Throttle high-frequency updates (like dragging) to keep the 2D UI responsive
+    // 32ms = ~30fps, giving the main thread plenty of room for Konva/React events
+    const now = Date.now();
+    if (now - lastSyncRef.current < 32) {
+      const timeout = setTimeout(() => {
+        // Trigger a final sync after a short delay to catch the "end" of a drag
+        lastSyncRef.current = 0; // Force next sync
+      }, 50);
+      return () => clearTimeout(timeout);
+    }
+    lastSyncRef.current = now;
+
     const scene = sceneRef.current;
     const shadowGenerator = shadowGeneratorRef.current;
     if (!scene || !shadowGenerator) return;
@@ -184,11 +199,16 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
       const h = 2.5;
 
       let needsRecreate = false;
+      const hasWallElements = el.wallElements && el.wallElements.length > 0;
+      
       const currentWallState = JSON.stringify({
         elements: el.wallElements || [],
         thickness: el.thickness || 10,
+        // Only trigger recreation on width change if there are cutouts to recalculate
+        width: hasWallElements ? el.width : undefined, 
         material: el.material || 'Solid Wall'
       });
+
       if (registry.has(el.id) && el.type === 'wall') {
         const mesh = registry.get(el.id)!;
         if (!mesh.metadata || mesh.metadata.wallState !== currentWallState) {
@@ -202,6 +222,18 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
         mesh.position.z = z;
         if (mesh.rotationQuaternion) mesh.rotationQuaternion = null;
         mesh.rotation.y = rotY;
+
+        // Fast-path: Scale plain walls instead of recreating them
+        if (el.type === 'wall' && !hasWallElements) {
+          const wVal = el.width / PPM;
+          // Calculate scale based on initial box width (which is 1 unit or the first width it had)
+          // Actually, if we just set scaling, we need to know the base width.
+          // Let's use mesh.scaling to avoid geometry recreation.
+          if (mesh.metadata && mesh.metadata.baseWidth) {
+            mesh.scaling.x = wVal / mesh.metadata.baseWidth;
+          }
+        }
+
         if (el.type !== 'wall' && mesh.metadata && mesh.metadata.nativeLength) {
           const targetW = el.width / PPM;
           const scale = targetW / mesh.metadata.nativeLength;
@@ -218,6 +250,8 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
           const wVal = el.width / PPM;
           const dVal = (el.thickness || 10) / PPM;
           let mesh = BABYLON.MeshBuilder.CreateBox(el.id + "_base", { width: wVal, height: h, depth: dVal }, scene);
+          if (!mesh.metadata) mesh.metadata = {};
+          mesh.metadata.baseWidth = wVal; // Store base width for future scaling
 
           if (el.wallElements && el.wallElements.length > 0) {
             const cutoutTypes = ['door', 'window'];

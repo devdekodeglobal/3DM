@@ -56,6 +56,17 @@ const LetterMarkAsset = ({ shapeProps, onSelect, onChange }: any) => {
       onClick={onSelect}
       onTap={onSelect}
       onDragEnd={(e: any) => onChange({ ...shapeProps, x: e.target.x(), y: e.target.y() })}
+      onTransform={(e: any) => {
+        const node = e.target
+        const scaleX = node.scaleX()
+        const scaleY = node.scaleY()
+        node.setAttrs({
+          width: Math.max(10, node.width() * scaleX),
+          height: Math.max(10, node.height() * scaleY),
+          scaleX: 1,
+          scaleY: 1
+        })
+      }}
       onTransformEnd={(e: any) => {
         const node = e.target
         const scaleX = node.scaleX()
@@ -140,19 +151,24 @@ const WallShape = ({ shapeProps, onSelect, onChange }: any) => {
       onDragEnd={(e) => {
         onChange({ ...shapeProps, x: e.target.x(), y: e.target.y() })
       }}
+      onTransform={(e) => {
+        const node = e.target
+        const scaleX = node.scaleX()
+        node.setAttrs({
+          width: Math.max(5, node.width() * scaleX),
+          scaleX: 1
+        })
+      }}
       onTransformEnd={(e) => {
         const node = e.target
         const scaleX = node.scaleX()
-        const scaleY = node.scaleY()
         node.scaleX(1)
-        node.scaleY(1)
         onChange({
           ...shapeProps,
           x: node.x(),
           y: node.y(),
           rotation: node.rotation(),
           width: Math.max(5, node.width() * scaleX),
-          height: Math.max(5, node.height() * scaleY),
         })
       }}
     />
