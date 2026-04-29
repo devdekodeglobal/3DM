@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Stage, Layer, Rect, Line, Image as KonvaImage, Transformer, Group, Text } from 'react-konva'
-import useImage from 'use-image'
+import { Stage, Layer, Rect, Line, Transformer, Group, Text } from 'react-konva'
 
 export interface BoothConfig {
   width: number;
   depth: number;
+  wallThickness: number;
   walls: { north: boolean; south: boolean; east: boolean; west: boolean };
 }
 
@@ -17,35 +17,49 @@ interface CanvasProps {
   gridVisible: boolean
 }
 
-const AssetImage = ({ shapeProps, onSelect, onChange }: any) => {
-  const [image] = useImage(shapeProps.src)
-  
+// Color palette matching sidebar categories
+const CATEGORY_PALETTE: Record<string, { fill: string; badge: string; text: string }> = {
+  Fixtures: { fill: 'rgba(245,158,11,0.15)', badge: '#f59e0b', text: '#78350f' },
+  Chairs: { fill: 'rgba(99,102,241,0.15)', badge: '#6366f1', text: '#312e81' },
+  Bar_Chairs: { fill: 'rgba(168,85,247,0.15)', badge: '#a855f7', text: '#4c1d95' },
+  Tables: { fill: 'rgba(6,182,212,0.15)', badge: '#06b6d4', text: '#164e63' },
+  Round_Tables: { fill: 'rgba(16,185,129,0.15)', badge: '#10b981', text: '#064e3b' },
+  Info_Desks: { fill: 'rgba(244,63,94,0.15)', badge: '#f43f5e', text: '#881337' },
+}
+
+const getInitials = (label: string) =>
+  label.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
+
+const LetterMarkAsset = ({ shapeProps, onSelect, onChange }: any) => {
+  const label = shapeProps.assetName?.replace(/_/g, ' ') || 'Asset'
+  const category = shapeProps.src?.split('/')[2] || 'Fixtures'
+  const palette = CATEGORY_PALETTE[category] || CATEGORY_PALETTE.Fixtures
+  const initials = getInitials(label)
+  const w = shapeProps.width
+  const h = shapeProps.height
+  const badgeSize = Math.min(w, h) * 0.45
+  // In group-local space, (0,0) is the tile top-left, (w,h) is bottom-right
+  const badgeCX = w / 2
+  const badgeCY = h * 0.38
+
   return (
-    <KonvaImage
+    <Group
       name={shapeProps.name}
-      image={image}
       x={shapeProps.x}
       y={shapeProps.y}
-      width={shapeProps.width}
-      height={shapeProps.height}
+      width={w}
+      height={h}
       rotation={shapeProps.rotation}
-      offsetX={shapeProps.width / 2}
-      offsetY={shapeProps.height / 2}
+      offsetX={w / 2}
+      offsetY={h / 2}
       draggable
       onClick={onSelect}
       onTap={onSelect}
-      onDragEnd={(e) => {
-        onChange({
-          ...shapeProps,
-          x: e.target.x(),
-          y: e.target.y(),
-        })
-      }}
-      onTransformEnd={(e) => {
+      onDragEnd={(e: any) => onChange({ ...shapeProps, x: e.target.x(), y: e.target.y() })}
+      onTransformEnd={(e: any) => {
         const node = e.target
         const scaleX = node.scaleX()
         const scaleY = node.scaleY()
-
         node.scaleX(1)
         node.scaleY(1)
         onChange({
@@ -53,11 +67,56 @@ const AssetImage = ({ shapeProps, onSelect, onChange }: any) => {
           x: node.x(),
           y: node.y(),
           rotation: node.rotation(),
-          width: Math.max(5, node.width() * scaleX),
-          height: Math.max(5, node.height() * scaleY),
+          width: Math.max(10, w * scaleX),
+          height: Math.max(10, h * scaleY),
         })
       }}
-    />
+    >
+      {/* Background tile: fills (0,0)→(w,h) in group-local space */}
+      <Rect
+        x={0} y={0}
+        width={w} height={h}
+        fill={palette.fill}
+        stroke={palette.badge}
+        strokeWidth={1.5}
+        cornerRadius={6}
+      />
+      {/* Badge: centered at (badgeCX, badgeCY) in local space */}
+      <Rect
+        x={badgeCX} y={badgeCY}
+        width={badgeSize} height={badgeSize}
+        offsetX={badgeSize / 2} offsetY={badgeSize / 2}
+        fill={palette.badge}
+        cornerRadius={badgeSize * 0.25}
+        opacity={0.9}
+      />
+      {/* Initials text: same center as badge */}
+      <Text
+        x={badgeCX - badgeSize / 2}
+        y={badgeCY - badgeSize / 2}
+        text={initials}
+        fontSize={badgeSize * 0.42}
+        fontFamily="Inter, sans-serif"
+        fontStyle="bold"
+        fill="white"
+        align="center"
+        verticalAlign="middle"
+        width={badgeSize}
+        height={badgeSize}
+      />
+      {/* Label: below badge */}
+      <Text
+        x={0}
+        y={h * 0.72}
+        text={label}
+        fontSize={Math.max(8, Math.min(10, w * 0.15))}
+        fontFamily="Inter, sans-serif"
+        fontStyle="bold"
+        fill={palette.text}
+        align="center"
+        width={w}
+      />
+    </Group>
   )
 }
 
@@ -68,13 +127,13 @@ const WallShape = ({ shapeProps, onSelect, onChange }: any) => {
       x={shapeProps.x}
       y={shapeProps.y}
       width={shapeProps.width}
-      height={shapeProps.height}
+      height={shapeProps.thickness || 10}
       rotation={shapeProps.rotation}
       fill={shapeProps.fill}
       opacity={shapeProps.opacity}
       offsetX={shapeProps.width / 2}
-      offsetY={shapeProps.height / 2}
-      draggable
+      offsetY={(shapeProps.thickness || 10) / 2}
+      draggable={!shapeProps.isOuter}
       hitStrokeWidth={20}
       onClick={onSelect}
       onTap={onSelect}
@@ -108,7 +167,7 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 })
   const [isSpacePressed, setIsSpacePressed] = useState(false)
   const [hasMounted, setHasMounted] = useState(false)
-  
+
   const PPM = 100 // 100px = 1 Metre
   const gridSnapSize = 50 // 0.5m visual grid (50px)
   const fineSnapSize = 10 // 0.1m snapping interval (10px)
@@ -203,11 +262,11 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
 
   const handleDragEndAndSnap = (index: number, newProps: any) => {
     const snapToGrid = (pos: number) => {
-       if (!gridVisible) return pos
-       // Snap to fineSnapSize intervals for precise placement
-       return Math.round(pos / fineSnapSize) * fineSnapSize
+      if (!gridVisible) return pos
+      // Snap to fineSnapSize intervals for precise placement
+      return Math.round(pos / fineSnapSize) * fineSnapSize
     }
-    
+
     const snappedProps = {
       ...newProps,
       x: snapToGrid(newProps.x),
@@ -223,10 +282,10 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
   const boothD = boothConfig.depth * PPM
 
   const boundaryLines = [
-    { dir: 'north', points: [0, 0, boothW, 0], isOpen: !boothConfig.walls.north, labelX: boothW/2, labelY: -20, dim: boothConfig.width },
-    { dir: 'east', points: [boothW, 0, boothW, boothD], isOpen: !boothConfig.walls.east, labelX: boothW + 20, labelY: boothD/2, dim: boothConfig.depth, rotate: 90 },
-    { dir: 'south', points: [boothW, boothD, 0, boothD], isOpen: !boothConfig.walls.south, labelX: boothW/2, labelY: boothD + 20, dim: boothConfig.width },
-    { dir: 'west', points: [0, boothD, 0, 0], isOpen: !boothConfig.walls.west, labelX: -20, labelY: boothD/2, dim: boothConfig.depth, rotate: -90 },
+    { dir: 'north', points: [0, 0, boothW, 0], isOpen: !boothConfig.walls.north, labelX: boothW / 2, labelY: -20, dim: boothConfig.width },
+    { dir: 'east', points: [boothW, 0, boothW, boothD], isOpen: !boothConfig.walls.east, labelX: boothW + 20, labelY: boothD / 2, dim: boothConfig.depth, rotate: 90 },
+    { dir: 'south', points: [boothW, boothD, 0, boothD], isOpen: !boothConfig.walls.south, labelX: boothW / 2, labelY: boothD + 20, dim: boothConfig.width },
+    { dir: 'west', points: [0, boothD, 0, 0], isOpen: !boothConfig.walls.west, labelX: -20, labelY: boothD / 2, dim: boothConfig.depth, rotate: -90 },
   ]
 
   // Draw huge visual grid (1m x 1m)
@@ -235,28 +294,28 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
     const vSize = 4000
     const offset = 1000
     const subStep = 20 // 0.1m subdivisions
-    
+
     for (let i = -offset; i <= vSize / subStep; i++) {
-       const isMajor = (i * subStep) % gridSnapSize === 0
-       gridLines.push(
-         <Line 
-           key={`v-${i}`} 
-           points={[i * subStep, -offset * subStep, i * subStep, vSize]} 
-           stroke={isMajor ? "rgba(23, 58, 64, 0.3)" : "rgba(23, 58, 64, 0.15)"} 
-           strokeWidth={isMajor ? 1.5 : 1} 
-         />
-       )
+      const isMajor = (i * subStep) % gridSnapSize === 0
+      gridLines.push(
+        <Line
+          key={`v-${i}`}
+          points={[i * subStep, -offset * subStep, i * subStep, vSize]}
+          stroke={isMajor ? "rgba(23, 58, 64, 0.3)" : "rgba(23, 58, 64, 0.15)"}
+          strokeWidth={isMajor ? 1.5 : 1}
+        />
+      )
     }
     for (let j = -offset; j <= vSize / subStep; j++) {
-       const isMajor = (j * subStep) % gridSnapSize === 0
-       gridLines.push(
-         <Line 
-           key={`h-${j}`} 
-           points={[-offset * subStep, j * subStep, vSize, j * subStep]} 
-           stroke={isMajor ? "rgba(23, 58, 64, 0.3)" : "rgba(23, 58, 64, 0.15)"} 
-           strokeWidth={isMajor ? 1.5 : 1} 
-         />
-       )
+      const isMajor = (j * subStep) % gridSnapSize === 0
+      gridLines.push(
+        <Line
+          key={`h-${j}`}
+          points={[-offset * subStep, j * subStep, vSize, j * subStep]}
+          stroke={isMajor ? "rgba(23, 58, 64, 0.3)" : "rgba(23, 58, 64, 0.15)"}
+          strokeWidth={isMajor ? 1.5 : 1}
+        />
+      )
     }
   }
 
@@ -290,90 +349,92 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
 
             {/* Booth Floor Area */}
             <Group name="boothBoundaries">
-               <Rect
-                 name="floorBg"
-                 x={0}
-                 y={0}
-                 width={boothW}
-                 height={boothD}
-                 fill="rgba(255,255,255,0.3)"
-                 shadowColor="rgba(0,0,0,0.1)"
-                 shadowBlur={40}
-               />
-               
-               {boundaryLines.map((line) => (
-                 <React.Fragment key={line.dir}>
-                   <Line
-                     points={line.points}
-                     stroke={line.isOpen ? 'rgba(23,58,64,0.3)' : '#ef4444'} // Dashed gray OR Solid Red
-                     strokeWidth={line.isOpen ? 2 : 4}
-                     dash={line.isOpen ? [10, 10] : []}
-                   />
-                   <Text
-                     x={line.labelX}
-                     y={line.labelY}
-                     text={`${line.dim}m`}
-                     fontSize={16}
-                     fontFamily="monospace"
-                     fill="var(--sea-ink)"
-                     fontStyle="bold"
-                     offset={{ x: 20, y: 10 }}
-                     rotation={line.rotate || 0}
-                     opacity={0.6}
-                   />
-                 </React.Fragment>
-               ))}
+              <Rect
+                name="floorBg"
+                x={0}
+                y={0}
+                width={boothW}
+                height={boothD}
+                fill="rgba(255,255,255,0.3)"
+                shadowColor="rgba(0,0,0,0.1)"
+                shadowBlur={40}
+              />
+
+              {boundaryLines.map((line) => (
+                <React.Fragment key={line.dir}>
+                  {line.isOpen && (
+                    <Line
+                      points={line.points}
+                      stroke="rgba(23,58,64,0.3)"
+                      strokeWidth={2}
+                      dash={[10, 10]}
+                    />
+                  )}
+                  <Text
+                    x={line.labelX}
+                    y={line.labelY}
+                    text={`${line.dim}m`}
+                    fontSize={16}
+                    fontFamily="monospace"
+                    fill="var(--sea-ink)"
+                    fontStyle="bold"
+                    offset={{ x: 20, y: 10 }}
+                    rotation={line.rotate || 0}
+                    opacity={0.6}
+                  />
+                </React.Fragment>
+              ))}
             </Group>
 
             {/* Render Elements */}
             {elements.map((obj, i) => {
-               if (obj.type === 'wall') {
-                 return (
-                   <WallShape
-                     key={obj.id}
-                     shapeProps={{ ...obj, name: obj.id }}
-                     onSelect={() => onSelect(obj.id)}
-                     onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
-                   />
-                 )
-               }
-               if (obj.type === 'asset') {
-                 return (
-                   <AssetImage
-                     key={obj.id}
-                     shapeProps={{ ...obj, name: obj.id }}
-                     onSelect={() => onSelect(obj.id)}
-                     onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
-                   />
-                 )
-               }
-               return null
+              if (obj.type === 'wall') {
+                return (
+                  <WallShape
+                    key={obj.id}
+                    shapeProps={{ ...obj, name: obj.id }}
+                    onSelect={() => onSelect(obj.id)}
+                    onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
+                  />
+                )
+              }
+              if (obj.type === 'asset') {
+                return (
+                  <LetterMarkAsset
+                    key={obj.id}
+                    shapeProps={{ ...obj, name: obj.id }}
+                    onSelect={() => onSelect(obj.id)}
+                    onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
+                  />
+                )
+              }
+              return null
             })}
 
             {/* Transformer */}
-            <Transformer 
-               ref={transformerRef} 
-               boundBoxFunc={(oldBox, newBox) => {
-                 if (Math.abs(newBox.width) < 5 || Math.abs(newBox.height) < 5) return oldBox
-                 return newBox
-               }}
-               enabledAnchors={
-                 selectedElement?.type === 'wall' 
-                   ? ['middle-left', 'middle-right'] 
-                   : ['top-left', 'top-center', 'top-right', 'middle-right', 'bottom-right', 'bottom-center', 'bottom-left', 'middle-left']
-               }
-               keepRatio={false}
-               padding={6}
-               anchorSize={12}
-               anchorCornerRadius={3}
-               borderStroke="#0d7a75"
-               borderStrokeWidth={2}
-               anchorStroke="#0d7a75"
-               anchorFill="white"
-               anchorStrokeWidth={2}
-               rotateEnabled={true}
-               rotateAnchorOffset={40}
-               rotateAnchorCursor="crosshair"
+            <Transformer
+              ref={transformerRef}
+              boundBoxFunc={(oldBox, newBox) => {
+                if (Math.abs(newBox.width) < 5 || Math.abs(newBox.height) < 5) return oldBox
+                return newBox
+              }}
+              enabledAnchors={
+                selectedElement?.type === 'wall'
+                  ? ['middle-left', 'middle-right']
+                  : ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+              }
+              keepRatio={selectedElement?.type === 'asset'}
+              padding={6}
+              anchorSize={12}
+              anchorCornerRadius={3}
+              borderStroke="#0d7a75"
+              borderStrokeWidth={2}
+              anchorStroke="#0d7a75"
+              anchorFill="white"
+              anchorStrokeWidth={2}
+              rotateEnabled={!selectedElement?.isOuter}
+              rotateAnchorOffset={40}
+              rotateAnchorCursor="crosshair"
             />
           </Layer>
         </Stage>
