@@ -21,15 +21,12 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
         const img = new window.Image()
         img.src = el.url
         img.onload = () => {
-          setImages(prev => ({ ...prev, [el.url]: img }))
+          if (img.width > 0 && img.height > 0) {
+            setImages(prev => ({ ...prev, [el.url]: img }))
+          }
         }
       }
     })
-    const lightLoader = new Image()
-    lightLoader.src = '/assets/Fixtures/wall_light.svg'
-    lightLoader.onload = () => {
-      setImages(prev => ({ ...prev, lightIcon: lightLoader }))
-    }
   }, [elements])
 
   return (
@@ -38,8 +35,7 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
         const cfg = ELEMENT_TYPES[el.type] || ELEMENT_TYPES.window
         const isSelected = selectedId === el.id
         const hasImage = (el.type === 'banner' || el.type === 'frame') && el.url && images[el.url]
-        const isLight = el.type === 'light' && images.lightIcon
-        const patternImg = hasImage ? images[el.url] : (isLight ? images.lightIcon : undefined)
+        const patternImg = hasImage ? images[el.url] : undefined
 
         if (el.type === 'frame' && el.shape === 'circle') {
           return (
@@ -98,7 +94,7 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
             y={el.y}
             width={el.width}
             height={el.height}
-            fill={(hasImage || isLight) ? undefined : cfg.color}
+            fill={hasImage ? undefined : cfg.color}
             fillPatternImage={patternImg}
             fillPatternScaleX={patternImg ? el.width / patternImg.width : undefined}
             fillPatternScaleY={patternImg ? el.height / patternImg.height : undefined}
@@ -420,10 +416,12 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
 
                     {/* --- Luminosity Slider --- */}
                     <div className="pt-2">
-                      <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold block mb-1">
+                      <label htmlFor="light-intensity" className="text-[10px] text-[var(--sea-ink-soft)] font-bold block mb-1">
                         Luminosity <span className="font-normal opacity-60">({(selectedEl.intensity || 1.2).toFixed(1)})</span>
                       </label>
                       <input
+                        id="light-intensity"
+                        name="light-intensity"
                         type="range" min="0.1" max="5" step="0.1"
                         value={selectedEl.intensity || 1.2}
                         onChange={(e) => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, intensity: parseFloat(e.target.value) } : el))}
@@ -507,7 +505,7 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
         </div>
 
         <div ref={containerRef} className="flex-1 relative bg-[#eceff4] overflow-hidden">
-          {dimensions.width > 0 && (
+          {dimensions.width > 0 && dimensions.height > 0 && (
             <Stage width={dimensions.width} height={dimensions.height} scaleX={stageScale} scaleY={stageScale} x={stagePos.x} y={stagePos.y} onMouseDown={(e) => {
               if (e.target === e.target.getStage() || e.target.name() === 'wallBg') setSelectedId(null)
             }}>

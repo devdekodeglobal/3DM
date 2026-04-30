@@ -1,64 +1,68 @@
 # 3DM | Advanced 3D Booth Designer
 
-3DM is a high-performance, web-based design suite for creating and visualizing exhibition booths. It combines a precise 2D planning interface with a real-time 3D visualization engine, allowing users to build complex layouts with physical accuracy.
-
-## 🚀 Getting Started
-
-Follow these instructions to get a local copy of the project up and running.
-
-### Prerequisites
-
-Ensure you have **Node.js** (v18 or higher) and **npm** installed on your system.
-
-### Installation
-
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/vansshparikh-arch/3dproj.git
-    cd 3dproj
-    ```
-
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-
-3.  **Start the development server:**
-    ```bash
-    npm run dev
-    ```
-    The application will be available at `http://localhost:3000`.
+**3DM** is a high-performance, browser-based design suite for creating professional exhibition booths. It bridges the gap between precise 2D floor planning and immersive 3D visualization, offering a seamless workflow for architects and designers.
 
 ---
 
-## 🏗 Project Structure
+## ✨ Key Features
 
-The codebase is organized into modular directories to maintain a clean separation of concerns between the 2D logic, 3D rendering, and UI state.
-
-### Core Directories
-
-*   **`src/routes/`**: Handles the application's file-based routing using TanStack Router.
-    *   `index.tsx`: The landing page and dashboard.
-    *   `editor.tsx`: The primary workspace containing the design tools.
-    *   `__root.tsx`: The main layout wrapper and HTML document shell.
-*   **`src/components/editor/`**: Contains the heavy-lifting logic for the design suite.
-    *   `Canvas.tsx`: A Konva-powered 2D engine for precise floor plan layout and object positioning.
-    *   `Preview3D.tsx`: A BabylonJS-driven real-time previewer that transforms 2D data into a full 3D environment.
-    *   `Sidebar.tsx`: The asset library where users can browse and add items to the workspace.
-    *   `Properties.tsx`: An inspector panel for modifying dimensions, textures, and coordinates of selected objects.
-*   **`src/components/`**: Reusable interface elements like the `Header`, `Footer`, and `ThemeToggle`.
-*   **`public/`**: Static assets including 3D models (GLB/STL), textures, and icons used within the editor.
+- **🚀 Real-time 3D Sync**: Powered by BabylonJS, witness your 2D designs come to life instantly in a hardware-accelerated 3D environment.
+- **🏗️ Elevation Editor**: Go beyond the floor plan. Design the faces of your walls with doors, windows, banners, and integrated lighting.
+- **📏 Precision Tools**: Snap-to-grid movement, precise dimensioning (PPM = 100), and dynamic wall thickness controls.
+- **💡 Premium Rendering**: Built-in PBR materials, SSAO (Ambient Occlusion), Bloom, and high-fidelity shadow mapping.
+- **🛸 Dual Camera Modes**: Switch between an isometric **Orbit Mode** for overview and a WASD **Flight Mode** for walkthroughs.
+- **💾 Local Persistence**: Automatic saving to browser local storage so you never lose your progress.
+- **🎨 Custom Assets**: Drag-and-drop 3D models (.glb) and customize materials with ease.
 
 ---
 
 ## 🛠 Technology Stack
 
-*   **Framework**: [TanStack Start](https://tanstack.com/start) (Full-stack React)
-*   **2D Engine**: [Konva](https://konvajs.org/) (Canvas manipulation)
-*   **3D Engine**: [BabylonJS](https://www.babylonjs.com/) (Real-time hardware-accelerated rendering)
-*   **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
-*   **Routing**: [TanStack Router](https://tanstack.com/router)
-*   **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Core**: [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- **Framework**: [TanStack Start](https://tanstack.com/start) & [TanStack Router](https://tanstack.com/router)
+- **2D Engine**: [Konva](https://konvajs.org/) (Canvas manipulation)
+- **3D Engine**: [BabylonJS](https://www.babylonjs.com/) (Real-time PBR rendering)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
+- **State**: React State Hooks + Local Storage Persistence
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- **Node.js** (v18 or higher)
+- **npm** or **pnpm**
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/vansshparikh-arch/3dproj.git
+   cd 3dproj
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## 📂 Project Structure
+
+- **`src/routes/`**: File-based routing and main application logic (`editor.tsx`).
+- **`src/components/editor/`**: 
+    - `Canvas.tsx`: The 2D floor plan engine.
+    - `WallCanvas.tsx`: The 2D elevation/wall editor.
+    - `Preview3D.tsx`: The BabylonJS 3D visualization bridge.
+    - `Properties.tsx`: The inspector panel for object modification.
+- **`public/models/`**: Repository for `.glb` assets used in the designer.
 
 ---
 
@@ -66,17 +70,14 @@ The codebase is organized into modular directories to maintain a clean separatio
 
 | Script | Description |
 | :--- | :--- |
-| `npm run dev` | Spins up the Vite development server with HMR. |
-| `npm run build` | Compiles the application for production deployment. |
-| `npm run preview` | Locally previews the production build. |
-| `npm run test` | Executes the test suite using Vitest. |
+| `npm run dev` | Start development server on port 3000 |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build locally |
+| `npm run test` | Run Vitest suite |
 
 ---
 
-## 🛠 Deployment
+## 🤝 Contributing
 
-To create a production-ready bundle, run:
-```bash
-npm run build
-```
-The output will be generated in the `.output` or `dist` directory (depending on the target adapter), optimized for performance and fast loading.
+Contributions are welcome! Please ensure you follow the coding standards outlined in the [PROJECT_GUIDELINES.md](./PROJECT_GUIDELINES.md).
+

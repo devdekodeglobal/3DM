@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Stage, Layer, Rect, Line, Transformer, Group, Text } from 'react-konva'
+import { Stage, Layer, Rect, Ellipse, Line, Transformer, Group, Text } from 'react-konva'
 
 export interface BoothConfig {
   width: number;
@@ -25,6 +25,7 @@ const CATEGORY_PALETTE: Record<string, { fill: string; badge: string; text: stri
   Tables: { fill: 'rgba(6,182,212,0.15)', badge: '#06b6d4', text: '#164e63' },
   Round_Tables: { fill: 'rgba(16,185,129,0.15)', badge: '#10b981', text: '#064e3b' },
   Info_Desks: { fill: 'rgba(244,63,94,0.15)', badge: '#f43f5e', text: '#881337' },
+  Electronics: { fill: 'rgba(14,165,233,0.15)', badge: '#0ea5e9', text: '#075985' },
 }
 
 const getInitials = (label: string) =>
@@ -56,17 +57,6 @@ const LetterMarkAsset = ({ shapeProps, onSelect, onChange }: any) => {
       onClick={onSelect}
       onTap={onSelect}
       onDragEnd={(e: any) => onChange({ ...shapeProps, x: e.target.x(), y: e.target.y() })}
-      onTransform={(e: any) => {
-        const node = e.target
-        const scaleX = node.scaleX()
-        const scaleY = node.scaleY()
-        node.setAttrs({
-          width: Math.max(10, node.width() * scaleX),
-          height: Math.max(10, node.height() * scaleY),
-          scaleX: 1,
-          scaleY: 1
-        })
-      }}
       onTransformEnd={(e: any) => {
         const node = e.target
         const scaleX = node.scaleX()
@@ -78,8 +68,8 @@ const LetterMarkAsset = ({ shapeProps, onSelect, onChange }: any) => {
           x: node.x(),
           y: node.y(),
           rotation: node.rotation(),
-          width: Math.max(10, w * scaleX),
-          height: Math.max(10, h * scaleY),
+          width: Math.max(10, node.width() * scaleX),
+          height: Math.max(10, node.height() * scaleY),
         })
       }}
     >
@@ -144,7 +134,7 @@ const WallShape = ({ shapeProps, onSelect, onChange }: any) => {
       opacity={shapeProps.opacity}
       offsetX={shapeProps.width / 2}
       offsetY={(shapeProps.thickness || 10) / 2}
-      draggable={!shapeProps.isOuter}
+      draggable={true}
       hitStrokeWidth={20}
       onClick={onSelect}
       onTap={onSelect}
@@ -172,6 +162,240 @@ const WallShape = ({ shapeProps, onSelect, onChange }: any) => {
         })
       }}
     />
+  )
+}
+
+const VolumetricShape = ({ shapeProps, onSelect, onChange }: any) => {
+  const w = shapeProps.width
+  const h = shapeProps.height
+  const color = shapeProps.volumetricColor || '#ec4899'
+  const isPill = shapeProps.shape === 'pill'
+  const isCylinder = shapeProps.shape === 'cylinder'
+  const isElevated = (shapeProps.yOffset || 0) > 0.1
+  const fillColor = shapeProps.emissive
+    ? color
+    : color + '33'
+  const strokeColor = color
+  const cornerRadius = isPill ? Math.min(w, h) / 2 : isCylinder ? Math.min(w, h) / 2 : 8
+
+  // Safe Image Loading for 2D View
+  const [logoImg, setLogoImg] = useState<HTMLImageElement | null>(null)
+  useEffect(() => {
+    if (shapeProps.logoUrl) {
+      const img = new window.Image()
+      img.src = shapeProps.logoUrl
+      img.onload = () => {
+        if (img.width > 0 && img.height > 0) setLogoImg(img)
+      }
+    } else {
+      setLogoImg(null)
+    }
+  }, [shapeProps.logoUrl])
+
+  const commonProps = {
+    draggable: true,
+    onClick: onSelect,
+    onTap: onSelect,
+    onDragEnd: (e: any) => onChange({ ...shapeProps, x: e.target.x(), y: e.target.y() }),
+    onTransformEnd: (e: any) => {
+      const node = e.target
+      const scaleX = node.scaleX()
+      const scaleY = node.scaleY()
+      node.scaleX(1)
+      node.scaleY(1)
+      onChange({
+        ...shapeProps,
+        x: node.x(),
+        y: node.y(),
+        rotation: node.rotation(),
+        width: Math.max(10, node.width() * scaleX),
+        height: Math.max(10, node.height() * scaleY),
+      })
+    },
+  }
+
+  return (
+    <Group
+      name={shapeProps.name}
+      x={shapeProps.x}
+      y={shapeProps.y}
+      width={w}
+      height={h}
+      rotation={shapeProps.rotation}
+      offsetX={w / 2}
+      offsetY={h / 2}
+      {...commonProps}
+    >
+      {isCylinder ? (
+        <Ellipse
+          x={w / 2} y={h / 2}
+          radiusX={w / 2} radiusY={h / 2}
+          fill={fillColor}
+          stroke={strokeColor}
+          strokeWidth={2}
+          dash={isElevated ? [6, 4] : []}
+          opacity={shapeProps.emissive ? 0.9 : 0.7}
+        />
+      ) : (
+        <Rect
+          x={0} y={0}
+          width={w} height={h}
+          fill={fillColor}
+          stroke={strokeColor}
+          strokeWidth={2}
+          cornerRadius={cornerRadius}
+          dash={isElevated ? [6, 4] : []}
+          opacity={shapeProps.emissive ? 0.9 : 0.7}
+        />
+      )}
+
+      {/* Logo Preview in 2D - Position based on logoSide */}
+      {logoImg && (
+        <Group 
+          x={
+            shapeProps.logoSide === 'left' ? 2 : 
+            shapeProps.logoSide === 'right' ? w - (w * 0.2) - 2 : 
+            w * 0.1
+          } 
+          y={
+            shapeProps.logoSide === 'back' ? 2 : 
+            shapeProps.logoSide === 'front' ? h - (h * 0.2) - 2 : 
+            h * 0.1
+          }
+        >
+           <Rect 
+             width={
+               (shapeProps.logoSide === 'left' || shapeProps.logoSide === 'right') ? w * 0.2 : 
+               (shapeProps.logoSide === 'top' || shapeProps.logoSide === 'bottom') ? w * 0.8 : w * 0.8
+             }
+             height={
+               (shapeProps.logoSide === 'back' || shapeProps.logoSide === 'front') ? h * 0.2 : 
+               (shapeProps.logoSide === 'top' || shapeProps.logoSide === 'bottom') ? h * 0.8 : h * 0.8
+             }
+             fill="rgba(255,255,255,0.4)"
+             cornerRadius={2}
+             stroke={color}
+             strokeWidth={1}
+           />
+           {logoImg.width > 0 && (
+             <Rect
+               width={
+                 (shapeProps.logoSide === 'left' || shapeProps.logoSide === 'right') ? w * 0.2 : 
+                 (shapeProps.logoSide === 'top' || shapeProps.logoSide === 'bottom') ? w * 0.8 : w * 0.8
+               }
+               height={
+                 (shapeProps.logoSide === 'back' || shapeProps.logoSide === 'front') ? h * 0.2 : 
+                 (shapeProps.logoSide === 'top' || shapeProps.logoSide === 'bottom') ? h * 0.8 : h * 0.8
+               }
+               fillPatternImage={logoImg}
+               fillPatternScaleX={
+                 ((shapeProps.logoSide === 'left' || shapeProps.logoSide === 'right') ? w * 0.2 : w * 0.8) / logoImg.width
+               }
+               fillPatternScaleY={
+                 ((shapeProps.logoSide === 'back' || shapeProps.logoSide === 'front') ? h * 0.2 : h * 0.8) / logoImg.height
+               }
+               fillPatternRepeat="no-repeat"
+               opacity={1}
+               listening={false}
+             />
+           )}
+        </Group>
+      )}
+
+      {/* Label */}
+      <Text
+        x={0} y={h / 2 - 6}
+        text={shapeProps.shape?.toUpperCase() || 'VOL'}
+        fontSize={Math.max(7, Math.min(9, w * 0.1))}
+        fontFamily="Inter, sans-serif"
+        fontStyle="bold"
+        fill={color}
+        align="center"
+        width={w}
+        opacity={0.7}
+      />
+    </Group>
+  )
+}
+
+const Logo3DShape = ({ shapeProps, onSelect, onChange }: any) => {
+  const w = shapeProps.width
+  const h = shapeProps.height
+  const [svgImg, setSvgImg] = useState<HTMLImageElement | null>(null)
+
+  useEffect(() => {
+    if (shapeProps.svgData) {
+      const img = new window.Image()
+      const blob = new Blob([shapeProps.svgData], { type: 'image/svg+xml' })
+      const url = URL.createObjectURL(blob)
+      img.src = url
+      img.onload = () => setSvgImg(img)
+      return () => URL.revokeObjectURL(url)
+    } else {
+      setSvgImg(null)
+    }
+  }, [shapeProps.svgData])
+
+  return (
+    <Group
+      name={shapeProps.name}
+      x={shapeProps.x}
+      y={shapeProps.y}
+      width={w}
+      height={h}
+      rotation={shapeProps.rotation}
+      offsetX={w / 2}
+      offsetY={h / 2}
+      draggable
+      onClick={onSelect}
+      onTap={onSelect}
+      onDragEnd={(e: any) => onChange({ ...shapeProps, x: e.target.x(), y: e.target.y() })}
+      onTransformEnd={(e: any) => {
+        const node = e.target
+        const scaleX = node.scaleX()
+        const scaleY = node.scaleY()
+        node.scaleX(1)
+        node.scaleY(1)
+        onChange({
+          ...shapeProps,
+          x: node.x(),
+          y: node.y(),
+          rotation: node.rotation(),
+          width: Math.max(10, node.width() * scaleX),
+          height: Math.max(10, node.height() * scaleY),
+        })
+      }}
+    >
+      <Rect
+        width={w} height={h}
+        fill="rgba(13, 122, 117, 0.08)"
+        stroke="#0d7a75"
+        strokeWidth={1.5}
+        cornerRadius={4}
+      />
+      {svgImg && (
+        <Rect
+          width={w * 0.9}
+          height={h * 0.9}
+          x={w * 0.05}
+          y={h * 0.05}
+          fillPatternImage={svgImg}
+          fillPatternScaleX={(w * 0.9) / svgImg.width}
+          fillPatternScaleY={(h * 0.9) / svgImg.height}
+          fillPatternRepeat="no-repeat"
+        />
+      )}
+      <Text
+        y={h + 5}
+        text="3D LOGO"
+        fontSize={10}
+        fontFamily="Inter, sans-serif"
+        fontStyle="bold"
+        fill="#0d7a75"
+        align="center"
+        width={w}
+      />
+    </Group>
   )
 }
 
@@ -339,7 +563,7 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
 
   return (
     <div ref={containerRef} className="flex-1 bg-[var(--bg-base)] overflow-hidden relative cursor-crosshair">
-      {hasMounted && (
+      {hasMounted && dimensions.width > 0 && dimensions.height > 0 && (
         <Stage
           width={dimensions.width}
           height={dimensions.height}
@@ -424,6 +648,26 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
                   />
                 )
               }
+              if (obj.type === 'volumetric') {
+                return (
+                  <VolumetricShape
+                    key={obj.id}
+                    shapeProps={{ ...obj, name: obj.id }}
+                    onSelect={() => onSelect(obj.id)}
+                    onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
+                  />
+                )
+              }
+              if (obj.type === '3d_logo') {
+                return (
+                  <Logo3DShape
+                    key={obj.id}
+                    shapeProps={{ ...obj, name: obj.id }}
+                    onSelect={() => onSelect(obj.id)}
+                    onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
+                  />
+                )
+              }
               return null
             })}
 
@@ -437,18 +681,18 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
               enabledAnchors={
                 selectedElement?.type === 'wall'
                   ? ['middle-left', 'middle-right']
-                  : ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+                  : ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']
               }
               keepRatio={selectedElement?.type === 'asset'}
-              padding={6}
-              anchorSize={12}
+              padding={selectedElement?.type === 'wall' ? 2 : 6}
+              anchorSize={selectedElement?.type === 'wall' ? 8 : 12}
               anchorCornerRadius={3}
               borderStroke="#0d7a75"
               borderStrokeWidth={2}
               anchorStroke="#0d7a75"
               anchorFill="white"
               anchorStrokeWidth={2}
-              rotateEnabled={!selectedElement?.isOuter}
+              rotateEnabled={true}
               rotateAnchorOffset={40}
               rotateAnchorCursor="crosshair"
             />

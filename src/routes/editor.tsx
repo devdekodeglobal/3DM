@@ -384,13 +384,13 @@ function EditorPage() {
 
         {/* Left Sidebar */}
         {sidebarOpen && (
-          <div className="flex shrink-0 z-10 shadow-xl border-r border-[var(--line)]">
+          <div className="flex h-full shrink-0 z-10 shadow-xl border-r border-[var(--line)]">
             <Sidebar addElement={addElement} />
           </div>
         )}
 
         {/* Center Canvas — flex-1 always fills remaining space */}
-        <div className="flex-1 flex flex-col relative z-0 min-w-0 bg-[var(--bg-base)]">
+        <div className="flex-1 flex h-full flex-col relative z-0 min-w-0 bg-[var(--bg-base)]">
           {editingWallId && editingWall ? (
             <WallCanvas
               wall={editingWall}
@@ -414,7 +414,7 @@ function EditorPage() {
 
         {/* Properties Panel — in flow, not absolute */}
         {propertiesOpen && (
-          <div className="shrink-0 border-l border-[var(--line)] z-20 shadow-[-8px_0_20px_rgba(0,0,0,0.05)]">
+          <div className="shrink-0 h-full border-l border-[var(--line)] z-20 shadow-[-8px_0_20px_rgba(0,0,0,0.05)]">
             <Properties
               selectedElement={selectedElement}
               onUpdate={handleUpdateElement}
