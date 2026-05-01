@@ -169,8 +169,7 @@ const steps = [
 
 function LandingPage() {
   return (
-    <main style={{ paddingBottom: 40 }}>
-
+    <>
       {/* ── HERO ── */}
       <section style={{ paddingTop: 72, paddingBottom: 40, overflow: 'hidden' }}>
         <div className="page-wrap" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 48, alignItems: 'center' }}>
@@ -418,6 +417,6 @@ function LandingPage() {
           50% { opacity: 0.4; transform: scale(0.85); }
         }
       `}</style>
-    </main>
+    </>
   )
 }
