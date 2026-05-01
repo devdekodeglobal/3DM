@@ -143,7 +143,7 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
     }
 
     const floor = BABYLON.MeshBuilder.CreateGround("floor", { width: boothConfig.width, height: boothConfig.depth }, scene);
-    floor.position = new BABYLON.Vector3(centerX, -0.02, centerZ);
+    floor.position = new BABYLON.Vector3(centerX, 0, centerZ);
     floor.receiveShadows = true;
 
     const floorMat = new BABYLON.PBRMaterial("floorMat", scene);
@@ -250,7 +250,12 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
         
         mesh.position.x = x;
         mesh.position.z = z;
-        mesh.position.y = (hActual * vScale / 2) + (el.yOffset || 0);
+        
+        if (el.type === 'asset') {
+          mesh.position.y = el.yOffset || 0;
+        } else {
+          mesh.position.y = (hActual * vScale / 2) + (el.yOffset || 0);
+        }
         
         if (mesh.rotationQuaternion) mesh.rotationQuaternion = null;
         mesh.rotation.y = rotY;
@@ -380,10 +385,20 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
                   const lMat = new BABYLON.StandardMaterial("lm", scene); lMat.emissiveColor = BABYLON.Color3.White(); mount.material = lMat;
                   mount.position.set(localX, localY, dVal/2 + 0.025);
                 } else {
+                  // Mounted elements (banner, frame)
                   mount = BABYLON.MeshBuilder.CreatePlane("banner", { width: cutW, height: cutH }, scene);
                   mount.rotation.y = Math.PI;
-                  const bMat = new BABYLON.StandardMaterial("bm", scene); bMat.diffuseColor = BABYLON.Color3.Blue(); mount.material = bMat;
                   mount.position.set(localX, localY, dVal/2 + 0.01);
+                  
+                  const bMat = new BABYLON.StandardMaterial("bm_" + index, scene);
+                  if (wel.url) {
+                    const tex = new BABYLON.Texture(wel.url, scene);
+                    tex.hasAlpha = true;
+                    bMat.diffuseTexture = tex;
+                  } else {
+                    bMat.diffuseColor = wel.type === 'frame' ? new BABYLON.Color3(0.8, 0.8, 0.8) : BABYLON.Color3.Blue();
+                  }
+                  mount.material = bMat;
                 }
                 attachments.push(mount);
               }
@@ -593,10 +608,10 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
               const bbox = root.getHierarchyBoundingVectors(true);
               const sz = bbox.max.subtract(bbox.min);
               const longest = Math.max(sz.x, sz.z);
-              const pPos = pivot.getAbsolutePosition();
-              root.position.x -= ((bbox.min.x + bbox.max.x) / 2 - pPos.x);
-              root.position.z -= ((bbox.min.z + bbox.max.z) / 2 - pPos.z);
-              root.position.y += (pPos.y - bbox.min.y);
+              const rootWorldPos = root.getAbsolutePosition();
+              root.position.x -= ((bbox.min.x + bbox.max.x) / 2 - rootWorldPos.x);
+              root.position.z -= ((bbox.min.z + bbox.max.z) / 2 - rootWorldPos.z);
+              root.position.y -= (bbox.min.y - rootWorldPos.y);
 
               if (longest > 0) {
                 pivot.metadata = { nativeLength: longest };

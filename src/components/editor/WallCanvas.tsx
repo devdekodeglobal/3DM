@@ -17,7 +17,7 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
 
   useEffect(() => {
     elements.forEach((el: any) => {
-      if (el.type === 'banner' && el.url && !images[el.url]) {
+      if ((el.type === 'banner' || el.type === 'frame') && el.url && !images[el.url]) {
         const img = new window.Image()
         img.src = el.url
         img.onload = () => {
