@@ -28,7 +28,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body suppressHydrationWarning className="antialiased" style={{ overflowWrap: 'anywhere' }}>
         <Header />
-        <main id="main-content">
+        <main id="root">
           {children}
         </main>
         <Footer />
