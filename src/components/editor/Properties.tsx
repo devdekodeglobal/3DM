@@ -21,6 +21,8 @@ const WALL_MATERIALS_LIST = [
   { value: 'Solid Wall', label: 'Solid Wall' },
   { value: 'Wood',       label: 'Wood Panel' },
   { value: 'Brick',      label: 'Brick' },
+  { value: 'Marble',     label: 'Marble' },
+  { value: 'Concrete',   label: 'Concrete' },
   { value: 'Glass Wall', label: 'Glass' },
 ]
 
@@ -34,6 +36,8 @@ export default function Properties({
     if (material === 'Glass Wall') { fill = 'lightblue'; opacity = 0.5 }
     else if (material === 'Wood')  { fill = '#8B4513' }
     else if (material === 'Brick') { fill = '#9a4a30' }
+    else if (material === 'Marble') { fill = '#d8d0c8' }
+    else if (material === 'Concrete') { fill = '#898989' }
     onUpdate(selectedElement.id, { material, fill, opacity })
   }
 

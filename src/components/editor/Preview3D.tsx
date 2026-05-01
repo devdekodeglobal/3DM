@@ -19,6 +19,8 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
 
   const meshRegistryRef = useRef<Map<string, BABYLON.AbstractMesh>>(new Map());
   const structureRegistryRef = useRef<BABYLON.AbstractMesh[]>([]);
+  const modelCacheRef = useRef<Map<string, BABYLON.AssetContainer>>(new Map());
+  const wallDecorationRegistryRef = useRef<Map<string, BABYLON.AbstractMesh[]>>(new Map());
   const lastBoothDimRef = useRef({ w: 0, d: 0 });
 
   // 1. Initial Setup Hook
@@ -207,6 +209,10 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
       if (!currentIds.has(id)) {
         mesh.dispose();
         registry.delete(id);
+        if (wallDecorationRegistryRef.current.has(id)) {
+          wallDecorationRegistryRef.current.get(id)?.forEach(m => m.dispose());
+          wallDecorationRegistryRef.current.delete(id);
+        }
       }
     });
 
@@ -218,18 +224,18 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
 
       let needsRecreate = false;
       const hasWallElements = el.wallElements && el.wallElements.length > 0;
-      
-      const currentWallState = JSON.stringify({
-        elements: el.wallElements || [],
-        thickness: el.thickness || 10,
-        width: hasWallElements ? el.width : undefined, 
-        material: el.material || 'Solid Wall'
-      });
 
       if (registry.has(el.id)) {
         const mesh = registry.get(el.id)!;
         if (el.type === 'wall') {
-          if (!mesh.metadata || mesh.metadata.wallState !== currentWallState) {
+          const cutouts = (el.wallElements || []).filter((wel: any) => ['door', 'window'].includes(wel.type));
+          const geometryState = JSON.stringify({
+            w: el.width,
+            t: el.thickness || 10,
+            c: cutouts.map((c: any) => ({ t: c.type, x: c.x, y: c.y, w: c.width, h: c.height }))
+          });
+
+          if (!mesh.metadata || mesh.metadata.geometryState !== geometryState) {
             needsRecreate = true;
           }
         } else if (el.type === 'volumetric') {
@@ -323,103 +329,167 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
           const wVal = el.width / PPM;
           const dVal = (el.thickness || 10) / PPM;
           const vScale = el.verticalScale || 1;
+          const cutouts = (el.wallElements || []).filter((wel: any) => ['door', 'window'].includes(wel.type));
+          const decorations = (el.wallElements || []).filter((wel: any) => !['door', 'window'].includes(wel.type));
           
-          let mesh = BABYLON.MeshBuilder.CreateBox(el.id, { width: wVal, height: h, depth: dVal }, scene);
+          const geometryState = JSON.stringify({
+            w: el.width,
+            t: el.thickness || 10,
+            c: cutouts.map((c: any) => ({ t: c.type, x: c.x, y: c.y, w: c.width, h: c.height }))
+          });
 
-          const attachments: BABYLON.Mesh[] = [];
-          if (el.wallElements && el.wallElements.length > 0) {
-            let wallCSG = BABYLON.CSG.FromMesh(mesh);
-            const trimColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-            const ft = 0.04; // Frame Thickness
+          let mesh: BABYLON.Mesh;
+          
+          if (needsRecreate || !registry.has(el.id)) {
+            // Dispose old mesh and its decorations
+            const oldMesh = registry.get(el.id);
+            if (oldMesh) {
+              oldMesh.dispose();
+              registry.delete(el.id);
+            }
+            if (wallDecorationRegistryRef.current.has(el.id)) {
+              wallDecorationRegistryRef.current.get(el.id)?.forEach(m => m.dispose());
+              wallDecorationRegistryRef.current.delete(el.id);
+            }
 
-            el.wallElements.forEach((wel: any, index: number) => {
-              const cutW = wel.width / PPM, cutH = wel.height / PPM, cutD = dVal + 0.5;
-              const localX = (wel.x / PPM) - (wVal / 2) + (cutW / 2);
-              const localY = (h / 2) - (wel.y / PPM) - (cutH / 2);
-              const isCutout = ['door', 'window'].includes(wel.type);
+            mesh = BABYLON.MeshBuilder.CreateBox(el.id, { width: wVal, height: h, depth: dVal }, scene);
+            
+            if (cutouts.length > 0) {
+              let wallCSG = BABYLON.CSG.FromMesh(mesh);
+              const trimColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+              const ft = 0.04;
 
-              if (isCutout) {
+              cutouts.forEach((wel: any, index: number) => {
+                const cutW = wel.width / PPM, cutH = wel.height / PPM, cutD = dVal + 0.5;
+                const localX = (wel.x / PPM) - (wVal / 2) + (cutW / 2);
+                const localY = (h / 2) - (wel.y / PPM) - (cutH / 2);
+                
                 const cutBox = BABYLON.MeshBuilder.CreateBox("cut", { width: cutW, height: cutH, depth: cutD }, scene);
                 cutBox.position.set(localX, localY, 0);
                 wallCSG = wallCSG.subtract(BABYLON.CSG.FromMesh(cutBox));
                 cutBox.dispose();
 
+                // Cutout accessories (frames/glass)
+                const accessoryGroup = new BABYLON.Mesh("acc_" + index, scene);
+                accessoryGroup.position.set(localX, localY, 0);
+                accessoryGroup.parent = mesh;
+
                 if (wel.type === 'window') {
-                  const winGroup = new BABYLON.Mesh("window_" + index, scene);
-                  const frameMat = new BABYLON.StandardMaterial("fmat", scene);
-                  frameMat.diffuseColor = trimColor;
-                  
+                  const frameMat = new BABYLON.StandardMaterial("fmat", scene); frameMat.diffuseColor = trimColor;
                   const fTop = BABYLON.MeshBuilder.CreateBox("ft", { width: cutW, height: ft, depth: dVal + 0.02 }, scene);
-                  fTop.position.y = cutH/2 - ft/2; fTop.material = frameMat; fTop.parent = winGroup;
+                  fTop.position.y = cutH/2 - ft/2; fTop.material = frameMat; fTop.parent = accessoryGroup;
                   const fBot = BABYLON.MeshBuilder.CreateBox("fb", { width: cutW, height: ft, depth: dVal + 0.02 }, scene);
-                  fBot.position.y = -cutH/2 + ft/2; fBot.material = frameMat; fBot.parent = winGroup;
+                  fBot.position.y = -cutH/2 + ft/2; fBot.material = frameMat; fBot.parent = accessoryGroup;
                   const fLeft = BABYLON.MeshBuilder.CreateBox("fl", { width: ft, height: cutH - ft*2, depth: dVal + 0.02 }, scene);
-                  fLeft.position.x = -cutW/2 + ft/2; fLeft.material = frameMat; fLeft.parent = winGroup;
+                  fLeft.position.x = -cutW/2 + ft/2; fLeft.material = frameMat; fLeft.parent = accessoryGroup;
                   const fRight = BABYLON.MeshBuilder.CreateBox("fr", { width: ft, height: cutH - ft*2, depth: dVal + 0.02 }, scene);
-                  fRight.position.x = cutW/2 - ft/2; fRight.material = frameMat; fRight.parent = winGroup;
+                  fRight.position.x = cutW/2 - ft/2; fRight.material = frameMat; fRight.parent = accessoryGroup;
                   
                   const glass = BABYLON.MeshBuilder.CreatePlane("glass", { width: cutW - ft*2, height: cutH - ft*2 }, scene);
-                  glass.position.z = dVal/2 + 0.005; glass.parent = winGroup;
+                  glass.position.z = dVal/2 + 0.005; glass.parent = accessoryGroup;
                   const gMat = new BABYLON.StandardMaterial("gmat", scene);
                   gMat.diffuseColor = new BABYLON.Color3(0.6, 0.8, 1); gMat.alpha = 0.3; glass.material = gMat;
-
-                  winGroup.position.set(localX, localY, 0);
-                  attachments.push(winGroup);
                 } else if (wel.type === 'door') {
-                   const doorGroup = new BABYLON.Mesh("door_" + index, scene);
                    const doorFrame = BABYLON.MeshBuilder.CreateBox("df", { width: cutW, height: cutH, depth: dVal + 0.02 }, scene);
-                   const dfMat = new BABYLON.StandardMaterial("dfm", scene); dfMat.diffuseColor = trimColor; doorFrame.material = dfMat; doorFrame.parent = doorGroup;
+                   const dfMat = new BABYLON.StandardMaterial("dfm", scene); dfMat.diffuseColor = trimColor; doorFrame.material = dfMat; doorFrame.parent = accessoryGroup;
                    const leaf = BABYLON.MeshBuilder.CreateBox("dl", { width: cutW - ft*2, height: cutH - ft, depth: 0.04 }, scene);
-                   leaf.position.y = -ft/2; leaf.material = dfMat; leaf.parent = doorGroup;
-                   doorGroup.position.set(localX, localY, 0);
-                   attachments.push(doorGroup);
+                   leaf.position.y = -ft/2; leaf.material = dfMat; leaf.parent = accessoryGroup;
                 }
-              } else {
-                // Mounted elements (banner, light, shelf)
-                let mount: BABYLON.Mesh;
-                if (wel.type === 'shelf') {
-                  mount = BABYLON.MeshBuilder.CreateBox("shelf", { width: cutW, height: 0.03, depth: 0.3 }, scene);
-                  mount.position.set(localX, localY, dVal/2 + 0.15);
-                } else if (wel.type === 'light') {
-                  mount = BABYLON.MeshBuilder.CreateBox("light", { width: cutW, height: cutH, depth: 0.05 }, scene);
-                  const lMat = new BABYLON.StandardMaterial("lm", scene); lMat.emissiveColor = BABYLON.Color3.White(); mount.material = lMat;
-                  mount.position.set(localX, localY, dVal/2 + 0.025);
-                } else {
-                  // Mounted elements (banner, frame)
-                  mount = BABYLON.MeshBuilder.CreatePlane("banner", { width: cutW, height: cutH }, scene);
-                  mount.rotation.y = Math.PI;
-                  mount.position.set(localX, localY, dVal/2 + 0.01);
-                  
-                  const bMat = new BABYLON.StandardMaterial("bm_" + index, scene);
-                  if (wel.url) {
-                    const tex = new BABYLON.Texture(wel.url, scene);
-                    tex.hasAlpha = true;
-                    bMat.diffuseTexture = tex;
-                  } else {
-                    bMat.diffuseColor = wel.type === 'frame' ? new BABYLON.Color3(0.8, 0.8, 0.8) : BABYLON.Color3.Blue();
-                  }
-                  mount.material = bMat;
-                }
-                attachments.push(mount);
-              }
-            });
+              });
 
-            const finalMesh = wallCSG.toMesh(el.id, null, scene);
-            mesh.dispose(); mesh = finalMesh;
-            attachments.forEach(att => att.parent = mesh);
+              const finalMesh = wallCSG.toMesh(el.id, null, scene);
+              // Transfer children (accessories) to final mesh
+              mesh.getChildren().forEach(child => child.parent = finalMesh);
+              mesh.dispose(); mesh = finalMesh as BABYLON.Mesh;
+            }
+            
+            shadowGenerator.addShadowCaster(mesh);
+            registry.set(el.id, mesh);
+          } else {
+            mesh = registry.get(el.id) as BABYLON.Mesh;
           }
 
+          // Update Decorations (Lights, Shelves, Banners)
+          const decorationState = JSON.stringify(decorations);
+          if (!mesh.metadata || mesh.metadata.decorationState !== decorationState) {
+            // Dispose old decorations for this wall
+            wallDecorationRegistryRef.current.get(el.id)?.forEach(m => m.dispose());
+            const newDecorations: BABYLON.AbstractMesh[] = [];
+
+            decorations.forEach((wel: any) => {
+              const cutW = wel.width / PPM, cutH = wel.height / PPM;
+              const localX = (wel.x / PPM) - (wVal / 2) + (cutW / 2);
+              const localY = (h / 2) - (wel.y / PPM) - (cutH / 2);
+              let mount: BABYLON.Mesh;
+
+              if (wel.type === 'shelf') {
+                mount = BABYLON.MeshBuilder.CreateBox("shelf", { width: cutW, height: 0.03, depth: 0.3 }, scene);
+                mount.position.set(localX, localY, dVal/2 + 0.15);
+              } else if (wel.type === 'light') {
+                const lColor = BABYLON.Color3.FromHexString(wel.lightColor || '#fff8e7');
+                const lIntensity = wel.intensity || 1.2;
+                const model = wel.model || 'wall_light_1';
+
+                if (model === 'wall_light_2') {
+                  mount = BABYLON.MeshBuilder.CreateCylinder("light", { diameter: Math.min(cutW, cutH), height: 0.05 }, scene);
+                  mount.rotation.x = Math.PI / 2;
+                } else if (model === 'wall_light_3') {
+                  mount = BABYLON.MeshBuilder.CreateBox("light", { width: cutW, height: 0.04, depth: 0.05 }, scene);
+                } else {
+                  mount = BABYLON.MeshBuilder.CreateBox("light", { width: cutW, height: cutH, depth: 0.05 }, scene);
+                }
+
+                const lMat = new BABYLON.PBRMaterial("lm", scene);
+                lMat.emissiveColor = lColor; lMat.emissiveIntensity = lIntensity * 2;
+                lMat.albedoColor = lColor; mount.material = lMat;
+                mount.position.set(localX, localY, dVal/2 + 0.025);
+
+                const spot = new BABYLON.SpotLight("spot", new BABYLON.Vector3(0,0,0.05), new BABYLON.Vector3(0,0,1), Math.PI/2, 2, scene);
+                spot.diffuse = lColor; spot.intensity = lIntensity * 5; spot.parent = mount;
+              } else {
+                mount = BABYLON.MeshBuilder.CreatePlane("banner", { width: cutW, height: cutH }, scene);
+                mount.rotation.y = Math.PI;
+                mount.position.set(localX, localY, dVal/2 + 0.01);
+                const bMat = new BABYLON.PBRMaterial("bm", scene);
+                if (wel.url) bMat.albedoTexture = new BABYLON.Texture(wel.url, scene);
+                else bMat.albedoColor = wel.type === 'frame' ? new BABYLON.Color3(0.8, 0.8, 0.8) : BABYLON.Color3.Blue();
+                mount.material = bMat;
+              }
+              mount.parent = mesh;
+              newDecorations.push(mount);
+            });
+            wallDecorationRegistryRef.current.set(el.id, newDecorations);
+          }
+
+          // Update Wall Common Properties
           mesh.position.set(x, (h * vScale / 2) + (el.yOffset || 0), z);
           mesh.scaling.y = vScale;
           mesh.rotation.y = rotY;
-          shadowGenerator.addShadowCaster(mesh);
 
-          const mat = new BABYLON.StandardMaterial(el.id + "_mat", scene);
-          if (el.material === 'Glass Wall') { mat.diffuseColor = new BABYLON.Color3(0.5, 0.8, 1); mat.alpha = 0.4; }
-          else if (el.material === 'Wood') { mat.diffuseTexture = new BABYLON.Texture("/assets/textures/hardwood.png", scene); }
-          else { mat.diffuseColor = new BABYLON.Color3(0.9, 0.9, 0.9); }
+          const mat = (mesh.material as BABYLON.PBRMaterial) || new BABYLON.PBRMaterial(el.id + "_mat", scene);
+          mat.roughness = 0.4; mat.metallic = 0.05;
+          if (el.material === 'Glass Wall') { mat.albedoColor = new BABYLON.Color3(0.5, 0.8, 1); mat.alpha = 0.4; mat.transparencyMode = 2; }
+          else {
+            let texName = '';
+            if (el.material === 'Wood') texName = 'hardwood';
+            else if (el.material === 'Brick') texName = 'brick';
+            else if (el.material === 'Marble') { texName = 'marble'; mat.roughness = 0.1; mat.metallic = 0.2; }
+            else if (el.material === 'Concrete') texName = 'concrete';
+            
+            if (texName) {
+              const tex = (mat.albedoTexture as BABYLON.Texture) || new BABYLON.Texture(`/assets/textures/${texName}.png`, scene);
+              if (tex.url !== `/assets/textures/${texName}.png`) {
+                mat.albedoTexture = new BABYLON.Texture(`/assets/textures/${texName}.png`, scene);
+              }
+              const currentTex = mat.albedoTexture as BABYLON.Texture;
+              currentTex.uScale = wVal / 2; 
+              currentTex.vScale = h / 2;
+            } else {
+              mat.albedoColor = new BABYLON.Color3(0.92, 0.92, 0.92); mat.albedoTexture = null;
+            }
+          }
           mesh.material = mat;
-          mesh.metadata = { wallState: currentWallState, baseWidth: wVal };
+          mesh.metadata = { geometryState, decorationState, baseWidth: wVal };
           registry.set(el.id, mesh);
 
         } else if (el.type === 'volumetric') {
@@ -598,32 +668,61 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
           pivot.rotation.y = rotY;
           registry.set(el.id, pivot);
 
-          BABYLON.SceneLoader.ImportMesh("", "/models/", `${modelName}.glb`, scene, (meshes) => {
-            if (!registry.has(el.id)) { meshes.forEach(m => m.dispose()); return; }
-            const root = meshes[0]; root.parent = pivot;
-            root.position = BABYLON.Vector3.Zero();
-            
+          const cache = modelCacheRef.current;
+          if (cache.has(modelName)) {
+            const container = cache.get(modelName)!;
+            const entries = container.instantiateModelsToScene();
+            entries.rootNodes.forEach(node => {
+              node.parent = pivot;
+              // Add shadows to all meshes in the instance
+              node.getChildMeshes().forEach(m => {
+                m.receiveShadows = true;
+                shadowGenerator.addShadowCaster(m, true);
+              });
+            });
+            // Native length logic needs a slight delay for bounds calculation
             setTimeout(() => {
-              root.computeWorldMatrix(true);
-              const bbox = root.getHierarchyBoundingVectors(true);
-              const sz = bbox.max.subtract(bbox.min);
-              const longest = Math.max(sz.x, sz.z);
-              const rootWorldPos = root.getAbsolutePosition();
-              root.position.x -= ((bbox.min.x + bbox.max.x) / 2 - rootWorldPos.x);
-              root.position.z -= ((bbox.min.z + bbox.max.z) / 2 - rootWorldPos.z);
-              root.position.y -= (bbox.min.y - rootWorldPos.y);
-
-              if (longest > 0) {
-                pivot.metadata = { nativeLength: longest };
-                const s = (el.width / PPM) / longest;
-                pivot.scaling.set(s, s * (el.verticalScale || 1), s);
+              if (!pivot.metadata || !pivot.metadata.nativeLength) {
+                 const root = entries.rootNodes[0];
+                 root.computeWorldMatrix(true);
+                 const bbox = root.getHierarchyBoundingVectors(true);
+                 const sz = bbox.max.subtract(bbox.min);
+                 const longest = Math.max(sz.x, sz.z);
+                 pivot.metadata = { ...pivot.metadata, nativeLength: longest };
+                 const s = (el.width / PPM) / longest;
+                 pivot.scaling.set(s, s * (el.verticalScale || 1), s);
               }
-            }, 100);
-            meshes.forEach(m => { m.receiveShadows = true; shadowGenerator.addShadowCaster(m, true); });
-          }, null, () => {
-             const ph = BABYLON.MeshBuilder.CreateBox("ph", { width: el.width/PPM, height: 0.8, depth: el.height/PPM }, scene);
-             ph.parent = pivot; ph.position.y = 0.4;
-          });
+            }, 10);
+          } else {
+            BABYLON.SceneLoader.LoadAssetContainer("/models/", `${modelName}.glb`, scene, (container) => {
+              if (!registry.has(el.id)) { container.dispose(); return; }
+              cache.set(modelName, container);
+              const entries = container.instantiateModelsToScene();
+              entries.rootNodes.forEach(node => {
+                node.parent = pivot;
+                node.getChildMeshes().forEach(m => {
+                  m.receiveShadows = true;
+                  shadowGenerator.addShadowCaster(m, true);
+                });
+              });
+              
+              setTimeout(() => {
+                const root = entries.rootNodes[0];
+                root.computeWorldMatrix(true);
+                const bbox = root.getHierarchyBoundingVectors(true);
+                const sz = bbox.max.subtract(bbox.min);
+                const longest = Math.max(sz.x, sz.z);
+                if (longest > 0) {
+                  pivot.metadata = { nativeLength: longest };
+                  const s = (el.width / PPM) / longest;
+                  pivot.scaling.set(s, s * (el.verticalScale || 1), s);
+                }
+              }, 100);
+            }, null, () => {
+               const ph = BABYLON.MeshBuilder.CreateBox("ph", { width: el.width/PPM, height: 0.8, depth: el.height/PPM }, scene);
+               ph.parent = pivot; ph.position.y = 0.4;
+            });
+          }
         }
       }
     });

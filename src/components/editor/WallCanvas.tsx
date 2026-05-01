@@ -36,8 +36,12 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
         const isSelected = selectedId === el.id
         const hasImage = (el.type === 'banner' || el.type === 'frame') && el.url && images[el.url]
         const patternImg = hasImage ? images[el.url] : undefined
+        
+        // Light color handling
+        const lightFill = el.type === 'light' ? (el.lightColor || '#fff8e7') : cfg.color
+        const lightOpacity = el.type === 'light' ? 0.6 : 1.0
 
-        if (el.type === 'frame' && el.shape === 'circle') {
+        if ((el.type === 'frame' && el.shape === 'circle') || (el.type === 'light' && el.model === 'wall_light_2')) {
           return (
             <Circle
               key={el.id}
@@ -45,7 +49,8 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
               x={el.x + el.width / 2}
               y={el.y + el.height / 2}
               radius={Math.min(el.width, el.height) / 2}
-              fill={hasImage ? undefined : cfg.color}
+              fill={hasImage ? undefined : lightFill}
+              opacity={lightOpacity}
               fillPatternImage={patternImg}
               fillPatternScaleX={patternImg ? el.width / patternImg.width : undefined}
               fillPatternScaleY={patternImg ? el.height / patternImg.height : undefined}
@@ -78,7 +83,6 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
                 node.scaleY(1)
                 const newR = node.radius() * scale
                 node.radius(newR)
-                // This is complex for Transformer, maybe just stick to Rect for simplicity or handle scaling
                 onTransform(i, e)
               }}
               onTransformEnd={onTransformEnd}
@@ -94,7 +98,8 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
             y={el.y}
             width={el.width}
             height={el.height}
-            fill={hasImage ? undefined : cfg.color}
+            fill={hasImage ? undefined : lightFill}
+            opacity={lightOpacity}
             fillPatternImage={patternImg}
             fillPatternScaleX={patternImg ? el.width / patternImg.width : undefined}
             fillPatternScaleY={patternImg ? el.height / patternImg.height : undefined}
@@ -192,6 +197,12 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
     let y = wallHeight / 2 - h / 2
     if (cfg.defaultY === 'floor') y = wallHeight - h
     if (cfg.defaultY === 'top') y = 0.1 * PPM
+    const lightProps = type === 'light' ? {
+      lightColor: '#fff8e7',
+      intensity: 1.2,
+      model: 'wall_light_1'
+    } : {}
+
     setElements(prev => [...prev, {
       id: Math.random().toString(36).substr(2, 9),
       type,
@@ -200,7 +211,7 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
       width: w,
       height: h,
       shape: cfg.shape || 'square',
-      model: cfg.model || undefined
+      ...lightProps
     }])
   }
 
@@ -510,7 +521,7 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
               if (e.target === e.target.getStage() || e.target.name() === 'wallBg') setSelectedId(null)
             }}>
               <Layer>
-                <Rect name="wallBg" x={0} y={0} width={wallWidth} height={wallHeight} fill="#f8f9fb" stroke="#94a3b8" strokeWidth={2} shadowColor="rgba(0,0,0,0.15)" shadowBlur={24} shadowOffsetY={6} />
+                <Rect name="wallBg" x={0} y={0} width={wallWidth} height={wallHeight} fill={wall.fill || "#f8f9fb"} stroke="#94a3b8" strokeWidth={2} shadowColor="rgba(0,0,0,0.15)" shadowBlur={24} shadowOffsetY={6} />
                 {gridLines}
                 <Line points={[0, 0, wallWidth, 0]} stroke="#64748b" strokeWidth={3} listening={false} />
                 <Text x={5} y={4} text="▼ CEILING" fill="#94a3b8" fontSize={9} fontFamily="monospace" listening={false} />
