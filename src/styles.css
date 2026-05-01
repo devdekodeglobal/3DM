@@ -49,7 +49,8 @@
 }
 
 /* --- Dark Mode Overrides --- */
-:root[data-theme="dark"] {
+:root[data-theme="dark"],
+.dark {
   --color-bg-page: #080B14;
   --color-bg-subtle: #0D1220;
   --color-bg-card: #111827;
@@ -76,6 +77,37 @@
   --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.55);
   --shadow-brand: 0 6px 24px rgba(79, 70, 229, 0.40);
 }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg-page: #080B14;
+    --color-bg-subtle: #0D1220;
+    --color-bg-card: #111827;
+    --color-bg-glass: rgba(17, 24, 39, 0.88);
+    --color-header-bg: rgba(8, 11, 20, 0.94);
+
+    --color-fg: #F1F5F9;
+    --color-fg-soft: #94A3B8;
+    --color-fg-dim: #4B5563;
+
+    --color-brand: #818CF8;
+    --color-brand-h: #6366F1;
+    --color-brand-bg: rgba(129, 140, 248, 0.10);
+
+    --color-accent: #22D3EE;
+    --color-accent-bg: rgba(34, 211, 238, 0.08);
+
+    --color-border: rgba(255, 255, 255, 0.07);
+    --color-border-hi: rgba(255, 255, 255, 0.13);
+    --color-border-brand: rgba(129, 140, 248, 0.24);
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.55);
+    --shadow-brand: 0 6px 24px rgba(79, 70, 229, 0.40);
+  }
+}
+
 
 @theme {
 

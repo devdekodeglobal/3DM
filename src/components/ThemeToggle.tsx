@@ -21,13 +21,7 @@ function applyThemeMode(mode: ThemeMode) {
 
   document.documentElement.classList.remove('light', 'dark')
   document.documentElement.classList.add(resolved)
-
-  if (mode === 'auto') {
-    document.documentElement.removeAttribute('data-theme')
-  } else {
-    document.documentElement.setAttribute('data-theme', mode)
-  }
-
+  document.documentElement.setAttribute('data-theme', resolved)
   document.documentElement.style.colorScheme = resolved
 }
 
@@ -41,22 +35,17 @@ export default function ThemeToggle() {
   }, [])
 
   useEffect(() => {
-    if (mode !== 'auto') {
-      return
-    }
+    if (mode !== 'auto') return
 
     const media = window.matchMedia('(prefers-color-scheme: dark)')
     const onChange = () => applyThemeMode('auto')
 
     media.addEventListener('change', onChange)
-    return () => {
-      media.removeEventListener('change', onChange)
-    }
+    return () => media.removeEventListener('change', onChange)
   }, [mode])
 
   function toggleMode() {
-    const nextMode: ThemeMode =
-      mode === 'light' ? 'dark' : mode === 'dark' ? 'auto' : 'light'
+    const nextMode: ThemeMode = mode === 'auto' ? 'light' : mode === 'light' ? 'dark' : 'auto'
     setMode(nextMode)
     applyThemeMode(nextMode)
     window.localStorage.setItem('theme', nextMode)
