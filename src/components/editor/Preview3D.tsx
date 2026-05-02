@@ -385,10 +385,9 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
                 accessoryGroup.position.set(localX, localY, 0);
                 accessoryGroup.parent = mesh;
 
-                const frameMat = new BABYLON.PBRMaterial("fmat", scene);
-                frameMat.albedoColor = trimColor;
-                frameMat.roughness = 0.4;
-                frameMat.metallic = 0.3;
+                const frameMat = new BABYLON.StandardMaterial("fmat", scene);
+                frameMat.diffuseColor = trimColor;
+                frameMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
 
                 if (wel.type === 'window') {
                   // Window Frame (4 sides)
@@ -423,9 +422,9 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
                   // Door Leaf
                   const leaf = BABYLON.MeshBuilder.CreateBox("dl", { width: cutW - ft*2, height: cutH - ft, depth: 0.04 }, scene);
                   leaf.position.y = -ft/2; 
-                  const leafMat = new BABYLON.PBRMaterial("leafMat", scene);
-                  leafMat.albedoColor = new BABYLON.Color3(0.25, 0.25, 0.25);
-                  leafMat.roughness = 0.3;
+                  const leafMat = new BABYLON.StandardMaterial("leafMat", scene);
+                  leafMat.diffuseColor = new BABYLON.Color3(0.39, 0.26, 0.13); // Warm Brown
+                  leafMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
                   leaf.material = leafMat;
                   leaf.parent = accessoryGroup;
 
@@ -433,10 +432,9 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
                   const handle = BABYLON.MeshBuilder.CreateSphere("handle", { diameter: 0.05 }, scene);
                   handle.position.set(cutW/2 - ft*3, -0.1, 0.03); // Positioned slightly below center
                   handle.parent = leaf;
-                  const hMat = new BABYLON.PBRMaterial("hmat", scene);
-                  hMat.albedoColor = new BABYLON.Color3(0.8, 0.7, 0.3); // Brass
-                  hMat.metallic = 1.0;
-                  hMat.roughness = 0.2;
+                  const hMat = new BABYLON.StandardMaterial("hmat", scene);
+                  hMat.diffuseColor = new BABYLON.Color3(0.8, 0.7, 0.3); // Brass
+                  hMat.specularColor = new BABYLON.Color3(1, 0.9, 0.5);
                   handle.material = hMat;
                 }
               });
