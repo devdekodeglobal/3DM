@@ -385,8 +385,13 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
                 accessoryGroup.position.set(localX, localY, 0);
                 accessoryGroup.parent = mesh;
 
+                const frameMat = new BABYLON.PBRMaterial("fmat", scene);
+                frameMat.albedoColor = trimColor;
+                frameMat.roughness = 0.4;
+                frameMat.metallic = 0.3;
+
                 if (wel.type === 'window') {
-                  const frameMat = new BABYLON.StandardMaterial("fmat", scene); frameMat.diffuseColor = trimColor;
+                  // Window Frame (4 sides)
                   const fTop = BABYLON.MeshBuilder.CreateBox("ft", { width: cutW, height: ft, depth: dVal + 0.02 }, scene);
                   fTop.position.y = cutH/2 - ft/2; fTop.material = frameMat; fTop.parent = accessoryGroup;
                   const fBot = BABYLON.MeshBuilder.CreateBox("fb", { width: cutW, height: ft, depth: dVal + 0.02 }, scene);
@@ -396,15 +401,43 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
                   const fRight = BABYLON.MeshBuilder.CreateBox("fr", { width: ft, height: cutH - ft*2, depth: dVal + 0.02 }, scene);
                   fRight.position.x = cutW/2 - ft/2; fRight.material = frameMat; fRight.parent = accessoryGroup;
                   
-                  const glass = BABYLON.MeshBuilder.CreatePlane("glass", { width: cutW - ft*2, height: cutH - ft*2 }, scene);
-                  glass.position.z = dVal/2 + 0.005; glass.parent = accessoryGroup;
-                  const gMat = new BABYLON.StandardMaterial("gmat", scene);
-                  gMat.diffuseColor = new BABYLON.Color3(0.6, 0.8, 1); gMat.alpha = 0.3; glass.material = gMat;
+                  // Glass (Centered)
+                  const glass = BABYLON.MeshBuilder.CreateBox("glass", { width: cutW - ft*2, height: cutH - ft*2, depth: 0.01 }, scene);
+                  glass.position.z = 0; glass.parent = accessoryGroup;
+                  const gMat = new BABYLON.PBRMaterial("gmat", scene);
+                  gMat.albedoColor = new BABYLON.Color3(0.8, 0.9, 1);
+                  gMat.alpha = 0.2;
+                  gMat.roughness = 0.05;
+                  gMat.metallic = 0;
+                  gMat.transparencyMode = 2; // ALPHABLEND
+                  glass.material = gMat;
                 } else if (wel.type === 'door') {
-                   const doorFrame = BABYLON.MeshBuilder.CreateBox("df", { width: cutW, height: cutH, depth: dVal + 0.02 }, scene);
-                   const dfMat = new BABYLON.StandardMaterial("dfm", scene); dfMat.diffuseColor = trimColor; doorFrame.material = dfMat; doorFrame.parent = accessoryGroup;
-                   const leaf = BABYLON.MeshBuilder.CreateBox("dl", { width: cutW - ft*2, height: cutH - ft, depth: 0.04 }, scene);
-                   leaf.position.y = -ft/2; leaf.material = dfMat; leaf.parent = accessoryGroup;
+                  // Door Frame (Top, Left, Right)
+                  const fTop = BABYLON.MeshBuilder.CreateBox("dt", { width: cutW, height: ft, depth: dVal + 0.02 }, scene);
+                  fTop.position.y = cutH/2 - ft/2; fTop.material = frameMat; fTop.parent = accessoryGroup;
+                  const fLeft = BABYLON.MeshBuilder.CreateBox("dlf", { width: ft, height: cutH - ft, depth: dVal + 0.02 }, scene);
+                  fLeft.position.x = -cutW/2 + ft/2; fLeft.position.y = -ft/2; fLeft.material = frameMat; fLeft.parent = accessoryGroup;
+                  const fRight = BABYLON.MeshBuilder.CreateBox("drf", { width: ft, height: cutH - ft, depth: dVal + 0.02 }, scene);
+                  fRight.position.x = cutW/2 - ft/2; fRight.position.y = -ft/2; fRight.material = frameMat; fRight.parent = accessoryGroup;
+
+                  // Door Leaf
+                  const leaf = BABYLON.MeshBuilder.CreateBox("dl", { width: cutW - ft*2, height: cutH - ft, depth: 0.04 }, scene);
+                  leaf.position.y = -ft/2; 
+                  const leafMat = new BABYLON.PBRMaterial("leafMat", scene);
+                  leafMat.albedoColor = new BABYLON.Color3(0.25, 0.25, 0.25);
+                  leafMat.roughness = 0.3;
+                  leaf.material = leafMat;
+                  leaf.parent = accessoryGroup;
+
+                  // Door Handle
+                  const handle = BABYLON.MeshBuilder.CreateSphere("handle", { diameter: 0.05 }, scene);
+                  handle.position.set(cutW/2 - ft*3, -0.1, 0.03); // Positioned slightly below center
+                  handle.parent = leaf;
+                  const hMat = new BABYLON.PBRMaterial("hmat", scene);
+                  hMat.albedoColor = new BABYLON.Color3(0.8, 0.7, 0.3); // Brass
+                  hMat.metallic = 1.0;
+                  hMat.roughness = 0.2;
+                  handle.material = hMat;
                 }
               });
 
