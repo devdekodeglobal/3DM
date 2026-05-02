@@ -249,7 +249,7 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
         }
       }
 
-      if (registry.has(el.id) && !needsRecreate) {
+      if (registry.has(el.id) && !needsRecreate && el.type !== 'wall') {
         const mesh = registry.get(el.id)!;
         const vScale = el.verticalScale || 1;
         const hActual = el.type === 'wall' ? 2.5 : 1; 
@@ -267,12 +267,7 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
         mesh.rotation.y = rotY;
         mesh.scaling.y = vScale;
 
-        if (el.type === 'wall' && !hasWallElements) {
-          const wVal = el.width / PPM;
-          if (mesh.metadata && mesh.metadata.baseWidth) {
-            mesh.scaling.x = wVal / mesh.metadata.baseWidth;
-          }
-        }
+
 
         if (el.type === 'asset' && mesh.metadata && mesh.metadata.nativeLength) {
           const targetW = el.width / PPM;
@@ -316,6 +311,22 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
             } else {
               mat.albedoTexture = null;
               mat.emissiveTexture = null;
+            }
+          }
+        } else if (el.type === '3d_logo') {
+          const multimat = mesh.material as BABYLON.MultiMaterial;
+          if (multimat && multimat.subMaterials) {
+            const frontMat = multimat.subMaterials[0] as BABYLON.PBRMaterial;
+            const sideMat = multimat.subMaterials[1] as BABYLON.PBRMaterial;
+            const baseColor = BABYLON.Color3.FromHexString(el.logoColor || '#ffffff');
+            if (frontMat) {
+              frontMat.albedoColor = baseColor;
+              if (el.logoStyle === 'glowing') {
+                frontMat.emissiveColor = baseColor;
+              }
+            }
+            if (sideMat) {
+              sideMat.albedoColor = baseColor;
             }
           }
         }
@@ -424,7 +435,7 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
 
               if (wel.type === 'shelf') {
                 mount = BABYLON.MeshBuilder.CreateBox("shelf", { width: cutW, height: 0.03, depth: 0.3 }, scene);
-                mount.position.set(localX, localY, dVal/2 + 0.15);
+                mount.position.set(localX, localY, -dVal/2 - 0.15);
               } else if (wel.type === 'light') {
                 const lColor = BABYLON.Color3.FromHexString(wel.lightColor || '#fff8e7');
                 const lIntensity = wel.intensity || 1.2;
@@ -442,17 +453,25 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
                 const lMat = new BABYLON.PBRMaterial("lm", scene);
                 lMat.emissiveColor = lColor; lMat.emissiveIntensity = lIntensity * 2;
                 lMat.albedoColor = lColor; mount.material = lMat;
-                mount.position.set(localX, localY, dVal/2 + 0.025);
+                mount.position.set(localX, localY, -dVal/2 - 0.025);
 
-                const spot = new BABYLON.SpotLight("spot", new BABYLON.Vector3(0,0,0.05), new BABYLON.Vector3(0,0,1), Math.PI/2, 2, scene);
+                const spot = new BABYLON.SpotLight("spot", new BABYLON.Vector3(0,0,-0.05), new BABYLON.Vector3(0,0,-1), Math.PI/2, 2, scene);
                 spot.diffuse = lColor; spot.intensity = lIntensity * 5; spot.parent = mount;
               } else {
                 mount = BABYLON.MeshBuilder.CreatePlane("banner", { width: cutW, height: cutH }, scene);
-                mount.rotation.y = Math.PI;
-                mount.position.set(localX, localY, dVal/2 + 0.01);
+                mount.position.set(localX, localY, -dVal/2 - 0.01);
                 const bMat = new BABYLON.PBRMaterial("bm", scene);
-                if (wel.url) bMat.albedoTexture = new BABYLON.Texture(wel.url, scene);
-                else bMat.albedoColor = wel.type === 'frame' ? new BABYLON.Color3(0.8, 0.8, 0.8) : BABYLON.Color3.Blue();
+                if (wel.url) {
+                  const tex = new BABYLON.Texture(wel.url, scene);
+                  tex.hasAlpha = true;
+                  bMat.albedoTexture = tex;
+                  bMat.useAlphaFromAlbedoTexture = true;
+                  bMat.transparencyMode = 2; // ALPHABLEND
+                  bMat.roughness = 0.5;
+                  bMat.metallic = 0.1;
+                } else {
+                  bMat.albedoColor = wel.type === 'frame' ? new BABYLON.Color3(0.8, 0.8, 0.8) : BABYLON.Color3.Blue();
+                }
                 mount.material = bMat;
               }
               mount.parent = mesh;
@@ -465,11 +484,17 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
           mesh.position.set(x, (h * vScale / 2) + (el.yOffset || 0), z);
           mesh.scaling.y = vScale;
           mesh.rotation.y = rotY;
+          if (!hasWallElements && mesh.metadata && mesh.metadata.baseWidth) {
+            mesh.scaling.x = wVal / mesh.metadata.baseWidth;
+          }
 
           const mat = (mesh.material as BABYLON.PBRMaterial) || new BABYLON.PBRMaterial(el.id + "_mat", scene);
           mat.roughness = 0.4; mat.metallic = 0.05;
-          if (el.material === 'Glass Wall') { mat.albedoColor = new BABYLON.Color3(0.5, 0.8, 1); mat.alpha = 0.4; mat.transparencyMode = 2; }
+          if (el.material === 'Glass Wall') { mat.albedoColor = new BABYLON.Color3(0.5, 0.8, 1); mat.alpha = 0.4; mat.transparencyMode = 2; mat.albedoTexture = null; }
           else {
+            mat.alpha = 1.0;
+            mat.transparencyMode = 0;
+            mat.albedoColor = BABYLON.Color3.White();
             let texName = '';
             if (el.material === 'Wood') texName = 'hardwood';
             else if (el.material === 'Brick') texName = 'brick';
@@ -477,13 +502,15 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
             else if (el.material === 'Concrete') texName = 'concrete';
             
             if (texName) {
-              const tex = (mat.albedoTexture as BABYLON.Texture) || new BABYLON.Texture(`/assets/textures/${texName}.png`, scene);
-              if (tex.url !== `/assets/textures/${texName}.png`) {
-                mat.albedoTexture = new BABYLON.Texture(`/assets/textures/${texName}.png`, scene);
+              const texUrl = `/assets/textures/${texName}.png`;
+              if (!mat.albedoTexture || (mat.albedoTexture as BABYLON.Texture).url !== texUrl) {
+                mat.albedoTexture = new BABYLON.Texture(texUrl, scene);
               }
               const currentTex = mat.albedoTexture as BABYLON.Texture;
-              currentTex.uScale = wVal / 2; 
-              currentTex.vScale = h / 2;
+              if (currentTex) {
+                currentTex.uScale = wVal / 2; 
+                currentTex.vScale = h / 2;
+              }
             } else {
               mat.albedoColor = new BABYLON.Color3(0.92, 0.92, 0.92); mat.albedoTexture = null;
             }
@@ -506,7 +533,7 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
             else if (logoSide === 'left') sideIndex = 3;
             else if (logoSide === 'top') sideIndex = 4;
             else if (logoSide === 'bottom') sideIndex = 5;
-            faceUV[sideIndex] = new BABYLON.Vector4(0, 0, 1, 1);
+            faceUV[sideIndex] = new BABYLON.Vector4(0, 1, 1, 0);
           } else {
             // No logo? All sides show the color
             faceUV.fill(new BABYLON.Vector4(0, 0, 1, 1));
@@ -515,9 +542,9 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
           if (el.shape === 'cylinder') {
             const cylUV = new Array(3).fill(new BABYLON.Vector4(0,0,0,0));
             if (el.logoUrl) {
-               if (logoSide === 'top') cylUV[2] = new BABYLON.Vector4(0,0,1,1);
-               else if (logoSide === 'bottom') cylUV[0] = new BABYLON.Vector4(0,0,1,1);
-               else cylUV[1] = new BABYLON.Vector4(0,0,1,1); // Side
+               if (logoSide === 'top') cylUV[2] = new BABYLON.Vector4(0, 1, 1, 0);
+               else if (logoSide === 'bottom') cylUV[0] = new BABYLON.Vector4(0, 1, 1, 0);
+               else cylUV[1] = new BABYLON.Vector4(0, 1, 1, 0); // Side
             } else {
                cylUV.fill(new BABYLON.Vector4(0,0,1,1));
             }
@@ -566,7 +593,7 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
           // Define faceUV to isolate logo to front face only
           // 0:Front, 1:Back, 2:Right, 3:Left, 4:Top, 5:Bottom
           const faceUV = new Array(6).fill(new BABYLON.Vector4(0, 0, 0, 0));
-          faceUV[0] = new BABYLON.Vector4(0, 0, 1, 1);
+          faceUV[0] = new BABYLON.Vector4(0, 1, 1, 0);
 
           // Create the logo box
           const logoMesh = BABYLON.MeshBuilder.CreateBox(el.id, { width: w, height: h, depth: depth, faceUV }, scene);
@@ -623,9 +650,6 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
             const url = URL.createObjectURL(blob);
             const tex = new BABYLON.Texture(url, scene);
             tex.hasAlpha = true;
-            // Fix upside-down orientation
-            tex.vScale = -1;
-            tex.vOffset = 1;
             
             frontMat.albedoTexture = tex;
             frontMat.opacityTexture = tex; // This makes the "white corners" transparent
@@ -646,9 +670,6 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
             const blob = new Blob([el.svgData], { type: 'image/svg+xml' });
             const url = URL.createObjectURL(blob);
             const tex = new BABYLON.Texture(url, scene);
-            // Fix upside-down orientation
-            tex.vScale = -1;
-            tex.vOffset = 1;
             sideMat.opacityTexture = tex;
             tex.onLoadObservable.addOnce(() => URL.revokeObjectURL(url));
           }
@@ -657,7 +678,7 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
           multimat.subMaterials.push(sideMat);
           
           logoMesh.material = multimat;
-          logoMesh.metadata = { svgData: el.svgData, depth: el.depth, logoStyle: el.logoStyle };
+          logoMesh.metadata = { svgData: el.svgData, depth: el.depth, logoStyle: el.logoStyle, logoColor: el.logoColor };
           registry.set(el.id, logoMesh);
 
         } else if (el.type === 'asset') {
