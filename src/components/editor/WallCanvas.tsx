@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { Stage, Layer, Rect, Text, Transformer, Line, Group, Circle } from 'react-konva'
 import { X, Save } from 'lucide-react'
+import { getCachedImage } from '../../lib/imageCache'
 
 // Sub-component for the actual wall elements to prevent re-renders during transformation/drag labels
 const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, onDragEnd, onTransform, onTransformEnd }: any) => {
@@ -18,13 +19,9 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
   useEffect(() => {
     elements.forEach((el: any) => {
       if ((el.type === 'banner' || el.type === 'frame') && el.url && !images[el.url]) {
-        const img = new window.Image()
-        img.src = el.url
-        img.onload = () => {
-          if (img.width > 0 && img.height > 0) {
-            setImages(prev => ({ ...prev, [el.url]: img }))
-          }
-        }
+        getCachedImage(el.url, (img) => {
+          setImages(prev => ({ ...prev, [el.url]: img }))
+        });
       }
     })
   }, [elements])
@@ -304,8 +301,8 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
   const selectedEl = elements.find(el => el.id === selectedId) || null
 
   return (
-    <div className="absolute inset-0 z-50 bg-[var(--bg-base)] flex flex-col">
-      <div className="h-14 border-b border-[var(--line)] bg-[var(--surface-strong)] flex items-center justify-between px-4 shrink-0">
+    <div className="flex flex-col h-full w-full">
+      <div className="h-16 border-b border-[var(--line)] bg-[var(--surface-strong)] flex items-center justify-between px-6 shrink-0">
         <div className="flex items-center gap-3">
           <h2 className="font-bold text-[var(--sea-ink)]">Wall Elevation Editor</h2>
           <span className="text-[10px] font-mono bg-[var(--sand)] border border-[var(--line)] px-2 py-1 rounded text-[var(--sea-ink-soft)]">

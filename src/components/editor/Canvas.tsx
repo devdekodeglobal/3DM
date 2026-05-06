@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Stage, Layer, Rect, Ellipse, Line, Transformer, Group, Text } from 'react-konva'
+import { getCachedImage } from '../../lib/imageCache'
 
 export interface BoothConfig {
   width: number;
@@ -182,11 +183,7 @@ const VolumetricShape = ({ shapeProps, onSelect, onChange }: any) => {
   const [logoImg, setLogoImg] = useState<HTMLImageElement | null>(null)
   useEffect(() => {
     if (shapeProps.logoUrl) {
-      const img = new window.Image()
-      img.src = shapeProps.logoUrl
-      img.onload = () => {
-        if (img.width > 0 && img.height > 0) setLogoImg(img)
-      }
+      getCachedImage(shapeProps.logoUrl, setLogoImg);
     } else {
       setLogoImg(null)
     }
@@ -599,7 +596,7 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
                 shadowColor="rgba(0,0,0,0.1)"
                 shadowBlur={40}
               />
-
+              
               {boundaryLines.map((line) => (
                 <React.Fragment key={line.dir}>
                   {line.isOpen && (

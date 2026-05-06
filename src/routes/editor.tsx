@@ -6,6 +6,7 @@ import WallCanvas from '../components/editor/WallCanvas'
 import Properties from '../components/editor/Properties'
 import Preview3D from '../components/editor/Preview3D'
 import { PanelLeftClose, PanelRightClose, Save, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings } from 'lucide-react'
+import { ASSET_DIMENSIONS, DEFAULT_ASSET_SIZE_PX } from '../lib/assetDimensions'
 
 export const Route = createFileRoute('/editor')({
   component: EditorPage,
@@ -16,6 +17,7 @@ interface BoothConfig {
   depth: number;
   wallThickness: number;
   walls: { north: boolean; south: boolean; east: boolean; west: boolean };
+  floorType?: string;
 }
 
 function EditorPage() {
@@ -27,6 +29,17 @@ function EditorPage() {
   const [setupDepth, setSetupDepth] = useState<number>(3)
   const [setupWallThickness, setSetupWallThickness] = useState<number>(0.1)
   const [setupWalls, setSetupWalls] = useState({ north: true, south: false, east: true, west: true })
+
+  // New Wizard States
+  const [setupFloorType, setSetupFloorType] = useState('hardwood')
+  const [setupWallMaterial, setSetupWallMaterial] = useState('White Paint')
+  const [setupAssets, setSetupAssets] = useState<Record<string, number>>({
+    'chair_1': 0,
+    'round_table_1': 0,
+    'plant': 0,
+    'dustbin': 0,
+    'tv_lcd': 0
+  })
 
   const [elements, setElements] = useState<any[]>([])
   const [history, setHistory] = useState<any[][]>([])
@@ -201,6 +214,8 @@ function EditorPage() {
           <div className="flex gap-2 mb-2">
             <div className={`h-1.5 flex-1 rounded-full ${wizardStep >= 1 ? 'bg-[var(--lagoon)]' : 'bg-[var(--line)]'}`} />
             <div className={`h-1.5 flex-1 rounded-full ${wizardStep >= 2 ? 'bg-[var(--lagoon)]' : 'bg-[var(--line)]'}`} />
+            <div className={`h-1.5 flex-1 rounded-full ${wizardStep >= 3 ? 'bg-[var(--lagoon)]' : 'bg-[var(--line)]'}`} />
+            <div className={`h-1.5 flex-1 rounded-full ${wizardStep >= 4 ? 'bg-[var(--lagoon)]' : 'bg-[var(--line)]'}`} />
           </div>
 
           {wizardStep === 1 && (
@@ -271,6 +286,104 @@ function EditorPage() {
               <div className="flex gap-3 mt-2">
                 <button onClick={() => setWizardStep(1)} className="rounded-full bg-[var(--sand)] text-[var(--sea-ink)] font-bold py-3 px-6 hover:bg-gray-200 transition">Back</button>
                 <button
+                  onClick={() => setWizardStep(3)}
+                  className="rounded-full bg-[var(--brand)] flex-1 text-white font-bold py-3 hover:bg-[var(--brand-h)] transition flex items-center justify-center gap-2"
+                >
+                  Next Step <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {wizardStep === 3 && (
+            <div className="flex flex-col gap-6 animate-in slide-in-from-right-8 duration-300">
+              <p className="text-sm text-[var(--sea-ink-soft)] font-semibold">Step 3: Materials & Ambience</p>
+
+              <div className="text-left space-y-4">
+                <div>
+                  <label className="text-sm font-bold text-[var(--sea-ink)] mb-2 block">Floor Surface</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'hardwood', name: 'Hardwood', img: '/assets/textures/hardwood.png' },
+                      { id: 'carpet', name: 'Carpet', img: null, color: '#2e3f50' },
+                      { id: 'marble', name: 'Marble', img: '/assets/textures/marble.png' },
+                      { id: 'concrete', name: 'Concrete', img: '/assets/textures/concrete.png' }
+                    ].map(mat => (
+                      <button
+                        key={mat.id}
+                        onClick={() => setSetupFloorType(mat.id)}
+                        className={`p-3 rounded-xl border-2 text-left font-bold text-sm transition-all flex items-center gap-3 ${setupFloorType === mat.id ? 'border-[var(--lagoon)] bg-[var(--chip-bg)] text-[var(--sea-ink)] shadow-sm' : 'border-[var(--line)] bg-[var(--sand)] text-[var(--sea-ink-soft)] hover:border-[var(--lagoon)]'}`}
+                      >
+                        <div className="w-8 h-8 rounded bg-cover bg-center border border-black/10 shrink-0" style={{ backgroundImage: mat.img ? `url('${mat.img}')` : 'none', backgroundColor: mat.color || '#eee' }} />
+                        {mat.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-bold text-[var(--sea-ink)] mb-2 block">Default Wall Material</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'White Paint', name: 'White Paint', color: '#f0f0f0' },
+                      { id: 'Wood', name: 'Wood Planks', img: '/assets/textures/hardwood.png' },
+                      { id: 'Concrete', name: 'Concrete', img: '/assets/textures/concrete.png' },
+                      { id: 'Marble', name: 'Marble', img: '/assets/textures/marble.png' }
+                    ].map(mat => (
+                      <button
+                        key={mat.id}
+                        onClick={() => setSetupWallMaterial(mat.id)}
+                        className={`p-3 rounded-xl border-2 text-left font-bold text-sm transition-all flex items-center gap-3 ${setupWallMaterial === mat.id ? 'border-[var(--lagoon)] bg-[var(--chip-bg)] text-[var(--sea-ink)] shadow-sm' : 'border-[var(--line)] bg-[var(--sand)] text-[var(--sea-ink-soft)] hover:border-[var(--lagoon)]'}`}
+                      >
+                        <div className="w-8 h-8 rounded bg-cover bg-center border border-black/10 shrink-0" style={{ backgroundImage: mat.img ? `url('${mat.img}')` : 'none', backgroundColor: mat.color || '#eee' }} />
+                        {mat.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-2">
+                <button onClick={() => setWizardStep(2)} className="rounded-full bg-[var(--sand)] text-[var(--sea-ink)] font-bold py-3 px-6 hover:bg-gray-200 transition">Back</button>
+                <button
+                  onClick={() => setWizardStep(4)}
+                  className="rounded-full bg-[var(--brand)] flex-1 text-white font-bold py-3 hover:bg-[var(--brand-h)] transition flex items-center justify-center gap-2"
+                >
+                  Next Step <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {wizardStep === 4 && (
+            <div className="flex flex-col gap-6 animate-in slide-in-from-right-8 duration-300">
+              <p className="text-sm text-[var(--sea-ink-soft)] font-semibold">Step 4: Select Your Asset Palette</p>
+              <p className="text-xs text-gray-500">Assets will spawn next to your booth for easy placement.</p>
+
+              <div className="grid grid-cols-2 gap-3 text-left">
+                {[
+                  { id: 'chair_1', name: 'Bar Chair' },
+                  { id: 'round_table_1', name: 'Round Table' },
+                  { id: 'tv_lcd', name: 'LED TV Screen' },
+                  { id: 'plant', name: 'Large Plant' },
+                  { id: 'dustbin', name: 'Recycle Bin' }
+                ].map(asset => (
+                  <div key={asset.id} className="flex items-center justify-between bg-[var(--sand)] p-3 rounded-xl border border-[var(--line)]">
+                    <span className="text-xs font-bold text-[var(--sea-ink)]">{asset.name}</span>
+                    <select
+                      value={setupAssets[asset.id] || 0}
+                      onChange={(e) => setSetupAssets(prev => ({ ...prev, [asset.id]: parseInt(e.target.value) }))}
+                      className="bg-white border border-[var(--line)] rounded text-xs p-1 font-mono"
+                    >
+                      {[0, 1, 2, 3, 4].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-3 mt-2">
+                <button onClick={() => setWizardStep(3)} className="rounded-full bg-[var(--sand)] text-[var(--sea-ink)] font-bold py-3 px-6 hover:bg-gray-200 transition">Back</button>
+                <button
                   onClick={() => {
                     const PPM = 100
                     const W = setupWidth * PPM
@@ -278,12 +391,38 @@ function EditorPage() {
                     const T = setupWallThickness * 100
 
                     const initialElements: any[] = []
-                    if (setupWalls.north) initialElements.push({ id: 'outer-north', type: 'wall', isOuter: true, x: W / 2, y: 0, width: W, thickness: T, rotation: 0, fill: '#333333', opacity: 1, wallElements: [] })
-                    if (setupWalls.south) initialElements.push({ id: 'outer-south', type: 'wall', isOuter: true, x: W / 2, y: D, width: W, thickness: T, rotation: 0, fill: '#333333', opacity: 1, wallElements: [] })
-                    if (setupWalls.west) initialElements.push({ id: 'outer-west', type: 'wall', isOuter: true, x: 0, y: D / 2, width: D, thickness: T, rotation: 90, fill: '#333333', opacity: 1, wallElements: [] })
-                    if (setupWalls.east) initialElements.push({ id: 'outer-east', type: 'wall', isOuter: true, x: W, y: D / 2, width: D, thickness: T, rotation: 90, fill: '#333333', opacity: 1, wallElements: [] })
+                    if (setupWalls.north) initialElements.push({ id: 'outer-north', type: 'wall', isOuter: true, x: W / 2, y: 0, width: W, thickness: T, rotation: 0, material: setupWallMaterial, opacity: 1, wallElements: [] })
+                    if (setupWalls.south) initialElements.push({ id: 'outer-south', type: 'wall', isOuter: true, x: W / 2, y: D, width: W, thickness: T, rotation: 0, material: setupWallMaterial, opacity: 1, wallElements: [] })
+                    if (setupWalls.west) initialElements.push({ id: 'outer-west', type: 'wall', isOuter: true, x: 0, y: D / 2, width: D, thickness: T, rotation: 90, material: setupWallMaterial, opacity: 1, wallElements: [] })
+                    if (setupWalls.east) initialElements.push({ id: 'outer-east', type: 'wall', isOuter: true, x: W, y: D / 2, width: D, thickness: T, rotation: 90, material: setupWallMaterial, opacity: 1, wallElements: [] })
 
-                    setBoothConfig({ width: setupWidth, depth: setupDepth, wallThickness: setupWallThickness, walls: setupWalls })
+                    // Generate Assets inside the Booth
+                    let spawnX = 0.5 * PPM; // Start 0.5m from left wall
+                    let spawnY = 0.5 * PPM; // Start 0.5m from top wall
+                    
+                    Object.entries(setupAssets).forEach(([assetId, count]) => {
+                      for (let i = 0; i < count; i++) {
+                        const dims = ASSET_DIMENSIONS[assetId] || { w: 1, h: 1 };
+                        initialElements.push({
+                          id: `${assetId}_${Math.random().toString(36).substring(2, 7)}`,
+                          type: 'asset',
+                          assetName: assetId.toUpperCase(),
+                          x: spawnX,
+                          y: spawnY,
+                          width: DEFAULT_ASSET_SIZE_PX * dims.w,
+                          height: DEFAULT_ASSET_SIZE_PX * dims.h,
+                          rotation: 0
+                        });
+                        spawnX += 0.8 * PPM; // Move right by 0.8m
+                        // Wrap to next row if we get close to the right wall
+                        if (spawnX > W - (0.8 * PPM)) {
+                           spawnX = 0.5 * PPM; // reset X to left
+                           spawnY += 0.8 * PPM; // move down a row
+                        }
+                      }
+                    });
+
+                    setBoothConfig({ width: setupWidth, depth: setupDepth, wallThickness: setupWallThickness, walls: setupWalls, floorType: setupFloorType })
                     setElements(initialElements)
                     saveToHistory(initialElements)
                   }}
@@ -391,25 +530,14 @@ function EditorPage() {
 
         {/* Center Canvas — flex-1 always fills remaining space */}
         <div className="flex-1 flex h-full flex-col relative z-0 min-w-0 bg-[var(--bg-base)]">
-          {editingWallId && editingWall ? (
-            <WallCanvas
-              wall={editingWall}
-              onSave={(wallElements: any) => {
-                handleUpdateElement(editingWall.id, { wallElements })
-                setEditingWallId(null)
-              }}
-              onClose={() => setEditingWallId(null)}
-            />
-          ) : (
-            <Canvas
-              elements={elements}
-              setElements={setElements}
-              selectedId={selectedId}
-              onSelect={handleSelect}
-              boothConfig={boothConfig}
-              gridVisible={gridVisible}
-            />
-          )}
+          <Canvas
+            elements={elements}
+            setElements={setElements}
+            selectedId={selectedId}
+            onSelect={handleSelect}
+            boothConfig={boothConfig}
+            gridVisible={gridVisible}
+          />
         </div>
 
         {/* Properties Panel — in flow, not absolute */}
@@ -450,11 +578,8 @@ function EditorPage() {
         {previewerOpen && (
           <div
             style={{ width: `${100 - splitWidth}%` }}
-            className="shrink-0 min-w-[180px] border-l border-[#1f2326] bg-[#121415] flex flex-col shadow-2xl z-20"
+            className="shrink-0 min-w-[180px] border-l border-[#2a2d30] bg-[#121415] flex flex-col shadow-2xl z-20 relative"
           >
-            <div className="h-10 border-b border-gray-800 flex items-center px-4 shrink-0 bg-[#0a0b0d]">
-              <span className="text-xs uppercase tracking-widest text-[#a1a1aa] font-bold">3D Previewer</span>
-            </div>
 
             {is3DGenerated ? (
               <div className="flex-1 w-full relative">
@@ -490,6 +615,21 @@ function EditorPage() {
           </span>
         </div>
       </div>
+      {/* Wall Elevation Modal Overlay */}
+      {editingWallId && editingWall && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-8 animate-in fade-in duration-200">
+          <div className="w-full max-w-7xl h-full max-h-[85vh] bg-[var(--bg-base)] rounded-3xl overflow-hidden shadow-2xl flex flex-col relative border border-[var(--border)] scale-in-center">
+            <WallCanvas
+              wall={editingWall}
+              onSave={(wallElements: any) => {
+                handleUpdateElement(editingWall.id, { wallElements })
+                setEditingWallId(null)
+              }}
+              onClose={() => setEditingWallId(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

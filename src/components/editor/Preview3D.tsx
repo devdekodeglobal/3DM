@@ -19,13 +19,32 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
 
   const meshRegistryRef = useRef<Map<string, BABYLON.AbstractMesh>>(new Map());
   const structureRegistryRef = useRef<BABYLON.AbstractMesh[]>([]);
-  const modelCacheRef = useRef<Map<string, BABYLON.AssetContainer>>(new Map());
+  const modelCacheRef = useRef<Map<string, Promise<BABYLON.AssetContainer>>>(new Map());
+  const textureCacheRef = useRef<Map<string, BABYLON.Texture>>(new Map());
   const wallDecorationRegistryRef = useRef<Map<string, BABYLON.AbstractMesh[]>>(new Map());
   const lastBoothDimRef = useRef({ w: 0, d: 0 });
+  const prevElementsRef = useRef<any[]>([]);
+  const [debouncedElements, setDebouncedElements] = useState(elements);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedElements(elements);
+    }, 100);
+    return () => clearTimeout(handler);
+  }, [elements]);
 
   // 1. Initial Setup Hook
   useEffect(() => {
     if (!canvasRef.current) return;
+
+    // Configure Draco Decoder for compressed GLB files
+    BABYLON.DracoCompression.Configuration = {
+      decoder: {
+        wasmUrl: "https://preview.babylonjs.com/draco_wasm_wrapper_gltf.js",
+        wasmBinaryUrl: "https://preview.babylonjs.com/draco_decoder_gltf.wasm",
+        fallbackUrl: "https://preview.babylonjs.com/draco_decoder_gltf.js"
+      }
+    };
 
     const engine = new BABYLON.Engine(canvasRef.current, true, {
       preserveDrawingBuffer: true, stencil: true, antialias: true
@@ -76,28 +95,33 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
     dirLight.intensity = 0.8;
     dirLight.diffuse = new BABYLON.Color3(1.0, 0.95, 0.85);
 
-    const shadowGenerator = new BABYLON.ShadowGenerator(2048, dirLight);
+    const isHQ = window.localStorage.getItem('hq_3d') === 'true';
+
+    const shadowGenerator = new BABYLON.ShadowGenerator(isHQ ? 2048 : 1024, dirLight);
     shadowGeneratorRef.current = shadowGenerator;
     shadowGenerator.useBlurExponentialShadowMap = true;
-    shadowGenerator.blurKernel = 16;
+    shadowGenerator.blurKernel = isHQ ? 16 : 8;
 
     // --- Premium Rendering Pipeline (SSAO + Bloom) ---
     const pipeline = new BABYLON.DefaultRenderingPipeline("default", true, scene, [orbitCam, flightCam]);
-    pipeline.bloomEnabled = true;
-    pipeline.bloomThreshold = 0.8;
-    pipeline.bloomWeight = 0.3;
-    pipeline.bloomKernel = 64;
-    pipeline.samples = 4;
+    pipeline.samples = isHQ ? 4 : 2;
     pipeline.sharpenEnabled = true;
     pipeline.sharpen.edgeAmount = 0.2;
 
-    // SSAO uses its own pipeline in BabylonJS
-    const ssao = new BABYLON.SSAO2RenderingPipeline("ssao", scene, { ssaoRatio: 0.5, blurRatio: 1 });
-    ssao.radius = 3.5;
-    ssao.totalStrength = 1.2;
-    ssao.expensiveBlur = true;
-    ssao.samples = 16;
-    scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline("ssao", orbitCam);
+    if (isHQ) {
+      pipeline.bloomEnabled = true;
+      pipeline.bloomThreshold = 0.8;
+      pipeline.bloomWeight = 0.3;
+      pipeline.bloomKernel = 64;
+
+      // SSAO uses its own pipeline in BabylonJS
+      const ssao = new BABYLON.SSAO2RenderingPipeline("ssao", scene, { ssaoRatio: 0.5, blurRatio: 1 });
+      ssao.radius = 3.5;
+      ssao.totalStrength = 1.2;
+      ssao.expensiveBlur = true;
+      ssao.samples = 16;
+      scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline("ssao", orbitCam);
+    }
 
     engine.runRenderLoop(() => {
       scene.render();
@@ -183,20 +207,22 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
 
   }, [boothConfig, isSceneReady]);
 
-  const lastSyncRef = useRef<number>(0);
-
   // 3. Sync Elements
   useEffect(() => {
-    if (!isSceneReady || !elements || !boothConfig) return;
-    
-    const now = Date.now();
-    if (now - lastSyncRef.current < 32) {
-      const timeout = setTimeout(() => {
-        lastSyncRef.current = 0; 
-      }, 50);
-      return () => clearTimeout(timeout);
+    if (!isSceneReady || !debouncedElements || !boothConfig) return;
+    const elements = debouncedElements;
+
+    // Fix 2: Dirty Flag for Assets
+    const prevElements = prevElementsRef.current;
+    let onlyAssetsMoved = false;
+    if (prevElements.length === elements.length && prevElements.length > 0) {
+      const nonAssetsPrev = prevElements.filter(e => e.type !== 'asset');
+      const nonAssetsCurr = elements.filter(e => e.type !== 'asset');
+      if (JSON.stringify(nonAssetsPrev) === JSON.stringify(nonAssetsCurr)) {
+         onlyAssetsMoved = true;
+      }
     }
-    lastSyncRef.current = now;
+    prevElementsRef.current = elements;
 
     const scene = sceneRef.current;
     const shadowGenerator = shadowGeneratorRef.current;
@@ -216,9 +242,86 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
       }
     });
 
+    // --- SMART BUTT JOINT CALCULATION ---
+    const wallConnections = new Map();
+    if (!onlyAssetsMoved) {
+      const walls = elements.filter(el => el.type === 'wall');
+      
+      walls.forEach(el => {
+      const r = BABYLON.Tools.ToRadians(el.rotation || 0);
+      const hw = el.width / 2;
+      const dx = Math.cos(r) * hw;
+      const dy = Math.sin(r) * hw;
+      wallConnections.set(el.id, {
+        p1: { x: el.x - dx, y: el.y - dy },
+        p2: { x: el.x + dx, y: el.y + dy },
+        r,
+        t: el.thickness || 10,
+        s1: 0,
+        s2: 0,
+        l1: 0,
+        l2: 0
+      });
+    });
+
+    const threshold = 15; // 15 pixels snapping radius
+    const dist = (a: any, b: any) => Math.hypot(a.x - b.x, a.y - b.y);
+
+    for (let i = 0; i < walls.length; i++) {
+      for (let j = i + 1; j < walls.length; j++) {
+        const w1 = walls[i];
+        const w2 = walls[j];
+        const d1 = wallConnections.get(w1.id);
+        const d2 = wallConnections.get(w2.id);
+
+        const isW1Horiz = Math.abs(Math.cos(d1.r)) > Math.abs(Math.sin(d1.r));
+        const isW2Horiz = Math.abs(Math.cos(d2.r)) > Math.abs(Math.sin(d2.r));
+
+        let through = null, butt = null;
+        if (isW1Horiz && !isW2Horiz) { through = d1; butt = d2; }
+        else if (!isW1Horiz && isW2Horiz) { through = d2; butt = d1; }
+        else { through = d1; butt = d2; } 
+
+        if (dist(butt.p1, through.p1) < threshold) {
+          butt.s1 = Math.max(butt.s1, through.t / 2);
+          through.l1 = Math.max(through.l1, butt.t / 2);
+        }
+        if (dist(butt.p1, through.p2) < threshold) {
+          butt.s1 = Math.max(butt.s1, through.t / 2);
+          through.l2 = Math.max(through.l2, butt.t / 2);
+        }
+        if (dist(butt.p2, through.p1) < threshold) {
+          butt.s2 = Math.max(butt.s2, through.t / 2);
+          through.l1 = Math.max(through.l1, butt.t / 2);
+        }
+        if (dist(butt.p2, through.p2) < threshold) {
+          butt.s2 = Math.max(butt.s2, through.t / 2);
+          through.l2 = Math.max(through.l2, butt.t / 2);
+        }
+      }
+    }
+    } // Close if (!onlyAssetsMoved)
+    // --- END SMART BUTT JOINT CALCULATION ---
+
     elements.forEach(el => {
-      const x = el.x / PPM;
-      const z = boothConfig.depth - (el.y / PPM);
+      if (onlyAssetsMoved && el.type !== 'asset') return;
+      let vX = el.x, vY = el.y, vW = el.width;
+      let delta1 = 0, delta2 = 0;
+      
+      if (el.type === 'wall') {
+        const conn = wallConnections.get(el.id);
+        if (conn) {
+          delta1 = conn.l1 - conn.s1; 
+          delta2 = conn.l2 - conn.s2;
+          vW = Math.max(1, el.width + delta1 + delta2);
+          const shiftMag = (delta2 - delta1) / 2;
+          vX = el.x + Math.cos(conn.r) * shiftMag;
+          vY = el.y + Math.sin(conn.r) * shiftMag;
+        }
+      }
+
+      const x = vX / PPM;
+      const z = boothConfig.depth - (vY / PPM);
       const rotY = BABYLON.Tools.ToRadians(el.rotation || 0);
       const h = 2.5;
 
@@ -230,9 +333,9 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
         if (el.type === 'wall') {
           const cutouts = (el.wallElements || []).filter((wel: any) => ['door', 'window'].includes(wel.type));
           const geometryState = JSON.stringify({
-            w: el.width,
+            w: vW,
             t: el.thickness || 10,
-            c: cutouts.map((c: any) => ({ t: c.type, x: c.x, y: c.y, w: c.width, h: c.height }))
+            c: cutouts.map((c: any) => ({ t: c.type, x: c.x + delta1, y: c.y, w: c.width, h: c.height }))
           });
 
           if (!mesh.metadata || mesh.metadata.geometryState !== geometryState) {
@@ -337,16 +440,16 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
         }
 
         if (el.type === 'wall') {
-          const wVal = el.width / PPM;
+          const wVal = vW / PPM;
           const dVal = (el.thickness || 10) / PPM;
           const vScale = el.verticalScale || 1;
           const cutouts = (el.wallElements || []).filter((wel: any) => ['door', 'window'].includes(wel.type));
           const decorations = (el.wallElements || []).filter((wel: any) => !['door', 'window'].includes(wel.type));
           
           const geometryState = JSON.stringify({
-            w: el.width,
+            w: vW,
             t: el.thickness || 10,
-            c: cutouts.map((c: any) => ({ t: c.type, x: c.x, y: c.y, w: c.width, h: c.height }))
+            c: cutouts.map((c: any) => ({ t: c.type, x: c.x + delta1, y: c.y, w: c.width, h: c.height }))
           });
 
           let mesh: BABYLON.Mesh;
@@ -372,7 +475,7 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
 
               cutouts.forEach((wel: any, index: number) => {
                 const cutW = wel.width / PPM, cutH = wel.height / PPM, cutD = dVal + 0.5;
-                const localX = (wel.x / PPM) - (wVal / 2) + (cutW / 2);
+                const localX = ((wel.x + delta1) / PPM) - (wVal / 2) + (cutW / 2);
                 const localY = (h / 2) - (wel.y / PPM) - (cutH / 2);
                 
                 const cutBox = BABYLON.MeshBuilder.CreateBox("cut", { width: cutW, height: cutH, depth: cutD }, scene);
@@ -460,7 +563,7 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
 
             decorations.forEach((wel: any) => {
               const cutW = wel.width / PPM, cutH = wel.height / PPM;
-              const localX = (wel.x / PPM) - (wVal / 2) + (cutW / 2);
+              const localX = ((wel.x + delta1) / PPM) - (wVal / 2) + (cutW / 2);
               const localY = (h / 2) - (wel.y / PPM) - (cutH / 2);
               let mount: BABYLON.Mesh;
 
@@ -535,7 +638,12 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
             if (texName) {
               const texUrl = `/assets/textures/${texName}.png`;
               if (!mat.albedoTexture || (mat.albedoTexture as BABYLON.Texture).url !== texUrl) {
-                mat.albedoTexture = new BABYLON.Texture(texUrl, scene);
+                let cachedTex = textureCacheRef.current.get(texUrl);
+                if (!cachedTex) {
+                  cachedTex = new BABYLON.Texture(texUrl, scene);
+                  textureCacheRef.current.set(texUrl, cachedTex);
+                }
+                mat.albedoTexture = cachedTex.clone();
               }
               const currentTex = mat.albedoTexture as BABYLON.Texture;
               if (currentTex) {
@@ -720,65 +828,71 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
           pivot.rotation.y = rotY;
           registry.set(el.id, pivot);
 
-          const cache = modelCacheRef.current;
-          if (cache.has(modelName)) {
-            const container = cache.get(modelName)!;
+          const instantiateAndSetup = (container: BABYLON.AssetContainer) => {
+            if (!registry.has(el.id)) return; // Node was deleted while loading
+            
+            // Remove placeholder if it exists
+            pivot.getChildMeshes().forEach(m => {
+              if (m.name === "ph") m.dispose();
+            });
+
             const entries = container.instantiateModelsToScene();
             entries.rootNodes.forEach(node => {
               node.parent = pivot;
-              // Add shadows to all meshes in the instance
+              // Add shadows only to meshes with significant vertices to save performance
               node.getChildMeshes().forEach(m => {
-                m.receiveShadows = true;
-                shadowGenerator.addShadowCaster(m, true);
-              });
-            });
-            // Native length logic needs a slight delay for bounds calculation
-            setTimeout(() => {
-              if (!pivot.metadata || !pivot.metadata.nativeLength) {
-                 const root = entries.rootNodes[0];
-                 root.computeWorldMatrix(true);
-                 const bbox = root.getHierarchyBoundingVectors(true);
-                 const sz = bbox.max.subtract(bbox.min);
-                 const longest = Math.max(sz.x, sz.z);
-                 pivot.metadata = { ...pivot.metadata, nativeLength: longest };
-                 const s = (el.width / PPM) / longest;
-                 pivot.scaling.set(s, s * (el.verticalScale || 1), s);
-              }
-            }, 10);
-          } else {
-            BABYLON.SceneLoader.LoadAssetContainer("/models/", `${modelName}.glb`, scene, (container) => {
-              if (!registry.has(el.id)) { container.dispose(); return; }
-              cache.set(modelName, container);
-              const entries = container.instantiateModelsToScene();
-              entries.rootNodes.forEach(node => {
-                node.parent = pivot;
-                node.getChildMeshes().forEach(m => {
+                if (m.getTotalVertices() > 20) {
                   m.receiveShadows = true;
                   shadowGenerator.addShadowCaster(m, true);
-                });
-              });
-              
-              setTimeout(() => {
-                const root = entries.rootNodes[0];
-                root.computeWorldMatrix(true);
-                const bbox = root.getHierarchyBoundingVectors(true);
-                const sz = bbox.max.subtract(bbox.min);
-                const longest = Math.max(sz.x, sz.z);
-                if (longest > 0) {
-                  pivot.metadata = { nativeLength: longest };
-                  const s = (el.width / PPM) / longest;
-                  pivot.scaling.set(s, s * (el.verticalScale || 1), s);
                 }
-              }, 100);
-            }, null, () => {
-               const ph = BABYLON.MeshBuilder.CreateBox("ph", { width: el.width/PPM, height: 0.8, depth: el.height/PPM }, scene);
-               ph.parent = pivot; ph.position.y = 0.4;
+              });
+            });
+
+            // Synchronous bounding box calculation without setTimeout hack
+            const root = entries.rootNodes[0];
+            if (root) {
+              root.computeWorldMatrix(true);
+              const bbox = root.getHierarchyBoundingVectors(true);
+              const sz = bbox.max.subtract(bbox.min);
+              const longest = Math.max(sz.x, sz.z);
+              if (longest > 0) {
+                pivot.metadata = { nativeLength: longest };
+                const s = (el.width / PPM) / longest;
+                pivot.scaling.set(s, s * (el.verticalScale || 1), s);
+              }
+            }
+          };
+
+          const cache = modelCacheRef.current;
+          if (cache.has(modelName)) {
+            // It's a Promise
+            cache.get(modelName)!.then(container => {
+              instantiateAndSetup(container);
+            });
+          } else {
+            // Create holographic wireframe placeholder immediately
+            const ph = BABYLON.MeshBuilder.CreateBox("ph", { width: el.width/PPM, height: 0.8, depth: el.height/PPM }, scene);
+            ph.parent = pivot; 
+            ph.position.y = 0.4;
+            const phMat = new BABYLON.StandardMaterial("phMat", scene);
+            phMat.wireframe = true;
+            phMat.emissiveColor = new BABYLON.Color3(0, 0.8, 1); // Glowing cyan
+            phMat.alpha = 0.5;
+            ph.material = phMat;
+
+            const loadPromise = BABYLON.SceneLoader.LoadAssetContainerAsync("/models/", `${modelName}.glb`, scene);
+            cache.set(modelName, loadPromise);
+            
+            loadPromise.then(container => {
+              instantiateAndSetup(container);
+            }).catch(e => {
+              console.error("Failed to load model", modelName, e);
             });
           }
         }
       }
     });
-  }, [elements, isSceneReady, boothConfig]);
+  }, [debouncedElements, isSceneReady, boothConfig]);
 
   // 4. Handle Camera Mode Switching
   useEffect(() => {
@@ -805,9 +919,19 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
           {cameraMode === 'orbit' ? 'Orbit Mode 🌐' : 'Flight Mode 🛸'}
         </div>
       </div>
-      <div className="absolute top-4 right-4 z-20">
+      <div className="absolute top-4 right-4 z-20 flex gap-2">
+        <button 
+          onClick={() => {
+            const currentHQ = localStorage.getItem('hq_3d') === 'true';
+            localStorage.setItem('hq_3d', currentHQ ? 'false' : 'true');
+            window.location.reload();
+          }} 
+          className="px-4 py-2 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--brand)] border border-[rgba(255,255,255,0.1)] text-xs font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors"
+        >
+          {localStorage.getItem('hq_3d') === 'true' ? "HQ: ON" : "HQ: OFF"}
+        </button>
         <button onClick={() => setCameraMode(prev => prev === 'orbit' ? 'flight' : 'orbit')} className="px-4 py-2 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--sea-ink)] border border-[rgba(255,255,255,0.1)] text-xs font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors">
-          {cameraMode === 'orbit' ? "Switch to Flight Mode" : "Switch to Orbit Mode"}
+          {cameraMode === 'orbit' ? "Flight Mode" : "Orbit Mode"}
         </button>
       </div>
     </div>
