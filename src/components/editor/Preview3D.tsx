@@ -373,8 +373,8 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
 
 
         if (el.type === 'asset' && mesh.metadata && mesh.metadata.nativeLength) {
-          const targetW = el.width / PPM;
-          const s = targetW / mesh.metadata.nativeLength;
+          const targetDim = Math.max(el.width, el.height) / PPM;
+          const s = targetDim / mesh.metadata.nativeLength;
           mesh.scaling = new BABYLON.Vector3(s, s * (el.verticalScale || 1), s);
         }
 
@@ -848,17 +848,31 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
               });
             });
 
-            // Synchronous bounding box calculation without setTimeout hack
+            // Synchronous bounding box calculation and centering
             const root = entries.rootNodes[0];
             if (root) {
               root.computeWorldMatrix(true);
               const bbox = root.getHierarchyBoundingVectors(true);
               const sz = bbox.max.subtract(bbox.min);
               const longest = Math.max(sz.x, sz.z);
+              
               if (longest > 0) {
                 pivot.metadata = { nativeLength: longest };
-                const s = (el.width / PPM) / longest;
+                const s = (Math.max(el.width, el.height) / PPM) / longest;
                 pivot.scaling.set(s, s * (el.verticalScale || 1), s);
+                
+                // Center the model: Calculate the offset between the pivot and the model's geometric center
+                const center = bbox.min.add(sz.scale(0.5));
+                const worldOffset = center.subtract(pivot.position);
+                
+                // Transform the world-space offset into the pivot's local space
+                const invPivotMatrix = new BABYLON.Matrix();
+                pivot.getWorldMatrix().invertToRef(invPivotMatrix);
+                const localOffset = BABYLON.Vector3.TransformNormal(worldOffset, invPivotMatrix);
+                
+                const rootMesh = root as BABYLON.AbstractMesh;
+                rootMesh.position.x -= localOffset.x;
+                rootMesh.position.z -= localOffset.z;
               }
             }
           };
