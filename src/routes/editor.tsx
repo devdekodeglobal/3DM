@@ -54,6 +54,7 @@ function EditorPage() {
   const [splitWidth, setSplitWidth] = useState(60)
   const [is3DGenerated, setIs3DGenerated] = useState(false)
   const [editingWallId, setEditingWallId] = useState<string | null>(null)
+  const [blueprintView, setBlueprintView] = useState<'perspective' | 'top' | 'north' | 'south' | 'east' | 'west'>('perspective')
 
 
   const handleSelect = (id: string | null) => {
@@ -524,7 +525,11 @@ function EditorPage() {
         {/* Left Sidebar */}
         {sidebarOpen && (
           <div className="flex h-full shrink-0 z-10 shadow-xl border-r border-[var(--line)]">
-            <Sidebar addElement={addElement} />
+            <Sidebar 
+              addElement={addElement} 
+              activeView={blueprintView} 
+              onViewChange={setBlueprintView} 
+            />
           </div>
         )}
 
@@ -583,7 +588,12 @@ function EditorPage() {
 
             {is3DGenerated ? (
               <div className="flex-1 w-full relative">
-                <Preview3D boothConfig={boothConfig} elements={elements} />
+                <Preview3D 
+                  boothConfig={boothConfig} 
+                  elements={elements} 
+                  activeView={blueprintView}
+                  onExportComplete={(baseView) => setBlueprintView(baseView)}
+                />
               </div>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-900 to-[#121415]">

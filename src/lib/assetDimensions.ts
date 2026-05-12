@@ -4,6 +4,8 @@
 // These drive the initial 2D canvas tile size when an asset is first placed.
 
 export const ASSET_DIMENSIONS: Record<string, { w: number; h: number }> = {
+  '03_black_draco': { w: 0.7808, h: 1.0000 },
+  '03_red_draco': { w: 1.0000, h: 0.8782 },
   'bar_chair_1': { w: 0.8853, h: 1.0000 },
   'cabinet_1': { w: 0.1964, h: 1.0000 },
   'ceramic_pot': { w: 1.0000, h: 1.0000 },

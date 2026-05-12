@@ -1,21 +1,30 @@
 import { useEffect, useRef, useState } from 'react'
 import * as BABYLON from '@babylonjs/core'
 import '@babylonjs/loaders/glTF'
+import * as GUI from '@babylonjs/gui';
+import { calculateBlueprintMeasurements } from '../../lib/blueprintMath';
+import { GridMaterial } from '@babylonjs/materials';
 
 interface Preview3DProps {
   boothConfig: any;
   elements: any[];
+  activeView?: 'perspective' | 'top' | 'north' | 'south' | 'east' | 'west' | string;
+  onExportComplete?: (baseView: any) => void;
 }
 
 const PPM = 100;
 
-export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
+export default function Preview3D({ boothConfig, elements, activeView = 'perspective', onExportComplete }: Preview3DProps) {
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [cameraMode, setCameraMode] = useState<'orbit' | 'flight'>('orbit');
+  const [isCapturing, setIsCapturing] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<BABYLON.Engine | null>(null);
   const sceneRef = useRef<BABYLON.Scene | null>(null);
   const shadowGeneratorRef = useRef<BABYLON.ShadowGenerator | null>(null);
+  const guiRef = useRef<GUI.AdvancedDynamicTexture | null>(null);
+  const measurementLinesRef = useRef<BABYLON.LinesMesh[]>([]);
 
   const meshRegistryRef = useRef<Map<string, BABYLON.AbstractMesh>>(new Map());
   const structureRegistryRef = useRef<BABYLON.AbstractMesh[]>([]);
@@ -81,6 +90,12 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
     flightCam.angularSensibility = 2000;
     flightCam.minZ = 0.05;
 
+    // Camera 3: Blueprint Orthographic Camera
+    const blueprintCam = new BABYLON.FreeCamera("blueprintCam", new BABYLON.Vector3(0, 10, 0), scene);
+    blueprintCam.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
+    blueprintCam.minZ = 0.1;
+    blueprintCam.maxZ = 100;
+
     // Set default
     scene.activeCamera = orbitCam;
     orbitCam.attachControl(canvasRef.current, true);
@@ -103,7 +118,7 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
     shadowGenerator.blurKernel = isHQ ? 16 : 8;
 
     // --- Premium Rendering Pipeline (SSAO + Bloom) ---
-    const pipeline = new BABYLON.DefaultRenderingPipeline("default", true, scene, [orbitCam, flightCam]);
+    const pipeline = new BABYLON.DefaultRenderingPipeline("default", true, scene, [orbitCam, flightCam, blueprintCam]);
     pipeline.samples = isHQ ? 4 : 2;
     pipeline.sharpenEnabled = true;
     pipeline.sharpen.edgeAmount = 0.2;
@@ -122,6 +137,9 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
       ssao.samples = 16;
       scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline("ssao", orbitCam);
     }
+
+    const gui = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
+    guiRef.current = gui;
 
     engine.runRenderLoop(() => {
       scene.render();
@@ -205,7 +223,313 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
     floor.material = floorMat;
     structureRegistryRef.current.push(floor);
 
+    // 2.1 Technical Grid (Visible only in technical views)
+    const grid = BABYLON.MeshBuilder.CreateGround("blueprintGrid", { width: boothConfig.width, height: boothConfig.depth }, scene);
+    grid.position = new BABYLON.Vector3(centerX, 0.01, centerZ); // Slightly above floor
+    const gridMat = new GridMaterial("gridMat", scene);
+    gridMat.majorUnitFrequency = 5; // 1m major lines (since 1 unit = 1m)
+    gridMat.minorUnitVisibility = 0.45;
+    gridMat.gridRatio = 0.2; // 20cm minor lines
+    gridMat.mainColor = new BABYLON.Color3(0, 0, 0);
+    gridMat.lineColor = new BABYLON.Color3(0.2, 0.5, 1.0); // Blueprint blue
+    gridMat.opacity = 0.8;
+    gridMat.backFaceCulling = false;
+    grid.material = gridMat;
+    grid.isVisible = activeView !== 'perspective';
+    structureRegistryRef.current.push(grid);
+
   }, [boothConfig, isSceneReady]);
+
+  // 2.1 Camera View & Wall Masking Sync
+  useEffect(() => {
+    if (!isSceneReady || !sceneRef.current || !boothConfig) return;
+    const scene = sceneRef.current;
+    const blueprintCam = scene.getCameraByName("blueprintCam") as BABYLON.FreeCamera;
+    const orbitCam = scene.getCameraByName("orbitCam") as BABYLON.ArcRotateCamera;
+    
+    if (!blueprintCam || !orbitCam) return;
+
+    // --- BLUEPRINT VISUAL POLISH: DIM LIGHTS ---
+    const baseView = activeView.replace('_download', '');
+    const isBlueprint = baseView !== 'perspective';
+    scene.lights.forEach(l => {
+      if (l instanceof BABYLON.HemisphericLight) {
+        l.intensity = isBlueprint ? 0.3 : 0.8;
+      }
+      if (l instanceof BABYLON.DirectionalLight) {
+        l.intensity = isBlueprint ? 0.2 : 1.0;
+      }
+    });
+    if (scene.environmentIntensity !== undefined) {
+      scene.environmentIntensity = isBlueprint ? 0.2 : 1.0;
+    }
+
+    // --- AUTOMATIC WALL HIDING FOR ELEVATIONS ---
+    scene.meshes.forEach(m => {
+      if (m.metadata && m.metadata.wallDir) {
+        // If we are looking from North, hide the North wall so we can see the interior
+        if (m.metadata.wallDir === baseView) {
+          m.isVisible = false;
+        } else {
+          m.isVisible = true;
+        }
+      }
+    });
+
+    // Reset visibility of all outer walls and grid
+    scene.meshes.forEach(m => {
+      if (m.metadata?.isOuter) {
+        m.isVisible = true;
+      }
+      if (m.name === 'blueprintGrid') {
+        m.isVisible = activeView !== 'perspective';
+      }
+    });
+
+    if (activeView === 'perspective') {
+      scene.activeCamera = orbitCam;
+      orbitCam.attachControl(canvasRef.current, true);
+      
+      // Standard Lighting
+      const hemi = scene.getLightByName("hemi") as BABYLON.HemisphericLight;
+      if (hemi) hemi.intensity = 0.6;
+      const dir = scene.getLightByName("dir") as BABYLON.DirectionalLight;
+      if (dir) dir.intensity = 0.8;
+    } else {
+      scene.activeCamera = blueprintCam;
+      blueprintCam.attachControl(canvasRef.current, true);
+      
+      // Blueprint Lighting (Softer, flat look)
+      const hemi = scene.getLightByName("hemi") as BABYLON.HemisphericLight;
+      if (hemi) hemi.intensity = 1.0;
+      const dir = scene.getLightByName("dir") as BABYLON.DirectionalLight;
+      if (dir) dir.intensity = 0.2; // Reduce harsh shadows
+      
+      const centerX = boothConfig.width / 2;
+      const centerZ = boothConfig.depth / 2;
+      const maxDim = Math.max(boothConfig.width, boothConfig.depth);
+      
+      // Update Orthographic scale to fit the booth
+      const aspect = engineRef.current ? engineRef.current.getAspectRatio(blueprintCam) : 1;
+      const zoom = maxDim * 0.8;
+      
+      blueprintCam.orthoTop = zoom;
+      blueprintCam.orthoBottom = -zoom;
+      blueprintCam.orthoLeft = -zoom * aspect;
+      blueprintCam.orthoRight = zoom * aspect;
+
+      let camPos = new BABYLON.Vector3(centerX, 10, centerZ);
+      let targetPos = new BABYLON.Vector3(centerX, 0, centerZ);
+      let hiddenWall = '';
+
+      switch (activeView) {
+        case 'top':
+          camPos = new BABYLON.Vector3(centerX, 10, centerZ);
+          targetPos = new BABYLON.Vector3(centerX, 0, centerZ);
+          break;
+        case 'north':
+          camPos = new BABYLON.Vector3(centerX, 1.5, -5);
+          targetPos = new BABYLON.Vector3(centerX, 1.5, 5);
+          hiddenWall = 'north';
+          break;
+        case 'south':
+          camPos = new BABYLON.Vector3(centerX, 1.5, boothConfig.depth + 5);
+          targetPos = new BABYLON.Vector3(centerX, 1.5, -5);
+          hiddenWall = 'south';
+          break;
+        case 'east':
+          camPos = new BABYLON.Vector3(boothConfig.width + 5, 1.5, centerZ);
+          targetPos = new BABYLON.Vector3(-5, 1.5, centerZ);
+          hiddenWall = 'east';
+          break;
+        case 'west':
+          camPos = new BABYLON.Vector3(-5, 1.5, centerZ);
+          targetPos = new BABYLON.Vector3(5, 1.5, centerZ);
+          hiddenWall = 'west';
+          break;
+      }
+
+      blueprintCam.position = camPos;
+      blueprintCam.setTarget(targetPos);
+      
+      if (hiddenWall) {
+        scene.meshes.forEach(m => {
+          if (m.metadata?.isOuter && m.metadata?.wallDir === hiddenWall) {
+            m.isVisible = false;
+          }
+        });
+      }
+    }
+  }, [activeView, isSceneReady, boothConfig]);
+
+  // 2.2 Measurement & GUI Sync
+  useEffect(() => {
+    if (!isSceneReady || !sceneRef.current || !guiRef.current) return;
+    const scene = sceneRef.current;
+    const gui = guiRef.current;
+    
+    // Clear old measurements with explicit unlinking
+    if (gui) {
+      gui.getDescendants().forEach(c => {
+        if (c instanceof GUI.Control) {
+          c.linkWithMesh(null);
+          c.dispose();
+        }
+      });
+    }
+    measurementLinesRef.current.forEach(m => {
+      if (m) m.dispose();
+    });
+    measurementLinesRef.current = [];
+
+    if (activeView === 'perspective') return;
+
+    const baseView = activeView.replace('_download', '');
+    const chains = calculateBlueprintMeasurements(baseView, elements, boothConfig);
+    
+    // --- BLUEPRINT VISUAL POLISH ---
+    const grid = scene.getMeshByName("blueprintGrid");
+    if (grid && grid.material) {
+      grid.material.alpha = 0.15; // Fade the grid significantly
+    }
+
+    chains.forEach(chain => {
+      // 1. Render Extension Lines (Whiskers)
+      chain.extensionLines.forEach(pointsArr => {
+        const p = pointsArr.map(pt => new BABYLON.Vector3(pt.x, pt.y, pt.z));
+        const extMesh = BABYLON.MeshBuilder.CreateLines("ext", { points: p }, scene);
+        extMesh.color = new BABYLON.Color3(0.3, 0.3, 0.3); // Faded grey
+        extMesh.alpha = 0.5;
+        measurementLinesRef.current.push(extMesh);
+      });
+
+      // 2. Render Main Dimension Line
+      const points = chain.mainLine.map(p => new BABYLON.Vector3(p.x, p.y, p.z));
+      const lineMesh = BABYLON.MeshBuilder.CreateLines("ml", { points }, scene);
+      
+      let color = new BABYLON.Color3(0.3, 0.3, 0.3); // Default Grey
+      if (chain.type === 'asset') color = new BABYLON.Color3(0, 0.7, 1); // Blue
+      if (chain.type === 'neighbor') color = new BABYLON.Color3(0, 1, 0.5); // Green
+      
+      lineMesh.color = color;
+      lineMesh.isPickable = false;
+      measurementLinesRef.current.push(lineMesh);
+
+      // --- ADD ARROWS ---
+      if ((chain.type === 'asset' || chain.type === 'neighbor') && points.length >= 2) {
+        const p1 = points[0];
+        const p2 = points[points.length - 1];
+        const dir = p2.subtract(p1).normalize();
+        
+        let up = BABYLON.Vector3.Up();
+        if (Math.abs(BABYLON.Vector3.Dot(dir, up)) > 0.9) up = BABYLON.Vector3.Right();
+        const perp = BABYLON.Vector3.Cross(dir, up).normalize().scale(0.05);
+        
+        const addArrow = (tip: BABYLON.Vector3, d: BABYLON.Vector3) => {
+          const arrowPoints = [
+            tip.subtract(d.scale(0.1)).add(perp),
+            tip,
+            tip.subtract(d.scale(0.1)).subtract(perp)
+          ];
+          const arrowMesh = BABYLON.MeshBuilder.CreateLines("arrow", { points: arrowPoints }, scene);
+          arrowMesh.color = lineMesh.color;
+          measurementLinesRef.current.push(arrowMesh);
+        };
+
+        addArrow(p1, dir.scale(-1));
+        addArrow(p2, dir);
+      }
+
+      // Add labels (centered on lines)
+      if (points.length >= 2) {
+        const p1 = points[0];
+        const p2 = points[points.length - 1];
+        const mid = BABYLON.Vector3.Center(p1, p2);
+        
+        const rect = new GUI.Rectangle();
+        rect.width = "48px";
+        rect.height = "16px";
+        rect.cornerRadius = 2;
+        rect.thickness = 0;
+        rect.background = "rgba(0,0,0,0.7)";
+        gui.addControl(rect);
+        
+        const labelText = new GUI.TextBlock();
+        labelText.text = chain.label;
+        labelText.color = chain.type === 'gap' ? "#aaaaaa" : "white";
+        labelText.fontSize = 9;
+        labelText.fontWeight = "bold";
+        rect.addControl(labelText);
+
+        const node = new BABYLON.TransformNode("ln", scene);
+        node.position = mid;
+        rect.linkWithMesh(node);
+        measurementLinesRef.current.push(node as any);
+      }
+    });
+
+    // Add Rulers (Faded for blueprint mode)
+    const isTop = activeView === 'top';
+    const maxDim = Math.max(boothConfig.width, boothConfig.depth);
+    for (let i = 0; i <= maxDim; i++) {
+      // X-Axis Marker (Top or Bottom edge)
+      if (i <= boothConfig.width) {
+        const xNode = new BABYLON.TransformNode("rx", scene);
+        xNode.position = new BABYLON.Vector3(i, 0, isTop ? -0.4 : 0);
+        const xLabel = new GUI.TextBlock();
+        xLabel.text = `${i}m`;
+        xLabel.color = "rgba(255,255,255,0.7)";
+        xLabel.fontSize = 9;
+        gui.addControl(xLabel);
+        xLabel.linkWithMesh(xNode);
+        measurementLinesRef.current.push(xNode as any);
+      }
+      
+      // Z-Axis Marker (Left or Right edge)
+      if (i <= boothConfig.depth && isTop) {
+        const zNode = new BABYLON.TransformNode("rz", scene);
+        zNode.position = new BABYLON.Vector3(-0.4, 0, i);
+        const zLabel = new GUI.TextBlock();
+        zLabel.text = `${i}m`;
+        zLabel.color = "rgba(255,255,255,0.7)";
+        zLabel.fontSize = 9;
+        gui.addControl(zLabel);
+        zLabel.linkWithMesh(zNode);
+        measurementLinesRef.current.push(zNode as any);
+      }
+    }
+
+  }, [activeView, debouncedElements, boothConfig, isSceneReady]);
+
+  // 2.3 Handle Export/Download Trigger
+  useEffect(() => {
+    if (!isSceneReady || !activeView.endsWith('_download') || isCapturing) return;
+
+    const capture = async () => {
+      setIsCapturing(true);
+      const baseView = activeView.replace('_download', '');
+      
+      // Wait for camera and elements to settle
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const scene = sceneRef.current;
+      const engine = engineRef.current;
+      if (!scene || !engine || !canvasRef.current) return;
+
+      // Use Babylon's native screenshot tool which is much more reliable for 3D
+      BABYLON.Tools.CreateScreenshot(engine, scene.activeCamera!, { precision: 2 }, (data) => {
+        const link = document.createElement('a');
+        link.download = `booth_${baseView}_blueprint.png`;
+        link.href = data;
+        link.click();
+        
+        setIsCapturing(false);
+        onExportComplete?.(baseView);
+      });
+    };
+
+    capture();
+  }, [activeView, isSceneReady, isCapturing, onExportComplete]);
 
   // 3. Sync Elements
   useEffect(() => {
@@ -341,10 +665,6 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
           if (!mesh.metadata || mesh.metadata.geometryState !== geometryState) {
             needsRecreate = true;
           }
-        } else if (el.type === 'volumetric') {
-          if (!mesh.metadata || mesh.metadata.shape !== el.shape || mesh.metadata.logoSide !== el.logoSide) {
-            needsRecreate = true;
-          }
         } else if (el.type === '3d_logo') {
           if (!mesh.metadata || mesh.metadata.svgData !== el.svgData || mesh.metadata.depth !== el.depth || mesh.metadata.logoStyle !== el.logoStyle) {
             needsRecreate = true;
@@ -370,53 +690,13 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
         mesh.rotation.y = rotY;
         mesh.scaling.y = vScale;
 
-
-
         if (el.type === 'asset' && mesh.metadata && mesh.metadata.nativeLength) {
           const targetDim = Math.max(el.width, el.height) / PPM;
           const s = targetDim / mesh.metadata.nativeLength;
           mesh.scaling = new BABYLON.Vector3(s, s * (el.verticalScale || 1), s);
         }
 
-        if (el.type === 'volumetric') {
-          mesh.scaling.x = el.width / PPM;
-          mesh.scaling.z = el.height / PPM;
-          const mat = mesh.material as BABYLON.PBRMaterial;
-          if (mat) {
-            const color = BABYLON.Color3.FromHexString(el.volumetricColor || '#ec4899');
-            // If we have a logo, we use white as base to avoid tinting the logo too much, 
-            // otherwise use the block color
-            mat.albedoColor = el.logoUrl ? BABYLON.Color3.White() : color;
-            
-            // Handle Emissive
-            if (el.emissive) {
-              mat.emissiveColor = color;
-              mat.emissiveIntensity = el.intensity || 1.5;
-            } else {
-              mat.emissiveColor = BABYLON.Color3.Black();
-            }
-
-            // Handle Logo / Texture
-            if (el.logoUrl) {
-              if (!mat.albedoTexture || (mat.albedoTexture as BABYLON.Texture).url !== el.logoUrl) {
-                const tex = new BABYLON.Texture(el.logoUrl, scene);
-                tex.hasAlpha = true;
-                tex.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
-                tex.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
-                mat.albedoTexture = tex;
-                // If emissive is on, the logo should also glow
-                if (el.emissive) {
-                  mat.emissiveTexture = tex;
-                }
-              } else if (el.emissive) {
-                mat.emissiveTexture = mat.albedoTexture;
-              }
-            } else {
-              mat.albedoTexture = null;
-              mat.emissiveTexture = null;
-            }
-          }
-        } else if (el.type === '3d_logo') {
+        if (el.type === '3d_logo') {
           const multimat = mesh.material as BABYLON.MultiMaterial;
           if (multimat && multimat.subMaterials) {
             const frontMat = multimat.subMaterials[0] as BABYLON.PBRMaterial;
@@ -493,57 +773,51 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
                 frameMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
 
                 if (wel.type === 'window') {
-                  // Window Frame (4 sides)
-                  const fTop = BABYLON.MeshBuilder.CreateBox("ft", { width: cutW, height: ft, depth: dVal + 0.02 }, scene);
-                  fTop.position.y = cutH/2 - ft/2; fTop.material = frameMat; fTop.parent = accessoryGroup;
-                  const fBot = BABYLON.MeshBuilder.CreateBox("fb", { width: cutW, height: ft, depth: dVal + 0.02 }, scene);
-                  fBot.position.y = -cutH/2 + ft/2; fBot.material = frameMat; fBot.parent = accessoryGroup;
-                  const fLeft = BABYLON.MeshBuilder.CreateBox("fl", { width: ft, height: cutH - ft*2, depth: dVal + 0.02 }, scene);
-                  fLeft.position.x = -cutW/2 + ft/2; fLeft.material = frameMat; fLeft.parent = accessoryGroup;
-                  const fRight = BABYLON.MeshBuilder.CreateBox("fr", { width: ft, height: cutH - ft*2, depth: dVal + 0.02 }, scene);
-                  fRight.position.x = cutW/2 - ft/2; fRight.material = frameMat; fRight.parent = accessoryGroup;
-                  
-                  // Glass (Centered)
-                  const glass = BABYLON.MeshBuilder.CreateBox("glass", { width: cutW - ft*2, height: cutH - ft*2, depth: 0.01 }, scene);
-                  glass.position.z = 0; glass.parent = accessoryGroup;
-                  const gMat = new BABYLON.PBRMaterial("gmat", scene);
-                  gMat.albedoColor = new BABYLON.Color3(0.8, 0.9, 1);
-                  gMat.alpha = 0.2;
-                  gMat.roughness = 0.05;
-                  gMat.metallic = 0;
-                  gMat.transparencyMode = 2; // ALPHABLEND
-                  glass.material = gMat;
+                   const fTop = BABYLON.MeshBuilder.CreateBox("ft", { width: cutW, height: ft, depth: dVal + 0.02 }, scene);
+                   fTop.position.y = cutH/2 - ft/2; fTop.material = frameMat; fTop.parent = accessoryGroup;
+                   const fBot = BABYLON.MeshBuilder.CreateBox("fb", { width: cutW, height: ft, depth: dVal + 0.02 }, scene);
+                   fBot.position.y = -cutH/2 + ft/2; fBot.material = frameMat; fBot.parent = accessoryGroup;
+                   const fLeft = BABYLON.MeshBuilder.CreateBox("fl", { width: ft, height: cutH - ft*2, depth: dVal + 0.02 }, scene);
+                   fLeft.position.x = -cutW/2 + ft/2; fLeft.material = frameMat; fLeft.parent = accessoryGroup;
+                   const fRight = BABYLON.MeshBuilder.CreateBox("fr", { width: ft, height: cutH - ft*2, depth: dVal + 0.02 }, scene);
+                   fRight.position.x = cutW/2 - ft/2; fRight.material = frameMat; fRight.parent = accessoryGroup;
+                   
+                   const glass = BABYLON.MeshBuilder.CreateBox("glass", { width: cutW - ft*2, height: cutH - ft*2, depth: 0.01 }, scene);
+                   glass.position.z = 0; glass.parent = accessoryGroup;
+                   const gMat = new BABYLON.PBRMaterial("gmat", scene);
+                   gMat.albedoColor = new BABYLON.Color3(0.8, 0.9, 1);
+                   gMat.alpha = 0.2;
+                   gMat.roughness = 0.05;
+                   gMat.metallic = 0;
+                   gMat.transparencyMode = 2; // ALPHABLEND
+                   glass.material = gMat;
                 } else if (wel.type === 'door') {
-                  // Door Frame (Top, Left, Right)
-                  const fTop = BABYLON.MeshBuilder.CreateBox("dt", { width: cutW, height: ft, depth: dVal + 0.02 }, scene);
-                  fTop.position.y = cutH/2 - ft/2; fTop.material = frameMat; fTop.parent = accessoryGroup;
-                  const fLeft = BABYLON.MeshBuilder.CreateBox("dlf", { width: ft, height: cutH - ft, depth: dVal + 0.02 }, scene);
-                  fLeft.position.x = -cutW/2 + ft/2; fLeft.position.y = -ft/2; fLeft.material = frameMat; fLeft.parent = accessoryGroup;
-                  const fRight = BABYLON.MeshBuilder.CreateBox("drf", { width: ft, height: cutH - ft, depth: dVal + 0.02 }, scene);
-                  fRight.position.x = cutW/2 - ft/2; fRight.position.y = -ft/2; fRight.material = frameMat; fRight.parent = accessoryGroup;
+                   const fTop = BABYLON.MeshBuilder.CreateBox("dt", { width: cutW, height: ft, depth: dVal + 0.02 }, scene);
+                   fTop.position.y = cutH/2 - ft/2; fTop.material = frameMat; fTop.parent = accessoryGroup;
+                   const fLeft = BABYLON.MeshBuilder.CreateBox("dlf", { width: ft, height: cutH - ft, depth: dVal + 0.02 }, scene);
+                   fLeft.position.x = -cutW/2 + ft/2; fLeft.position.y = -ft/2; fLeft.material = frameMat; fLeft.parent = accessoryGroup;
+                   const fRight = BABYLON.MeshBuilder.CreateBox("drf", { width: ft, height: cutH - ft, depth: dVal + 0.02 }, scene);
+                   fRight.position.x = cutW/2 - ft/2; fRight.position.y = -ft/2; fRight.material = frameMat; fRight.parent = accessoryGroup;
 
-                  // Door Leaf
-                  const leaf = BABYLON.MeshBuilder.CreateBox("dl", { width: cutW - ft*2, height: cutH - ft, depth: 0.04 }, scene);
-                  leaf.position.y = -ft/2; 
-                  const leafMat = new BABYLON.StandardMaterial("leafMat", scene);
-                  leafMat.diffuseColor = new BABYLON.Color3(0.39, 0.26, 0.13); // Warm Brown
-                  leafMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-                  leaf.material = leafMat;
-                  leaf.parent = accessoryGroup;
+                   const leaf = BABYLON.MeshBuilder.CreateBox("dl", { width: cutW - ft*2, height: cutH - ft, depth: 0.04 }, scene);
+                   leaf.position.y = -ft/2; 
+                   const leafMat = new BABYLON.StandardMaterial("leafMat", scene);
+                   leafMat.diffuseColor = new BABYLON.Color3(0.39, 0.26, 0.13); 
+                   leafMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+                   leaf.material = leafMat;
+                   leaf.parent = accessoryGroup;
 
-                  // Door Handle
-                  const handle = BABYLON.MeshBuilder.CreateSphere("handle", { diameter: 0.05 }, scene);
-                  handle.position.set(cutW/2 - ft*3, -0.1, 0.03); // Positioned slightly below center
-                  handle.parent = leaf;
-                  const hMat = new BABYLON.StandardMaterial("hmat", scene);
-                  hMat.diffuseColor = new BABYLON.Color3(0.8, 0.7, 0.3); // Brass
-                  hMat.specularColor = new BABYLON.Color3(1, 0.9, 0.5);
-                  handle.material = hMat;
+                   const handle = BABYLON.MeshBuilder.CreateSphere("handle", { diameter: 0.05 }, scene);
+                   handle.position.set(cutW/2 - ft*3, -0.1, 0.03); 
+                   handle.parent = leaf;
+                   const hMat = new BABYLON.StandardMaterial("hmat", scene);
+                   hMat.diffuseColor = new BABYLON.Color3(0.8, 0.7, 0.3); 
+                   hMat.specularColor = new BABYLON.Color3(1, 0.9, 0.5);
+                   handle.material = hMat;
                 }
               });
 
               const finalMesh = wallCSG.toMesh(el.id, null, scene);
-              // Transfer children (accessories) to final mesh
               mesh.getChildren().forEach(child => child.parent = finalMesh);
               mesh.dispose(); mesh = finalMesh as BABYLON.Mesh;
             }
@@ -554,10 +828,8 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
             mesh = registry.get(el.id) as BABYLON.Mesh;
           }
 
-          // Update Decorations (Lights, Shelves, Banners)
           const decorationState = JSON.stringify(decorations);
           if (!mesh.metadata || mesh.metadata.decorationState !== decorationState) {
-            // Dispose old decorations for this wall
             wallDecorationRegistryRef.current.get(el.id)?.forEach(m => m.dispose());
             const newDecorations: BABYLON.AbstractMesh[] = [];
 
@@ -600,7 +872,7 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
                   tex.hasAlpha = true;
                   bMat.albedoTexture = tex;
                   bMat.useAlphaFromAlbedoTexture = true;
-                  bMat.transparencyMode = 2; // ALPHABLEND
+                  bMat.transparencyMode = 2; 
                   bMat.roughness = 0.5;
                   bMat.metallic = 0.1;
                 } else {
@@ -614,7 +886,6 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
             wallDecorationRegistryRef.current.set(el.id, newDecorations);
           }
 
-          // Update Wall Common Properties
           mesh.position.set(x, (h * vScale / 2) + (el.yOffset || 0), z);
           mesh.scaling.y = vScale;
           mesh.rotation.y = rotY;
@@ -655,86 +926,22 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
             }
           }
           mesh.material = mat;
-          mesh.metadata = { geometryState, decorationState, baseWidth: wVal };
+          mesh.metadata = { 
+            geometryState, 
+            decorationState, 
+            baseWidth: wVal,
+            isOuter: el.isOuter,
+            wallDir: el.id.split('-')[1] 
+          };
           registry.set(el.id, mesh);
-
-        } else if (el.type === 'volumetric') {
-          let vMesh: BABYLON.Mesh;
-          const logoSide = el.logoSide || 'front';
-          
-          // Define faceUV to isolate logo to one side
-          // Babylon Box sides: 0:Front, 1:Back, 2:Right, 3:Left, 4:Top, 5:Bottom
-          const faceUV = new Array(6).fill(new BABYLON.Vector4(0, 0, 0, 0));
-          if (el.logoUrl) {
-            let sideIndex = 0; // Front
-            if (logoSide === 'back') sideIndex = 1;
-            else if (logoSide === 'right') sideIndex = 2;
-            else if (logoSide === 'left') sideIndex = 3;
-            else if (logoSide === 'top') sideIndex = 4;
-            else if (logoSide === 'bottom') sideIndex = 5;
-            faceUV[sideIndex] = new BABYLON.Vector4(0, 1, 1, 0);
-          } else {
-            // No logo? All sides show the color
-            faceUV.fill(new BABYLON.Vector4(0, 0, 1, 1));
-          }
-
-          if (el.shape === 'cylinder') {
-            const cylUV = new Array(3).fill(new BABYLON.Vector4(0,0,0,0));
-            if (el.logoUrl) {
-               if (logoSide === 'top') cylUV[2] = new BABYLON.Vector4(0, 1, 1, 0);
-               else if (logoSide === 'bottom') cylUV[0] = new BABYLON.Vector4(0, 1, 1, 0);
-               else cylUV[1] = new BABYLON.Vector4(0, 1, 1, 0); // Side
-            } else {
-               cylUV.fill(new BABYLON.Vector4(0,0,1,1));
-            }
-            vMesh = BABYLON.MeshBuilder.CreateCylinder(el.id, { diameter: 1, height: 1, faceUV: cylUV }, scene);
-          } else if (el.shape === 'pill') {
-            vMesh = BABYLON.MeshBuilder.CreateCapsule(el.id, { height: 1, radius: 0.5 }, scene);
-          } else {
-            vMesh = BABYLON.MeshBuilder.CreateBox(el.id, { size: 1, faceUV }, scene);
-          }
-          
-          vMesh.position.set(x, (1 * (el.verticalScale || 1) / 2) + (el.yOffset || 0), z);
-          vMesh.scaling.set(el.width / PPM, el.verticalScale || 1, el.height / PPM);
-          vMesh.rotation.y = rotY;
-          shadowGenerator.addShadowCaster(vMesh);
-
-          const mat = new BABYLON.PBRMaterial(el.id + "_mat", scene);
-          const color = BABYLON.Color3.FromHexString(el.volumetricColor || '#ec4899');
-          mat.albedoColor = el.logoUrl ? BABYLON.Color3.White() : color;
-          mat.roughness = 0.2;
-          
-          if (el.emissive) { 
-            mat.emissiveColor = color; 
-            mat.emissiveIntensity = el.intensity || 1.5; 
-          }
-          
-          if (el.logoUrl) {
-            const tex = new BABYLON.Texture(el.logoUrl, scene);
-            tex.hasAlpha = true;
-            tex.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
-            tex.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
-            mat.albedoTexture = tex;
-            if (el.emissive) {
-              mat.emissiveTexture = tex;
-            }
-          }
-          
-          vMesh.material = mat;
-          vMesh.metadata = { shape: el.shape, logoSide: el.logoSide };
-          registry.set(el.id, vMesh);
 
         } else if (el.type === '3d_logo') {
           const depth = (el.depth || 5) / PPM;
           const w = el.width / PPM;
           const h = el.height / PPM;
-          
-          // Define faceUV to isolate logo to front face only
-          // 0:Front, 1:Back, 2:Right, 3:Left, 4:Top, 5:Bottom
           const faceUV = new Array(6).fill(new BABYLON.Vector4(0, 0, 0, 0));
           faceUV[0] = new BABYLON.Vector4(0, 1, 1, 0);
 
-          // Create the logo box
           const logoMesh = BABYLON.MeshBuilder.CreateBox(el.id, { width: w, height: h, depth: depth, faceUV }, scene);
           logoMesh.position.set(x, (h / 2) + (el.yOffset || 0), z);
           logoMesh.rotation.y = rotY;
@@ -742,70 +949,42 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
 
           const mat = new BABYLON.PBRMaterial(el.id + "_mat", scene);
           const baseColor = BABYLON.Color3.FromHexString(el.logoColor || '#ffffff');
-          
           mat.albedoColor = baseColor;
           mat.metallic = 0;
           mat.roughness = 0.5;
 
           if (el.logoStyle === 'chrome') {
-            mat.metallic = 1.0;
-            mat.roughness = 0.1;
+            mat.metallic = 1.0; mat.roughness = 0.1;
           } else if (el.logoStyle === 'glowing') {
-            mat.emissiveColor = baseColor;
-            mat.emissiveIntensity = 2.0;
+            mat.emissiveColor = baseColor; mat.emissiveIntensity = 2.0;
           } else if (el.logoStyle === 'glass') {
-            mat.alpha = 0.5;
-            mat.metallic = 0;
-            mat.roughness = 0.1;
-            mat.indexOfRefraction = 1.5;
-            mat.transparencyMode = 2; // ALPHABLEND
+            mat.alpha = 0.5; mat.metallic = 0; mat.roughness = 0.1; mat.indexOfRefraction = 1.5; mat.transparencyMode = 2;
           }
 
-          // Define sub-meshes: 0 is the front face, 1 is the rest
           logoMesh.subMeshes = [];
-          new BABYLON.SubMesh(0, 0, logoMesh.getTotalVertices(), 0, 6, logoMesh); // Front face (indices 0-5)
-          new BABYLON.SubMesh(1, 0, logoMesh.getTotalVertices(), 6, 30, logoMesh); // Other faces
+          new BABYLON.SubMesh(0, 0, logoMesh.getTotalVertices(), 0, 6, logoMesh);
+          new BABYLON.SubMesh(1, 0, logoMesh.getTotalVertices(), 6, 30, logoMesh);
 
           const multimat = new BABYLON.MultiMaterial(el.id + "_multimat", scene);
-          
-          // Material for front face
           const frontMat = new BABYLON.PBRMaterial(el.id + "_front", scene);
-          frontMat.albedoColor = baseColor;
-          frontMat.metallic = mat.metallic;
-          frontMat.roughness = mat.roughness;
-          frontMat.transparencyMode = 2; // Always enable alpha blend for logos
+          frontMat.albedoColor = baseColor; frontMat.metallic = mat.metallic; frontMat.roughness = mat.roughness; frontMat.transparencyMode = 2;
           
-          if (el.logoStyle === 'glowing') {
-            frontMat.emissiveColor = baseColor;
-            frontMat.emissiveIntensity = 2.0;
-          }
-          if (el.logoStyle === 'glass') {
-            frontMat.alpha = 0.5;
-            frontMat.indexOfRefraction = 1.5;
-          }
+          if (el.logoStyle === 'glowing') { frontMat.emissiveColor = baseColor; frontMat.emissiveIntensity = 2.0; }
+          if (el.logoStyle === 'glass') { frontMat.alpha = 0.5; frontMat.indexOfRefraction = 1.5; }
           
           if (el.svgData) {
             const blob = new Blob([el.svgData], { type: 'image/svg+xml' });
             const url = URL.createObjectURL(blob);
             const tex = new BABYLON.Texture(url, scene);
             tex.hasAlpha = true;
-            
-            frontMat.albedoTexture = tex;
-            frontMat.opacityTexture = tex; // This makes the "white corners" transparent
-            
+            frontMat.albedoTexture = tex; frontMat.opacityTexture = tex;
             if (el.logoStyle === 'glowing') frontMat.emissiveTexture = tex;
             tex.onLoadObservable.addOnce(() => URL.revokeObjectURL(url));
           }
 
-          // Material for sides/back
           const sideMat = new BABYLON.PBRMaterial(el.id + "_side", scene);
-          sideMat.albedoColor = baseColor;
-          sideMat.metallic = mat.metallic;
-          sideMat.roughness = mat.roughness;
-          sideMat.transparencyMode = 2;
-
+          sideMat.albedoColor = baseColor; sideMat.metallic = mat.metallic; sideMat.roughness = mat.roughness; sideMat.transparencyMode = 2;
           if (el.svgData) {
-            // Apply the same opacity texture to sides to help with the "cutout" look
             const blob = new Blob([el.svgData], { type: 'image/svg+xml' });
             const url = URL.createObjectURL(blob);
             const tex = new BABYLON.Texture(url, scene);
@@ -813,9 +992,7 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
             tex.onLoadObservable.addOnce(() => URL.revokeObjectURL(url));
           }
 
-          multimat.subMaterials.push(frontMat);
-          multimat.subMaterials.push(sideMat);
-          
+          multimat.subMaterials.push(frontMat); multimat.subMaterials.push(sideMat);
           logoMesh.material = multimat;
           logoMesh.metadata = { svgData: el.svgData, depth: el.depth, logoStyle: el.logoStyle, logoColor: el.logoColor };
           registry.set(el.id, logoMesh);
@@ -829,79 +1006,50 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
           registry.set(el.id, pivot);
 
           const instantiateAndSetup = (container: BABYLON.AssetContainer) => {
-            if (!registry.has(el.id)) return; // Node was deleted while loading
-            
-            // Remove placeholder if it exists
-            pivot.getChildMeshes().forEach(m => {
-              if (m.name === "ph") m.dispose();
-            });
-
+            if (!registry.has(el.id)) return;
+            pivot.getChildMeshes().forEach(m => { if (m.name === "ph") m.dispose(); });
             const entries = container.instantiateModelsToScene();
             entries.rootNodes.forEach(node => {
               node.parent = pivot;
-              // Add shadows only to meshes with significant vertices to save performance
               node.getChildMeshes().forEach(m => {
                 if (m.getTotalVertices() > 20) {
-                  m.receiveShadows = true;
-                  shadowGenerator.addShadowCaster(m, true);
+                  m.receiveShadows = true; shadowGenerator.addShadowCaster(m, true);
                 }
               });
             });
-
-            // Synchronous bounding box calculation and centering
             const root = entries.rootNodes[0];
             if (root) {
               root.computeWorldMatrix(true);
               const bbox = root.getHierarchyBoundingVectors(true);
               const sz = bbox.max.subtract(bbox.min);
               const longest = Math.max(sz.x, sz.z);
-              
               if (longest > 0) {
                 pivot.metadata = { nativeLength: longest };
                 const s = (Math.max(el.width, el.height) / PPM) / longest;
                 pivot.scaling.set(s, s * (el.verticalScale || 1), s);
-                
-                // Center the model: Calculate the offset between the pivot and the model's geometric center
                 const center = bbox.min.add(sz.scale(0.5));
                 const worldOffset = center.subtract(pivot.position);
-                
-                // Transform the world-space offset into the pivot's local space
                 const invPivotMatrix = new BABYLON.Matrix();
                 pivot.getWorldMatrix().invertToRef(invPivotMatrix);
                 const localOffset = BABYLON.Vector3.TransformNormal(worldOffset, invPivotMatrix);
-                
                 const rootMesh = root as BABYLON.AbstractMesh;
-                rootMesh.position.x -= localOffset.x;
-                rootMesh.position.z -= localOffset.z;
+                rootMesh.position.x -= localOffset.x; rootMesh.position.z -= localOffset.z;
               }
             }
           };
 
           const cache = modelCacheRef.current;
           if (cache.has(modelName)) {
-            // It's a Promise
-            cache.get(modelName)!.then(container => {
-              instantiateAndSetup(container);
-            });
+            cache.get(modelName)!.then(container => instantiateAndSetup(container));
           } else {
-            // Create holographic wireframe placeholder immediately
             const ph = BABYLON.MeshBuilder.CreateBox("ph", { width: el.width/PPM, height: 0.8, depth: el.height/PPM }, scene);
-            ph.parent = pivot; 
-            ph.position.y = 0.4;
+            ph.parent = pivot; ph.position.y = 0.4;
             const phMat = new BABYLON.StandardMaterial("phMat", scene);
-            phMat.wireframe = true;
-            phMat.emissiveColor = new BABYLON.Color3(0, 0.8, 1); // Glowing cyan
-            phMat.alpha = 0.5;
+            phMat.wireframe = true; phMat.emissiveColor = new BABYLON.Color3(0, 0.8, 1); phMat.alpha = 0.5;
             ph.material = phMat;
-
             const loadPromise = BABYLON.SceneLoader.LoadAssetContainerAsync("/models/", `${modelName}.glb`, scene);
             cache.set(modelName, loadPromise);
-            
-            loadPromise.then(container => {
-              instantiateAndSetup(container);
-            }).catch(e => {
-              console.error("Failed to load model", modelName, e);
-            });
+            loadPromise.then(container => instantiateAndSetup(container)).catch(e => console.error("Failed to load model", modelName, e));
           }
         }
       }
@@ -926,28 +1074,32 @@ export default function Preview3D({ boothConfig, elements }: Preview3DProps) {
   }, [cameraMode]);
 
   return (
-    <div className="w-full h-full relative" style={{ backgroundColor: '#0d0d0f' }}>
+    <div ref={containerRef} className="w-full h-full relative" style={{ backgroundColor: '#0d0d0f' }}>
       <canvas ref={canvasRef} className="w-full h-full block outline-none touch-none" />
-      <div className="absolute top-4 left-4 z-20 flex gap-2">
-        <div className="px-3 py-1.5 rounded-lg bg-[rgba(0,0,0,0.6)] border border-[rgba(255,255,255,0.1)] text-[10px] font-bold text-white uppercase backdrop-blur-md">
-          {cameraMode === 'orbit' ? 'Orbit Mode 🌐' : 'Flight Mode 🛸'}
-        </div>
-      </div>
-      <div className="absolute top-4 right-4 z-20 flex gap-2">
-        <button 
-          onClick={() => {
-            const currentHQ = localStorage.getItem('hq_3d') === 'true';
-            localStorage.setItem('hq_3d', currentHQ ? 'false' : 'true');
-            window.location.reload();
-          }} 
-          className="px-4 py-2 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--brand)] border border-[rgba(255,255,255,0.1)] text-xs font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors"
-        >
-          {localStorage.getItem('hq_3d') === 'true' ? "HQ: ON" : "HQ: OFF"}
-        </button>
-        <button onClick={() => setCameraMode(prev => prev === 'orbit' ? 'flight' : 'orbit')} className="px-4 py-2 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--sea-ink)] border border-[rgba(255,255,255,0.1)] text-xs font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors">
-          {cameraMode === 'orbit' ? "Flight Mode" : "Orbit Mode"}
-        </button>
-      </div>
+      {activeView === 'perspective' && (
+        <>
+          <div className="absolute top-4 left-4 z-20 flex gap-2">
+            <div className="px-3 py-1.5 rounded-lg bg-[rgba(0,0,0,0.6)] border border-[rgba(255,255,255,0.1)] text-[10px] font-bold text-white uppercase backdrop-blur-md">
+              {cameraMode === 'orbit' ? 'Orbit Mode 🌐' : 'Flight Mode 🛸'}
+            </div>
+          </div>
+          <div className="absolute top-4 right-4 z-20 flex gap-2">
+            <button 
+              onClick={() => {
+                const currentHQ = localStorage.getItem('hq_3d') === 'true';
+                localStorage.setItem('hq_3d', currentHQ ? 'false' : 'true');
+                window.location.reload();
+              }} 
+              className="px-4 py-2 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--brand)] border border-[rgba(255,255,255,0.1)] text-xs font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors"
+            >
+              {localStorage.getItem('hq_3d') === 'true' ? "HQ: ON" : "HQ: OFF"}
+            </button>
+            <button onClick={() => setCameraMode(prev => prev === 'orbit' ? 'flight' : 'orbit')} className="px-4 py-2 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--sea-ink)] border border-[rgba(255,255,255,0.1)] text-xs font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors">
+              {cameraMode === 'orbit' ? "Flight Mode" : "Orbit Mode"}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

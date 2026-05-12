@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Box, PlusSquare, ChevronDown, ChevronRight } from 'lucide-react'
+import { Box, PlusSquare, ChevronDown, ChevronRight, Download, LayoutGrid } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import { ASSET_DIMENSIONS, DEFAULT_ASSET_SIZE_PX } from '../../lib/assetDimensions'
 
@@ -12,7 +12,6 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
   Round_Tables: { bg: 'rgba(16,185,129,0.12)',  text: '#065f46', border: 'rgba(16,185,129,0.3)',  dot: '#10b981' },
   Info_Desks:   { bg: 'rgba(244,63,94,0.12)',   text: '#9f1239', border: 'rgba(244,63,94,0.3)',   dot: '#f43f5e' },
   Electronics:  { bg: 'rgba(14,165,233,0.12)',   text: '#0369a1', border: 'rgba(14,165,233,0.3)',   dot: '#0ea5e9' },
-  Volumetric:   { bg: 'rgba(236,72,153,0.12)',   text: '#831843', border: 'rgba(236,72,153,0.3)',   dot: '#ec4899' },
 }
 
 const categories = [
@@ -31,9 +30,12 @@ const categories = [
     folder: 'Chairs',
     name: 'Chairs',
     items: [
-      { name: 'chair_1', label: 'Chair 1', initials: 'C1' },
-      { name: 'chair_2', label: 'Chair 2', initials: 'C2' },
+      { name: '03_black_draco', label: 'Pro Chair Black', initials: 'CB' },
+      { name: '03_red_draco', label: 'Pro Chair Red', initials: 'CR' },
+      { name: 'chair_1', label: 'Dining Chair', initials: 'C1' },
+      { name: 'chair_2', label: 'Armchair', initials: 'C2' },
       { name: 'modern_dining_chair', label: 'Modern Chair', initials: 'MC' },
+      { name: 'bar_chair_1', label: 'Bar Stool', initials: 'BS' },
     ],
   },
   {
@@ -78,7 +80,15 @@ const categories = [
   },
 ]
 
-export default function Sidebar({ addElement }: { addElement: (el: any) => void }) {
+export default function Sidebar({ 
+  addElement, 
+  activeView = 'perspective', 
+  onViewChange 
+}: { 
+  addElement: (el: any) => void;
+  activeView?: string;
+  onViewChange?: (view: any) => void;
+}) {
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
     Fixtures: true,
     Chairs: false,
@@ -87,7 +97,10 @@ export default function Sidebar({ addElement }: { addElement: (el: any) => void 
     Round_Tables: false,
     Info_Desks: false,
     Electronics: false,
+    Technical: false,
   })
+
+  const [isTechOpen, setIsTechOpen] = useState(false)
 
   const toggleCategory = (folder: string) => {
     setOpenCategories(prev => ({ ...prev, [folder]: !prev[folder] }))
@@ -125,31 +138,7 @@ export default function Sidebar({ addElement }: { addElement: (el: any) => void 
     })
   }
 
-  const VOLUMETRIC_PRESETS = [
-    { id: 'header',  label: 'Header',   initials: 'HD', w: 200, h: 60,  shape: 'box',    color: '#ec4899', yOffset: 2.5, verticalScale: 0.15 },
-    { id: 'slab',    label: 'Ceiling',  initials: 'CG', w: 150, h: 150, shape: 'box',    color: '#c026d3', yOffset: 2.8, verticalScale: 0.08 },
-    { id: 'beam',    label: 'Beam',     initials: 'BM', w: 300, h: 30,  shape: 'box',    color: '#9333ea', yOffset: 2.4, verticalScale: 0.2  },
-    { id: 'column',  label: 'Column',   initials: 'CL', w: 40,  h: 40,  shape: 'cylinder', color: '#7c3aed', yOffset: 0,   verticalScale: 2.5  },
-    { id: 'pill',    label: 'Pill',     initials: 'PL', w: 160, h: 60,  shape: 'pill',   color: '#ec4899', yOffset: 2.5, verticalScale: 0.2  },
-  ]
 
-  const addVolumetric = (preset: typeof VOLUMETRIC_PRESETS[0]) => {
-    addElement({
-      id: uuidv4(),
-      type: 'volumetric',
-      shape: preset.shape,
-      volumetricColor: preset.color,
-      x: 200, y: 200,
-      width: preset.w,
-      height: preset.h,
-      rotation: 0,
-      yOffset: preset.yOffset,
-      verticalScale: preset.verticalScale,
-      emissive: false,
-      logoUrl: null,
-      logoSide: 'front',
-    })
-  }
 
   const add3DLogo = () => {
     addElement({
@@ -167,6 +156,15 @@ export default function Sidebar({ addElement }: { addElement: (el: any) => void 
     })
   }
 
+  const TECHNICAL_VIEWS = [
+    { id: 'perspective', label: '3D Orbit',  icon: <Box className="w-3 h-3" /> },
+    { id: 'top',         label: 'Top View', icon: <Download className="w-3 h-3" /> },
+    { id: 'north',       label: 'North Elev', icon: <Download className="w-3 h-3" /> },
+    { id: 'south',       label: 'South Elev', icon: <Download className="w-3 h-3" /> },
+    { id: 'east',        label: 'East Elev',  icon: <Download className="w-3 h-3" /> },
+    { id: 'west',        label: 'West Elev',  icon: <Download className="w-3 h-3" /> },
+  ]
+
   return (
     <aside className="w-64 h-full border-r border-[var(--line)] bg-[var(--surface-strong)] flex flex-col overflow-hidden">
       <div className="p-4 border-b border-[var(--line)] shrink-0">
@@ -177,6 +175,8 @@ export default function Sidebar({ addElement }: { addElement: (el: any) => void 
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink-soft)] mb-2">
             Core Structures
@@ -193,31 +193,6 @@ export default function Sidebar({ addElement }: { addElement: (el: any) => void 
           >
             <PlusSquare className="h-4 w-4" /> Add 3D Logo
           </button>
-
-          {/* Volumetric / Architectural Blocks */}
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink-soft)] mt-3 mb-2">
-            Volumetric Blocks
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {VOLUMETRIC_PRESETS.map(preset => (
-              <button
-                key={preset.id}
-                onClick={() => addVolumetric(preset)}
-                className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl border transition-all duration-200 hover:scale-105"
-                style={{ backgroundColor: 'rgba(236,72,153,0.08)', borderColor: 'rgba(236,72,153,0.3)' }}
-              >
-                <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-black tracking-tight"
-                  style={{ backgroundColor: preset.color + '22', color: preset.color, border: `1.5px solid ${preset.color}55` }}
-                >
-                  {preset.initials}
-                </div>
-                <span className="text-[9px] font-bold uppercase tracking-tight text-center" style={{ color: '#831843' }}>
-                  {preset.label}
-                </span>
-              </button>
-            ))}
-          </div>
         </div>
 
         <div className="w-full h-px bg-[var(--line)] my-2" />
@@ -283,6 +258,52 @@ export default function Sidebar({ addElement }: { addElement: (el: any) => void 
             </div>
           )
         })}
+      </div>
+
+      {/* Fixed Bottom Technical Section */}
+      <div className="border-t border-[var(--line)] bg-[var(--surface-light)] shrink-0">
+        <button 
+          onClick={() => setIsTechOpen(!isTechOpen)}
+          className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-strong)] transition-colors"
+        >
+          <p className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--sea-ink-soft)] flex items-center gap-2">
+            <LayoutGrid className="w-3 h-3 text-[var(--lagoon-deep)]" />
+            Technical Drawings
+          </p>
+          {isTechOpen 
+            ? <ChevronDown className="h-3 w-3 text-[var(--sea-ink-soft)]" /> 
+            : <ChevronRight className="h-3 w-3 text-[var(--sea-ink-soft)]" />
+          }
+        </button>
+        
+        {isTechOpen && (
+          <div className="px-4 pb-4 grid grid-cols-2 gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            {TECHNICAL_VIEWS.map(view => (
+              <button
+                key={view.id}
+                onClick={() => onViewChange?.(view.id)}
+                className={`flex items-center justify-between gap-2 p-2 rounded-lg border text-[10px] font-bold transition-all ${
+                  activeView === view.id 
+                    ? 'bg-[var(--lagoon)] text-white border-[var(--lagoon-deep)] shadow-sm' 
+                    : 'bg-[var(--sand)] text-[var(--sea-ink-soft)] border-transparent hover:border-[var(--line)]'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {view.id === 'perspective' ? <Box className="w-2.5 h-2.5" /> : null}
+                  {view.label}
+                </div>
+                {view.id !== 'perspective' && (
+                    <div 
+                    onClick={(e) => { e.stopPropagation(); onViewChange?.(view.id + '_download' as any); }}
+                    className="p-1 hover:bg-white/20 rounded-md transition-colors"
+                    >
+                      <Download className="w-3 h-3" />
+                    </div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </aside>
   )
