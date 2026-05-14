@@ -1,84 +1,9 @@
-import { useState } from 'react'
-import { Box, PlusSquare, ChevronDown, ChevronRight, Download, LayoutGrid } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Box, PlusSquare, ChevronDown, ChevronRight, Download, LayoutGrid, Search } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
-import { ASSET_DIMENSIONS, DEFAULT_ASSET_SIZE_PX } from '../../lib/assetDimensions'
+import { ASSET_DIMENSIONS, ASSET_CATEGORIES, ASSET_REGISTRY } from '../../lib/assetRegistry'
 
-// Category color system — each category gets a unique hue
-const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-  Fixtures:     { bg: 'rgba(245,158,11,0.12)', text: '#92400e', border: 'rgba(245,158,11,0.3)', dot: '#f59e0b' },
-  Chairs:       { bg: 'rgba(99,102,241,0.12)',  text: '#3730a3', border: 'rgba(99,102,241,0.3)',  dot: '#6366f1' },
-  Bar_Chairs:   { bg: 'rgba(168,85,247,0.12)',  text: '#6b21a8', border: 'rgba(168,85,247,0.3)',  dot: '#a855f7' },
-  Tables:       { bg: 'rgba(6,182,212,0.12)',   text: '#155e75', border: 'rgba(6,182,212,0.3)',   dot: '#06b6d4' },
-  Round_Tables: { bg: 'rgba(16,185,129,0.12)',  text: '#065f46', border: 'rgba(16,185,129,0.3)',  dot: '#10b981' },
-  Info_Desks:   { bg: 'rgba(244,63,94,0.12)',   text: '#9f1239', border: 'rgba(244,63,94,0.3)',   dot: '#f43f5e' },
-  Electronics:  { bg: 'rgba(14,165,233,0.12)',   text: '#0369a1', border: 'rgba(14,165,233,0.3)',   dot: '#0ea5e9' },
-}
-
-const categories = [
-  {
-    folder: 'Fixtures',
-    name: 'Fixtures',
-    items: [
-      { name: 'dustbin',   label: 'Dustbin 1',  initials: 'D1' },
-      { name: 'plant',     label: 'Plant 1',    initials: 'P1' },
-      { name: 'ceramic_pot', label: 'Pot 1',    initials: 'PT' },
-      { name: 'cabinet_1', label: 'Cabinet 1',  initials: 'C1' },
-      { name: 'sink_1',    label: 'Sink 1',     initials: 'SK' },
-    ],
-  },
-  {
-    folder: 'Chairs',
-    name: 'Chairs',
-    items: [
-      { name: '03_black_draco', label: 'Pro Chair Black', initials: 'CB' },
-      { name: '03_red_draco', label: 'Pro Chair Red', initials: 'CR' },
-      { name: 'chair_1', label: 'Dining Chair', initials: 'C1' },
-      { name: 'chair_2', label: 'Armchair', initials: 'C2' },
-      { name: 'modern_dining_chair', label: 'Modern Chair', initials: 'MC' },
-      { name: 'bar_chair_1', label: 'Bar Stool', initials: 'BS' },
-    ],
-  },
-  {
-    folder: 'Bar_Chairs',
-    name: 'Bar Chairs',
-    items: [
-      { name: 'bar_chair_1', label: 'Bar Chair 1', initials: 'B1' },
-    ],
-  },
-  {
-    folder: 'Tables',
-    name: 'Tables',
-    items: [
-      { name: 'table1', label: 'Table 1', initials: 'T1' },
-      { name: 'table2', label: 'Table 2', initials: 'T2' },
-      { name: 'coffee_table', label: 'Coffee Table', initials: 'CT' },
-      { name: 'rectangular_side_coffee_table', label: 'Side Table', initials: 'ST' },
-      { name: 'table', label: 'Long Table', initials: 'LT' },
-    ],
-  },
-  {
-    folder: 'Electronics',
-    name: 'Electronics',
-    items: [
-      { name: 'tv_lcd', label: 'LCD TV', initials: 'TV' },
-      { name: 'game_ready_free_livingroom_tv', label: 'Modern TV', initials: 'MT' },
-    ],
-  },
-  {
-    folder: 'Round_Tables',
-    name: 'Round Tables',
-    items: [
-      { name: 'round_table_1', label: 'Round Table 1', initials: 'R1' },
-    ],
-  },
-  {
-    folder: 'Info_Desks',
-    name: 'Info Desks',
-    items: [
-      { name: 'infodesk_1', label: 'Info Desk 1', initials: 'ID' },
-    ],
-  },
-]
+const DEFAULT_ASSET_SIZE_PX = 100
 
 export default function Sidebar({ 
   addElement, 
@@ -89,22 +14,9 @@ export default function Sidebar({
   activeView?: string;
   onViewChange?: (view: any) => void;
 }) {
-  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
-    Fixtures: true,
-    Chairs: false,
-    Bar_Chairs: false,
-    Tables: false,
-    Round_Tables: false,
-    Info_Desks: false,
-    Electronics: false,
-    Technical: false,
-  })
-
   const [isTechOpen, setIsTechOpen] = useState(false)
-
-  const toggleCategory = (folder: string) => {
-    setOpenCategories(prev => ({ ...prev, [folder]: !prev[folder] }))
-  }
+  const [selectedCategory, setSelectedCategory] = useState<string>(ASSET_CATEGORIES[0].id)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const addWall = () => {
     addElement({
@@ -117,28 +29,6 @@ export default function Sidebar({
       material: 'Solid Wall',
     })
   }
-
-  const addAsset = (categoryFolder: string, assetName: string) => {
-    const dims = ASSET_DIMENSIONS[assetName]
-    const base = DEFAULT_ASSET_SIZE_PX
-    const wRatio = dims ? dims.w : 1
-    const hRatio = dims ? dims.h : 1
-    const longest = Math.max(wRatio, hRatio)
-    const w = Math.max(20, Math.round((wRatio / longest) * base))
-    const h = Math.max(20, Math.round((hRatio / longest) * base))
-    addElement({
-      id: uuidv4(),
-      type: 'asset',
-      assetName,
-      src: `/assets/${categoryFolder}/${assetName}`,
-      x: 150, y: 150,
-      rotation: 0,
-      width: w,
-      height: h,
-    })
-  }
-
-
 
   const add3DLogo = () => {
     addElement({
@@ -156,6 +46,26 @@ export default function Sidebar({
     })
   }
 
+  const addAsset = (categoryFolder: string, assetName: string) => {
+    const dims = ASSET_DIMENSIONS[assetName]
+    const base = DEFAULT_ASSET_SIZE_PX
+    const wRatio = dims ? dims.w : 1
+    const hRatio = dims ? dims.h : 1
+    const longest = Math.max(wRatio, hRatio)
+    const w = Math.max(20, Math.round((wRatio / longest) * base))
+    const h = Math.max(20, Math.round((hRatio / longest) * base))
+    addElement({
+      id: uuidv4(),
+      type: 'asset',
+      assetName,
+      categoryFolder, // added to track folder for 3D loading
+      x: 150, y: 150,
+      rotation: 0,
+      width: w,
+      height: h,
+    })
+  }
+
   const TECHNICAL_VIEWS = [
     { id: 'perspective', label: '3D Orbit',  icon: <Box className="w-3 h-3" /> },
     { id: 'top',         label: 'Top View', icon: <Download className="w-3 h-3" /> },
@@ -164,6 +74,18 @@ export default function Sidebar({
     { id: 'east',        label: 'East Elev',  icon: <Download className="w-3 h-3" /> },
     { id: 'west',        label: 'West Elev',  icon: <Download className="w-3 h-3" /> },
   ]
+
+  const filteredAssets = useMemo(() => {
+    let filtered = ASSET_REGISTRY
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(a => a.category === selectedCategory)
+    }
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase()
+      filtered = filtered.filter(a => a.label.toLowerCase().includes(q) || a.id.toLowerCase().includes(q))
+    }
+    return filtered
+  }, [selectedCategory, searchQuery])
 
   return (
     <aside className="w-64 h-full border-r border-[var(--line)] bg-[var(--surface-strong)] flex flex-col overflow-hidden">
@@ -174,9 +96,7 @@ export default function Sidebar({
         </h3>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-
-
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 flex flex-col">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink-soft)] mb-2">
             Core Structures
@@ -197,67 +117,59 @@ export default function Sidebar({
 
         <div className="w-full h-px bg-[var(--line)] my-2" />
 
-        {categories.map((cat) => {
-          const isOpen = openCategories[cat.folder]
-          const colors = CATEGORY_COLORS[cat.folder]
-          return (
-            <div key={cat.folder} className="border-b border-[var(--line)] pb-3 last:border-0">
-              <button
-                onClick={() => toggleCategory(cat.folder)}
-                className="w-full flex items-center justify-between py-2 group"
-              >
-                <span className="flex items-center gap-2">
-                  {/* Category color dot */}
-                  <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: colors.dot }}
-                  />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink-soft)] group-hover:text-[var(--sea-ink)] transition-colors">
-                    {cat.name}
-                  </span>
-                </span>
-                {isOpen
-                  ? <ChevronDown className="h-3 w-3 text-[var(--sea-ink-soft)]" />
-                  : <ChevronRight className="h-3 w-3 text-[var(--sea-ink-soft)]" />
-                }
-              </button>
+        <div className="flex flex-col gap-3 flex-1 overflow-hidden">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink-soft)]">
+            3D Models
+          </p>
+          
+          <select 
+            value={selectedCategory} 
+            onChange={e => setSelectedCategory(e.target.value)}
+            className="w-full p-2 bg-[var(--sand)] border border-[var(--line)] rounded-lg text-xs font-bold text-[var(--sea-ink)] outline-none focus:border-[var(--lagoon)]"
+          >
+            <option value="all">All Categories</option>
+            {ASSET_CATEGORIES.map(c => (
+              <option key={c.id} value={c.id}>{c.label}</option>
+            ))}
+          </select>
 
-              {isOpen && (
-                <div className="grid grid-cols-2 gap-2 mt-1 animate-in fade-in slide-in-from-top-2 duration-200">
-                  {cat.items.map((item) => (
-                    <button
-                      key={item.name}
-                      onClick={() => addAsset(cat.folder, item.name)}
-                      className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200 group"
-                      style={{
-                        backgroundColor: colors.bg,
-                        borderColor: colors.border,
-                      }}
-                    >
-                      {/* Letter-Mark Badge */}
-                      <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-black tracking-tight border transition-transform duration-150 group-hover:scale-110"
-                        style={{
-                          backgroundColor: 'rgba(255,255,255,0.6)',
-                          color: colors.text,
-                          borderColor: colors.border,
-                        }}
-                      >
-                        {item.initials}
-                      </div>
-                      <span
-                        className="text-[9px] font-bold uppercase tracking-tight text-center leading-tight"
-                        style={{ color: colors.text }}
-                      >
-                        {item.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input 
+              type="text" 
+              placeholder="Search assets..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-2 bg-white border border-[var(--line)] rounded-lg text-xs outline-none focus:border-[var(--lagoon)] shadow-sm"
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto mt-2 space-y-2 pr-1 custom-scrollbar">
+            {filteredAssets.length === 0 ? (
+              <div className="text-xs text-center text-gray-400 py-4">No assets found</div>
+            ) : (
+              filteredAssets.map(asset => (
+                <button
+                  key={asset.id}
+                  onClick={() => addAsset(asset.category, asset.id)}
+                  className="w-full text-left p-2.5 rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-white hover:border-[var(--lagoon)] transition group flex items-center gap-3"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-[var(--surface-strong)] border border-[var(--line)] flex items-center justify-center text-[10px] font-black text-[var(--lagoon-deep)] shrink-0">
+                    {asset.id.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-[var(--sea-ink)] truncate group-hover:text-[var(--lagoon-deep)]">
+                      {asset.label}
+                    </p>
+                    <p className="text-[9px] text-gray-400 truncate mt-0.5 uppercase tracking-wider">
+                      {asset.category.replace(/-/g, ' ')}
+                    </p>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Fixed Bottom Technical Section */}
@@ -308,3 +220,4 @@ export default function Sidebar({
     </aside>
   )
 }
+

@@ -6,7 +6,10 @@ import WallCanvas from '../components/editor/WallCanvas'
 import Properties from '../components/editor/Properties'
 import Preview3D from '../components/editor/Preview3D'
 import { PanelLeftClose, PanelRightClose, Save, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings } from 'lucide-react'
-import { ASSET_DIMENSIONS, DEFAULT_ASSET_SIZE_PX } from '../lib/assetDimensions'
+import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
+import { getWallMaterialProps } from '../lib/materials'
+
+const DEFAULT_ASSET_SIZE_PX = 100
 
 export const Route = createFileRoute('/editor')({
   component: EditorPage,
@@ -327,16 +330,17 @@ function EditorPage() {
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       { id: 'White Paint', name: 'White Paint', color: '#f0f0f0' },
-                      { id: 'Wood', name: 'Wood Planks', img: '/assets/textures/hardwood.png' },
-                      { id: 'Concrete', name: 'Concrete', img: '/assets/textures/concrete.png' },
-                      { id: 'Marble', name: 'Marble', img: '/assets/textures/marble.png' }
+                      { id: 'Wood', name: 'Wood Planks', color: '#8B4513' },
+                      { id: 'Brick', name: 'Brick Wall', color: '#9a4a30' },
+                      { id: 'Concrete', name: 'Concrete', color: '#898989' },
+                      { id: 'Marble', name: 'Marble', color: '#d8d0c8' }
                     ].map(mat => (
                       <button
                         key={mat.id}
                         onClick={() => setSetupWallMaterial(mat.id)}
                         className={`p-3 rounded-xl border-2 text-left font-bold text-sm transition-all flex items-center gap-3 ${setupWallMaterial === mat.id ? 'border-[var(--lagoon)] bg-[var(--chip-bg)] text-[var(--sea-ink)] shadow-sm' : 'border-[var(--line)] bg-[var(--sand)] text-[var(--sea-ink-soft)] hover:border-[var(--lagoon)]'}`}
                       >
-                        <div className="w-8 h-8 rounded bg-cover bg-center border border-black/10 shrink-0" style={{ backgroundImage: mat.img ? `url('${mat.img}')` : 'none', backgroundColor: mat.color || '#eee' }} />
+                        <div className="w-8 h-8 rounded bg-cover bg-center border border-black/10 shrink-0" style={{ backgroundColor: mat.color }} />
                         {mat.name}
                       </button>
                     ))}
@@ -363,11 +367,11 @@ function EditorPage() {
 
               <div className="grid grid-cols-2 gap-3 text-left">
                 {[
-                  { id: 'chair_1', name: 'Bar Chair' },
-                  { id: 'round_table_1', name: 'Round Table' },
-                  { id: 'tv_lcd', name: 'LED TV Screen' },
-                  { id: 'plant', name: 'Large Plant' },
-                  { id: 'dustbin', name: 'Recycle Bin' }
+                  { id: 'bombo_white_chrome_plated', name: 'Bar Stool' },
+                  { id: 'luna_110_70_white_chrome_plated', name: 'Round Table' },
+                  { id: 'pushboy_silver_laquered_metal', name: 'Recycle Bin' },
+                  { id: 'amagni_soft_light_grey_laquered_oak', name: 'Modern Chair' },
+                  { id: 'infocounter_grey_wood', name: 'Info Desk' }
                 ].map(asset => (
                   <div key={asset.id} className="flex items-center justify-between bg-[var(--sand)] p-3 rounded-xl border border-[var(--line)]">
                     <span className="text-xs font-bold text-[var(--sea-ink)]">{asset.name}</span>
@@ -391,11 +395,12 @@ function EditorPage() {
                     const D = setupDepth * PPM
                     const T = setupWallThickness * 100
 
+                    const wallProps = getWallMaterialProps(setupWallMaterial)
                     const initialElements: any[] = []
-                    if (setupWalls.north) initialElements.push({ id: 'outer-north', type: 'wall', isOuter: true, x: W / 2, y: 0, width: W, thickness: T, rotation: 0, material: setupWallMaterial, opacity: 1, wallElements: [] })
-                    if (setupWalls.south) initialElements.push({ id: 'outer-south', type: 'wall', isOuter: true, x: W / 2, y: D, width: W, thickness: T, rotation: 0, material: setupWallMaterial, opacity: 1, wallElements: [] })
-                    if (setupWalls.west) initialElements.push({ id: 'outer-west', type: 'wall', isOuter: true, x: 0, y: D / 2, width: D, thickness: T, rotation: 90, material: setupWallMaterial, opacity: 1, wallElements: [] })
-                    if (setupWalls.east) initialElements.push({ id: 'outer-east', type: 'wall', isOuter: true, x: W, y: D / 2, width: D, thickness: T, rotation: 90, material: setupWallMaterial, opacity: 1, wallElements: [] })
+                    if (setupWalls.north) initialElements.push({ id: 'outer-north', type: 'wall', isOuter: true, x: W / 2, y: 0, width: W, thickness: T, rotation: 0, wallElements: [], ...wallProps })
+                    if (setupWalls.south) initialElements.push({ id: 'outer-south', type: 'wall', isOuter: true, x: W / 2, y: D, width: W, thickness: T, rotation: 0, wallElements: [], ...wallProps })
+                    if (setupWalls.west) initialElements.push({ id: 'outer-west', type: 'wall', isOuter: true, x: 0, y: D / 2, width: D, thickness: T, rotation: 90, wallElements: [], ...wallProps })
+                    if (setupWalls.east) initialElements.push({ id: 'outer-east', type: 'wall', isOuter: true, x: W, y: D / 2, width: D, thickness: T, rotation: 90, wallElements: [], ...wallProps })
 
                     // Generate Assets inside the Booth
                     let spawnX = 0.5 * PPM; // Start 0.5m from left wall
@@ -404,10 +409,12 @@ function EditorPage() {
                     Object.entries(setupAssets).forEach(([assetId, count]) => {
                       for (let i = 0; i < count; i++) {
                         const dims = ASSET_DIMENSIONS[assetId] || { w: 1, h: 1 };
+                        const reg = ASSET_REGISTRY.find(a => a.id === assetId);
                         initialElements.push({
                           id: `${assetId}_${Math.random().toString(36).substring(2, 7)}`,
                           type: 'asset',
-                          assetName: assetId.toUpperCase(),
+                          assetName: assetId,
+                          categoryFolder: reg ? reg.category : 'models',
                           x: spawnX,
                           y: spawnY,
                           width: DEFAULT_ASSET_SIZE_PX * dims.w,

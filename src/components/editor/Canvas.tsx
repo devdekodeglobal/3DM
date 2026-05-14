@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Stage, Layer, Rect, Ellipse, Line, Transformer, Group, Text } from 'react-konva'
-import { getCachedImage } from '../../lib/imageCache'
+import { Stage, Layer, Rect, Line, Transformer, Group, Text } from 'react-konva'
 
 export interface BoothConfig {
   width: number;
@@ -145,9 +144,11 @@ const WallShape = ({ shapeProps, onSelect, onChange }: any) => {
       onTransform={(e) => {
         const node = e.target
         const scaleX = node.scaleX()
+        const newWidth = Math.max(5, node.width() * scaleX)
         node.setAttrs({
-          width: Math.max(5, node.width() * scaleX),
-          scaleX: 1
+          width: newWidth,
+          scaleX: 1,
+          offsetX: newWidth / 2
         })
       }}
       onTransformEnd={(e) => {
@@ -359,7 +360,9 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
     const snappedProps = {
       ...newProps,
       x: snapToGrid(newProps.x),
-      y: snapToGrid(newProps.y)
+      y: snapToGrid(newProps.y),
+      width: snapToGrid(newProps.width),
+      height: snapToGrid(newProps.height)
     }
 
     const newElements = elements.slice()

@@ -30,7 +30,6 @@ const BlueprintOverlay: React.FC<BlueprintOverlayProps> = ({ scene, activeView, 
             key={cIdx} 
             chain={chain} 
             scene={scene} 
-            activeView={activeView}
           />
         ))}
       </svg>
@@ -38,11 +37,11 @@ const BlueprintOverlay: React.FC<BlueprintOverlayProps> = ({ scene, activeView, 
   );
 };
 
-const MeasurementLine: React.FC<{ chain: MeasurementChain; scene: BABYLON.Scene; activeView: string }> = ({ chain, scene, activeView }) => {
+const MeasurementLine: React.FC<{ chain: MeasurementChain; scene: BABYLON.Scene }> = ({ chain, scene }) => {
   const engine = scene.getEngine();
   
   // Project all points to 2D screen coordinates
-  const projectedPoints = chain.points.map(p => {
+  const projectedPoints = chain.mainLine.map((p: { x: number; y: number; z: number }) => {
     const vector = new BABYLON.Vector3(p.x, p.y, p.z);
     const projected = BABYLON.Vector3.Project(
       vector,
@@ -53,69 +52,62 @@ const MeasurementLine: React.FC<{ chain: MeasurementChain; scene: BABYLON.Scene;
     return { x: projected.x, y: projected.y, world: p };
   });
 
+  // Project extension lines
+  const projectedExtensionLines = (chain.extensionLines || []).map(line => 
+    line.map((p: { x: number; y: number; z: number }) => {
+      const vector = new BABYLON.Vector3(p.x, p.y, p.z);
+      const projected = BABYLON.Vector3.Project(
+        vector,
+        BABYLON.Matrix.Identity(),
+        scene.getTransformMatrix(),
+        scene.activeCamera!.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
+      );
+      return { x: projected.x, y: projected.y };
+    })
+  );
+
   if (projectedPoints.length < 2) return null;
 
   return (
     <g>
+      {/* Extension Lines */}
+      {projectedExtensionLines.map((line, idx) => line.length >= 2 && (
+        <line 
+          key={`ext-${idx}`}
+          x1={line[0].x} y1={line[0].y} 
+          x2={line[1].x} y2={line[1].y} 
+          stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" 
+        />
+      ))}
+
       {/* Main Dimension Line */}
       <polyline
-        points={projectedPoints.map(p => `${p.x},${p.y}`).join(' ')}
+        points={projectedPoints.map((p: { x: number; y: number }) => `${p.x},${p.y}`).join(' ')}
         fill="none"
         stroke="rgba(59, 130, 246, 0.8)"
         strokeWidth="1"
       />
 
-      {/* Ticks, Labels, and Extension Lines */}
-      {projectedPoints.map((p, i) => {
-        const prev = i > 0 ? projectedPoints[i-1] : null;
-        
-        // Calculate a "base" point (closer to the object) for extension lines
-        // For top view X-axis, the object is at Z=...
-        let extX = p.x, extY = p.y;
-        if (activeView === 'top') {
-           // We need to project the actual object boundary to draw the extension line
-           const baseVector = new BABYLON.Vector3(p.world.x, p.world.y, chain.axis === 'x' ? 0 : 0);
-           const baseProj = BABYLON.Vector3.Project(
-             baseVector, BABYLON.Matrix.Identity(), scene.getTransformMatrix(),
-             scene.activeCamera!.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
-           );
-           extX = baseProj.x; extY = baseProj.y;
-        }
+      {/* Architectural Ticks */}
+      {projectedPoints.map((p: { x: number; y: number }, i: number) => (
+        <line 
+          key={`tick-${i}`}
+          x1={p.x - 4} y1={p.y + 4} 
+          x2={p.x + 4} y2={p.y - 4} 
+          stroke="#3b82f6" strokeWidth="1.5" 
+        />
+      ))}
 
-        return (
-          <g key={i}>
-            {/* Extension Line */}
-            <line 
-              x1={p.x} y1={p.y} 
-              x2={extX} y2={extY} 
-              stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" 
-            />
-
-            {/* Architectural Tick */}
-            <line 
-              x1={p.x - 4} y1={p.y + 4} 
-              x2={p.x + 4} y2={p.y - 4} 
-              stroke="#3b82f6" strokeWidth="1.5" 
-            />
-
-            {/* Label for the segment leading to this point */}
-            {prev && (
-              <g>
-                {/* Alternate label position to avoid overlap */}
-                <text
-                  x={(p.x + prev.x) / 2}
-                  y={(p.y + prev.y) / 2 - (i % 2 === 0 ? 12 : 24)}
-                  textAnchor="middle"
-                  className="text-[9px] font-bold fill-blue-400 select-none"
-                  style={{ textShadow: '0 0 4px rgba(0,0,0,0.5)' }}
-                >
-                  {chain.labels[i - 1]}
-                </text>
-              </g>
-            )}
-          </g>
-        );
-      })}
+      {/* Label (centered on the segment) */}
+      <text
+        x={(projectedPoints[0].x + projectedPoints[projectedPoints.length - 1].x) / 2}
+        y={(projectedPoints[0].y + projectedPoints[projectedPoints.length - 1].y) / 2 - 12}
+        textAnchor="middle"
+        className="text-[9px] font-bold fill-blue-400 select-none"
+        style={{ textShadow: '0 0 4px rgba(0,0,0,0.5)' }}
+      >
+        {chain.label}
+      </text>
     </g>
   );
 };

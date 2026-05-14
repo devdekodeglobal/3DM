@@ -1,4 +1,5 @@
 import { Settings, Code, Trash2, Layers } from 'lucide-react'
+import { WALL_MATERIALS, getWallMaterialProps } from '../../lib/materials'
 
 interface PropertiesProps {
   selectedElement: any
@@ -17,14 +18,9 @@ const FLOOR_MATERIALS = [
   { id: 'concrete', label: 'Concrete', color: '#898989', desc: 'Industrial grey' },
 ]
 
-const WALL_MATERIALS_LIST = [
-  { value: 'Solid Wall', label: 'Solid Wall' },
-  { value: 'Wood',       label: 'Wood Panel' },
-  { value: 'Brick',      label: 'Brick' },
-  { value: 'Marble',     label: 'Marble' },
-  { value: 'Concrete',   label: 'Concrete' },
-  { value: 'Glass Wall', label: 'Glass' },
-]
+
+
+const WALL_MATERIALS_LIST = WALL_MATERIALS.map((m: any) => ({ value: m.id, label: m.label }));
 
 export default function Properties({
   selectedElement, onUpdate, onDelete, onEditElevation,
@@ -32,13 +28,8 @@ export default function Properties({
 }: PropertiesProps) {
   
   const handleMaterialChange = (material: string) => {
-    let fill = '#333333', opacity = 1
-    if (material === 'Glass Wall') { fill = 'lightblue'; opacity = 0.5 }
-    else if (material === 'Wood')  { fill = '#8B4513' }
-    else if (material === 'Brick') { fill = '#9a4a30' }
-    else if (material === 'Marble') { fill = '#d8d0c8' }
-    else if (material === 'Concrete') { fill = '#898989' }
-    onUpdate(selectedElement.id, { material, fill, opacity })
+    const props = getWallMaterialProps(material);
+    onUpdate(selectedElement.id, props)
   }
 
   const floorType = boothConfig?.floorType || 'hardwood'
@@ -225,7 +216,7 @@ export default function Properties({
                        Wall Material
                      </label>
                      <div className="grid grid-cols-2 gap-2">
-                       {WALL_MATERIALS_LIST.map(m => (
+                       {WALL_MATERIALS_LIST.map((m: any) => (
                          <button
                            key={m.value}
                            onClick={() => handleMaterialChange(m.value)}
@@ -321,10 +312,7 @@ export default function Properties({
                     }`}
                   >
                     {/* Color swatch */}
-                    <div
-                      className="w-8 h-8 rounded-lg shrink-0 border border-[rgba(0,0,0,0.1)]"
-                      style={{ backgroundColor: mat.color }}
-                    />
+                    <div className="w-8 h-8 rounded bg-cover bg-center border border-black/10 shrink-0" style={{ backgroundColor: mat.color }} />
                     <div className="text-left">
                       <div className={`text-xs font-bold ${floorType === mat.id ? 'text-[var(--lagoon-deep)]' : 'text-[var(--sea-ink)]'}`}>
                         {mat.label}

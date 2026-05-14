@@ -20,7 +20,7 @@ export function calculateBlueprintMeasurements(
   const chains: MeasurementChain[] = [];
   const PPM = 100;
 
-  const items = elements.filter(el => el.type === 'asset' && !el.isOuter).map(el => {
+  const items = elements.filter(el => ['asset', '3d_logo', 'wall'].includes(el.type) && !el.isOuter).map(el => {
     const w = el.width / PPM;
     const h = el.height / PPM;
     const x = el.x / PPM;
@@ -57,7 +57,7 @@ export function calculateBlueprintMeasurements(
 
     items.forEach(item => {
       // Helper for aligned lines
-      const addDim = (pA: any, pB: any, label: string, type: any) => {
+      const addDim = (pA: {x: number, z: number}, pB: {x: number, z: number}, label: string, type: MeasurementChain['type']) => {
         const dx = pB.x - pA.x;
         const dz = pB.z - pA.z;
         const len = Math.sqrt(dx*dx + dz*dz);

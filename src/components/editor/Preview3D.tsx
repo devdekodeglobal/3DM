@@ -1047,7 +1047,10 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
             const phMat = new BABYLON.StandardMaterial("phMat", scene);
             phMat.wireframe = true; phMat.emissiveColor = new BABYLON.Color3(0, 0.8, 1); phMat.alpha = 0.5;
             ph.material = phMat;
-            const loadPromise = BABYLON.SceneLoader.LoadAssetContainerAsync("/models/", `${modelName}.glb`, scene);
+            
+            const basePath = el.categoryFolder ? `/models/${el.categoryFolder}/` : "/models/";
+            const loadPromise = BABYLON.SceneLoader.LoadAssetContainerAsync(basePath, `${modelName}.glb`, scene);
+            
             cache.set(modelName, loadPromise);
             loadPromise.then(container => instantiateAndSetup(container)).catch(e => console.error("Failed to load model", modelName, e));
           }
