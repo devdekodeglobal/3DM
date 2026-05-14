@@ -524,6 +524,8 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
               enabledAnchors={
                 selectedElement?.type === 'wall'
                   ? ['middle-left', 'middle-right']
+                  : selectedElement?.type === 'asset'
+                  ? [] // Furniture assets cannot be resized
                   : ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']
               }
               keepRatio={selectedElement?.type === 'asset'}

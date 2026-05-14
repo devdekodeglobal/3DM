@@ -47,6 +47,7 @@ export default function Sidebar({
   }
 
   const addAsset = (categoryFolder: string, assetName: string) => {
+    const asset = ASSET_REGISTRY.find(a => a.id === assetName)
     const dims = ASSET_DIMENSIONS[assetName]
     const base = DEFAULT_ASSET_SIZE_PX
     const wRatio = dims ? dims.w : 1
@@ -54,15 +55,20 @@ export default function Sidebar({
     const longest = Math.max(wRatio, hRatio)
     const w = Math.max(20, Math.round((wRatio / longest) * base))
     const h = Math.max(20, Math.round((hRatio / longest) * base))
+    
     addElement({
       id: uuidv4(),
       type: 'asset',
       assetName,
-      categoryFolder, // added to track folder for 3D loading
+      categoryFolder,
+      label: asset ? asset.label : assetName,
+      details: asset ? asset.details : '',
       x: 150, y: 150,
       rotation: 0,
       width: w,
       height: h,
+      yOffset: 0,
+      verticalScale: 1
     })
   }
 

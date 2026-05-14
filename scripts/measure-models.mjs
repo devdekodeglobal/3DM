@@ -123,7 +123,39 @@ const categories = [
 ];
 
 function formatLabel(name) {
-  return name.split(/[-_]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const colorKeywords = [
+    'white', 'black', 'red', 'blue', 'grey', 'green', 'yellow', 'orange', 'purple', 'pink', 'brown', 
+    'ivory', 'beige', 'sand', 'anthracite', 'beech', 'oak', 'natural', 'ash', 'chrome', 'plated', 
+    'stainless', 'steel', 'laquered', 'metal', 'plastic', 'wood', 'upholstered', 'fabric', 'kunstleder',
+    'stoff', 'alu', 'weiss', 'schwarz', 'dunkelblau', 'edelstahl', 'wei', 'grau', 'rot', 'blau', 'grün',
+    'chrom', 'leder', 'kunst', 'buche', 'eiche', 'natur', 'lackiert', 'matt'
+  ];
+  const regex = new RegExp(`\\b(${colorKeywords.join('|')})\\b`, 'gi');
+  
+  return name.replace(regex, '')
+    .replace(/[-_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ') || name;
+}
+
+function genericizeCatalogLabel(label) {
+  const parts = label.split(' - ');
+  return parts[0].trim(); // Usually the first part is the model name, second is color
+}
+
+function cleanDetails(details) {
+  if (!details) return '';
+  const fieldsToRemove = ['Color', 'Color Name', 'Frame color', 'Backrest color'];
+  return details.split(';')
+    .map(d => d.trim())
+    .filter(d => {
+      const [key] = d.split(':').map(s => s.trim());
+      return !fieldsToRemove.includes(key);
+    })
+    .join('; ');
 }
 
 function formatCategoryLabel(cat) {
@@ -141,6 +173,49 @@ function formatCategoryLabel(cat) {
 
 const results = [];
 const dimensionMap = {};
+
+// Parse asset_catalog.csv for better labels and details
+const CATALOG_PATH = path.join(__dirname, 'asset_catalog.csv');
+const catalogLookup = {};
+
+if (fs.existsSync(CATALOG_PATH)) {
+  const catalogContent = fs.readFileSync(CATALOG_PATH, 'utf8');
+  const lines = catalogContent.split('\n');
+  
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    
+    // Split CSV while respecting quotes
+    const parts = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let char of line) {
+      if (char === '"') inQuotes = !inQuotes;
+      else if (char === ',' && !inQuotes) {
+        parts.push(cur);
+        cur = '';
+      } else {
+        cur += char;
+      }
+    }
+    parts.push(cur);
+    
+    if (parts.length >= 5) {
+      const label = genericizeCatalogLabel(parts[1].trim());
+      const id = parts[2].trim();
+      const details = cleanDetails(parts[3].trim());
+      const zipPath = parts[4].trim();
+      const zipBase = path.basename(zipPath, '.zip').toLowerCase();
+      
+      catalogLookup[id] = { label, details };
+      catalogLookup[zipBase] = { label, details }; // Add lookup by base name too
+    }
+  }
+  console.log(`📖 Loaded catalog for ${Object.keys(catalogLookup).length} assets.`);
+} else {
+  console.warn(`⚠️ Catalog not found at ${CATALOG_PATH}`);
+}
 
 for (const cat of categories) {
   const catDir = path.join(MODELS_DIR, cat);
@@ -168,10 +243,15 @@ for (const cat of categories) {
         const normW = bounds.sizeX / longest;
         const normH = bounds.sizeZ / longest;
         
+        const catalogEntry = catalogLookup[name];
+        const label = catalogEntry ? catalogEntry.label : formatLabel(name);
+        const details = catalogEntry ? catalogEntry.details : '';
+        
         results.push({
           id: name,
           category: cat,
-          label: formatLabel(name),
+          label: label,
+          details: details,
           w: normW,
           h: normH
         });
@@ -193,7 +273,7 @@ ${categories.map(c => `  { id: '${c}', label: '${formatCategoryLabel(c)}' }`).jo
 ];
 
 export const ASSET_REGISTRY = [
-${results.map(r => `  { id: '${r.id}', category: '${r.category}', label: '${r.label.replace(/'/g, "\\'")}', w: ${r.w.toFixed(4)}, h: ${r.h.toFixed(4)} }`).join(',\n')}
+${results.map(r => `  { id: '${r.id}', category: '${r.category}', label: '${r.label.replace(/'/g, "\\'")}', details: '${r.details.replace(/'/g, "\\'")}', w: ${r.w.toFixed(4)}, h: ${r.h.toFixed(4)} }`).join(',\n')}
 ];
 
 export const ASSET_DIMENSIONS: Record<string, { w: number; h: number }> = {

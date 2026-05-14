@@ -105,7 +105,8 @@ export default function Properties({
                         type="number" step="0.05"
                         value={((selectedElement.width || 0) / 100).toFixed(2)} 
                         onChange={(e) => onUpdate(selectedElement.id, { width: parseFloat(e.target.value) * 100 || 0 })}
-                        className="w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none" 
+                        disabled={selectedElement.type === 'asset'}
+                        className={`w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`} 
                       />
                     </div>
                     <div className="flex items-center gap-2">
@@ -115,7 +116,8 @@ export default function Properties({
                         type="number" step="0.05"
                         value={((selectedElement.height || 0) / 100).toFixed(2)} 
                         onChange={(e) => onUpdate(selectedElement.id, { height: parseFloat(e.target.value) * 100 || 0 })}
-                        className="w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none" 
+                        disabled={selectedElement.type === 'asset'}
+                        className={`w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`} 
                       />
                     </div>
                   </div>
@@ -176,12 +178,34 @@ export default function Properties({
                         type="range" min="0.05" max="5" step="0.05"
                         value={selectedElement.verticalScale || 1} 
                         onChange={(e) => onUpdate(selectedElement.id, { verticalScale: parseFloat(e.target.value) })}
-                        className="w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)]" 
+                        disabled={selectedElement.type === 'asset'}
+                        className={`w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)] ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`} 
                       />
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* Asset Details */}
+              {selectedElement.type === 'asset' && selectedElement.details && (
+                <div className="mt-6 pt-4 border-t border-[var(--line)]">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--sea-ink-soft)] mb-3">
+                    Technical Specifications
+                  </p>
+                  <div className="bg-white/40 backdrop-blur-sm rounded-xl p-3 border border-white/40 space-y-2">
+                    {selectedElement.details.split(';').map((detail: string, idx: number) => {
+                      const [label, value] = detail.split(':').map(s => s.trim());
+                      if (!value) return <p key={idx} className="text-[11px] text-[var(--sea-ink)] leading-relaxed">{detail}</p>;
+                      return (
+                        <div key={idx} className="flex justify-between items-start gap-2">
+                          <span className="text-[10px] font-bold text-[var(--sea-ink-soft)] uppercase tracking-tight">{label}</span>
+                          <span className="text-[10px] font-medium text-[var(--sea-ink)] text-right">{value}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Wall-specific controls */}
               {selectedElement.type === 'wall' && (

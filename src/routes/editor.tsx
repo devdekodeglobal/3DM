@@ -368,10 +368,11 @@ function EditorPage() {
               <div className="grid grid-cols-2 gap-3 text-left">
                 {[
                   { id: 'bombo_white_chrome_plated', name: 'Bar Stool' },
-                  { id: 'luna_110_70_white_chrome_plated', name: 'Round Table' },
-                  { id: 'pushboy_silver_laquered_metal', name: 'Recycle Bin' },
-                  { id: 'amagni_soft_light_grey_laquered_oak', name: 'Modern Chair' },
-                  { id: 'infocounter_grey_wood', name: 'Info Desk' }
+                  { id: 'catifa_bar_white_white_chrome_plated', name: 'High Stool' },
+                  { id: 'catifa_46_white_white_chrome_plated', name: 'Chair' },
+                  { id: 'berthe_white_chrome_plated', name: 'Office Chair' },
+                  { id: 'medola_80x80_white_chrome_plated', name: 'Meeting Table' },
+                  { id: 'luna_110_70_white_chrome_plated', name: 'Bar Table' },
                 ].map(asset => (
                   <div key={asset.id} className="flex items-center justify-between bg-[var(--sand)] p-3 rounded-xl border border-[var(--line)]">
                     <span className="text-xs font-bold text-[var(--sea-ink)]">{asset.name}</span>
@@ -415,6 +416,8 @@ function EditorPage() {
                           type: 'asset',
                           assetName: assetId,
                           categoryFolder: reg ? reg.category : 'models',
+                          label: reg ? reg.label : assetId,
+                          details: reg ? reg.details : '',
                           x: spawnX,
                           y: spawnY,
                           width: DEFAULT_ASSET_SIZE_PX * dims.w,
