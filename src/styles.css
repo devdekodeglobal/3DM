@@ -173,7 +173,7 @@ a { color: var(--brand); text-decoration: none; }
 }
 
 .label-caps {
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;

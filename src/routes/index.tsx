@@ -128,7 +128,7 @@ const features = [
       </svg>
     ),
     title: 'Live 3D Preview',
-    desc: 'BabylonJS-powered real-time renderer that transforms your 2D plan into a 3D walkthrough.',
+    desc: 'High-performance real-time renderer that transforms your 2D plan into a 3D walkthrough.',
     color: 'var(--accent)',
     bg: 'var(--accent-bg)',
   },
@@ -205,7 +205,7 @@ function LandingPage() {
                 maxWidth: 440,
               }}>
                 Professional 2D floor planning with snap-to-grid mechanics and
-                a real-time BabylonJS 3D preview — all in your browser.
+                a real-time 3D preview — all in your browser.
               </p>
 
               <div className="fade-up d-300" style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
