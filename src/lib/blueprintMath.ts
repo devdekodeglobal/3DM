@@ -26,7 +26,8 @@ export function calculateBlueprintMeasurements(
     const x = el.x / PPM;
     const z = boothConfig.depth - (el.y / PPM);
     const rot = (el.rotation || 0) * (Math.PI / 180);
-    const vH = (el.verticalScale || 1);
+    const baseH = el.type === 'wall' ? 2.5 : (el.specH || 1);
+    const vH = baseH * (el.verticalScale || 1);
     const yOff = el.yOffset || 0;
 
     // Standard Rotated Corners (0:BL, 1:BR, 2:TR, 3:TL)

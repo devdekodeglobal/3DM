@@ -25,6 +25,9 @@ export default function Sidebar({
       x: 100, y: 100,
       width: 200, height: 20,
       thickness: 10, rotation: 0,
+      realWidth: 2.0,
+      realHeight: 2.5,
+      realDepth: 0.1, // same as thickness
       fill: '#333333', opacity: 1,
       material: 'Solid Wall',
     })
@@ -48,13 +51,20 @@ export default function Sidebar({
 
   const addAsset = (categoryFolder: string, assetName: string) => {
     const asset = ASSET_REGISTRY.find(a => a.id === assetName)
-    const dims = ASSET_DIMENSIONS[assetName]
+    const dims = ASSET_DIMENSIONS[assetName] as any
     const base = DEFAULT_ASSET_SIZE_PX
-    const wRatio = dims ? dims.w : 1
-    const hRatio = dims ? dims.h : 1
-    const longest = Math.max(wRatio, hRatio)
-    const w = Math.max(20, Math.round((wRatio / longest) * base))
-    const h = Math.max(20, Math.round((hRatio / longest) * base))
+    
+    let w, h;
+    if (dims && dims.specW && dims.specD) {
+      w = dims.specW * 100;
+      h = dims.specD * 100;
+    } else {
+      const wRatio = dims ? dims.w : 1
+      const hRatio = dims ? dims.h : 1
+      const longest = Math.max(wRatio, hRatio)
+      w = Math.max(20, Math.round((wRatio / longest) * base))
+      h = Math.max(20, Math.round((hRatio / longest) * base))
+    }
     
     addElement({
       id: uuidv4(),
@@ -67,6 +77,10 @@ export default function Sidebar({
       rotation: 0,
       width: w,
       height: h,
+      specH: dims ? dims.specH : null,
+      realWidth: Number((w / 100).toFixed(2)),
+      realHeight: dims?.specH ? Number(dims.specH.toFixed(2)) : 1.0,
+      realDepth: Number((h / 100).toFixed(2)),
       yOffset: 0,
       verticalScale: 1
     })

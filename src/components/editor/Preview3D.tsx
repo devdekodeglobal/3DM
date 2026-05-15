@@ -693,7 +693,11 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
         if (el.type === 'asset' && mesh.metadata && mesh.metadata.nativeLength) {
           const targetDim = Math.max(el.width, el.height) / PPM;
           const s = targetDim / mesh.metadata.nativeLength;
-          mesh.scaling = new BABYLON.Vector3(s, s * (el.verticalScale || 1), s);
+          let sY = s * (el.verticalScale || 1);
+          if (el.specH && mesh.metadata.nativeHeight && mesh.metadata.nativeHeight > 0) {
+            sY = el.specH / mesh.metadata.nativeHeight;
+          }
+          mesh.scaling = new BABYLON.Vector3(s, sY, s);
         }
 
         if (el.type === '3d_logo') {
@@ -1024,9 +1028,13 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
               const sz = bbox.max.subtract(bbox.min);
               const longest = Math.max(sz.x, sz.z);
               if (longest > 0) {
-                pivot.metadata = { nativeLength: longest };
+                pivot.metadata = { nativeLength: longest, nativeHeight: sz.y };
                 const s = (Math.max(el.width, el.height) / PPM) / longest;
-                pivot.scaling.set(s, s * (el.verticalScale || 1), s);
+                let sY = s * (el.verticalScale || 1);
+                if (el.specH && sz.y > 0) {
+                  sY = el.specH / sz.y;
+                }
+                pivot.scaling.set(s, sY, s);
                 const center = bbox.min.add(sz.scale(0.5));
                 const worldOffset = center.subtract(pivot.position);
                 const invPivotMatrix = new BABYLON.Matrix();

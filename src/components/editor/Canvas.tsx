@@ -155,12 +155,16 @@ const WallShape = ({ shapeProps, onSelect, onChange }: any) => {
         const node = e.target
         const scaleX = node.scaleX()
         node.scaleX(1)
+        const newWidth = Math.max(5, node.width() * scaleX)
         onChange({
           ...shapeProps,
           x: node.x(),
           y: node.y(),
           rotation: node.rotation(),
-          width: Math.max(5, node.width() * scaleX),
+          width: newWidth,
+          realWidth: Number((newWidth / 100).toFixed(2)),
+          realDepth: Number(((shapeProps.thickness || 10) / 100).toFixed(2)),
+          realHeight: Number((2.5 * (shapeProps.verticalScale || 1)).toFixed(2))
         })
       }}
     />

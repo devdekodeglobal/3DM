@@ -171,6 +171,30 @@ function formatCategoryLabel(cat) {
   return customLabels[cat] || cat;
 }
 
+function parseDimensions(details) {
+  let specW = null;
+  let specD = null;
+  let specH = null;
+  if (!details) return { specW, specD, specH };
+  
+  const widthMatch = details.match(/Width:\s*([\d.,]+)\s*cm/i);
+  const depthMatch = details.match(/(?:Length\/dept|Depth|Length):\s*([\d.,]+)\s*cm/i);
+  const diameterMatch = details.match(/Diameter:\s*([\d.,]+)\s*cm/i);
+  const heightMatch = details.match(/Height:\s*([\d.,]+)\s*cm/i);
+  
+  if (widthMatch) specW = parseFloat(widthMatch[1].replace(',', '.')) / 100;
+  if (depthMatch) specD = parseFloat(depthMatch[1].replace(',', '.')) / 100;
+  if (heightMatch) specH = parseFloat(heightMatch[1].replace(',', '.')) / 100;
+  
+  if (diameterMatch && specW === null && specD === null) {
+    const d = parseFloat(diameterMatch[1].replace(',', '.')) / 100;
+    specW = d;
+    specD = d;
+  }
+  
+  return { specW, specD, specH };
+}
+
 const results = [];
 const dimensionMap = {};
 
@@ -246,6 +270,7 @@ for (const cat of categories) {
         const catalogEntry = catalogLookup[name];
         const label = catalogEntry ? catalogEntry.label : formatLabel(name);
         const details = catalogEntry ? catalogEntry.details : '';
+        const { specW, specD, specH } = parseDimensions(details);
         
         results.push({
           id: name,
@@ -253,11 +278,14 @@ for (const cat of categories) {
           label: label,
           details: details,
           w: normW,
-          h: normH
+          h: normH,
+          specW,
+          specD,
+          specH
         });
         
-        dimensionMap[name] = { w: normW, h: normH };
-        console.log(`✅  [${cat}] ${name.padEnd(30)} X:${bounds.sizeX.toFixed(3)}  Y:${bounds.sizeY.toFixed(3)}  Z:${bounds.sizeZ.toFixed(3)}`);
+        dimensionMap[name] = { w: normW, h: normH, specW, specD, specH };
+        console.log(`✅  [${cat}] ${name.padEnd(30)} X:${bounds.sizeX.toFixed(3)}  Y:${bounds.sizeY.toFixed(3)}  Z:${bounds.sizeZ.toFixed(3)} | Specs: ${specW}x${specD}x${specH}`);
       } else {
         console.log(`⚠️  [${cat}] ${name} — no POSITION accessors with min/max found`);
       }
@@ -273,11 +301,21 @@ ${categories.map(c => `  { id: '${c}', label: '${formatCategoryLabel(c)}' }`).jo
 ];
 
 export const ASSET_REGISTRY = [
-${results.map(r => `  { id: '${r.id}', category: '${r.category}', label: '${r.label.replace(/'/g, "\\'")}', details: '${r.details.replace(/'/g, "\\'")}', w: ${r.w.toFixed(4)}, h: ${r.h.toFixed(4)} }`).join(',\n')}
+${results.map(r => {
+  const sw = r.specW !== null ? r.specW.toFixed(4) : 'null';
+  const sd = r.specD !== null ? r.specD.toFixed(4) : 'null';
+  const sh = r.specH !== null ? r.specH.toFixed(4) : 'null';
+  return `  { id: '${r.id}', category: '${r.category}', label: '${r.label.replace(/'/g, "\\'")}', details: '${r.details.replace(/'/g, "\\'")}', w: ${r.w.toFixed(4)}, h: ${r.h.toFixed(4)}, specW: ${sw}, specD: ${sd}, specH: ${sh} }`;
+}).join(',\n')}
 ];
 
-export const ASSET_DIMENSIONS: Record<string, { w: number; h: number }> = {
-${Object.entries(dimensionMap).map(([k, v]) => `  '${k}': { w: ${v.w.toFixed(4)}, h: ${v.h.toFixed(4)} }`).join(',\n')}
+export const ASSET_DIMENSIONS: Record<string, { w: number; h: number; specW: number | null; specD: number | null; specH: number | null }> = {
+${Object.entries(dimensionMap).map(([k, v]) => {
+  const sw = v.specW !== null ? v.specW.toFixed(4) : 'null';
+  const sd = v.specD !== null ? v.specD.toFixed(4) : 'null';
+  const sh = v.specH !== null ? v.specH.toFixed(4) : 'null';
+  return `  '${k}': { w: ${v.w.toFixed(4)}, h: ${v.h.toFixed(4)}, specW: ${sw}, specD: ${sd}, specH: ${sh} }`;
+}).join(',\n')}
 };
 `;
 
