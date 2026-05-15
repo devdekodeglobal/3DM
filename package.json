@@ -24,7 +24,7 @@
     "@tanstack/react-router-devtools": "latest",
     "@tanstack/react-router-ssr-query": "latest",
     "@tanstack/react-start": "latest",
-    "@tanstack/router-plugin": "^1.132.0",
+    "@tanstack/router-plugin": "^1.167.35",
     "@types/three": "^0.184.0",
     "fbx2gltf": "^0.9.7-p1",
     "gltf-pipeline": "^4.3.1",
