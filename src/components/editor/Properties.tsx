@@ -6,6 +6,7 @@ interface PropertiesProps {
   onUpdate: (id: string, newProps: any) => void
   onDelete: () => void
   onEditElevation?: () => void
+  onViewElevation?: () => void
   boothConfig?: any
   onBoothConfigUpdate?: (updates: any) => void
 }
@@ -23,7 +24,7 @@ const FLOOR_MATERIALS = [
 const WALL_MATERIALS_LIST = WALL_MATERIALS.map((m: any) => ({ value: m.id, label: m.label }));
 
 export default function Properties({
-  selectedElement, onUpdate, onDelete, onEditElevation,
+  selectedElement, onUpdate, onDelete, onEditElevation, onViewElevation,
   boothConfig, onBoothConfigUpdate
 }: PropertiesProps) {
   
@@ -215,6 +216,13 @@ export default function Properties({
                       className="w-full bg-[var(--brand)] text-white py-2 rounded-lg font-bold hover:bg-[var(--brand-h)] transition flex items-center justify-center gap-2 shadow-sm"
                     >
                       Edit Wall Elevation
+                    </button>
+                    
+                    <button 
+                      onClick={onViewElevation}
+                      className="w-full bg-[var(--sand)] text-[var(--sea-ink)] border border-[var(--line)] py-2 rounded-lg font-bold hover:border-[var(--lagoon)] hover:text-[var(--lagoon-deep)] transition flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      View Technical Elevation
                     </button>
                    
                    <div>

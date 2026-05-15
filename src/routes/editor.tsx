@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Sidebar from '../components/editor/Sidebar'
 import Canvas from '../components/editor/Canvas'
 import WallCanvas from '../components/editor/WallCanvas'
@@ -8,6 +8,7 @@ import Preview3D from '../components/editor/Preview3D'
 import { PanelLeftClose, PanelRightClose, Save, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
+import { generateReport } from '../lib/reportGenerator'
 
 const DEFAULT_ASSET_SIZE_PX = 100
 
@@ -59,10 +60,15 @@ function EditorPage() {
   const [editingWallId, setEditingWallId] = useState<string | null>(null)
   const [blueprintView, setBlueprintView] = useState<'perspective' | 'top' | 'north' | 'south' | 'east' | 'west'>('perspective')
 
+  // Report Generation State
+  const [isCapturingReport, setIsCapturingReport] = useState(false)
+  const [captureQueue, setCaptureQueue] = useState<string[]>([])
+  const [reportScreenshots, setReportScreenshots] = useState<Record<string, string>>({})
 
-  const handleSelect = (id: string | null) => {
+
+  const handleSelect = useCallback((id: string | null) => {
     setSelectedId(id)
-  }
+  }, [])
 
   // Auto-load from local storage
   useEffect(() => {
@@ -108,11 +114,13 @@ function EditorPage() {
     }
   }, [boothConfig, elements])
 
-  const saveToHistory = (newElements: any[]) => {
-    const nextHistory = history.slice(0, historyStep + 1)
-    setHistory([...nextHistory, newElements])
-    setHistoryStep(nextHistory.length)
-  }
+  const saveToHistory = useCallback((newElements: any[]) => {
+    setHistory(prev => {
+      const nextHistory = prev.slice(0, historyStep + 1)
+      return [...nextHistory, newElements]
+    })
+    setHistoryStep(prev => prev + 1)
+  }, [historyStep])
 
   const undo = () => {
     if (historyStep > 0) {
@@ -132,24 +140,30 @@ function EditorPage() {
     }
   }
 
-  const handleUpdateElement = (id: string, newProps: any) => {
-    const updated = elements.map((el) => (el.id === id ? { ...el, ...newProps } : el))
-    setElements(updated)
-    saveToHistory(updated)
-  }
+  const handleUpdateElement = useCallback((id: string, newProps: any) => {
+    setElements(prev => {
+      const updated = prev.map((el) => (el.id === id ? { ...el, ...newProps } : el))
+      saveToHistory(updated)
+      return updated
+    })
+  }, [saveToHistory])
 
-  const handleDeleteElement = (id: string) => {
-    const filtered = elements.filter((el) => el.id !== id)
-    setElements(filtered)
-    saveToHistory(filtered)
+  const handleDeleteElement = useCallback((id: string) => {
+    setElements(prev => {
+      const filtered = prev.filter((el) => el.id !== id)
+      saveToHistory(filtered)
+      return filtered
+    })
     if (selectedId === id) setSelectedId(null)
-  }
+  }, [selectedId, saveToHistory])
 
-  const addElement = (newEl: any) => {
-    const updated = [...elements, newEl]
-    setElements(updated)
-    saveToHistory(updated)
-  }
+  const addElement = useCallback((newEl: any) => {
+    setElements(prev => {
+      const updated = [...prev, newEl]
+      saveToHistory(updated)
+      return updated
+    })
+  }, [saveToHistory])
 
   // Handle Shortcuts
   useEffect(() => {
@@ -171,32 +185,51 @@ function EditorPage() {
   }, [selectedId, historyStep, history, editingWallId])
 
   const submitExport = () => {
-    const exportedElements = elements.map((el) => ({
-      id: el.id,
-      type: el.type,
-      assetName: el.assetName,
-      material: el.material,
-      x: el.x,
-      y: el.y,
-      rotation: el.rotation || 0,
-      width: el.width,
-      height: el.height,
-    }))
-
-    const finalExport = {
-      booth: {
-        width: boothConfig?.width,
-        length: boothConfig?.depth,
-        wallThickness: boothConfig?.wallThickness,
-        size: (boothConfig?.width || 0) * (boothConfig?.depth || 0),
-        walls: boothConfig?.walls,
-      },
-      elements: exportedElements,
-    }
-
-    console.log(JSON.stringify(finalExport, null, 2))
-    alert('Export successful! Check console for JSON.')
+    setIsCapturingReport(true)
+    setReportScreenshots({})
+    
+    // Queue: Top view + standard directional elevations + specific wall elevations
+    const queue = ['top', 'north', 'south', 'east', 'west'];
+    
+    // Find walls with customizations and append their specific elevations
+    const customWalls = elements.filter(el => el.type === 'wall' && el.wallElements && el.wallElements.length > 0);
+    customWalls.forEach(w => queue.push(`elevation_${w.id}`));
+    
+    setCaptureQueue(queue)
   }
+
+  useEffect(() => {
+    if (!isCapturingReport) return;
+    
+    if (captureQueue.length > 0) {
+      const nextView = captureQueue[0];
+      console.log(`[Report] Switching to view: ${nextView}`);
+      setBlueprintView(nextView + '_capture' as any);
+    } else {
+      console.log('[Report] All captures complete. Generating document...');
+      setIsCapturingReport(false);
+      setBlueprintView('perspective');
+      
+      // Small timeout to ensure state has settled
+      setTimeout(() => {
+        generateReport(boothConfig, elements, reportScreenshots).then(() => {
+          console.log('[Report] Document generated and downloaded.');
+        }).catch(err => {
+          console.error('[Report] Generation failed:', err);
+          alert('Failed to generate report.');
+        });
+      }, 600);
+    }
+  }, [captureQueue.length, isCapturingReport]);
+
+  const onExportComplete = useCallback((baseView: string, data?: string) => {
+    if (isCapturingReport && data) {
+      setReportScreenshots(prev => ({ ...prev, [baseView]: data }))
+      setCaptureQueue(prev => prev.slice(1))
+    } else {
+      setBlueprintView(baseView as any)
+    }
+  }, [isCapturingReport])
 
   const clearAll = () => {
     if (confirm('Clear the workspace?')) {
@@ -563,6 +596,7 @@ function EditorPage() {
               onUpdate={handleUpdateElement}
               onDelete={() => handleDeleteElement(selectedId!)}
               onEditElevation={() => setEditingWallId(selectedId)}
+              onViewElevation={() => setBlueprintView(`elevation_${selectedId}` as any)}
               boothConfig={boothConfig}
               onBoothConfigUpdate={(updates: any) => setBoothConfig((prev: any) => ({ ...prev, ...updates }))}
             />
@@ -602,7 +636,7 @@ function EditorPage() {
                   boothConfig={boothConfig} 
                   elements={elements} 
                   activeView={blueprintView}
-                  onExportComplete={(baseView) => setBlueprintView(baseView)}
+                  onExportComplete={onExportComplete}
                 />
               </div>
             ) : (

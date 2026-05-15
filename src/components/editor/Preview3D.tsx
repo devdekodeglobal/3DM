@@ -9,7 +9,7 @@ interface Preview3DProps {
   boothConfig: any;
   elements: any[];
   activeView?: 'perspective' | 'top' | 'north' | 'south' | 'east' | 'west' | string;
-  onExportComplete?: (baseView: any) => void;
+  onExportComplete?: (baseView: any, base64Data?: string) => void;
 }
 
 const PPM = 100;
@@ -17,7 +17,6 @@ const PPM = 100;
 export default function Preview3D({ boothConfig, elements, activeView = 'perspective', onExportComplete }: Preview3DProps) {
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [cameraMode, setCameraMode] = useState<'orbit' | 'flight'>('orbit');
-  const [isCapturing, setIsCapturing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<BABYLON.Engine | null>(null);
@@ -145,7 +144,13 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
       scene.render();
     });
 
-    const handleResize = () => engine.resize();
+    let resizeTimer: any;
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (engineRef.current) engineRef.current.resize();
+      }, 150);
+    };
     window.addEventListener('resize', handleResize);
 
     setIsSceneReady(true);
@@ -226,7 +231,7 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
     // 2.1 Technical Grid (Visible only in technical views)
     const grid = BABYLON.MeshBuilder.CreateGround("blueprintGrid", { width: boothConfig.width, height: boothConfig.depth }, scene);
     grid.position = new BABYLON.Vector3(centerX, 0.01, centerZ); // Slightly above floor
-    const gridMat = new GridMaterial("gridMat", scene);
+    const gridMat = new GridMaterial("gridMat", scene) as any;
     gridMat.majorUnitFrequency = 5; // 1m major lines (since 1 unit = 1m)
     gridMat.minorUnitVisibility = 0.45;
     gridMat.gridRatio = 0.2; // 20cm minor lines
@@ -234,7 +239,7 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
     gridMat.lineColor = new BABYLON.Color3(0.2, 0.5, 1.0); // Blueprint blue
     gridMat.opacity = 0.8;
     gridMat.backFaceCulling = false;
-    grid.material = gridMat;
+    grid.material = gridMat as BABYLON.Material;
     grid.isVisible = activeView !== 'perspective';
     structureRegistryRef.current.push(grid);
 
@@ -250,7 +255,7 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
     if (!blueprintCam || !orbitCam) return;
 
     // --- BLUEPRINT VISUAL POLISH: DIM LIGHTS ---
-    const baseView = activeView.replace('_download', '');
+    const baseView = activeView.replace('_download', '').replace('_capture', '');
     const isBlueprint = baseView !== 'perspective';
     scene.lights.forEach(l => {
       if (l instanceof BABYLON.HemisphericLight) {
@@ -264,22 +269,19 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
       scene.environmentIntensity = isBlueprint ? 0.2 : 1.0;
     }
 
+    // --- VISIBILITY RESET ---
+    // Make all standard meshes visible to recover from any isolated elevation views
+    scene.meshes.forEach(m => {
+      m.isVisible = true;
+    });
+
     // --- AUTOMATIC WALL HIDING FOR ELEVATIONS ---
     scene.meshes.forEach(m => {
       if (m.metadata && m.metadata.wallDir) {
         // If we are looking from North, hide the North wall so we can see the interior
         if (m.metadata.wallDir === baseView) {
           m.isVisible = false;
-        } else {
-          m.isVisible = true;
         }
-      }
-    });
-
-    // Reset visibility of all outer walls and grid
-    scene.meshes.forEach(m => {
-      if (m.metadata?.isOuter) {
-        m.isVisible = true;
       }
       if (m.name === 'blueprintGrid') {
         m.isVisible = activeView !== 'perspective';
@@ -322,45 +324,81 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
       let targetPos = new BABYLON.Vector3(centerX, 0, centerZ);
       let hiddenWall = '';
 
-      switch (activeView) {
-        case 'top':
-          camPos = new BABYLON.Vector3(centerX, 10, centerZ);
-          targetPos = new BABYLON.Vector3(centerX, 0, centerZ);
-          break;
-        case 'north':
-          camPos = new BABYLON.Vector3(centerX, 1.5, -5);
-          targetPos = new BABYLON.Vector3(centerX, 1.5, 5);
-          hiddenWall = 'north';
-          break;
-        case 'south':
-          camPos = new BABYLON.Vector3(centerX, 1.5, boothConfig.depth + 5);
-          targetPos = new BABYLON.Vector3(centerX, 1.5, -5);
-          hiddenWall = 'south';
-          break;
-        case 'east':
-          camPos = new BABYLON.Vector3(boothConfig.width + 5, 1.5, centerZ);
-          targetPos = new BABYLON.Vector3(-5, 1.5, centerZ);
-          hiddenWall = 'east';
-          break;
-        case 'west':
-          camPos = new BABYLON.Vector3(-5, 1.5, centerZ);
-          targetPos = new BABYLON.Vector3(5, 1.5, centerZ);
-          hiddenWall = 'west';
-          break;
+      if (baseView.startsWith('elevation_')) {
+        const wallId = baseView.replace('elevation_', '');
+        const wallEl = elements.find(el => el.id === wallId);
+        
+        if (wallEl) {
+          const rot = (wallEl.rotation || 0) * (Math.PI / 180);
+          const wX = wallEl.x / PPM;
+          const wZ = boothConfig.depth - (wallEl.y / PPM);
+          
+          // Camera should look AT the wall (target) from the INNER side (interior)
+          // We flip the normal (nx, nz) to look from inside the booth outwards
+          const nx = -Math.sin(rot);
+          const nz = -Math.cos(rot);
+          
+          camPos = new BABYLON.Vector3(wX + nx * 5, 1.25, wZ + nz * 5);
+          targetPos = new BABYLON.Vector3(wX, 1.25, wZ);
+          
+          // Hide everything
+          scene.meshes.forEach(m => { m.isVisible = false; });
+          
+          // Show only the selected wall and its accessories
+          const wallMesh = meshRegistryRef.current.get(wallId);
+          if (wallMesh) {
+            wallMesh.isVisible = true;
+            wallMesh.getChildMeshes().forEach(c => c.isVisible = true);
+          }
+          const decos = wallDecorationRegistryRef.current.get(wallId);
+          if (decos) {
+            decos.forEach(d => {
+              d.isVisible = true;
+              d.getChildMeshes().forEach(c => c.isVisible = true);
+            });
+          }
+        }
+      } else {
+        switch (baseView) {
+          case 'top':
+            camPos = new BABYLON.Vector3(centerX, 10, centerZ);
+            targetPos = new BABYLON.Vector3(centerX, 0, centerZ);
+            break;
+          case 'north':
+            camPos = new BABYLON.Vector3(centerX, 1.5, -5);
+            targetPos = new BABYLON.Vector3(centerX, 1.5, 5);
+            hiddenWall = 'north';
+            break;
+          case 'south':
+            camPos = new BABYLON.Vector3(centerX, 1.5, boothConfig.depth + 5);
+            targetPos = new BABYLON.Vector3(centerX, 1.5, -5);
+            hiddenWall = 'south';
+            break;
+          case 'east':
+            camPos = new BABYLON.Vector3(boothConfig.width + 5, 1.5, centerZ);
+            targetPos = new BABYLON.Vector3(-5, 1.5, centerZ);
+            hiddenWall = 'east';
+            break;
+          case 'west':
+            camPos = new BABYLON.Vector3(-5, 1.5, centerZ);
+            targetPos = new BABYLON.Vector3(5, 1.5, centerZ);
+            hiddenWall = 'west';
+            break;
+        }
+
+        if (hiddenWall) {
+          scene.meshes.forEach(m => {
+            if (m.metadata?.isOuter && m.metadata?.wallDir === hiddenWall) {
+              m.isVisible = false;
+            }
+          });
+        }
       }
 
       blueprintCam.position = camPos;
       blueprintCam.setTarget(targetPos);
-      
-      if (hiddenWall) {
-        scene.meshes.forEach(m => {
-          if (m.metadata?.isOuter && m.metadata?.wallDir === hiddenWall) {
-            m.isVisible = false;
-          }
-        });
-      }
     }
-  }, [activeView, isSceneReady, boothConfig]);
+  }, [activeView, isSceneReady, boothConfig, elements]);
 
   // 2.2 Measurement & GUI Sync
   useEffect(() => {
@@ -384,7 +422,7 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
 
     if (activeView === 'perspective') return;
 
-    const baseView = activeView.replace('_download', '');
+    const baseView = activeView.replace('_download', '').replace('_capture', '');
     const chains = calculateBlueprintMeasurements(baseView, elements, boothConfig);
     
     // --- BLUEPRINT VISUAL POLISH ---
@@ -469,7 +507,7 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
     });
 
     // Add Rulers (Faded for blueprint mode)
-    const isTop = activeView === 'top';
+    const isTop = baseView === 'top';
     const maxDim = Math.max(boothConfig.width, boothConfig.depth);
     for (let i = 0; i <= maxDim; i++) {
       // X-Axis Marker (Top or Bottom edge)
@@ -501,35 +539,57 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
 
   }, [activeView, debouncedElements, boothConfig, isSceneReady]);
 
-  // 2.3 Handle Export/Download Trigger
+  const isCapturingRef = useRef(false);
+
+  // 2.3 Handle Export/Download/Capture Trigger
   useEffect(() => {
-    if (!isSceneReady || !activeView.endsWith('_download') || isCapturing) return;
+    if (!isSceneReady || isCapturingRef.current) return;
+    
+    const isDownload = activeView.endsWith('_download');
+    const isCapture = activeView.endsWith('_capture');
+    
+    if (!isDownload && !isCapture) return;
 
     const capture = async () => {
-      setIsCapturing(true);
-      const baseView = activeView.replace('_download', '');
+      if (isCapturingRef.current) return;
+      isCapturingRef.current = true;
       
-      // Wait for camera and elements to settle
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const baseView = activeView.replace('_download', '').replace('_capture', '');
+      
+      // Wait for camera, measurements and UI to settle (crucial for labels)
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       const scene = sceneRef.current;
       const engine = engineRef.current;
-      if (!scene || !engine || !canvasRef.current) return;
+      if (!scene || !engine || !canvasRef.current) {
+        isCapturingRef.current = false;
+        return;
+      }
 
-      // Use Babylon's native screenshot tool which is much more reliable for 3D
-      BABYLON.Tools.CreateScreenshot(engine, scene.activeCamera!, { precision: 2 }, (data) => {
-        const link = document.createElement('a');
-        link.download = `booth_${baseView}_blueprint.png`;
-        link.href = data;
-        link.click();
+      // Force the engine to physically render at full resolution before capturing.
+      // This avoids blurry upsampling from a small on-screen canvas.
+      const captureW = 2560, captureH = 1440;
+      engine.setSize(captureW, captureH);
+      scene.render(); // Force one render at the new size
+
+      BABYLON.Tools.CreateScreenshot(engine, scene.activeCamera!, { width: captureW, height: captureH }, (data) => {
+        // Restore the canvas to the natural container size after capture
+        engine.resize();
+
+        if (isDownload) {
+          const link = document.createElement('a');
+          link.download = `booth_${baseView}_blueprint.png`;
+          link.href = data;
+          link.click();
+        }
         
-        setIsCapturing(false);
-        onExportComplete?.(baseView);
+        isCapturingRef.current = false;
+        onExportComplete?.(baseView, data);
       });
     };
 
     capture();
-  }, [activeView, isSceneReady, isCapturing, onExportComplete]);
+  }, [activeView, isSceneReady, onExportComplete]);
 
   // 3. Sync Elements
   useEffect(() => {
@@ -868,8 +928,8 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
                 const spot = new BABYLON.SpotLight("spot", new BABYLON.Vector3(0,0,-0.05), new BABYLON.Vector3(0,0,-1), Math.PI/2, 2, scene);
                 spot.diffuse = lColor; spot.intensity = lIntensity * 5; spot.parent = mount;
               } else {
-                mount = BABYLON.MeshBuilder.CreatePlane("banner", { width: cutW, height: cutH }, scene);
-                mount.position.set(localX, localY, -dVal/2 - 0.01);
+                mount = BABYLON.MeshBuilder.CreatePlane("banner", { width: cutW, height: cutH, sideOrientation: BABYLON.Mesh.DOUBLESIDE }, scene);
+                mount.position.set(localX, localY, -dVal/2 - 0.005);
                 const bMat = new BABYLON.PBRMaterial("bm", scene);
                 if (wel.url) {
                   const tex = new BABYLON.Texture(wel.url, scene);
@@ -943,63 +1003,81 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
           const depth = (el.depth || 5) / PPM;
           const w = el.width / PPM;
           const h = el.height / PPM;
-          const faceUV = new Array(6).fill(new BABYLON.Vector4(0, 0, 0, 0));
-          faceUV[0] = new BABYLON.Vector4(0, 1, 1, 0);
-
-          const logoMesh = BABYLON.MeshBuilder.CreateBox(el.id, { width: w, height: h, depth: depth, faceUV }, scene);
-          logoMesh.position.set(x, (h / 2) + (el.yOffset || 0), z);
-          logoMesh.rotation.y = rotY;
-          shadowGenerator.addShadowCaster(logoMesh);
-
-          const mat = new BABYLON.PBRMaterial(el.id + "_mat", scene);
           const baseColor = BABYLON.Color3.FromHexString(el.logoColor || '#ffffff');
-          mat.albedoColor = baseColor;
-          mat.metallic = 0;
-          mat.roughness = 0.5;
 
-          if (el.logoStyle === 'chrome') {
-            mat.metallic = 1.0; mat.roughness = 0.1;
-          } else if (el.logoStyle === 'glowing') {
-            mat.emissiveColor = baseColor; mat.emissiveIntensity = 2.0;
-          } else if (el.logoStyle === 'glass') {
-            mat.alpha = 0.5; mat.metallic = 0; mat.roughness = 0.1; mat.indexOfRefraction = 1.5; mat.transparencyMode = 2;
+          const pivot = new BABYLON.Mesh(el.id, scene);
+          pivot.position.set(x, (h / 2) + (el.yOffset || 0), z);
+          pivot.rotation.y = rotY;
+
+          // Helper to create a plane layer at a given z offset
+          const makeLayer = (zOffset: number, mat: BABYLON.StandardMaterial) => {
+            const p = BABYLON.MeshBuilder.CreatePlane(el.id + "_layer" + zOffset, { width: w, height: h }, scene);
+            p.parent = pivot;
+            p.position.z = zOffset;
+            p.material = mat;
+            return p;
+          };
+
+          // ---- FRONT FACE PLANE: SVG via Canvas ----
+          const faceMat = new BABYLON.StandardMaterial(el.id + "_face_mat", scene);
+          faceMat.backFaceCulling = true; // Don't render the back
+
+          // ---- DEPTH LAYERS: stack of solid-color planes behind the front ----
+          const sideMat = new BABYLON.StandardMaterial(el.id + "_side_mat", scene);
+          sideMat.diffuseColor = baseColor;
+          sideMat.backFaceCulling = false; // Sides visible from all angles
+          if (el.logoStyle === 'chrome') { sideMat.specularColor = new BABYLON.Color3(1, 1, 1); sideMat.specularPower = 128; }
+          if (el.logoStyle === 'glowing') { sideMat.emissiveColor = baseColor; }
+
+          const steps = Math.max(1, Math.round(depth / 0.005));
+          const stepSize = depth / steps;
+          for (let i = 1; i <= steps; i++) {
+            makeLayer(i * stepSize, sideMat);
           }
 
-          logoMesh.subMeshes = [];
-          new BABYLON.SubMesh(0, 0, logoMesh.getTotalVertices(), 0, 6, logoMesh);
-          new BABYLON.SubMesh(1, 0, logoMesh.getTotalVertices(), 6, 30, logoMesh);
+          // Front face on top
+          const facePlane = makeLayer(0, faceMat);
+          shadowGenerator.addShadowCaster(facePlane);
 
-          const multimat = new BABYLON.MultiMaterial(el.id + "_multimat", scene);
-          const frontMat = new BABYLON.PBRMaterial(el.id + "_front", scene);
-          frontMat.albedoColor = baseColor; frontMat.metallic = mat.metallic; frontMat.roughness = mat.roughness; frontMat.transparencyMode = 2;
-          
-          if (el.logoStyle === 'glowing') { frontMat.emissiveColor = baseColor; frontMat.emissiveIntensity = 2.0; }
-          if (el.logoStyle === 'glass') { frontMat.alpha = 0.5; frontMat.indexOfRefraction = 1.5; }
-          
           if (el.svgData) {
-            const blob = new Blob([el.svgData], { type: 'image/svg+xml' });
+            const PX_W = Math.round(el.width * 4);
+            const PX_H = Math.round(el.height * 4);
+            const blob = new Blob([el.svgData], { type: 'image/svg+xml;charset=utf-8' });
             const url = URL.createObjectURL(blob);
-            const tex = new BABYLON.Texture(url, scene);
-            tex.hasAlpha = true;
-            frontMat.albedoTexture = tex; frontMat.opacityTexture = tex;
-            if (el.logoStyle === 'glowing') frontMat.emissiveTexture = tex;
-            tex.onLoadObservable.addOnce(() => URL.revokeObjectURL(url));
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = PX_W;
+              canvas.height = PX_H;
+              const ctx = canvas.getContext('2d')!;
+              ctx.clearRect(0, 0, PX_W, PX_H);
+              ctx.drawImage(img, 0, 0, PX_W, PX_H);
+              URL.revokeObjectURL(url);
+
+              const dynTex = new BABYLON.DynamicTexture(el.id + "_tex", { width: PX_W, height: PX_H }, scene, false);
+              dynTex.getContext().drawImage(canvas, 0, 0);
+              dynTex.update(false);
+              dynTex.hasAlpha = true;
+
+              faceMat.diffuseTexture = dynTex;
+              faceMat.opacityTexture = dynTex;
+              faceMat.useAlphaFromDiffuseTexture = true;
+
+              // Apply same opacity mask to depth layers so they clip to logo shape
+              sideMat.opacityTexture = dynTex;
+
+              if (el.logoStyle === 'glowing') {
+                faceMat.emissiveTexture = dynTex;
+                faceMat.emissiveColor = new BABYLON.Color3(1, 1, 1);
+              }
+            };
+            img.src = url;
+          } else {
+            faceMat.diffuseColor = baseColor;
           }
 
-          const sideMat = new BABYLON.PBRMaterial(el.id + "_side", scene);
-          sideMat.albedoColor = baseColor; sideMat.metallic = mat.metallic; sideMat.roughness = mat.roughness; sideMat.transparencyMode = 2;
-          if (el.svgData) {
-            const blob = new Blob([el.svgData], { type: 'image/svg+xml' });
-            const url = URL.createObjectURL(blob);
-            const tex = new BABYLON.Texture(url, scene);
-            sideMat.opacityTexture = tex;
-            tex.onLoadObservable.addOnce(() => URL.revokeObjectURL(url));
-          }
-
-          multimat.subMaterials.push(frontMat); multimat.subMaterials.push(sideMat);
-          logoMesh.material = multimat;
-          logoMesh.metadata = { svgData: el.svgData, depth: el.depth, logoStyle: el.logoStyle, logoColor: el.logoColor };
-          registry.set(el.id, logoMesh);
+          pivot.metadata = { svgData: el.svgData, depth: el.depth, logoStyle: el.logoStyle, logoColor: el.logoColor };
+          registry.set(el.id, pivot);
 
         } else if (el.type === 'asset') {
           const modelName = el.assetName?.toLowerCase() || 'box';
@@ -1085,8 +1163,9 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
   }, [cameraMode]);
 
   return (
-    <div ref={containerRef} className="w-full h-full relative" style={{ backgroundColor: '#0d0d0f' }}>
-      <canvas ref={canvasRef} className="w-full h-full block outline-none touch-none" />
+    <div className="w-full h-full flex items-center justify-center bg-[var(--bg-base)] p-4">
+      <div ref={containerRef} className="w-full max-h-full aspect-video relative rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10" style={{ backgroundColor: '#0d0d0f' }}>
+        <canvas ref={canvasRef} className="w-full h-full block outline-none touch-none" />
       {activeView === 'perspective' && (
         <>
           <div className="absolute top-4 left-4 z-20 flex gap-2">
@@ -1111,6 +1190,7 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }

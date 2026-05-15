@@ -141,6 +141,75 @@ export function calculateBlueprintMeasurements(
     });
   }
 
+  if (view.startsWith('elevation_')) {
+    const wallId = view.replace('elevation_', '');
+    const wall = elements.find(el => el.id === wallId);
+    
+    if (wall && wall.wallElements) {
+      const rot = (wall.rotation || 0) * (Math.PI / 180);
+      const wVal = wall.width / PPM;
+      const x = wall.x / PPM;
+      const z = boothConfig.depth - (wall.y / PPM);
+      
+      const dx = Math.cos(rot);
+      const dz = -Math.sin(rot); // Note: 2D Canvas Y goes down, 3D Z goes up/back
+
+      wall.wallElements.forEach((wel: any) => {
+        const cutW = wel.width / PPM;
+        const cutH = wel.height / PPM;
+        
+        // Match Preview3D logic for local positioning
+        const localX = (wel.x / PPM) - (wVal / 2) + (cutW / 2);
+        const localY = (2.5 / 2) - (wel.y / PPM) - (cutH / 2);
+        
+        // Convert to world space
+        // Local X moves along the wall's rotation
+        const worldX = x + localX * dx;
+        const worldZ = z + localX * dz;
+        const worldY = 2.5 / 2 + localY; // Center Y
+        
+        const ptBottom = { x: worldX, y: worldY - cutH / 2, z: worldZ };
+        const ptTop = { x: worldX, y: worldY + cutH / 2, z: worldZ };
+        const ptLeft = { x: worldX - (cutW / 2) * dx, y: worldY, z: worldZ - (cutW / 2) * dz };
+        const ptRight = { x: worldX + (cutW / 2) * dx, y: worldY, z: worldZ + (cutW / 2) * dz };
+
+        // Normal vector to push the lines out slightly from the wall towards the INTERIOR
+        // We use -Math.sin/cos to match the interior-facing camera logic
+        const nx = -Math.sin(rot) * 0.15;
+        const nz = -Math.cos(rot) * 0.15;
+
+        // Height Measurement
+        chains.push({
+          type: 'asset', axis: 'y', label: `${cutH.toFixed(2)}m`,
+          mainLine: [{ x: ptBottom.x + nx, y: ptBottom.y, z: ptBottom.z + nz }, { x: ptTop.x + nx, y: ptTop.y, z: ptTop.z + nz }],
+          extensionLines: [
+            [{ x: ptBottom.x, y: ptBottom.y, z: ptBottom.z }, { x: ptBottom.x + nx * 1.5, y: ptBottom.y, z: ptBottom.z + nz * 1.5 }],
+            [{ x: ptTop.x, y: ptTop.y, z: ptTop.z }, { x: ptTop.x + nx * 1.5, y: ptTop.y, z: ptTop.z + nz * 1.5 }]
+          ]
+        });
+
+        // Width Measurement
+        chains.push({
+          type: 'asset', axis: 'x', label: `${cutW.toFixed(2)}m`,
+          mainLine: [{ x: ptLeft.x + nx, y: worldY - cutH / 2 - 0.2, z: ptLeft.z + nz }, { x: ptRight.x + nx, y: worldY - cutH / 2 - 0.2, z: ptRight.z + nz }],
+          extensionLines: [
+            [{ x: ptLeft.x, y: worldY - cutH / 2, z: ptLeft.z }, { x: ptLeft.x + nx * 1.5, y: worldY - cutH / 2 - 0.2, z: ptLeft.z + nz * 1.5 }],
+            [{ x: ptRight.x, y: worldY - cutH / 2, z: ptRight.z }, { x: ptRight.x + nx * 1.5, y: worldY - cutH / 2 - 0.2, z: ptRight.z + nz * 1.5 }]
+          ]
+        });
+        
+        // Distance to Floor
+        if (ptBottom.y > 0.05) {
+          chains.push({
+            type: 'gap', axis: 'y', label: `${ptBottom.y.toFixed(2)}m`,
+            mainLine: [{ x: ptBottom.x + nx, y: 0, z: ptBottom.z + nz }, { x: ptBottom.x + nx, y: ptBottom.y, z: ptBottom.z + nz }],
+            extensionLines: []
+          });
+        }
+      });
+    }
+  }
+
   return chains;
 }
 
