@@ -367,12 +367,12 @@ function EditorPage() {
 
               <div className="grid grid-cols-2 gap-3 text-left">
                 {[
-                  { id: 'bombo_white_chrome_plated', name: 'Bar Stool' },
-                  { id: 'catifa_bar_white_white_chrome_plated', name: 'High Stool' },
-                  { id: 'catifa_46_white_white_chrome_plated', name: 'Chair' },
-                  { id: 'berthe_white_chrome_plated', name: 'Office Chair' },
-                  { id: 'medola_80x80_white_chrome_plated', name: 'Meeting Table' },
-                  { id: 'luna_110_70_white_chrome_plated', name: 'Bar Table' },
+                  { id: 'bombo', name: 'Bar Stool' },
+                  { id: 'catifa_bar', name: 'High Stool' },
+                  { id: 'catifa_46', name: 'Chair' },
+                  { id: 'berthe', name: 'Office Chair' },
+                  { id: 'medola_weiss', name: 'Meeting Table' },
+                  { id: 'luna_110', name: 'Bar Table' },
                 ].map(asset => (
                   <div key={asset.id} className="flex items-center justify-between bg-[var(--sand)] p-3 rounded-xl border border-[var(--line)]">
                     <span className="text-xs font-bold text-[var(--sea-ink)]">{asset.name}</span>
