@@ -145,7 +145,7 @@ export default function Sidebar({
           <select 
             value={selectedCategory} 
             onChange={e => setSelectedCategory(e.target.value)}
-            className="w-full p-2 bg-[var(--sand)] border border-[var(--line)] rounded-lg text-xs font-bold text-[var(--sea-ink)] outline-none focus:border-[var(--lagoon)]"
+            className="w-full p-2 bg-[var(--surface-strong)] border border-[var(--line)] rounded-lg text-xs font-bold text-[var(--sea-ink)] outline-none focus:border-[var(--lagoon)]"
           >
             <option value="all">All Categories</option>
             {ASSET_CATEGORIES.map(c => (
@@ -160,7 +160,7 @@ export default function Sidebar({
               placeholder="Search assets..." 
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-2 bg-white border border-[var(--line)] rounded-lg text-xs outline-none focus:border-[var(--lagoon)] shadow-sm"
+              className="w-full pl-8 pr-3 py-2 bg-[var(--surface-strong)] border border-[var(--line)] rounded-lg text-xs text-[var(--sea-ink)] outline-none focus:border-[var(--lagoon)] shadow-sm placeholder:text-[var(--sea-ink-soft)]"
             />
           </div>
 

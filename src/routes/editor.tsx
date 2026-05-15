@@ -412,7 +412,7 @@ function EditorPage() {
                     <select
                       value={setupAssets[asset.id] || 0}
                       onChange={(e) => setSetupAssets(prev => ({ ...prev, [asset.id]: parseInt(e.target.value) }))}
-                      className="bg-white border border-[var(--line)] rounded text-xs p-1 font-mono"
+                      className="bg-[var(--surface-strong)] border border-[var(--line)] rounded text-xs p-1 font-mono text-[var(--sea-ink)]"
                     >
                       {[0, 1, 2, 3, 4].map(n => <option key={n} value={n}>{n}</option>)}
                     </select>
