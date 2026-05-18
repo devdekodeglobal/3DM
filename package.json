@@ -57,7 +57,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@types/uuid": "^10.0.0",
-    "@vitejs/plugin-react": "^6.0.2",
+    "@vitejs/plugin-react": "^5.2.0",
     "draco3dgltf": "^1.5.7",
     "gl-matrix": "^3.4.4",
     "jsdom": "^28.1.0",
