@@ -72,104 +72,114 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
   }
 
   return (
-    <div className="fixed inset-y-0 right-0 z-[80] w-96 bg-[var(--bg-card)] border-l border-[var(--border)] shadow-2xl flex flex-col transition-all">
-      {/* Header */}
-      <div className="p-4 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-subtle)]">
-        <div className="flex items-center gap-2">
-          <FolderOpen className="w-5 h-5 text-[var(--brand)]" />
-          <h2 className="text-sm font-black font-[Outfit] text-[var(--fg)] tracking-wide uppercase">
-            My Cloud Designs
-          </h2>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={fetchDesigns}
-            title="Refresh list"
-            disabled={loading}
-            className="p-1.5 rounded-lg text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--chip-bg)] transition disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-          <button 
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--chip-bg)] transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
+      <div 
+        className="relative w-full max-w-lg max-h-[85vh] overflow-hidden rounded-2xl border border-white/10 bg-black/80 backdrop-blur-xl shadow-2xl flex flex-col transition-all"
+        style={{ boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Glow Orbs */}
+        <div className="absolute -top-24 -left-24 -z-10 h-48 w-48 rounded-full bg-[var(--brand)] opacity-20 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 -z-10 h-48 w-48 rounded-full bg-[var(--accent)] opacity-20 blur-3xl pointer-events-none" />
 
-      {/* Body Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {loading && designs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-[var(--fg-dim)]">
-            <Loader2 className="w-8 h-8 animate-spin text-[var(--brand)] mb-2" />
-            <span className="text-xs">Fetching your workspace cloud saves...</span>
+        {/* Header */}
+        <div className="p-5 border-b border-white/10 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FolderOpen className="w-5 h-5 text-[var(--brand)]" />
+            <h2 className="text-sm font-black font-[Outfit] text-white tracking-wide uppercase">
+              My Cloud Designs
+            </h2>
           </div>
-        ) : errorMsg ? (
-          <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded-lg">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>{errorMsg}</span>
-          </div>
-        ) : designs.length === 0 ? (
-          <div className="text-center py-16 px-4 text-[var(--fg-dim)]">
-            <FolderOpen className="w-12 h-12 stroke-[1.2] mx-auto text-[var(--border)] mb-3" />
-            <p className="text-sm font-bold text-[var(--fg)]">No designs found</p>
-            <p className="text-xs mt-1 max-w-[240px] mx-auto leading-relaxed">
-              When you are working, click "Save Project" and select "Save to Cloud" to keep your layouts safe here.
-            </p>
-          </div>
-        ) : (
-          designs.map((design) => (
-            <div
-              key={design.id}
-              onClick={() => {
-                onLoadProject(design.booth_config, design.elements)
-                onClose()
-              }}
-              className="group relative p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)] hover:bg-[var(--chip-bg)] hover:border-[var(--brand)] transition cursor-pointer flex flex-col gap-2"
+          <div className="flex items-center gap-1">
+            <button
+              onClick={fetchDesigns}
+              title="Refresh list"
+              disabled={loading}
+              className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition disabled:opacity-50"
             >
-              {/* Title & Actions */}
-              <div className="flex items-start justify-between gap-4">
-                <span className="font-bold text-xs text-[var(--fg)] font-[Outfit] group-hover:text-[var(--brand)] transition break-words flex-1">
-                  {design.name}
-                </span>
-                
-                {/* Trash delete */}
-                <button
-                  disabled={deletingId === design.id}
-                  onClick={(e) => handleDelete(design.id, e)}
-                  className="p-1 rounded text-red-400 hover:text-red-500 hover:bg-red-500/10 transition opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-50"
-                  title="Delete design"
-                >
-                  {deletingId === design.id ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-3.5 h-3.5" />
-                  )}
-                </button>
-              </div>
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+            <button 
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
 
-              {/* Timestamp footer */}
-              <div className="flex items-center gap-1.5 text-[10px] text-[var(--fg-dim)] font-medium">
-                <Calendar className="w-3 h-3 shrink-0" />
-                <span>
-                  Saved {new Date(design.updated_at).toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </span>
-              </div>
+        {/* Body Content */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-3 custom-scrollbar">
+          {loading && designs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-white/50">
+              <Loader2 className="w-8 h-8 animate-spin text-[var(--brand)] mb-2" />
+              <span className="text-xs">Fetching your workspace cloud saves...</span>
             </div>
-          ))
-        )}
-      </div>
+          ) : errorMsg ? (
+            <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded-lg">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{errorMsg}</span>
+            </div>
+          ) : designs.length === 0 ? (
+            <div className="text-center py-16 px-4 text-white/50">
+              <FolderOpen className="w-12 h-12 stroke-[1.2] mx-auto text-white/20 mb-3" />
+              <p className="text-sm font-bold text-white">No designs found</p>
+              <p className="text-xs mt-1 max-w-[240px] mx-auto leading-relaxed">
+                When you are working, click "Save Project" and select "Save to Cloud" to keep your layouts safe here.
+              </p>
+            </div>
+          ) : (
+            designs.map((design) => (
+              <div
+                key={design.id}
+                onClick={() => {
+                  onLoadProject(design.booth_config, design.elements)
+                  onClose()
+                }}
+                className="group relative p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-[var(--brand)] transition cursor-pointer flex flex-col gap-2"
+              >
+                {/* Title & Actions */}
+                <div className="flex items-start justify-between gap-4">
+                  <span className="font-bold text-xs text-white font-[Outfit] group-hover:text-[var(--brand)] transition break-words flex-1">
+                    {design.name}
+                  </span>
+                  
+                  {/* Trash delete */}
+                  <button
+                    disabled={deletingId === design.id}
+                    onClick={(e) => handleDelete(design.id, e)}
+                    className="p-1 rounded text-red-400 hover:text-red-500 hover:bg-red-500/10 transition opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-50"
+                    title="Delete design"
+                  >
+                    {deletingId === design.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
 
-      {/* Footer Info */}
-      <div className="p-4 border-t border-[var(--border)] bg-[var(--bg-subtle)] text-[10px] text-center text-[var(--fg-dim)] font-semibold tracking-wide">
-        SYNCED SECURELY VIA SUPABASE
+                {/* Timestamp footer */}
+                <div className="flex items-center gap-1.5 text-[10px] text-white/40 font-medium">
+                  <Calendar className="w-3 h-3 shrink-0" />
+                  <span>
+                    Saved {new Date(design.updated_at).toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Footer Info */}
+        <div className="p-4 border-t border-white/10 bg-white/5 text-[10px] text-center text-white/40 font-semibold tracking-wide">
+          SYNCED SECURELY VIA SUPABASE
+        </div>
       </div>
     </div>
   )
