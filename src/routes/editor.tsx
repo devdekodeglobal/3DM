@@ -5,10 +5,13 @@ import Canvas from '../components/editor/Canvas'
 import WallCanvas from '../components/editor/WallCanvas'
 import Properties from '../components/editor/Properties'
 import Preview3D from '../components/editor/Preview3D'
-import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, FileText, Download, Upload } from 'lucide-react'
+import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, FileText, Download, Upload, LogOut, Cloud, Laptop, LogIn, Folder, X } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
+import { supabase } from '../lib/supabaseClient'
+import { AuthModal } from '../components/editor/AuthModal'
+import { CloudProjectsDrawer } from '../components/editor/CloudProjectsDrawer'
 
 const DEFAULT_ASSET_SIZE_PX = 100
 
@@ -26,6 +29,14 @@ interface BoothConfig {
 
 function EditorPage() {
   const [boothConfig, setBoothConfig] = useState<BoothConfig | null>(null)
+
+  // Supabase Auth and Cloud states
+  const [sessionUser, setSessionUser] = useState<any>(null)
+  const [authModalOpen, setAuthModalOpen] = useState(false)
+  const [cloudDrawerOpen, setCloudDrawerOpen] = useState(false)
+  const [showSavePrompt, setShowSavePrompt] = useState(false)
+  const [projectName, setProjectName] = useState('My Exhibition Stand')
+  const [isCloudSaving, setIsCloudSaving] = useState(false)
 
   // Setup Wizard State
   const [wizardStep, setWizardStep] = useState(1)
@@ -69,6 +80,58 @@ function EditorPage() {
   const handleSelect = useCallback((id: string | null) => {
     setSelectedId(id)
   }, [])
+
+  // Supabase Auth state listener
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSessionUser(session?.user || null)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSessionUser(session?.user || null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const handleCloudSave = async () => {
+    if (!sessionUser) {
+      setAuthModalOpen(true)
+      return
+    }
+    
+    setIsCloudSaving(true)
+    try {
+      const { error } = await supabase.from('designs').insert({
+        user_id: sessionUser.id,
+        name: projectName || 'Untitled Design',
+        booth_config: boothConfig,
+        elements: elements,
+        updated_at: new Date().toISOString()
+      })
+
+      if (error) throw error
+      alert('Design successfully saved to the cloud!')
+      setShowSavePrompt(false)
+    } catch (err: any) {
+      console.error('Cloud save failed:', err)
+      alert(err.message || 'Failed to save to the cloud.')
+    } finally {
+      setIsCloudSaving(false)
+    }
+  };
+
+  const loadCloudDesign = (loadedConfig: any, loadedElements: any[]) => {
+    setBoothConfig(loadedConfig)
+    setElements(loadedElements)
+    setHistory([loadedElements])
+    setHistoryStep(0)
+    
+    // Force canvas refresh
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'))
+    }, 100)
+  };
 
   // Auto-load from local storage
   useEffect(() => {
@@ -599,12 +662,44 @@ function EditorPage() {
             </button>
           </div>
 
+          {sessionUser ? (
+            <div className="flex items-center gap-1 border-r border-white/10 pr-2 mr-1">
+              <span className="text-[10px] text-white/60 font-semibold max-w-[120px] truncate block px-2">
+                {sessionUser.email}
+              </span>
+              <button
+                onClick={() => setCloudDrawerOpen(true)}
+                className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
+                title="My Cloud Projects"
+              >
+                <Folder className="h-4 w-4 text-[var(--brand)]" /> Projects
+              </button>
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut()
+                  alert('Logged out successfully.')
+                }}
+                className="p-2 rounded-lg text-red-400 hover:text-red-500 hover:bg-red-500/10 transition"
+                title="Log Out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setAuthModalOpen(true)}
+              className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1 mr-1"
+            >
+              <LogIn className="h-4 w-4 text-[var(--brand)]" /> Login
+            </button>
+          )}
+
           <label className="cursor-pointer px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1">
             <Upload className="h-4 w-4" /> Import Project
             <input type="file" accept=".json" onChange={handleImportProject} className="hidden" />
           </label>
           <button
-            onClick={downloadProjectJSON}
+            onClick={() => setShowSavePrompt(true)}
             className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
           >
             <Download className="h-4 w-4" /> Save Project
@@ -743,6 +838,69 @@ function EditorPage() {
               }}
               onClose={() => setEditingWallId(null)}
             />
+          </div>
+        </div>
+      )}
+      {/* Supabase Integration Overlays */}
+      <AuthModal 
+        isOpen={authModalOpen} 
+        onClose={() => setAuthModalOpen(false)} 
+      />
+      
+      <CloudProjectsDrawer 
+        isOpen={cloudDrawerOpen} 
+        onClose={() => setCloudDrawerOpen(false)} 
+        onLoadProject={loadCloudDesign} 
+        userId={sessionUser?.id || null} 
+      />
+
+      {/* Sleek Save Project Dialog */}
+      {showSavePrompt && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl p-6 shadow-2xl transition-all">
+            <button 
+              onClick={() => setShowSavePrompt(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-lg font-bold font-[Outfit] text-white mb-4">Save Your Design</h3>
+            
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black tracking-wider uppercase text-white/70 block">
+                  Project Name
+                </label>
+                <input
+                  type="text"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] transition"
+                  placeholder="E.g., Tech Summit 2026 Stand"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <button
+                  onClick={handleCloudSave}
+                  disabled={isCloudSaving}
+                  className="bg-[var(--lagoon-deep)] hover:bg-[var(--palm)] text-white text-xs font-bold py-3 px-4 rounded-xl transition flex flex-col items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
+                >
+                  <Cloud className="w-5 h-5" />
+                  {isCloudSaving ? 'Saving...' : sessionUser ? 'Save to Cloud' : 'Login to Cloud Save'}
+                </button>
+                <button
+                  onClick={() => {
+                    downloadProjectJSON();
+                    setShowSavePrompt(false);
+                  }}
+                  className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold py-3 px-4 rounded-xl transition flex flex-col items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Laptop className="w-5 h-5" />
+                  Save to Computer
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
