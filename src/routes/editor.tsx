@@ -5,7 +5,7 @@ import Canvas from '../components/editor/Canvas'
 import WallCanvas from '../components/editor/WallCanvas'
 import Properties from '../components/editor/Properties'
 import Preview3D from '../components/editor/Preview3D'
-import { PanelLeftClose, PanelRightClose, Save, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings } from 'lucide-react'
+import { PanelLeftClose, PanelRightClose, Save, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, FileText, Download, Upload } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
@@ -230,6 +230,58 @@ function EditorPage() {
       setBlueprintView(baseView as any)
     }
   }, [isCapturingReport])
+
+  const downloadProjectJSON = () => {
+    if (!boothConfig) return;
+    // We preserve the svgData here for 3D Logos, unlike the report generator
+    const dataToSave = {
+      booth: boothConfig,
+      elements: elements
+    };
+    const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `booth_design_${Date.now().toString(36)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportProject = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const parsed = JSON.parse(content);
+        
+        if (parsed.booth && parsed.elements) {
+          setBoothConfig(parsed.booth);
+          setElements(parsed.elements);
+          setHistory([parsed.elements]);
+          setHistoryStep(0);
+          
+          // Force layout refresh if needed
+          setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+          }, 100);
+        } else {
+          alert("Invalid project file format.");
+        }
+      } catch (err) {
+        console.error("Failed to parse project file:", err);
+        alert("Failed to read the project file.");
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset file input so the same file can be selected again if needed
+    event.target.value = '';
+  };
 
   const clearAll = () => {
     if (confirm('Clear the workspace?')) {
@@ -547,11 +599,21 @@ function EditorPage() {
             </button>
           </div>
 
+          <label className="cursor-pointer px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1">
+            <Upload className="h-4 w-4" /> Import Project
+            <input type="file" accept=".json" onChange={handleImportProject} className="hidden" />
+          </label>
+          <button
+            onClick={downloadProjectJSON}
+            className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
+          >
+            <Download className="h-4 w-4" /> Save Project
+          </button>
           <button
             onClick={submitExport}
             className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
           >
-            <Save className="h-4 w-4" /> Save
+            <FileText className="h-4 w-4" /> Report
           </button>
           <button
             onClick={() => setIs3DGenerated(true)}

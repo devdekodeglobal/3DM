@@ -6,10 +6,8 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
   const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-  // Export JSON
-  const rawData = { booth: boothConfig, elements: elements.map(el => ({ ...el, svgData: el.type === '3d_logo' ? undefined : el.svgData })) };
-  saveAs(new Blob([JSON.stringify(rawData, null, 2)], { type: 'application/json' }), 'project_details.json');
-
+  // Export JSON - Now handled by a dedicated Save button in editor.tsx
+  
   // BOM & Element Collection
   const walls = elements.filter(el => el.type === 'wall');
   const topLevelAssets = elements.filter(el => el.type === 'asset');
