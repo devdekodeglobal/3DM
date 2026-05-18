@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
 import ThemeToggle from './ThemeToggle'
 import { supabase } from '../lib/supabaseClient'
@@ -12,7 +12,7 @@ export default function Header() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSessionUser(session?.user || null)
     })
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
       setSessionUser(session?.user || null)
     })
     return () => authListener.subscription.unsubscribe()
@@ -49,7 +49,7 @@ export default function Header() {
 
           {/* Nav links */}
           <div className="hidden sm:flex items-center gap-7">
-            <Link to="/" className="nav-link" activeProps={{ className: 'nav-link is-active' }} exact>
+            <Link to="/" className="nav-link" activeProps={{ className: 'nav-link is-active' }} activeOptions={{ exact: true }}>
               Home
             </Link>
             <Link to="/editor" className="nav-link" activeProps={{ className: 'nav-link is-active' }}>
