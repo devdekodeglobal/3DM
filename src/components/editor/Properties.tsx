@@ -1,5 +1,6 @@
 import { Settings, Code, Trash2, Layers } from 'lucide-react'
 import { WALL_MATERIALS, getWallMaterialProps } from '../../lib/materials'
+import ColorPickerPanel from './ColorPickerPanel'
 
 interface PropertiesProps {
   selectedElement: any
@@ -9,6 +10,7 @@ interface PropertiesProps {
   onViewElevation?: () => void
   boothConfig?: any
   onBoothConfigUpdate?: (updates: any) => void
+  onEditRoof?: () => void
 }
 
 const FLOOR_MATERIALS = [
@@ -17,15 +19,19 @@ const FLOOR_MATERIALS = [
   { id: 'tile',     label: 'Tile',     color: '#b0a898', desc: 'Classic square tile' },
   { id: 'carpet',   label: 'Carpet',   color: '#2e4050', desc: 'Soft dark carpet' },
   { id: 'concrete', label: 'Concrete', color: '#898989', desc: 'Industrial grey' },
+  { id: 'custom_color', label: 'Custom Color', color: '#ffffff', desc: 'Pick your own color' },
 ]
 
 
 
-const WALL_MATERIALS_LIST = WALL_MATERIALS.map((m: any) => ({ value: m.id, label: m.label }));
+const WALL_MATERIALS_LIST = [
+  ...WALL_MATERIALS.map((m: any) => ({ value: m.id, label: m.label })),
+  { value: 'custom_color', label: 'Custom Color' }
+];
 
 export default function Properties({
   selectedElement, onUpdate, onDelete, onEditElevation, onViewElevation,
-  boothConfig, onBoothConfigUpdate
+  boothConfig, onBoothConfigUpdate, onEditRoof
 }: PropertiesProps) {
   
   const handleMaterialChange = (material: string) => {
@@ -251,7 +257,13 @@ export default function Properties({
                        {WALL_MATERIALS_LIST.map((m: any) => (
                          <button
                            key={m.value}
-                           onClick={() => handleMaterialChange(m.value)}
+                           onClick={() => {
+                             if (m.value === 'custom_color') {
+                               onUpdate(selectedElement.id, { material: 'custom_color', color: selectedElement.color || '#f0f0f0' });
+                             } else {
+                               handleMaterialChange(m.value);
+                             }
+                           }}
                            className={`px-3 py-2 rounded-lg text-xs font-bold border transition ${
                              (selectedElement.material || 'Solid Wall') === m.value
                                ? 'border-[var(--lagoon)] bg-[var(--lagoon-soft)] text-[var(--lagoon-deep)]'
@@ -262,6 +274,12 @@ export default function Properties({
                          </button>
                        ))}
                      </div>
+                     {selectedElement.material === 'custom_color' && (
+                       <ColorPickerPanel 
+                         initialColor={selectedElement.color || '#f0f0f0'} 
+                         onChange={(c) => onUpdate(selectedElement.id, { color: c })} 
+                       />
+                     )}
                    </div>
                  </div>
               )}
@@ -336,7 +354,7 @@ export default function Properties({
                 {FLOOR_MATERIALS.map(mat => (
                   <button
                     key={mat.id}
-                    onClick={() => onBoothConfigUpdate?.({ floorType: mat.id })}
+                    onClick={() => onBoothConfigUpdate?.({ floorType: mat.id, floorColor: boothConfig?.floorColor || '#ffffff' })}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all ${
                       floorType === mat.id
                         ? 'border-[var(--lagoon)] bg-[var(--lagoon-soft)]'
@@ -344,7 +362,7 @@ export default function Properties({
                     }`}
                   >
                     {/* Color swatch */}
-                    <div className="w-8 h-8 rounded bg-cover bg-center border border-black/10 shrink-0" style={{ backgroundColor: mat.color }} />
+                    <div className="w-8 h-8 rounded bg-cover bg-center border border-black/10 shrink-0" style={{ backgroundColor: mat.id === 'custom_color' ? (boothConfig?.floorColor || mat.color) : mat.color }} />
                     <div className="text-left">
                       <div className={`text-xs font-bold ${floorType === mat.id ? 'text-[var(--lagoon-deep)]' : 'text-[var(--sea-ink)]'}`}>
                         {mat.label}
@@ -357,6 +375,46 @@ export default function Properties({
                   </button>
                 ))}
               </div>
+              {floorType === 'custom_color' && (
+                <ColorPickerPanel 
+                  initialColor={boothConfig?.floorColor || '#ffffff'} 
+                  onChange={(c) => onBoothConfigUpdate?.({ floorColor: c })} 
+                />
+              )}
+            </div>
+
+            {/* Roof & Ceiling Section */}
+            <div className="pt-4 border-t border-[var(--line)] space-y-3">
+              <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block">
+                Ceiling & Roofing
+              </label>
+              
+              <div className="flex items-center justify-between p-3 rounded-xl border border-[var(--line)] bg-[var(--sand)]">
+                <span className="text-xs font-bold text-[var(--sea-ink)]">Include Roof / Ceiling</span>
+                <input
+                  type="checkbox"
+                  checked={boothConfig?.roof?.enabled ?? false}
+                  onChange={(e) => {
+                    const roof = boothConfig?.roof || {};
+                    onBoothConfigUpdate?.({
+                      roof: {
+                        ...roof,
+                        enabled: e.target.checked
+                      }
+                    });
+                  }}
+                  className="rounded border-gray-300 text-[var(--brand)] focus:ring-[var(--brand)] h-4 w-4"
+                />
+              </div>
+
+              {(boothConfig?.roof?.enabled) && (
+                <button
+                  onClick={onEditRoof}
+                  className="w-full bg-[var(--lagoon-soft)] border border-[var(--lagoon)] hover:bg-[var(--lagoon)] hover:text-white text-[var(--lagoon-deep)] font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-sm"
+                >
+                  Configure Roof & Lights
+                </button>
+              )}
             </div>
 
             <div className="text-center text-[10px] text-[var(--sea-ink-soft)] pt-2 border-t border-[var(--line)]">

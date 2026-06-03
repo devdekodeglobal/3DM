@@ -1,0 +1,37 @@
+================================================================================
+                       3DM | INVESTOR & IPR PITCH
+================================================================================
+
+--- UNIQUE SELLING PROPOSITION (USP) & DIFFERENTIATOR ---
+
+3DM is a browser-based, zero-latency design suite built specifically for the 
+Indian exhibition industry that merges high-fidelity PBR 3D rendering with 
+precise, fabricator-ready 2D drafting. Unlike generic design software, 3DM 
+features a live CSG-powered elevation editor and an automated blueprint 
+generator that instantly creates fully dimensioned, technical layouts (Top 
+and elevation views) in real-time. This eliminates redundant CAD drafting, 
+slashes client pitch revisions from days to minutes, and runs flawlessly on 
+low-spec laptops without expensive hardware.
+
+
+--- COMPARISON WITH INDIAN PLATFORMS ---
+
+* Foyr Neo (Chennai/Global)
+  While Foyr Neo is India’s leading cloud-based interior design platform, it 
+  is built for general residential/commercial spaces and relies on slow, 
+  queue-based cloud rendering. It lacks 3DM's instant local browser sync, 
+  custom wall-cutout engineering, and automated technical blueprints for 
+  onsite fabrication.
+
+* Infurnia (Bangalore)
+  A cloud-based BIM platform designed for Indian modular kitchens and 
+  home-building architects. While architecturally capable, Infurnia has a 
+  steep learning curve, is tailored strictly for housing construction (such as 
+  wardrobes and kitchen cabinets), and lacks the rapid, drag-and-drop workflow 
+  essential for temporary exhibition stall setups.
+
+* Flipspaces / VIZSTORE (Mumbai)
+  A technology-driven commercial design platform focusing on virtual office 
+  walkthroughs. Unlike 3DM, Flipspaces is primarily a sales tool for corporate 
+  office pitches rather than a precise, production-level engineering designer 
+  for fabrication yards.

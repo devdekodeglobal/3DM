@@ -488,7 +488,7 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
                 return (
                   <WallShape
                     key={obj.id}
-                    shapeProps={{ ...obj, name: obj.id }}
+                    shapeProps={{ ...obj, name: obj.id, fill: obj.material === 'custom_color' ? (obj.color || '#f0f0f0') : obj.fill }}
                     onSelect={() => onSelect(obj.id)}
                     onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
                   />

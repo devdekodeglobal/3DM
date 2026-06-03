@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as BABYLON from '@babylonjs/core'
 import '@babylonjs/loaders/glTF'
+import { GLTF2Export } from '@babylonjs/serializers/glTF/2.0/glTFSerializer'
 import * as GUI from '@babylonjs/gui';
 import { calculateBlueprintMeasurements } from '../../lib/blueprintMath';
 import { GridMaterial } from '@babylonjs/materials';
@@ -10,11 +11,22 @@ interface Preview3DProps {
   elements: any[];
   activeView?: 'perspective' | 'top' | 'north' | 'south' | 'east' | 'west' | string;
   onExportComplete?: (baseView: any, base64Data?: string) => void;
+  selectedId?: string | null;
+  onSelectElement?: (id: string | null) => void;
+  onUpdateElement?: (id: string, newProps: any) => void;
 }
 
 const PPM = 100;
 
-export default function Preview3D({ boothConfig, elements, activeView = 'perspective', onExportComplete }: Preview3DProps) {
+export default function Preview3D({ 
+  boothConfig, 
+  elements, 
+  activeView = 'perspective', 
+  onExportComplete,
+  selectedId,
+  onSelectElement,
+  onUpdateElement
+}: Preview3DProps) {
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [cameraMode, setCameraMode] = useState<'orbit' | 'flight'>('orbit');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -30,8 +42,21 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
   const modelCacheRef = useRef<Map<string, Promise<BABYLON.AssetContainer>>>(new Map());
   const textureCacheRef = useRef<Map<string, BABYLON.Texture>>(new Map());
   const wallDecorationRegistryRef = useRef<Map<string, BABYLON.AbstractMesh[]>>(new Map());
+  const ceilingLightsRef = useRef<BABYLON.Light[]>([]);
   const lastBoothDimRef = useRef({ w: 0, d: 0 });
   const prevElementsRef = useRef<any[]>([]);
+
+  const isShiftPressedRef = useRef(false);
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Shift') isShiftPressedRef.current = true; };
+    const handleKeyUp = (e: KeyboardEvent) => { if (e.key === 'Shift') isShiftPressedRef.current = false; };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
   const [debouncedElements, setDebouncedElements] = useState(elements);
 
   useEffect(() => {
@@ -153,9 +178,22 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
     };
     window.addEventListener('resize', handleResize);
 
+    (window as any).exportSceneToGLB = async () => {
+      const glb = await GLTF2Export.GLBAsync(scene, "booth.glb", {
+        shouldExportNode: (node) => {
+          if (node.name === "blueprintGrid" || node.name === "background" || node instanceof BABYLON.Camera) {
+            return false;
+          }
+          return true;
+        }
+      });
+      return glb.glTFFiles["booth.glb"];
+    };
+
     setIsSceneReady(true);
 
     return () => {
+      delete (window as any).exportSceneToGLB;
       setIsSceneReady(false);
       window.removeEventListener('resize', handleResize);
       if (sceneRef.current) {
@@ -176,11 +214,22 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
     const shadowGenerator = shadowGeneratorRef.current;
     if (!scene || !shadowGenerator) return;
 
+    if (shadowGenerator) {
+      shadowGenerator.bias = 0.0015;
+      shadowGenerator.normalBias = 0.02;
+    }
+
     structureRegistryRef.current.forEach(mesh => mesh.dispose());
     structureRegistryRef.current = [];
 
     const centerX = boothConfig.width / 2;
     const centerZ = boothConfig.depth / 2;
+
+    const dir = scene.getLightByName("dir") as BABYLON.DirectionalLight;
+    if (dir) {
+      dir.position = new BABYLON.Vector3(centerX + 15, 25, centerZ + 15);
+      dir.shadowOrthoScale = 1.5;
+    }
 
     if (lastBoothDimRef.current.w !== boothConfig.width || lastBoothDimRef.current.d !== boothConfig.depth) {
       const orbitCam = scene.getCameraByName("orbitCam") as BABYLON.ArcRotateCamera;
@@ -202,7 +251,11 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
     
     const floorType = boothConfig.floorType || 'hardwood';
 
-    if (floorType === 'carpet') {
+    if (floorType === 'custom_color') {
+      const cHex = boothConfig.floorColor || '#ffffff';
+      floorMat.albedoColor = BABYLON.Color3.FromHexString(cHex);
+      floorMat.roughness = 0.5;
+    } else if (floorType === 'carpet') {
       floorMat.albedoColor = new BABYLON.Color3(0.18, 0.25, 0.31);
       floorMat.roughness = 0.9; // Matte
     } else {
@@ -242,6 +295,105 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
     grid.material = gridMat as BABYLON.Material;
     grid.isVisible = activeView !== 'perspective';
     structureRegistryRef.current.push(grid);
+
+    // --- 2.2 ROOF & CEILING LIGHTS RENDERING ---
+    if (ceilingLightsRef.current) {
+      ceilingLightsRef.current.forEach(l => l.dispose());
+      ceilingLightsRef.current = [];
+    }
+
+    const roofConfig = boothConfig?.roof;
+    if (roofConfig && roofConfig.enabled) {
+      const rColor = roofConfig.color || '#e2e8f0';
+      const rThickness = roofConfig.thickness || 0.1;
+      const rHeight = roofConfig.height || 2.5;
+      const panels = roofConfig.panels || [];
+      const lights = roofConfig.lights || [];
+
+      // Create Material for Roof Panels
+      const roofMat = new BABYLON.PBRMaterial("roofMat", scene);
+      roofMat.maxSimultaneousLights = 16;
+      roofMat.albedoColor = BABYLON.Color3.FromHexString(rColor);
+      roofMat.roughness = 0.6;
+      roofMat.metallic = 0.1;
+
+      panels.forEach((panel: any, index: number) => {
+        const wVal = panel.width / PPM;
+        const dVal = panel.height / PPM; // height in 2D is depth in 3D
+        const pX = panel.x / PPM;
+        const pY = panel.y / PPM;
+
+        const roofPanelMesh = BABYLON.MeshBuilder.CreateBox("roofPanel_" + panel.id, {
+          width: wVal,
+          height: rThickness,
+          depth: dVal
+        }, scene);
+
+        // Position: center x and z, y is above wall height (with a tiny offset to prevent Z-fighting)
+        const cX = pX + wVal / 2;
+        const cZ = boothConfig.depth - (pY + dVal / 2);
+        const cY = rHeight + rThickness / 2 + index * 0.002;
+
+        roofPanelMesh.position.set(cX, cY, cZ);
+        roofPanelMesh.material = roofMat;
+        roofPanelMesh.receiveShadows = true;
+        shadowGenerator.addShadowCaster(roofPanelMesh);
+
+        structureRegistryRef.current.push(roofPanelMesh);
+      });
+
+      // Create lights
+      lights.forEach((light: any) => {
+        const wVal = light.width / PPM;
+        const dVal = light.height / PPM;
+        const pX = light.x / PPM;
+        const pY = light.y / PPM;
+
+        const cX = pX + wVal / 2;
+        const cZ = boothConfig.depth - (pY + dVal / 2);
+        const cY = rHeight - 0.01; // slightly below ceiling
+
+        let lightMesh: BABYLON.Mesh;
+        const lightMat = new BABYLON.PBRMaterial("ceilingLightMat_" + light.id, scene);
+        const lColor = BABYLON.Color3.FromHexString(light.color || '#ffffff');
+        lightMat.albedoColor = lColor;
+        lightMat.emissiveColor = lColor;
+        lightMat.emissiveIntensity = (light.intensity || 1.0) * 2.5;
+        lightMat.roughness = 0.1;
+
+        if (light.type === 'circular') {
+          lightMesh = BABYLON.MeshBuilder.CreateCylinder("ceilingLightMesh_" + light.id, {
+            diameter: Math.min(wVal, dVal),
+            height: 0.03
+          }, scene);
+        } else {
+          lightMesh = BABYLON.MeshBuilder.CreateBox("ceilingLightMesh_" + light.id, {
+            width: wVal,
+            height: 0.03,
+            depth: dVal
+          }, scene);
+        }
+
+        lightMesh.position.set(cX, cY, cZ);
+        lightMesh.material = lightMat;
+        structureRegistryRef.current.push(lightMesh);
+
+        // Add real spotlight pointing down
+        const spotLight = new BABYLON.SpotLight(
+          "ceilingSpot_" + light.id,
+          new BABYLON.Vector3(cX, cY - 0.02, cZ),
+          new BABYLON.Vector3(0, -1, 0),
+          Math.PI / 3, // 60 degree cone
+          2.0, // falloff exponent
+          scene
+        );
+        spotLight.diffuse = lColor;
+        spotLight.intensity = (light.intensity || 1.0) * 6.0;
+        spotLight.range = 8.0;
+
+        ceilingLightsRef.current.push(spotLight);
+      });
+    }
 
   }, [boothConfig, isSceneReady]);
 
@@ -399,6 +551,74 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
       blueprintCam.setTarget(targetPos);
     }
   }, [activeView, isSceneReady, boothConfig, elements]);
+
+  // 2.15 Selection Outline Highlight Effect
+  useEffect(() => {
+    if (!isSceneReady || !sceneRef.current) return;
+    const registry = meshRegistryRef.current;
+    
+    // Clear all outlines first
+    registry.forEach((mesh) => {
+      mesh.renderOutline = false;
+      mesh.getChildMeshes().forEach(c => {
+        c.renderOutline = false;
+      });
+    });
+
+    if (selectedId) {
+      const selectedMesh = registry.get(selectedId);
+      if (selectedMesh) {
+        selectedMesh.renderOutline = true;
+        selectedMesh.outlineColor = new BABYLON.Color3(0, 0.7, 1);
+        selectedMesh.outlineWidth = 0.04;
+        
+        selectedMesh.getChildMeshes().forEach(c => {
+          c.renderOutline = true;
+          c.outlineColor = new BABYLON.Color3(0, 0.7, 1);
+          c.outlineWidth = 0.04;
+        });
+      }
+    }
+  }, [selectedId, isSceneReady]);
+
+  // 2.16 Pointer Pick Selection
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene || !isSceneReady) return;
+
+    scene.onPointerDown = (_evt, pickResult) => {
+      if (pickResult.hit && pickResult.pickedMesh) {
+        let current: BABYLON.Node | null = pickResult.pickedMesh;
+        let foundId: string | null = null;
+        
+        while (current) {
+          if (current instanceof BABYLON.AbstractMesh) {
+            for (const [id, regMesh] of meshRegistryRef.current.entries()) {
+              if (regMesh === current) {
+                foundId = id;
+                break;
+              }
+            }
+            if (foundId) break;
+          }
+          current = current.parent;
+        }
+
+        if (foundId) {
+          const el = elements.find(e => e.id === foundId);
+          if (el) {
+            onSelectElement?.(foundId);
+            return;
+          }
+        }
+      }
+
+      // Deselect if clicking on empty floor or grid
+      if (pickResult.hit && (pickResult.pickedMesh?.name === 'floor' || pickResult.pickedMesh?.name === 'blueprintGrid')) {
+        onSelectElement?.(null);
+      }
+    };
+  }, [isSceneReady, onSelectElement, elements]);
 
   // 2.2 Measurement & GUI Sync
   useEffect(() => {
@@ -595,6 +815,73 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
   useEffect(() => {
     if (!isSceneReady || !debouncedElements || !boothConfig) return;
     const elements = debouncedElements;
+
+    const attachDragBehavior = (pivotMesh: BABYLON.AbstractMesh, elementId: string) => {
+      const scene = sceneRef.current;
+      if (!scene) return;
+
+      const existing = pivotMesh.getBehaviorByName("PointerDrag");
+      if (existing) return;
+
+      const dragBehavior = new BABYLON.PointerDragBehavior({
+        dragPlaneNormal: new BABYLON.Vector3(0, 1, 0)
+      });
+      dragBehavior.moveAttached = false; // We handle position and rotation manually
+
+      let isRotating = false;
+      let startRotY = 0;
+      let startX = 0;
+
+      dragBehavior.onDragStartObservable.add(() => {
+        const activeCam = scene.activeCamera;
+        if (activeCam) {
+          activeCam.detachControl();
+        }
+        onSelectElement?.(elementId);
+
+        isRotating = isShiftPressedRef.current;
+        startRotY = pivotMesh.rotation.y;
+        startX = scene.pointerX;
+      });
+
+      dragBehavior.onDragObservable.add((evt) => {
+        if (isRotating) {
+           const deltaX = scene.pointerX - startX;
+           // Roughly 1 degree per pixel
+           pivotMesh.rotation.y = startRotY + (deltaX * Math.PI / 180);
+        } else {
+           pivotMesh.position.addInPlace(evt.delta);
+        }
+      });
+
+      dragBehavior.onDragEndObservable.add(() => {
+        const activeCam = scene.activeCamera;
+        if (activeCam && canvasRef.current) {
+          activeCam.attachControl(canvasRef.current, true);
+        }
+
+        if (isRotating) {
+           const finalRot = pivotMesh.rotation.y * (180 / Math.PI);
+           let normalized = Math.round(finalRot) % 360;
+           if (normalized < 0) normalized += 360;
+           onUpdateElement?.(elementId, { rotation: normalized });
+        } else {
+           const newX = pivotMesh.position.x * PPM;
+           const newY = (boothConfig.depth - pivotMesh.position.z) * PPM;
+
+           // Snap to nearest 10px (0.1m) to match 2D grid snapping
+           const fineSnapSize = 10;
+           const snapToGrid = (val: number) => Math.round(val / fineSnapSize) * fineSnapSize;
+
+           onUpdateElement?.(elementId, { 
+             x: snapToGrid(newX), 
+             y: snapToGrid(newY) 
+           });
+        }
+      });
+
+      pivotMesh.addBehavior(dragBehavior);
+    };
 
     // Fix 2: Dirty Flag for Assets
     const prevElements = prevElementsRef.current;
@@ -832,8 +1119,9 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
                 accessoryGroup.position.set(localX, localY, 0);
                 accessoryGroup.parent = mesh;
 
+                const cColor = wel.color ? BABYLON.Color3.FromHexString(wel.color) : null;
                 const frameMat = new BABYLON.StandardMaterial("fmat", scene);
-                frameMat.diffuseColor = trimColor;
+                frameMat.diffuseColor = (wel.type === 'window' && cColor) ? cColor : trimColor;
                 frameMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
 
                 if (wel.type === 'window') {
@@ -866,7 +1154,7 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
                    const leaf = BABYLON.MeshBuilder.CreateBox("dl", { width: cutW - ft*2, height: cutH - ft, depth: 0.04 }, scene);
                    leaf.position.y = -ft/2; 
                    const leafMat = new BABYLON.StandardMaterial("leafMat", scene);
-                   leafMat.diffuseColor = new BABYLON.Color3(0.39, 0.26, 0.13); 
+                   leafMat.diffuseColor = cColor ? cColor : new BABYLON.Color3(0.39, 0.26, 0.13); 
                    leafMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
                    leaf.material = leafMat;
                    leaf.parent = accessoryGroup;
@@ -906,6 +1194,9 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
               if (wel.type === 'shelf') {
                 mount = BABYLON.MeshBuilder.CreateBox("shelf", { width: cutW, height: 0.03, depth: 0.3 }, scene);
                 mount.position.set(localX, localY, -dVal/2 - 0.15);
+                const sMat = new BABYLON.StandardMaterial("sMat", scene);
+                sMat.diffuseColor = wel.color ? BABYLON.Color3.FromHexString(wel.color) : new BABYLON.Color3(0.6, 0.4, 0.2);
+                mount.material = sMat;
               } else if (wel.type === 'light') {
                 const lColor = BABYLON.Color3.FromHexString(wel.lightColor || '#fff8e7');
                 const lIntensity = wel.intensity || 1.2;
@@ -970,7 +1261,10 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
             else if (el.material === 'Marble') { texName = 'marble'; mat.roughness = 0.1; mat.metallic = 0.2; }
             else if (el.material === 'Concrete') texName = 'concrete';
             
-            if (texName) {
+            if (el.material === 'custom_color') {
+              mat.albedoColor = BABYLON.Color3.FromHexString(el.color || '#f0f0f0'); 
+              mat.albedoTexture = null;
+            } else if (texName) {
               const texUrl = `/assets/textures/${texName}.png`;
               if (!mat.albedoTexture || (mat.albedoTexture as BABYLON.Texture).url !== texUrl) {
                 let cachedTex = textureCacheRef.current.get(texUrl);
@@ -1078,6 +1372,7 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
 
           pivot.metadata = { svgData: el.svgData, depth: el.depth, logoStyle: el.logoStyle, logoColor: el.logoColor };
           registry.set(el.id, pivot);
+          attachDragBehavior(pivot, el.id);
 
         } else if (el.type === 'asset') {
           const modelName = el.assetName?.toLowerCase() || 'box';
@@ -1086,6 +1381,7 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
           pivot.position.set(x, el.yOffset || 0, z);
           pivot.rotation.y = rotY;
           registry.set(el.id, pivot);
+          attachDragBehavior(pivot, el.id);
 
           const instantiateAndSetup = (container: BABYLON.AssetContainer) => {
             if (!registry.has(el.id)) return;
@@ -1163,33 +1459,36 @@ export default function Preview3D({ boothConfig, elements, activeView = 'perspec
   }, [cameraMode]);
 
   return (
-    <div className="w-full h-full flex items-center justify-center bg-[var(--bg-base)] p-4">
-      <div ref={containerRef} className="w-full max-h-full aspect-video relative rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10" style={{ backgroundColor: '#0d0d0f' }}>
-        <canvas ref={canvasRef} className="w-full h-full block outline-none touch-none" />
+    <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--bg-base)] p-4 gap-4">
       {activeView === 'perspective' && (
-        <>
-          <div className="absolute top-4 left-4 z-20 flex gap-2">
+        <div className="w-full flex justify-between items-center max-w-[calc(100vh*16/9)]">
+          <div className="flex gap-2">
             <div className="px-3 py-1.5 rounded-lg bg-[rgba(0,0,0,0.6)] border border-[rgba(255,255,255,0.1)] text-[10px] font-bold text-white uppercase backdrop-blur-md">
               {cameraMode === 'orbit' ? 'Orbit Mode 🌐' : 'Flight Mode 🛸'}
             </div>
+            <div className="px-3 py-1.5 rounded-lg bg-[rgba(0,180,255,0.2)] border border-[rgba(0,180,255,0.3)] text-[10px] font-bold text-[#bbf] uppercase backdrop-blur-md">
+              Hold Shift to Rotate Assets
+            </div>
           </div>
-          <div className="absolute top-4 right-4 z-20 flex gap-2">
+          <div className="flex gap-2">
             <button 
               onClick={() => {
                 const currentHQ = localStorage.getItem('hq_3d') === 'true';
                 localStorage.setItem('hq_3d', currentHQ ? 'false' : 'true');
                 window.location.reload();
               }} 
-              className="px-4 py-2 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--brand)] border border-[rgba(255,255,255,0.1)] text-xs font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors"
+              className="px-4 py-2 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--brand)] border border-[rgba(255,255,255,0.1)] text-xs font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors cursor-pointer"
             >
               {localStorage.getItem('hq_3d') === 'true' ? "HQ: ON" : "HQ: OFF"}
             </button>
-            <button onClick={() => setCameraMode(prev => prev === 'orbit' ? 'flight' : 'orbit')} className="px-4 py-2 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--sea-ink)] border border-[rgba(255,255,255,0.1)] text-xs font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors">
+            <button onClick={() => setCameraMode(prev => prev === 'orbit' ? 'flight' : 'orbit')} className="px-4 py-2 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--sea-ink)] border border-[rgba(255,255,255,0.1)] text-xs font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors cursor-pointer">
               {cameraMode === 'orbit' ? "Flight Mode" : "Orbit Mode"}
             </button>
           </div>
-        </>
+        </div>
       )}
+      <div ref={containerRef} className="w-full max-h-full aspect-video relative rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10" style={{ backgroundColor: '#0d0d0f' }}>
+        <canvas ref={canvasRef} className="w-full h-full block outline-none touch-none" />
       </div>
     </div>
   );

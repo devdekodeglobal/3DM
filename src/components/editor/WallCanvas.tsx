@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { Stage, Layer, Rect, Text, Transformer, Line, Group, Circle } from 'react-konva'
 import { X, Save } from 'lucide-react'
 import { getCachedImage } from '../../lib/imageCache'
+import ColorPickerPanel from './ColorPickerPanel'
 
 // Sub-component for the actual wall elements to prevent re-renders during transformation/drag labels
 const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, onDragEnd, onTransform, onTransformEnd }: any) => {
@@ -35,7 +36,7 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
         const patternImg = hasImage ? images[el.url] : undefined
         
         // Light color handling
-        const lightFill = el.type === 'light' ? (el.lightColor || '#fff8e7') : cfg.color
+        const lightFill = el.type === 'light' ? (el.lightColor || '#fff8e7') : (el.color || cfg.color)
         const lightOpacity = el.type === 'light' ? 0.6 : 1.0
 
         if ((el.type === 'frame' && el.shape === 'circle') || (el.type === 'light' && el.model === 'wall_light_2')) {
@@ -441,6 +442,16 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
                       </div>
                     </div>
                   </>
+                )}
+
+                {(selectedEl.type === 'door' || selectedEl.type === 'window' || selectedEl.type === 'shelf') && (
+                  <div className="pt-2">
+                    <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold block mb-1">Color</label>
+                    <ColorPickerPanel
+                      initialColor={selectedEl.color || ELEMENT_TYPES[selectedEl.type]?.stroke || '#ffffff'}
+                      onChange={(c) => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, color: c } : el))}
+                    />
+                  </div>
                 )}
 
                 {selectedEl.type === 'frame' && (

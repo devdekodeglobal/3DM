@@ -5,7 +5,9 @@ import Canvas from '../components/editor/Canvas'
 import WallCanvas from '../components/editor/WallCanvas'
 import Properties from '../components/editor/Properties'
 import Preview3D from '../components/editor/Preview3D'
-import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, FileText, Download, Upload, LogOut, Cloud, Laptop, LogIn, Folder, X } from 'lucide-react'
+import ColorPickerPanel from '../components/editor/ColorPickerPanel'
+import RoofCanvas from '../components/editor/RoofCanvas'
+import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, FileText, Download, Upload, LogOut, Cloud, LogIn, Folder, X } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
@@ -25,6 +27,7 @@ interface BoothConfig {
   wallThickness: number;
   walls: { north: boolean; south: boolean; east: boolean; west: boolean };
   floorType?: string;
+  floorColor?: string;
 }
 
 function EditorPage() {
@@ -47,7 +50,9 @@ function EditorPage() {
 
   // New Wizard States
   const [setupFloorType, setSetupFloorType] = useState('hardwood')
+  const [setupFloorColor, setSetupFloorColor] = useState('#ffffff')
   const [setupWallMaterial, setSetupWallMaterial] = useState('White Paint')
+  const [setupWallColor, setSetupWallColor] = useState('#f0f0f0')
   const [setupAssets, setSetupAssets] = useState<Record<string, number>>({
     'chair_1': 0,
     'round_table_1': 0,
@@ -69,6 +74,7 @@ function EditorPage() {
   const [splitWidth, setSplitWidth] = useState(60)
   const [is3DGenerated, setIs3DGenerated] = useState(false)
   const [editingWallId, setEditingWallId] = useState<string | null>(null)
+  const [editingRoof, setEditingRoof] = useState(false)
   const [blueprintView, setBlueprintView] = useState<'perspective' | 'top' | 'north' | 'south' | 'east' | 'west'>('perspective')
 
   // Report Generation State
@@ -459,7 +465,8 @@ function EditorPage() {
                       { id: 'hardwood', name: 'Hardwood', img: '/assets/textures/hardwood.png' },
                       { id: 'carpet', name: 'Carpet', img: null, color: '#2e3f50' },
                       { id: 'marble', name: 'Marble', img: '/assets/textures/marble.png' },
-                      { id: 'concrete', name: 'Concrete', img: '/assets/textures/concrete.png' }
+                      { id: 'concrete', name: 'Concrete', img: '/assets/textures/concrete.png' },
+                      { id: 'custom_color', name: 'Custom Color', img: null, color: setupFloorColor }
                     ].map(mat => (
                       <button
                         key={mat.id}
@@ -471,6 +478,9 @@ function EditorPage() {
                       </button>
                     ))}
                   </div>
+                  {setupFloorType === 'custom_color' && (
+                    <ColorPickerPanel initialColor={setupFloorColor} onChange={setSetupFloorColor} />
+                  )}
                 </div>
                 
                 <div>
@@ -481,7 +491,8 @@ function EditorPage() {
                       { id: 'Wood', name: 'Wood Planks', color: '#8B4513' },
                       { id: 'Brick', name: 'Brick Wall', color: '#9a4a30' },
                       { id: 'Concrete', name: 'Concrete', color: '#898989' },
-                      { id: 'Marble', name: 'Marble', color: '#d8d0c8' }
+                      { id: 'Marble', name: 'Marble', color: '#d8d0c8' },
+                      { id: 'custom_color', name: 'Custom Color', color: setupWallColor }
                     ].map(mat => (
                       <button
                         key={mat.id}
@@ -493,6 +504,9 @@ function EditorPage() {
                       </button>
                     ))}
                   </div>
+                  {setupWallMaterial === 'custom_color' && (
+                    <ColorPickerPanel initialColor={setupWallColor} onChange={setSetupWallColor} />
+                  )}
                 </div>
               </div>
 
@@ -544,13 +558,15 @@ function EditorPage() {
                     const D = setupDepth * PPM
                     const T = setupWallThickness * 100
 
-                    const wallProps = getWallMaterialProps(setupWallMaterial)
+                    const wallProps = setupWallMaterial === 'custom_color' 
+                      ? { material: 'custom_color', color: setupWallColor } 
+                      : getWallMaterialProps(setupWallMaterial)
                     const initialElements: any[] = []
                     if (setupWalls.north) initialElements.push({ id: 'outer-north', type: 'wall', isOuter: true, x: W / 2, y: 0, width: W, thickness: T, rotation: 0, wallElements: [], ...wallProps })
                     if (setupWalls.south) initialElements.push({ id: 'outer-south', type: 'wall', isOuter: true, x: W / 2, y: D, width: W, thickness: T, rotation: 0, wallElements: [], ...wallProps })
                     if (setupWalls.west) initialElements.push({ id: 'outer-west', type: 'wall', isOuter: true, x: 0, y: D / 2, width: D, thickness: T, rotation: 90, wallElements: [], ...wallProps })
                     if (setupWalls.east) initialElements.push({ id: 'outer-east', type: 'wall', isOuter: true, x: W, y: D / 2, width: D, thickness: T, rotation: 90, wallElements: [], ...wallProps })
-
+                    
                     // Generate Assets inside the Booth
                     let spawnX = 0.5 * PPM; // Start 0.5m from left wall
                     let spawnY = 0.5 * PPM; // Start 0.5m from top wall
@@ -581,7 +597,7 @@ function EditorPage() {
                       }
                     });
 
-                    setBoothConfig({ width: setupWidth, depth: setupDepth, wallThickness: setupWallThickness, walls: setupWalls, floorType: setupFloorType })
+                    setBoothConfig({ width: setupWidth, depth: setupDepth, wallThickness: setupWallThickness, walls: setupWalls, floorType: setupFloorType, floorColor: setupFloorColor })
                     setElements(initialElements)
                     saveToHistory(initialElements)
                   }}
@@ -756,6 +772,7 @@ function EditorPage() {
               onViewElevation={() => setBlueprintView(`elevation_${selectedId}` as any)}
               boothConfig={boothConfig}
               onBoothConfigUpdate={(updates: any) => setBoothConfig((prev: any) => ({ ...prev, ...updates }))}
+              onEditRoof={() => setEditingRoof(true)}
             />
           </div>
         )}
@@ -794,6 +811,9 @@ function EditorPage() {
                   elements={elements} 
                   activeView={blueprintView}
                   onExportComplete={onExportComplete}
+                  onUpdateElement={handleUpdateElement}
+                  onSelectElement={handleSelect}
+                  selectedId={selectedId}
                 />
               </div>
             ) : (
@@ -841,6 +861,21 @@ function EditorPage() {
           </div>
         </div>
       )}
+      {/* Roof Configuration Modal Overlay */}
+      {editingRoof && boothConfig && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-8 animate-in fade-in duration-200">
+          <div className="w-full max-w-7xl h-full max-h-[85vh] bg-[var(--bg-base)] rounded-3xl overflow-hidden shadow-2xl flex flex-col relative border border-[var(--border)] scale-in-center">
+            <RoofCanvas
+              boothConfig={boothConfig}
+              onSave={(roofConfig: any) => {
+                setBoothConfig((prev: any) => ({ ...prev, roof: roofConfig }))
+                setEditingRoof(false)
+              }}
+              onClose={() => setEditingRoof(false)}
+            />
+          </div>
+        </div>
+      )}
       {/* Supabase Integration Overlays */}
       <AuthModal 
         isOpen={authModalOpen} 
@@ -880,25 +915,61 @@ function EditorPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="space-y-4 pt-2">
                 <button
                   onClick={handleCloudSave}
                   disabled={isCloudSaving}
-                  className="bg-[var(--lagoon-deep)] hover:bg-[var(--palm)] text-white text-xs font-bold py-3 px-4 rounded-xl transition flex flex-col items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
+                  className="w-full bg-[var(--lagoon-deep)] hover:bg-[var(--palm)] text-white text-xs font-bold py-3.5 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
                 >
                   <Cloud className="w-5 h-5" />
                   {isCloudSaving ? 'Saving...' : sessionUser ? 'Save to Cloud' : 'Login to Cloud Save'}
                 </button>
-                <button
-                  onClick={() => {
-                    downloadProjectJSON();
-                    setShowSavePrompt(false);
-                  }}
-                  className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold py-3 px-4 rounded-xl transition flex flex-col items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Laptop className="w-5 h-5" />
-                  Save to Computer
-                </button>
+
+                <div className="text-[10px] font-black tracking-wider uppercase text-white/50 pt-3 block border-t border-white/10">
+                  Local Export Options
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => {
+                      downloadProjectJSON();
+                      setShowSavePrompt(false);
+                    }}
+                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold py-3.5 px-4 rounded-xl transition flex flex-col items-center justify-center gap-1.5 cursor-pointer text-center"
+                  >
+                    <FileText className="w-5 h-5 text-sky-400" />
+                    <span className="text-[11px]">Download JSON</span>
+                    <span className="text-[8px] text-white/50 leading-none">To edit in 3DM later</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!is3DGenerated || !(window as any).exportSceneToGLB) {
+                        alert("Please click 'Generate 3D' first to export the 3D model.");
+                        return;
+                      }
+                      try {
+                        const glbBlob = await (window as any).exportSceneToGLB();
+                        const url = URL.createObjectURL(glbBlob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `${projectName.replace(/\s+/g, '_')}_booth.glb`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        setShowSavePrompt(false);
+                      } catch (err) {
+                        console.error("GLB export failed:", err);
+                        alert("Failed to export 3D model.");
+                      }
+                    }}
+                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold py-3.5 px-4 rounded-xl transition flex flex-col items-center justify-center gap-1.5 cursor-pointer text-center"
+                  >
+                    <Box className="w-5 h-5 text-amber-400" />
+                    <span className="text-[11px]">Download GLB</span>
+                    <span className="text-[8px] text-white/50 leading-none">For Blender & AR</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
