@@ -81,6 +81,7 @@ function EditorPage() {
   const [isCapturingReport, setIsCapturingReport] = useState(false)
   const [captureQueue, setCaptureQueue] = useState<string[]>([])
   const [reportScreenshots, setReportScreenshots] = useState<Record<string, string>>({})
+  const [backgroundColor, setBackgroundColor] = useState('#1d1f21')
 
 
   const handleSelect = useCallback((id: string | null) => {
@@ -744,7 +745,9 @@ function EditorPage() {
             <Sidebar 
               addElement={addElement} 
               activeView={blueprintView} 
-              onViewChange={setBlueprintView} 
+              onViewChange={setBlueprintView}
+              backgroundColor={backgroundColor}
+              setBackgroundColor={setBackgroundColor}
             />
           </div>
         )}
@@ -814,6 +817,8 @@ function EditorPage() {
                   onUpdateElement={handleUpdateElement}
                   onSelectElement={handleSelect}
                   selectedId={selectedId}
+                  backgroundColor={backgroundColor}
+                  setBackgroundColor={setBackgroundColor}
                 />
               </div>
             ) : (

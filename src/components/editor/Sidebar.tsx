@@ -2,19 +2,27 @@ import { useState, useMemo } from 'react'
 import { Box, PlusSquare, ChevronDown, ChevronRight, Download, LayoutGrid, Search } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import { ASSET_DIMENSIONS, ASSET_CATEGORIES, ASSET_REGISTRY } from '../../lib/assetRegistry'
+import ColorPickerPanel from './ColorPickerPanel'
 
 const DEFAULT_ASSET_SIZE_PX = 100
 
 export default function Sidebar({ 
   addElement, 
   activeView = 'perspective', 
-  onViewChange 
+  onViewChange,
+  backgroundColor,
+  setBackgroundColor
 }: { 
   addElement: (el: any) => void;
   activeView?: string;
   onViewChange?: (view: any) => void;
+  backgroundColor?: string;
+  setBackgroundColor?: (color: string) => void;
 }) {
   const [isTechOpen, setIsTechOpen] = useState(false)
+  const [isCoreOpen, setIsCoreOpen] = useState(false)
+  const [isModelsOpen, setIsModelsOpen] = useState(true)
+  const [isBgOpen, setIsBgOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>(ASSET_CATEGORIES[0].id)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -116,79 +124,120 @@ export default function Sidebar({
         </h3>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 flex flex-col">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink-soft)] mb-2">
-            Core Structures
-          </p>
-          <button
-            onClick={addWall}
-            className="w-full flex items-center justify-center gap-2 p-3 bg-[var(--brand)] text-white rounded-xl font-semibold hover:bg-[var(--brand-h)] transition shadow-sm"
+      <div className="flex-1 overflow-y-auto flex flex-col custom-scrollbar">
+        {/* Core Structures Accordion */}
+        <div className="border-b border-[var(--line)] shrink-0">
+          <button 
+            onClick={() => setIsCoreOpen(!isCoreOpen)}
+            className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-light)] transition-colors"
           >
-            <PlusSquare className="h-4 w-4" /> Add Wall
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink-soft)]">
+              Core Structures
+            </p>
+            {isCoreOpen ? <ChevronDown className="h-4 w-4 text-[var(--sea-ink-soft)]" /> : <ChevronRight className="h-4 w-4 text-[var(--sea-ink-soft)]" />}
           </button>
-          <button
-            onClick={add3DLogo}
-            className="w-full mt-2 flex items-center justify-center gap-2 p-3 bg-[var(--lagoon-deep)] text-white rounded-xl font-semibold hover:bg-[var(--palm)] transition shadow-sm"
-          >
-            <PlusSquare className="h-4 w-4" /> Add 3D Logo
-          </button>
+          {isCoreOpen && (
+            <div className="px-4 pb-4 space-y-2 animate-in fade-in duration-200">
+              <button
+                onClick={addWall}
+                className="w-full flex items-center justify-center gap-2 p-3 bg-[var(--brand)] text-white rounded-xl font-semibold hover:bg-[var(--brand-h)] transition shadow-sm"
+              >
+                <PlusSquare className="h-4 w-4" /> Add Wall
+              </button>
+              <button
+                onClick={add3DLogo}
+                className="w-full flex items-center justify-center gap-2 p-3 bg-[var(--lagoon-deep)] text-white rounded-xl font-semibold hover:bg-[var(--palm)] transition shadow-sm"
+              >
+                <PlusSquare className="h-4 w-4" /> Add 3D Logo
+              </button>
+            </div>
+          )}
         </div>
 
-        <div className="w-full h-px bg-[var(--line)] my-2" />
-
-        <div className="flex flex-col gap-3 flex-1 overflow-hidden">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink-soft)]">
-            3D Models
-          </p>
-          
-          <select 
-            value={selectedCategory} 
-            onChange={e => setSelectedCategory(e.target.value)}
-            className="w-full p-2 bg-[var(--surface-strong)] border border-[var(--line)] rounded-lg text-xs font-bold text-[var(--sea-ink)] outline-none focus:border-[var(--lagoon)]"
+        {/* 3D Models Accordion */}
+        <div className={`border-b border-[var(--line)] flex flex-col ${isModelsOpen ? 'flex-1 min-h-[200px]' : 'shrink-0'}`}>
+          <button 
+            onClick={() => setIsModelsOpen(!isModelsOpen)}
+            className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-light)] transition-colors shrink-0"
           >
-            <option value="all">All Categories</option>
-            {ASSET_CATEGORIES.map(c => (
-              <option key={c.id} value={c.id}>{c.label}</option>
-            ))}
-          </select>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink-soft)]">
+              3D Models
+            </p>
+            {isModelsOpen ? <ChevronDown className="h-4 w-4 text-[var(--sea-ink-soft)]" /> : <ChevronRight className="h-4 w-4 text-[var(--sea-ink-soft)]" />}
+          </button>
+          
+          {isModelsOpen && (
+            <div className="px-4 pb-4 flex flex-col gap-3 flex-1 overflow-hidden animate-in fade-in duration-200">
+              <select 
+                value={selectedCategory} 
+                onChange={e => setSelectedCategory(e.target.value)}
+                className="w-full p-2 bg-[var(--surface-strong)] border border-[var(--line)] rounded-lg text-xs font-bold text-[var(--sea-ink)] outline-none focus:border-[var(--lagoon)] shrink-0"
+              >
+                <option value="all">All Categories</option>
+                {ASSET_CATEGORIES.map(c => (
+                  <option key={c.id} value={c.id}>{c.label}</option>
+                ))}
+              </select>
 
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Search assets..." 
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-2 bg-[var(--surface-strong)] border border-[var(--line)] rounded-lg text-xs text-[var(--sea-ink)] outline-none focus:border-[var(--lagoon)] shadow-sm placeholder:text-[var(--sea-ink-soft)]"
-            />
-          </div>
+              <div className="relative shrink-0">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input 
+                  type="text" 
+                  placeholder="Search assets..." 
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-3 py-2 bg-[var(--surface-strong)] border border-[var(--line)] rounded-lg text-xs text-[var(--sea-ink)] outline-none focus:border-[var(--lagoon)] shadow-sm placeholder:text-[var(--sea-ink-soft)]"
+                />
+              </div>
 
-          <div className="flex-1 overflow-y-auto mt-2 space-y-2 pr-1 custom-scrollbar">
-            {filteredAssets.length === 0 ? (
-              <div className="text-xs text-center text-gray-400 py-4">No assets found</div>
-            ) : (
-              filteredAssets.map(asset => (
-                <button
-                  key={asset.id}
-                  onClick={() => addAsset(asset.category, asset.id)}
-                  className="w-full text-left p-2.5 rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-white hover:border-[var(--lagoon)] transition group flex items-center gap-3"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-[var(--surface-strong)] border border-[var(--line)] flex items-center justify-center text-[10px] font-black text-[var(--lagoon-deep)] shrink-0">
-                    {asset.id.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-[var(--sea-ink)] truncate group-hover:text-[var(--lagoon-deep)]">
-                      {asset.label}
-                    </p>
-                    <p className="text-[9px] text-gray-400 truncate mt-0.5 uppercase tracking-wider">
-                      {asset.category.replace(/-/g, ' ')}
-                    </p>
-                  </div>
-                </button>
-              ))
-            )}
-          </div>
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar min-h-0">
+                {filteredAssets.length === 0 ? (
+                  <div className="text-xs text-center text-gray-400 py-4">No assets found</div>
+                ) : (
+                  filteredAssets.map(asset => (
+                    <button
+                      key={asset.id}
+                      onClick={() => addAsset(asset.category, asset.id)}
+                      className="w-full text-left p-2.5 rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-white hover:border-[var(--lagoon)] transition group flex items-center gap-3"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-[var(--surface-strong)] border border-[var(--line)] flex items-center justify-center text-[10px] font-black text-[var(--lagoon-deep)] shrink-0">
+                        {asset.id.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-[var(--sea-ink)] truncate group-hover:text-[var(--lagoon-deep)]">
+                          {asset.label}
+                        </p>
+                        <p className="text-[9px] text-gray-400 truncate mt-0.5 uppercase tracking-wider">
+                          {asset.category.replace(/-/g, ' ')}
+                        </p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Background Color Accordion */}
+        <div className="shrink-0">
+          <button 
+            onClick={() => setIsBgOpen(!isBgOpen)}
+            className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-light)] transition-colors"
+          >
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink-soft)]">
+              Background Color
+            </p>
+            {isBgOpen ? <ChevronDown className="h-4 w-4 text-[var(--sea-ink-soft)]" /> : <ChevronRight className="h-4 w-4 text-[var(--sea-ink-soft)]" />}
+          </button>
+          
+          {isBgOpen && (
+            <div className="px-4 pb-4 animate-in fade-in duration-200">
+              {setBackgroundColor && backgroundColor && (
+                <ColorPickerPanel initialColor={backgroundColor} onChange={setBackgroundColor} />
+              )}
+            </div>
+          )}
         </div>
       </div>
 

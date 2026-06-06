@@ -291,21 +291,29 @@ export default function Properties({
                     3D Logo Settings
                   </p>
                   <div>
-                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">Upload SVG File</label>
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">Upload Logo (SVG/PNG/JPG)</label>
                     {selectedElement.svgData && (
                       <div className="relative group rounded-lg overflow-hidden border border-[var(--line)] h-20 bg-black/5 mb-2 flex items-center justify-center">
-                        <div dangerouslySetInnerHTML={{ __html: selectedElement.svgData }} className="w-full h-full p-2" />
+                        {selectedElement.svgData.startsWith('data:') ? (
+                          <img src={selectedElement.svgData} className="max-w-full max-h-full object-contain p-2" />
+                        ) : (
+                          <div dangerouslySetInnerHTML={{ __html: selectedElement.svgData }} className="w-full h-full p-2 [&>svg]:w-full [&>svg]:h-full" />
+                        )}
                         <button onClick={() => onUpdate(selectedElement.id, { svgData: null })} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold">Remove</button>
                       </div>
                     )}
                     <label htmlFor="svg-upload" className="cursor-pointer w-full py-2 rounded-lg bg-[var(--sand)] border border-[var(--line)] text-[10px] font-bold text-[var(--sea-ink)] text-center hover:bg-[var(--chip-bg)] hover:border-[var(--lagoon)] transition block">
-                      {selectedElement.svgData ? 'Replace SVG' : '+ Upload SVG'}
-                      <input id="svg-upload" type="file" accept=".svg" className="hidden" onChange={(e) => {
+                      {selectedElement.svgData ? 'Replace Logo' : '+ Upload Logo'}
+                      <input id="svg-upload" type="file" accept=".svg,.png,.jpg,.jpeg" className="hidden" onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
                           const reader = new FileReader();
                           reader.onload = (re) => onUpdate(selectedElement.id, { svgData: re.target?.result as string });
-                          reader.readAsText(file);
+                          if (file.type === 'image/svg+xml') {
+                            reader.readAsText(file);
+                          } else {
+                            reader.readAsDataURL(file);
+                          }
                         }
                       }} />
                     </label>
