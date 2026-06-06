@@ -1038,7 +1038,7 @@ export default function Preview3D({
             needsRecreate = true;
           }
         } else if (el.type === '3d_logo') {
-          if (!mesh.metadata || mesh.metadata.svgData !== el.svgData || mesh.metadata.depth !== el.depth || mesh.metadata.logoStyle !== el.logoStyle) {
+          if (!mesh.metadata || mesh.metadata.svgData !== el.svgData || mesh.metadata.depth !== el.depth || mesh.metadata.logoStyle !== el.logoStyle || mesh.metadata.width !== el.width || mesh.metadata.height !== el.height) {
             needsRecreate = true;
           }
         }
@@ -1379,6 +1379,11 @@ export default function Preview3D({
               canvas.height = PX_H;
               const ctx = canvas.getContext('2d')!;
               ctx.clearRect(0, 0, PX_W, PX_H);
+              
+              // BabylonJS applies textures upside down on CreatePlane
+              ctx.translate(0, PX_H);
+              ctx.scale(1, -1);
+              
               ctx.drawImage(img, 0, 0, PX_W, PX_H);
               if (isBlobUrl) URL.revokeObjectURL(url);
 
@@ -1404,7 +1409,13 @@ export default function Preview3D({
             faceMat.diffuseColor = baseColor;
           }
 
-          pivot.metadata = { svgData: el.svgData, depth: el.depth, logoStyle: el.logoStyle, logoColor: el.logoColor };
+          pivot.metadata = { 
+            svgData: el.svgData, 
+            depth: el.depth, 
+            logoStyle: el.logoStyle,
+            width: el.width,
+            height: el.height
+          };
           registry.set(el.id, pivot);
           attachDragBehavior(pivot, el.id);
 

@@ -308,7 +308,21 @@ export default function Properties({
                         const file = e.target.files?.[0];
                         if (file) {
                           const reader = new FileReader();
-                          reader.onload = (re) => onUpdate(selectedElement.id, { svgData: re.target?.result as string });
+                          reader.onload = (re) => {
+                            const data = re.target?.result as string;
+                            // Auto-fit dimensions based on image aspect ratio
+                            const img = new Image();
+                            img.onload = () => {
+                              const aspect = img.width / img.height;
+                              const defaultWidth = 150; // 1.5m wide base
+                              onUpdate(selectedElement.id, { 
+                                svgData: data,
+                                width: defaultWidth,
+                                height: defaultWidth / aspect
+                              });
+                            };
+                            img.src = data;
+                          };
                           if (file.type === 'image/svg+xml') {
                             reader.readAsText(file);
                           } else {
@@ -317,6 +331,33 @@ export default function Properties({
                         }
                       }} />
                     </label>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold">WIDTH (cm)</label>
+                        <span className="text-[10px] font-mono text-[var(--lagoon-deep)]">{Math.round(selectedElement.width || 100)}</span>
+                      </div>
+                      <input 
+                        type="range" min="10" max="1000" step="5"
+                        value={selectedElement.width || 100} 
+                        onChange={(e) => onUpdate(selectedElement.id, { width: parseFloat(e.target.value) })}
+                        className="w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)]" 
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold">HEIGHT (cm)</label>
+                        <span className="text-[10px] font-mono text-[var(--lagoon-deep)]">{Math.round(selectedElement.height || 100)}</span>
+                      </div>
+                      <input 
+                        type="range" min="10" max="1000" step="5"
+                        value={selectedElement.height || 100} 
+                        onChange={(e) => onUpdate(selectedElement.id, { height: parseFloat(e.target.value) })}
+                        className="w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)]" 
+                      />
+                    </div>
                   </div>
                   <div>
                     <div className="flex justify-between items-center mb-1">
