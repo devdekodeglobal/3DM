@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import ThemeToggle from './ThemeToggle'
 import { supabase } from '../lib/supabaseClient'
 import { AuthModal } from './editor/AuthModal'
+import { AnimatedHeaderLogo } from './AnimatedHeaderLogo'
 
 export default function Header() {
   const [sessionUser, setSessionUser] = useState<any>(null)
@@ -24,28 +25,7 @@ export default function Header() {
         <nav className="page-wrap flex items-center gap-8 py-3.5">
 
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 flex-shrink-0 no-underline" id="logo-link">
-            <div style={{
-              width: 34, height: 34,
-              background: 'var(--brand)',
-              borderRadius: 10,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: 'var(--shadow-brand)',
-            }}>
-              <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-                <path d="M12 3L3 8l9 5 9-5-9-5z" fill="white"/>
-                <path d="M3 16l9 5 9-5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M3 12l9 5 9-5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" opacity="0.65"/>
-              </svg>
-            </div>
-            <span style={{
-              fontFamily: 'Outfit, sans-serif',
-              fontWeight: 800,
-              fontSize: '1.15rem',
-              color: 'var(--fg)',
-              letterSpacing: '-0.02em',
-            }}>3DM</span>
-          </Link>
+          <AnimatedHeaderLogo />
 
           {/* Nav links */}
           <div className="hidden sm:flex items-center gap-7">

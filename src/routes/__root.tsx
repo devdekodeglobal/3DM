@@ -11,10 +11,21 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: '3DM — Advanced 3D Booth Designer' },
-      { name: 'description', content: 'Design exhibition booths with precision. 2D floor planning + real-time 3D visualization.' },
+      { title: 'kreatekaro — Professional 3D Interior Design Suite' },
+      { name: 'description', content: 'Advanced 3D interior design software for professionals. Seamless 2D floor planning and real-time immersive 3D visualization.' },
+      { property: 'og:title', content: 'kreatekaro — Professional 3D Interior Design Suite' },
+      { property: 'og:description', content: 'Advanced 3D interior design software for professionals. Seamless 2D floor planning and real-time immersive 3D visualization.' },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:image', content: '/og-image.png' },
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:title', content: 'kreatekaro — Professional 3D Interior Design Suite' },
+      { name: 'twitter:description', content: 'Advanced 3D interior design software for professionals. Seamless 2D floor planning and real-time immersive 3D visualization.' },
+      { name: 'twitter:image', content: '/og-image.png' },
     ],
-    links: [{ rel: 'stylesheet', href: appCss }],
+    links: [
+      { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+      { rel: 'stylesheet', href: appCss }
+    ],
   }),
   shellComponent: RootDocument,
 })

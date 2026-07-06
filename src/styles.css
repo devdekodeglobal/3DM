@@ -35,6 +35,15 @@
   --color-fg-soft: #475569;
   --color-fg-dim: #94A3B8;
 
+  /* --- Logo 3D Shading --- */
+  --color-logo-left-front: #0F172A;
+  --color-logo-left-top: #1E293B;
+  --color-logo-left-slope: #334155;
+  --color-logo-left-gap: #475569;
+  --color-logo-right-front: #475569;
+  --color-logo-right-top: #64748B;
+  --color-logo-right-slope: #94A3B8;
+
   /* --- Borders --- */
   --color-border: rgba(15, 23, 42, 0.09);
   --color-border-hi: rgba(15, 23, 42, 0.16);
@@ -60,6 +69,15 @@
   --color-fg: #F1F5F9;
   --color-fg-soft: #94A3B8;
   --color-fg-dim: #4B5563;
+
+  /* --- Logo 3D Shading (Dark) --- */
+  --color-logo-left-front: #FFFFFF;
+  --color-logo-left-top: #F8FAFC;
+  --color-logo-left-slope: #F1F5F9;
+  --color-logo-left-gap: #E2E8F0;
+  --color-logo-right-front: #CBD5E1;
+  --color-logo-right-top: #E2E8F0;
+  --color-logo-right-slope: #94A3B8;
 
   --color-brand: #818CF8;
   --color-brand-h: #6366F1;
@@ -89,6 +107,15 @@
     --color-fg: #F1F5F9;
     --color-fg-soft: #94A3B8;
     --color-fg-dim: #4B5563;
+
+    /* --- Logo 3D Shading (Dark) --- */
+    --color-logo-left-front: #FFFFFF;
+    --color-logo-left-top: #F8FAFC;
+    --color-logo-left-slope: #F1F5F9;
+    --color-logo-left-gap: #E2E8F0;
+    --color-logo-right-front: #CBD5E1;
+    --color-logo-right-top: #E2E8F0;
+    --color-logo-right-slope: #94A3B8;
 
     --color-brand: #818CF8;
     --color-brand-h: #6366F1;
@@ -137,6 +164,14 @@
   --line: var(--color-border);
   --bg-base: var(--color-bg-page);
   --chip-bg: var(--color-brand-bg);
+
+  --logo-left-front: var(--color-logo-left-front);
+  --logo-left-top: var(--color-logo-left-top);
+  --logo-left-slope: var(--color-logo-left-slope);
+  --logo-left-gap: var(--color-logo-left-gap);
+  --logo-right-front: var(--color-logo-right-front);
+  --logo-right-top: var(--color-logo-right-top);
+  --logo-right-slope: var(--color-logo-right-slope);
 }
 
 /* ===================== BASE ===================== */
@@ -374,4 +409,19 @@ code {
 pre code {
   border: 0; background: transparent; padding: 0;
   border-radius: 0; font-size: inherit; color: inherit;
+}
+
+/* ===================== VIEW TRANSITIONS ===================== */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
 }

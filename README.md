@@ -1,6 +1,6 @@
-# 3DM | Advanced 3D Booth Designer
+# kreatekaro | Professional 3D Interior Design Suite
 
-**3DM** is a high-performance, browser-based design suite for creating professional exhibition booths. It bridges the gap between precise 2D floor planning and immersive 3D visualization, offering a seamless workflow for architects and designers.
+**kreatekaro** is an advanced, high-performance browser-based design suite built specifically for professional interior designers and architects. It seamlessly bridges the gap between precise 2D floor planning and immersive, real-time 3D visualization.
 
 ---
 

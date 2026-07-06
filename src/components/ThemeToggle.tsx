@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 type ThemeMode = 'light' | 'dark' | 'auto'
 
@@ -44,11 +44,46 @@ export default function ThemeToggle() {
     return () => media.removeEventListener('change', onChange)
   }, [mode])
 
-  function toggleMode() {
+  function toggleMode(e: React.MouseEvent) {
     const nextMode: ThemeMode = mode === 'auto' ? 'light' : mode === 'light' ? 'dark' : 'auto'
-    setMode(nextMode)
-    applyThemeMode(nextMode)
-    window.localStorage.setItem('theme', nextMode)
+    
+    // Check for View Transitions API support
+    if (!('startViewTransition' in document)) {
+      setMode(nextMode)
+      applyThemeMode(nextMode)
+      window.localStorage.setItem('theme', nextMode)
+      return
+    }
+
+    const x = e.clientX
+    const y = e.clientY
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y)
+    )
+
+    // @ts-ignore - View Transitions API might not be in TS types
+    const transition = document.startViewTransition(() => {
+      setMode(nextMode)
+      applyThemeMode(nextMode)
+      window.localStorage.setItem('theme', nextMode)
+    })
+
+    transition.ready.then(() => {
+      document.documentElement.animate(
+        {
+          clipPath: [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${endRadius}px at ${x}px ${y}px)`
+          ]
+        },
+        {
+          duration: 1000,
+          easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)', // Nice springy reveal
+          pseudoElement: '::view-transition-new(root)'
+        }
+      )
+    })
   }
 
   const label =

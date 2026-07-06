@@ -19,7 +19,7 @@ export default function Footer() {
             </svg>
           </div>
           <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, color: 'var(--fg)', fontSize: '0.95rem' }}>
-            3DM
+            kreatekaro
           </span>
         </Link>
 

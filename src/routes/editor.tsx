@@ -944,7 +944,7 @@ function EditorPage() {
                   >
                     <FileText className="w-5 h-5 text-sky-400" />
                     <span className="text-[11px]">Download JSON</span>
-                    <span className="text-[8px] text-white/50 leading-none">To edit in 3DM later</span>
+                    <span className="text-[8px] text-white/50 leading-none">To edit in kreatekaro later</span>
                   </button>
                   <button
                     onClick={async () => {
