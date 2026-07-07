@@ -1,6 +1,6 @@
-# kreatekaro | Professional 3D Interior Design Suite
+# kreatekaro | Professional Platform for 3D Spaces
 
-**kreatekaro** is an advanced, high-performance browser-based design suite built specifically for professional interior designers and architects. It seamlessly bridges the gap between precise 2D floor planning and immersive, real-time 3D visualization.
+**kreatekaro** is an advanced, high-performance browser-based design suite built specifically for professional designers of 3D spaces and architecture. It seamlessly bridges the gap between precise 2D floor planning and immersive, real-time 3D visualization.
 
 ---
 

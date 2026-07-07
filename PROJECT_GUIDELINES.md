@@ -1,6 +1,6 @@
-# kreatekaro | Project Guidelines & Architecture
+# kreatekaro | Project Architecture & Guidelines
 
-This document serves as the primary technical reference for the **kreatekaro Interior Design Suite**. It outlines the core architecture, state management patterns, and the "Sync Loop" that powers the real-time 3D visualization.
+This document serves as the primary technical reference for the **kreatekaro Platform for 3D Spaces**. It outlines the core architecture, state management patterns, and the "Sync Loop" that powers the real-time 3D visualization.
 
 ---
 

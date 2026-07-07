@@ -17,7 +17,7 @@ low-spec laptops without expensive hardware.
 --- COMPARISON WITH INDIAN PLATFORMS ---
 
 * Foyr Neo (Chennai/Global)
-  While Foyr Neo is India’s leading cloud-based interior design platform, it 
+  While Foyr Neo is India’s leading cloud-based 3D space design platform, it 
   is built for general residential/commercial spaces and relies on slow, 
   queue-based cloud rendering. It lacks kreatekaro's instant local browser sync, 
   custom wall-cutout engineering, and automated technical blueprints for 
