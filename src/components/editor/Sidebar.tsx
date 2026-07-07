@@ -6,13 +6,13 @@ import ColorPickerPanel from './ColorPickerPanel'
 
 const DEFAULT_ASSET_SIZE_PX = 100
 
-export default function Sidebar({ 
-  addElement, 
-  activeView = 'perspective', 
+export default function Sidebar({
+  addElement,
+  activeView = 'perspective',
   onViewChange,
   backgroundColor,
   setBackgroundColor
-}: { 
+}: {
   addElement: (el: any) => void;
   activeView?: string;
   onViewChange?: (view: any) => void;
@@ -61,7 +61,7 @@ export default function Sidebar({
     const asset = ASSET_REGISTRY.find(a => a.id === assetName)
     const dims = ASSET_DIMENSIONS[assetName] as any
     const base = DEFAULT_ASSET_SIZE_PX
-    
+
     let w, h;
     if (dims && dims.specW && dims.specD) {
       w = dims.specW * 100;
@@ -73,7 +73,7 @@ export default function Sidebar({
       w = Math.max(20, Math.round((wRatio / longest) * base))
       h = Math.max(20, Math.round((hRatio / longest) * base))
     }
-    
+
     addElement({
       id: uuidv4(),
       type: 'asset',
@@ -95,12 +95,12 @@ export default function Sidebar({
   }
 
   const TECHNICAL_VIEWS = [
-    { id: 'perspective', label: '3D Orbit',  icon: <Box className="w-3 h-3" /> },
-    { id: 'top',         label: 'Top View', icon: <Download className="w-3 h-3" /> },
-    { id: 'north',       label: 'North Elev', icon: <Download className="w-3 h-3" /> },
-    { id: 'south',       label: 'South Elev', icon: <Download className="w-3 h-3" /> },
-    { id: 'east',        label: 'East Elev',  icon: <Download className="w-3 h-3" /> },
-    { id: 'west',        label: 'West Elev',  icon: <Download className="w-3 h-3" /> },
+    { id: 'perspective', label: '3D Orbit', icon: <Box className="w-3 h-3" /> },
+    { id: 'top', label: 'Top View', icon: <Download className="w-3 h-3" /> },
+    { id: 'north', label: 'North Elev', icon: <Download className="w-3 h-3" /> },
+    { id: 'south', label: 'South Elev', icon: <Download className="w-3 h-3" /> },
+    { id: 'east', label: 'East Elev', icon: <Download className="w-3 h-3" /> },
+    { id: 'west', label: 'West Elev', icon: <Download className="w-3 h-3" /> },
   ]
 
   const filteredAssets = useMemo(() => {
@@ -127,7 +127,7 @@ export default function Sidebar({
       <div className="flex-1 overflow-y-auto flex flex-col custom-scrollbar">
         {/* Core Structures Accordion */}
         <div className="border-b border-[var(--line)] shrink-0">
-          <button 
+          <button
             onClick={() => setIsCoreOpen(!isCoreOpen)}
             className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-light)] transition-colors"
           >
@@ -156,7 +156,7 @@ export default function Sidebar({
 
         {/* 3D Models Accordion */}
         <div className={`border-b border-[var(--line)] flex flex-col ${isModelsOpen ? 'flex-1 min-h-[200px]' : 'shrink-0'}`}>
-          <button 
+          <button
             onClick={() => setIsModelsOpen(!isModelsOpen)}
             className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-light)] transition-colors shrink-0"
           >
@@ -165,11 +165,11 @@ export default function Sidebar({
             </p>
             {isModelsOpen ? <ChevronDown className="h-4 w-4 text-[var(--sea-ink-soft)]" /> : <ChevronRight className="h-4 w-4 text-[var(--sea-ink-soft)]" />}
           </button>
-          
+
           {isModelsOpen && (
             <div className="px-4 pb-4 flex flex-col gap-3 flex-1 overflow-hidden animate-in fade-in duration-200">
-              <select 
-                value={selectedCategory} 
+              <select
+                value={selectedCategory}
                 onChange={e => setSelectedCategory(e.target.value)}
                 className="w-full p-2 bg-[var(--surface-strong)] border border-[var(--line)] rounded-lg text-xs font-bold text-[var(--sea-ink)] outline-none focus:border-[var(--lagoon)] shrink-0"
               >
@@ -181,9 +181,9 @@ export default function Sidebar({
 
               <div className="relative shrink-0">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input 
-                  type="text" 
-                  placeholder="Search assets..." 
+                <input
+                  type="text"
+                  placeholder="Search assets..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   className="w-full pl-8 pr-3 py-2 bg-[var(--surface-strong)] border border-[var(--line)] rounded-lg text-xs text-[var(--sea-ink)] outline-none focus:border-[var(--lagoon)] shadow-sm placeholder:text-[var(--sea-ink-soft)]"
@@ -221,7 +221,7 @@ export default function Sidebar({
 
         {/* Background Color Accordion */}
         <div className="shrink-0">
-          <button 
+          <button
             onClick={() => setIsBgOpen(!isBgOpen)}
             className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-light)] transition-colors"
           >
@@ -230,7 +230,7 @@ export default function Sidebar({
             </p>
             {isBgOpen ? <ChevronDown className="h-4 w-4 text-[var(--sea-ink-soft)]" /> : <ChevronRight className="h-4 w-4 text-[var(--sea-ink-soft)]" />}
           </button>
-          
+
           {isBgOpen && (
             <div className="px-4 pb-4 animate-in fade-in duration-200">
               {setBackgroundColor && backgroundColor && (
@@ -243,7 +243,7 @@ export default function Sidebar({
 
       {/* Fixed Bottom Technical Section */}
       <div className="border-t border-[var(--line)] bg-[var(--surface-light)] shrink-0">
-        <button 
+        <button
           onClick={() => setIsTechOpen(!isTechOpen)}
           className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-strong)] transition-colors"
         >
@@ -251,35 +251,34 @@ export default function Sidebar({
             <LayoutGrid className="w-3 h-3 text-[var(--lagoon-deep)]" />
             Technical Drawings
           </p>
-          {isTechOpen 
-            ? <ChevronDown className="h-3 w-3 text-[var(--sea-ink-soft)]" /> 
+          {isTechOpen
+            ? <ChevronDown className="h-3 w-3 text-[var(--sea-ink-soft)]" />
             : <ChevronRight className="h-3 w-3 text-[var(--sea-ink-soft)]" />
           }
         </button>
-        
+
         {isTechOpen && (
           <div className="px-4 pb-4 grid grid-cols-2 gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
             {TECHNICAL_VIEWS.map(view => (
               <button
                 key={view.id}
                 onClick={() => onViewChange?.(view.id)}
-                className={`flex items-center justify-between gap-2 p-2 rounded-lg border text-[10px] font-bold transition-all ${
-                  activeView === view.id 
-                    ? 'bg-[var(--lagoon)] text-white border-[var(--lagoon-deep)] shadow-sm' 
+                className={`flex items-center justify-between gap-2 p-2 rounded-lg border text-[10px] font-bold transition-all ${activeView === view.id
+                    ? 'bg-[var(--lagoon)] text-white border-[var(--lagoon-deep)] shadow-sm'
                     : 'bg-[var(--sand)] text-[var(--sea-ink-soft)] border-transparent hover:border-[var(--line)]'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   {view.id === 'perspective' ? <Box className="w-2.5 h-2.5" /> : null}
                   {view.label}
                 </div>
                 {view.id !== 'perspective' && (
-                    <div 
+                  <div
                     onClick={(e) => { e.stopPropagation(); onViewChange?.(view.id + '_download' as any); }}
                     className="p-1 hover:bg-white/20 rounded-md transition-colors"
-                    >
-                      <Download className="w-3 h-3" />
-                    </div>
+                  >
+                    <Download className="w-3 h-3" />
+                  </div>
                 )}
               </button>
             ))}

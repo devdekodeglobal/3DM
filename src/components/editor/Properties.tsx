@@ -15,9 +15,9 @@ interface PropertiesProps {
 
 const FLOOR_MATERIALS = [
   { id: 'hardwood', label: 'Hardwood', color: '#7a4f2e', desc: 'Warm oak planks' },
-  { id: 'marble',   label: 'Marble',   color: '#d8d0c8', desc: 'Polished white veined' },
-  { id: 'tile',     label: 'Tile',     color: '#b0a898', desc: 'Classic square tile' },
-  { id: 'carpet',   label: 'Carpet',   color: '#2e4050', desc: 'Soft dark carpet' },
+  { id: 'marble', label: 'Marble', color: '#d8d0c8', desc: 'Polished white veined' },
+  { id: 'tile', label: 'Tile', color: '#b0a898', desc: 'Classic square tile' },
+  { id: 'carpet', label: 'Carpet', color: '#2e4050', desc: 'Soft dark carpet' },
   { id: 'concrete', label: 'Concrete', color: '#898989', desc: 'Industrial grey' },
   { id: 'custom_color', label: 'Custom Color', color: '#ffffff', desc: 'Pick your own color' },
 ]
@@ -33,7 +33,7 @@ export default function Properties({
   selectedElement, onUpdate, onDelete, onEditElevation, onViewElevation,
   boothConfig, onBoothConfigUpdate, onEditRoof
 }: PropertiesProps) {
-  
+
   const handleMaterialChange = (material: string) => {
     const props = getWallMaterialProps(material);
     onUpdate(selectedElement.id, props)
@@ -49,21 +49,21 @@ export default function Properties({
           Properties
         </h3>
         {selectedElement && (
-           <button 
-             onClick={onDelete}
-             className="text-red-500 hover:text-white hover:bg-red-500 p-1.5 rounded-lg transition"
-             title="Delete (Backspace)"
-           >
-             <Trash2 className="h-4 w-4" />
-           </button>
+          <button
+            onClick={onDelete}
+            className="text-red-500 hover:text-white hover:bg-red-500 p-1.5 rounded-lg transition"
+            title="Delete (Backspace)"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         )}
       </div>
-      
+
       <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-32">
         {selectedElement ? (
           <div>
             <div className="space-y-4">
-              
+
               {/* Type / ID display */}
               <div>
                 <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-1">
@@ -80,24 +80,24 @@ export default function Properties({
                   <label htmlFor="pos-x" className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-1">
                     Pos X (m)
                   </label>
-                  <input 
+                  <input
                     id="pos-x" name="pos-x"
                     type="number" step="0.05"
-                    value={((selectedElement.x || 0) / 100).toFixed(2)} 
+                    value={((selectedElement.x || 0) / 100).toFixed(2)}
                     onChange={(e) => onUpdate(selectedElement.id, { x: parseFloat(e.target.value) * 100 || 0 })}
-                    className="w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-3 py-2 text-sm outline-none" 
+                    className="w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-3 py-2 text-sm outline-none"
                   />
                 </div>
                 <div>
                   <label htmlFor="pos-y" className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-1">
                     Pos Y (m)
                   </label>
-                  <input 
+                  <input
                     id="pos-y" name="pos-y"
                     type="number" step="0.05"
-                    value={((selectedElement.y || 0) / 100).toFixed(2)} 
+                    value={((selectedElement.y || 0) / 100).toFixed(2)}
                     onChange={(e) => onUpdate(selectedElement.id, { y: parseFloat(e.target.value) * 100 || 0 })}
-                    className="w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-3 py-2 text-sm outline-none" 
+                    className="w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-3 py-2 text-sm outline-none"
                   />
                 </div>
                 <div className="col-span-2">
@@ -107,24 +107,24 @@ export default function Properties({
                   <div className="grid grid-cols-2 gap-2">
                     <div className="flex items-center gap-2">
                       <label htmlFor="dim-w" className="text-[10px] text-[var(--sea-ink-soft)] font-bold">W</label>
-                      <input 
+                      <input
                         id="dim-w" name="dim-w"
                         type="number" step="0.05"
-                        value={((selectedElement.width || 0) / 100).toFixed(2)} 
+                        value={((selectedElement.width || 0) / 100).toFixed(2)}
                         onChange={(e) => onUpdate(selectedElement.id, { width: parseFloat(e.target.value) * 100 || 0 })}
                         disabled={selectedElement.type === 'asset'}
-                        className={`w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                        className={`w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
                     </div>
                     <div className="flex items-center gap-2">
                       <label htmlFor="dim-h" className="text-[10px] text-[var(--sea-ink-soft)] font-bold">H</label>
-                      <input 
+                      <input
                         id="dim-h" name="dim-h"
                         type="number" step="0.05"
-                        value={((selectedElement.height || 0) / 100).toFixed(2)} 
+                        value={((selectedElement.height || 0) / 100).toFixed(2)}
                         onChange={(e) => onUpdate(selectedElement.id, { height: parseFloat(e.target.value) * 100 || 0 })}
                         disabled={selectedElement.type === 'asset'}
-                        className={`w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                        className={`w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
                     </div>
                   </div>
@@ -134,21 +134,21 @@ export default function Properties({
                   <label htmlFor="rot" className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-1">
                     Rotation (Deg)
                   </label>
-                  <input 
+                  <input
                     id="rot" name="rot"
                     type="number"
-                    value={Math.round(selectedElement.rotation) || 0} 
+                    value={Math.round(selectedElement.rotation) || 0}
                     onChange={(e) => onUpdate(selectedElement.id, { rotation: parseInt(e.target.value) || 0 })}
-                    className="w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-3 py-2 text-sm outline-none mb-2" 
+                    className="w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-3 py-2 text-sm outline-none mb-2"
                   />
                   <div className="flex gap-2">
-                    <button 
+                    <button
                       onClick={() => onUpdate(selectedElement.id, { rotation: (selectedElement.rotation || 0) - 90 })}
                       className="flex-1 bg-[var(--surface-strong)] hover:bg-[var(--chip-bg)] border border-[var(--line)] rounded-lg py-1.5 text-xs font-bold text-[var(--sea-ink)] transition"
                     >
                       -90° (Left)
                     </button>
-                    <button 
+                    <button
                       onClick={() => onUpdate(selectedElement.id, { rotation: (selectedElement.rotation || 0) + 90 })}
                       className="flex-1 bg-[var(--surface-strong)] hover:bg-[var(--chip-bg)] border border-[var(--line)] rounded-lg py-1.5 text-xs font-bold text-[var(--sea-ink)] transition"
                     >
@@ -167,12 +167,12 @@ export default function Properties({
                         <label htmlFor="y-offset" className="text-[10px] text-[var(--sea-ink-soft)] font-bold">HEIGHT FROM FLOOR (m)</label>
                         <span className="text-[10px] font-mono text-[var(--lagoon-deep)]">{(selectedElement.yOffset || 0).toFixed(2)}m</span>
                       </div>
-                      <input 
+                      <input
                         id="y-offset" name="y-offset"
                         type="range" min="0" max="4" step="0.05"
-                        value={selectedElement.yOffset || 0} 
+                        value={selectedElement.yOffset || 0}
                         onChange={(e) => onUpdate(selectedElement.id, { yOffset: parseFloat(e.target.value) })}
-                        className="w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)]" 
+                        className="w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)]"
                       />
                     </div>
                     <div>
@@ -180,13 +180,13 @@ export default function Properties({
                         <label htmlFor="v-scale" className="text-[10px] text-[var(--sea-ink-soft)] font-bold">VERTICAL THICKNESS (Scale)</label>
                         <span className="text-[10px] font-mono text-[var(--lagoon-deep)]">{(selectedElement.verticalScale || 1).toFixed(2)}x</span>
                       </div>
-                      <input 
+                      <input
                         id="v-scale" name="v-scale"
                         type="range" min="0.05" max="5" step="0.05"
-                        value={selectedElement.verticalScale || 1} 
+                        value={selectedElement.verticalScale || 1}
                         onChange={(e) => onUpdate(selectedElement.id, { verticalScale: parseFloat(e.target.value) })}
                         disabled={selectedElement.type === 'asset'}
-                        className={`w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)] ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                        className={`w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)] ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
                     </div>
                   </div>
@@ -216,72 +216,71 @@ export default function Properties({
 
               {/* Wall-specific controls */}
               {selectedElement.type === 'wall' && (
-                 <div className="space-y-4 mt-4">
-                    <button 
-                      onClick={onEditElevation}
-                      className="w-full bg-[var(--brand)] text-white py-2 rounded-lg font-bold hover:bg-[var(--brand-h)] transition flex items-center justify-center gap-2 shadow-sm"
-                    >
-                      Edit Wall Elevation
-                    </button>
-                    
-                    <button 
-                      onClick={onViewElevation}
-                      className="w-full bg-[var(--sand)] text-[var(--sea-ink)] border border-[var(--line)] py-2 rounded-lg font-bold hover:border-[var(--lagoon)] hover:text-[var(--lagoon-deep)] transition flex items-center justify-center gap-2 shadow-sm"
-                    >
-                      View Technical Elevation
-                    </button>
-                   
-                   <div>
-                     <label htmlFor="wall-thickness" className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-1">
-                       Wall Thickness (cm)
-                     </label>
-                     <div className="flex items-center gap-3">
-                       <input 
-                         id="wall-thickness" name="wall-thickness"
-                         type="range" min="2" max="50" step="1"
-                         value={selectedElement.thickness || 10} 
-                         onChange={(e) => onUpdate(selectedElement.id, { thickness: parseInt(e.target.value) })}
-                         className="flex-1 accent-[var(--lagoon-deep)]" 
-                       />
-                       <span className="text-xs font-mono font-bold text-[var(--sea-ink)] w-8 text-right">
-                         {selectedElement.thickness || 10}
-                       </span>
-                     </div>
-                   </div>
+                <div className="space-y-4 mt-4">
+                  <button
+                    onClick={onEditElevation}
+                    className="w-full bg-[var(--brand)] text-white py-2 rounded-lg font-bold hover:bg-[var(--brand-h)] transition flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    Edit Wall Elevation
+                  </button>
 
-                   <div>
-                     <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">
-                       Wall Material
-                     </label>
-                     <div className="grid grid-cols-2 gap-2">
-                       {WALL_MATERIALS_LIST.map((m: any) => (
-                         <button
-                           key={m.value}
-                           onClick={() => {
-                             if (m.value === 'custom_color') {
-                               onUpdate(selectedElement.id, { material: 'custom_color', color: selectedElement.color || '#f0f0f0' });
-                             } else {
-                               handleMaterialChange(m.value);
-                             }
-                           }}
-                           className={`px-3 py-2 rounded-lg text-xs font-bold border transition ${
-                             (selectedElement.material || 'Solid Wall') === m.value
-                               ? 'border-[var(--lagoon)] bg-[var(--lagoon-soft)] text-[var(--lagoon-deep)]'
-                               : 'border-[var(--line)] bg-[var(--sand)] text-[var(--sea-ink)] hover:border-[var(--lagoon)]'
-                           }`}
-                         >
-                           {m.label}
-                         </button>
-                       ))}
-                     </div>
-                     {selectedElement.material === 'custom_color' && (
-                       <ColorPickerPanel 
-                         initialColor={selectedElement.color || '#f0f0f0'} 
-                         onChange={(c) => onUpdate(selectedElement.id, { color: c })} 
-                       />
-                     )}
-                   </div>
-                 </div>
+                  <button
+                    onClick={onViewElevation}
+                    className="w-full bg-[var(--sand)] text-[var(--sea-ink)] border border-[var(--line)] py-2 rounded-lg font-bold hover:border-[var(--lagoon)] hover:text-[var(--lagoon-deep)] transition flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    View Technical Elevation
+                  </button>
+
+                  <div>
+                    <label htmlFor="wall-thickness" className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-1">
+                      Wall Thickness (cm)
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        id="wall-thickness" name="wall-thickness"
+                        type="range" min="2" max="50" step="1"
+                        value={selectedElement.thickness || 10}
+                        onChange={(e) => onUpdate(selectedElement.id, { thickness: parseInt(e.target.value) })}
+                        className="flex-1 accent-[var(--lagoon-deep)]"
+                      />
+                      <span className="text-xs font-mono font-bold text-[var(--sea-ink)] w-8 text-right">
+                        {selectedElement.thickness || 10}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">
+                      Wall Material
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {WALL_MATERIALS_LIST.map((m: any) => (
+                        <button
+                          key={m.value}
+                          onClick={() => {
+                            if (m.value === 'custom_color') {
+                              onUpdate(selectedElement.id, { material: 'custom_color', color: selectedElement.color || '#f0f0f0' });
+                            } else {
+                              handleMaterialChange(m.value);
+                            }
+                          }}
+                          className={`px-3 py-2 rounded-lg text-xs font-bold border transition ${(selectedElement.material || 'Solid Wall') === m.value
+                              ? 'border-[var(--lagoon)] bg-[var(--lagoon-soft)] text-[var(--lagoon-deep)]'
+                              : 'border-[var(--line)] bg-[var(--sand)] text-[var(--sea-ink)] hover:border-[var(--lagoon)]'
+                            }`}
+                        >
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
+                    {selectedElement.material === 'custom_color' && (
+                      <ColorPickerPanel
+                        initialColor={selectedElement.color || '#f0f0f0'}
+                        onChange={(c) => onUpdate(selectedElement.id, { color: c })}
+                      />
+                    )}
+                  </div>
+                </div>
               )}
 
               {/* 3D Logo-specific controls */}
@@ -315,7 +314,7 @@ export default function Properties({
                             img.onload = () => {
                               const aspect = img.width / img.height;
                               const defaultWidth = 150; // 1.5m wide base
-                              onUpdate(selectedElement.id, { 
+                              onUpdate(selectedElement.id, {
                                 svgData: data,
                                 width: defaultWidth,
                                 height: defaultWidth / aspect
@@ -339,11 +338,11 @@ export default function Properties({
                         <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold">WIDTH (cm)</label>
                         <span className="text-[10px] font-mono text-[var(--lagoon-deep)]">{Math.round(selectedElement.width || 100)}</span>
                       </div>
-                      <input 
+                      <input
                         type="range" min="10" max="1000" step="5"
-                        value={selectedElement.width || 100} 
+                        value={selectedElement.width || 100}
                         onChange={(e) => onUpdate(selectedElement.id, { width: parseFloat(e.target.value) })}
-                        className="w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)]" 
+                        className="w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)]"
                       />
                     </div>
                     <div className="flex-1">
@@ -351,11 +350,11 @@ export default function Properties({
                         <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold">HEIGHT (cm)</label>
                         <span className="text-[10px] font-mono text-[var(--lagoon-deep)]">{Math.round(selectedElement.height || 100)}</span>
                       </div>
-                      <input 
+                      <input
                         type="range" min="10" max="1000" step="5"
-                        value={selectedElement.height || 100} 
+                        value={selectedElement.height || 100}
                         onChange={(e) => onUpdate(selectedElement.id, { height: parseFloat(e.target.value) })}
-                        className="w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)]" 
+                        className="w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)]"
                       />
                     </div>
                   </div>
@@ -377,7 +376,7 @@ export default function Properties({
                   <div>
                     <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">Base Color</label>
                     <div className="flex flex-wrap gap-2">
-                      {['#ffffff','#000000','#fbbf24','#f87171','#60a5fa','#4ade80','#a78bfa'].map(c => (
+                      {['#ffffff', '#000000', '#fbbf24', '#f87171', '#60a5fa', '#4ade80', '#a78bfa'].map(c => (
                         <button key={c} onClick={() => onUpdate(selectedElement.id, { logoColor: c })} className="w-7 h-7 rounded-lg border-2 transition-all hover:scale-110" style={{ backgroundColor: c, borderColor: selectedElement.logoColor === c ? '#0d7a75' : 'transparent', outline: selectedElement.logoColor === c ? '2px solid #0d7a75' : 'none', outlineOffset: '1px' }} />
                       ))}
                     </div>
@@ -404,11 +403,10 @@ export default function Properties({
                   <button
                     key={mat.id}
                     onClick={() => onBoothConfigUpdate?.({ floorType: mat.id, floorColor: boothConfig?.floorColor || '#ffffff' })}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all ${
-                      floorType === mat.id
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all ${floorType === mat.id
                         ? 'border-[var(--lagoon)] bg-[var(--lagoon-soft)]'
                         : 'border-[var(--line)] bg-[var(--sand)] hover:border-[var(--lagoon)]'
-                    }`}
+                      }`}
                   >
                     {/* Color swatch */}
                     <div className="w-8 h-8 rounded bg-cover bg-center border border-black/10 shrink-0" style={{ backgroundColor: mat.id === 'custom_color' ? (boothConfig?.floorColor || mat.color) : mat.color }} />
@@ -425,9 +423,9 @@ export default function Properties({
                 ))}
               </div>
               {floorType === 'custom_color' && (
-                <ColorPickerPanel 
-                  initialColor={boothConfig?.floorColor || '#ffffff'} 
-                  onChange={(c) => onBoothConfigUpdate?.({ floorColor: c })} 
+                <ColorPickerPanel
+                  initialColor={boothConfig?.floorColor || '#ffffff'}
+                  onChange={(c) => onBoothConfigUpdate?.({ floorColor: c })}
                 />
               )}
             </div>
@@ -437,7 +435,7 @@ export default function Properties({
               <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block">
                 Ceiling & Roofing
               </label>
-              
+
               <div className="flex items-center justify-between p-3 rounded-xl border border-[var(--line)] bg-[var(--sand)]">
                 <span className="text-xs font-bold text-[var(--sea-ink)]">Include Roof / Ceiling</span>
                 <input

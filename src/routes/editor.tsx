@@ -106,7 +106,7 @@ function EditorPage() {
       setAuthModalOpen(true)
       return
     }
-    
+
     setIsCloudSaving(true)
     try {
       const { error } = await supabase.from('designs').insert({
@@ -133,7 +133,7 @@ function EditorPage() {
     setElements(loadedElements)
     setHistory([loadedElements])
     setHistoryStep(0)
-    
+
     // Force canvas refresh
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'))
@@ -257,20 +257,20 @@ function EditorPage() {
   const submitExport = () => {
     setIsCapturingReport(true)
     setReportScreenshots({})
-    
+
     // Queue: Top view + standard directional elevations + specific wall elevations
     const queue = ['top', 'north', 'south', 'east', 'west'];
-    
+
     // Find walls with customizations and append their specific elevations
     const customWalls = elements.filter(el => el.type === 'wall' && el.wallElements && el.wallElements.length > 0);
     customWalls.forEach(w => queue.push(`elevation_${w.id}`));
-    
+
     setCaptureQueue(queue)
   }
 
   useEffect(() => {
     if (!isCapturingReport) return;
-    
+
     if (captureQueue.length > 0) {
       const nextView = captureQueue[0];
       console.log(`[Report] Switching to view: ${nextView}`);
@@ -279,7 +279,7 @@ function EditorPage() {
       console.log('[Report] All captures complete. Generating document...');
       setIsCapturingReport(false);
       setBlueprintView('perspective');
-      
+
       // Small timeout to ensure state has settled
       setTimeout(() => {
         generateReport(boothConfig, elements, reportScreenshots).then(() => {
@@ -328,13 +328,13 @@ function EditorPage() {
       try {
         const content = e.target?.result as string;
         const parsed = JSON.parse(content);
-        
+
         if (parsed.booth && parsed.elements) {
           setBoothConfig(parsed.booth);
           setElements(parsed.elements);
           setHistory([parsed.elements]);
           setHistoryStep(0);
-          
+
           // Force layout refresh if needed
           setTimeout(() => {
             window.dispatchEvent(new Event('resize'));
@@ -348,7 +348,7 @@ function EditorPage() {
       }
     };
     reader.readAsText(file);
-    
+
     // Reset file input so the same file can be selected again if needed
     event.target.value = '';
   };
@@ -368,7 +368,7 @@ function EditorPage() {
     return (
       <div key="setup-screen" suppressHydrationWarning className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] bg-[var(--bg-base)] p-4">
         <div className="island-shell p-8 rounded-2xl w-full max-w-[500px] flex flex-col gap-6 text-center rise-in">
-          <h2 className="text-3xl font-bold text-[var(--sea-ink)] display-title">Booth Setup Wizard</h2>
+          <h2 className="text-3xl font-bold text-[var(--sea-ink)] display-title">Space Setup Wizard</h2>
 
           <div className="flex gap-2 mb-2">
             <div className={`h-1.5 flex-1 rounded-full ${wizardStep >= 1 ? 'bg-[var(--lagoon)]' : 'bg-[var(--line)]'}`} />
@@ -420,8 +420,8 @@ function EditorPage() {
                       key={wallDir}
                       onClick={() => setSetupWalls((prev: any) => ({ ...prev, [wallDir]: !isClosed }))}
                       className={`p-4 rounded-xl border-2 transition-all flex flex-col items-start gap-2 ${isClosed
-                          ? 'bg-[var(--surface-strong)] border-[var(--sea-ink)] shadow-md'
-                          : 'bg-[var(--sand)] border-transparent text-[var(--sea-ink-soft)]'
+                        ? 'bg-[var(--surface-strong)] border-[var(--sea-ink)] shadow-md'
+                        : 'bg-[var(--sand)] border-transparent text-[var(--sea-ink-soft)]'
                         }`}
                     >
                       <span className="text-xs uppercase tracking-wider font-bold capitalize block">{wallDir} Wall</span>
@@ -483,7 +483,7 @@ function EditorPage() {
                     <ColorPickerPanel initialColor={setupFloorColor} onChange={setSetupFloorColor} />
                   )}
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-bold text-[var(--sea-ink)] mb-2 block">Default Wall Material</label>
                   <div className="grid grid-cols-2 gap-2">
@@ -526,7 +526,7 @@ function EditorPage() {
           {wizardStep === 4 && (
             <div className="flex flex-col gap-6 animate-in slide-in-from-right-8 duration-300">
               <p className="text-sm text-[var(--sea-ink-soft)] font-semibold">Step 4: Select Your Asset Palette</p>
-              <p className="text-xs text-gray-500">Assets will spawn next to your booth for easy placement.</p>
+              <p className="text-xs text-gray-500">Assets will spawn next to your space for easy placement.</p>
 
               <div className="grid grid-cols-2 gap-3 text-left">
                 {[
@@ -559,19 +559,19 @@ function EditorPage() {
                     const D = setupDepth * PPM
                     const T = setupWallThickness * 100
 
-                    const wallProps = setupWallMaterial === 'custom_color' 
-                      ? { material: 'custom_color', color: setupWallColor } 
+                    const wallProps = setupWallMaterial === 'custom_color'
+                      ? { material: 'custom_color', color: setupWallColor }
                       : getWallMaterialProps(setupWallMaterial)
                     const initialElements: any[] = []
                     if (setupWalls.north) initialElements.push({ id: 'outer-north', type: 'wall', isOuter: true, x: W / 2, y: 0, width: W, thickness: T, rotation: 0, wallElements: [], ...wallProps })
                     if (setupWalls.south) initialElements.push({ id: 'outer-south', type: 'wall', isOuter: true, x: W / 2, y: D, width: W, thickness: T, rotation: 0, wallElements: [], ...wallProps })
                     if (setupWalls.west) initialElements.push({ id: 'outer-west', type: 'wall', isOuter: true, x: 0, y: D / 2, width: D, thickness: T, rotation: 90, wallElements: [], ...wallProps })
                     if (setupWalls.east) initialElements.push({ id: 'outer-east', type: 'wall', isOuter: true, x: W, y: D / 2, width: D, thickness: T, rotation: 90, wallElements: [], ...wallProps })
-                    
+
                     // Generate Assets inside the Booth
                     let spawnX = 0.5 * PPM; // Start 0.5m from left wall
                     let spawnY = 0.5 * PPM; // Start 0.5m from top wall
-                    
+
                     Object.entries(setupAssets).forEach(([assetId, count]) => {
                       for (let i = 0; i < count; i++) {
                         const dims = ASSET_DIMENSIONS[assetId] || { w: 1, h: 1 };
@@ -592,8 +592,8 @@ function EditorPage() {
                         spawnX += 0.8 * PPM; // Move right by 0.8m
                         // Wrap to next row if we get close to the right wall
                         if (spawnX > W - (0.8 * PPM)) {
-                           spawnX = 0.5 * PPM; // reset X to left
-                           spawnY += 0.8 * PPM; // move down a row
+                          spawnX = 0.5 * PPM; // reset X to left
+                          spawnY += 0.8 * PPM; // move down a row
                         }
                       }
                     });
@@ -604,7 +604,7 @@ function EditorPage() {
                   }}
                   className="rounded-full bg-[var(--lagoon-deep)] flex-1 text-white font-bold py-3 hover:bg-[var(--palm)] transition flex items-center justify-center gap-2"
                 >
-                  <Check className="w-5 h-5" /> Initialize Booth
+                  <Check className="w-5 h-5" /> Initialize Space
                 </button>
               </div>
             </div>
@@ -619,25 +619,25 @@ function EditorPage() {
   return (
     <div key="editor-workspace" className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-[var(--bg-base)]">
       {/* Top Bar */}
-      <div className="h-14 border-b border-[var(--line)] bg-[var(--surface-strong)] flex items-center justify-between px-4 z-20 shadow-sm transition-all shrink-0">
-        <div className="flex items-center gap-4">
+      <div className="h-14 border-b border-[var(--line)] bg-[var(--surface-strong)] flex items-center justify-between px-4 z-20 shadow-sm transition-all shrink-0 overflow-x-auto whitespace-nowrap scrollbar-hide">
+        <div className="flex items-center gap-4 shrink-0">
           <div className="flex items-center gap-2 pr-4 border-r border-[var(--border)]">
             <div className="h-8 w-8 rounded-lg bg-[var(--brand)] flex items-center justify-center text-white font-bold shadow-sm">D</div>
-            <span className="font-extrabold text-[var(--fg)] tracking-tight">
-              Dekode Booth Designer
+            <span className="font-extrabold text-[var(--fg)] tracking-tight pr-4">
+              Dekode Space Designer
             </span>
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={() => {
-                if (confirm('Return to Setup Wizard? Current booth dimensions will be reset.')) {
+                if (confirm('Return to Setup Wizard? Current space dimensions will be reset.')) {
                   setBoothConfig(null)
                   setWizardStep(1)
                 }
               }}
               className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--sand)] text-[var(--sea-ink)] text-xs font-bold transition hover:bg-[var(--lagoon)] hover:text-white"
             >
-              Edit Booth Setup
+              Edit Space Setup
             </button>
             <div className="w-px h-6 bg-[var(--line)] mx-2" />
             <button onClick={undo} disabled={historyStep <= 0} className="p-2 rounded-lg hover:bg-[var(--chip-bg)] text-[var(--sea-ink-soft)] disabled:opacity-30 transition" title="Undo (Ctrl+Z)">
@@ -653,7 +653,7 @@ function EditorPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           {/* View Toggles */}
           <div className="flex items-center gap-1 bg-[var(--sand)] p-1 rounded-xl border border-[var(--line)] mr-2">
             <button
@@ -742,9 +742,9 @@ function EditorPage() {
         {/* Left Sidebar */}
         {sidebarOpen && (
           <div className="flex h-full shrink-0 z-10 shadow-xl border-r border-[var(--line)]">
-            <Sidebar 
-              addElement={addElement} 
-              activeView={blueprintView} 
+            <Sidebar
+              addElement={addElement}
+              activeView={blueprintView}
               onViewChange={setBlueprintView}
               backgroundColor={backgroundColor}
               setBackgroundColor={setBackgroundColor}
@@ -809,9 +809,9 @@ function EditorPage() {
 
             {is3DGenerated ? (
               <div className="flex-1 w-full relative">
-                <Preview3D 
-                  boothConfig={boothConfig} 
-                  elements={elements} 
+                <Preview3D
+                  boothConfig={boothConfig}
+                  elements={elements}
                   activeView={blueprintView}
                   onExportComplete={onExportComplete}
                   onUpdateElement={handleUpdateElement}
@@ -882,30 +882,30 @@ function EditorPage() {
         </div>
       )}
       {/* Supabase Integration Overlays */}
-      <AuthModal 
-        isOpen={authModalOpen} 
-        onClose={() => setAuthModalOpen(false)} 
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
       />
-      
-      <CloudProjectsDrawer 
-        isOpen={cloudDrawerOpen} 
-        onClose={() => setCloudDrawerOpen(false)} 
-        onLoadProject={loadCloudDesign} 
-        userId={sessionUser?.id || null} 
+
+      <CloudProjectsDrawer
+        isOpen={cloudDrawerOpen}
+        onClose={() => setCloudDrawerOpen(false)}
+        onLoadProject={loadCloudDesign}
+        userId={sessionUser?.id || null}
       />
 
       {/* Sleek Save Project Dialog */}
       {showSavePrompt && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl p-6 shadow-2xl transition-all">
-            <button 
+            <button
               onClick={() => setShowSavePrompt(false)}
               className="absolute top-4 right-4 p-1.5 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition"
             >
               <X className="w-5 h-5" />
             </button>
             <h3 className="text-lg font-bold font-[Outfit] text-white mb-4">Save Your Design</h3>
-            
+
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black tracking-wider uppercase text-white/70 block">

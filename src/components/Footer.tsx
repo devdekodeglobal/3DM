@@ -24,7 +24,7 @@ export default function Footer() {
         </Link>
 
         <p style={{ margin: 0, color: 'var(--fg-dim)', fontSize: '0.82rem' }}>
-          Advanced 3D Booth Designer &nbsp;·&nbsp; © {year}
+          Advanced 3D Spatial Design Software &nbsp;·&nbsp; © {year}
         </p>
       </div>
     </footer>

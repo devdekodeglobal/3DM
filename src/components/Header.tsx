@@ -40,11 +40,11 @@ export default function Header() {
           {/* Right side */}
           <div className="ml-auto flex items-center gap-4">
             <ThemeToggle />
-            
+
             {/* Auth Controls */}
             {sessionUser ? (
-              <div className="hidden sm:flex items-center gap-3 border-r border-[var(--line)] pr-4">
-                <span className="text-[11px] font-semibold text-[var(--fg-soft)] max-w-[140px] truncate">
+              <div className="flex items-center gap-3 pl-2 sm:pl-0">
+                <span className="hidden sm:block text-[11px] font-semibold text-[var(--fg-soft)] max-w-[140px] truncate">
                   {sessionUser.email}
                 </span>
                 <button
@@ -57,7 +57,7 @@ export default function Header() {
                 </button>
               </div>
             ) : (
-              <div className="hidden sm:flex items-center border-r border-[var(--line)] pr-4">
+              <div className="flex items-center pl-2 sm:pl-0">
                 <button
                   onClick={() => setAuthModalOpen(true)}
                   className="text-xs font-bold text-[var(--fg-soft)] hover:text-[var(--brand)] transition"
@@ -66,33 +66,14 @@ export default function Header() {
                 </button>
               </div>
             )}
-
-            <Link
-              to="/editor"
-              id="header-open-editor"
-              onClick={() => {
-                localStorage.removeItem('stall-config')
-                localStorage.removeItem('stall-elements')
-              }}
-              className="btn btn-primary hidden sm:inline-flex"
-              style={{ padding: '9px 22px', fontSize: '0.875rem' }}
-            >
-              <svg viewBox="0 0 16 16" fill="none" width="15" height="15">
-                <rect x="1" y="1" width="6" height="6" rx="1.2" fill="currentColor" opacity="0.8"/>
-                <rect x="9" y="1" width="6" height="6" rx="1.2" fill="currentColor"/>
-                <rect x="1" y="9" width="6" height="6" rx="1.2" fill="currentColor"/>
-                <rect x="9" y="9" width="6" height="6" rx="1.2" fill="currentColor" opacity="0.5"/>
-              </svg>
-              Open Designer
-            </Link>
           </div>
         </nav>
       </header>
 
-      <AuthModal 
-        isOpen={authModalOpen} 
-        onClose={() => setAuthModalOpen(false)} 
-        onSuccess={() => setAuthModalOpen(false)} 
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={() => setAuthModalOpen(false)}
       />
     </>
   )

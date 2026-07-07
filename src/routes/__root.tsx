@@ -1,5 +1,5 @@
 import React from 'react'
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRoute, useRouterState } from '@tanstack/react-router'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
 import appCss from '../styles.css?url'
@@ -31,6 +31,8 @@ export const Route = createRootRoute({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const isEditor = useRouterState({ select: (s) => s.location.pathname.startsWith('/editor') })
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -42,7 +44,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <main id="root">
           {children}
         </main>
-        <Footer />
+        {!isEditor && <Footer />}
         <Scripts />
       </body>
     </html>

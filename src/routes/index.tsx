@@ -114,7 +114,7 @@ const features = [
       </svg>
     ),
     title: 'Precision 2D Grid',
-    desc: 'Snap-to-grid mechanics with pixel-perfect alignment for flawless stall layouts.',
+    desc: 'Snap-to-grid mechanics with pixel-perfect alignment for flawless spatial layouts.',
     color: 'var(--brand)',
     bg: 'var(--brand-bg)',
   },
@@ -162,7 +162,7 @@ const features = [
 ]
 
 const steps = [
-  { id: 'step-1', num: '01', title: 'Set Your Space', desc: 'Define the booth dimensions and drop outer walls on the 2D canvas.' },
+  { id: 'step-1', num: '01', title: 'Set Your Space', desc: 'Define the dimensions and drop outer walls on the 2D canvas.' },
   { id: 'step-2', num: '02', title: 'Place Fixtures', desc: 'Drag counters, signage, seating, and décor from the asset library.' },
   { id: 'step-3', num: '03', title: 'Preview in 3D', desc: 'Switch to Live 3D Preview to walk through your design in real time.' },
 ]
@@ -189,12 +189,12 @@ function LandingPage() {
               </div>
 
               <h1 className="display fade-up d-100" style={{
-                fontSize: 'clamp(2.4rem, 5vw, 3.6rem)',
+                fontSize: 'clamp(1.8rem, 5vw, 3.6rem)',
                 color: 'var(--fg)',
                 margin: '0 0 20px',
               }}>
-                Design Exhibition<br/>
-                <span style={{ color: 'var(--brand)' }}>Booths</span> with Precision
+                Design 3D<br/>
+                <span style={{ color: 'var(--brand)' }}>Spaces</span> with Precision
               </h1>
 
               <p className="fade-up d-200" style={{
@@ -294,7 +294,7 @@ function LandingPage() {
               fontSize: 'clamp(1.8rem, 3vw, 2.6rem)',
               color: 'var(--fg)', margin: 0,
             }}>
-              Everything you need to design a perfect stall
+              Everything you need to design a perfect space
             </h2>
           </div>
 
@@ -384,13 +384,13 @@ function LandingPage() {
             fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
             color: 'var(--fg)', margin: '0 0 16px',
           }}>
-            Start designing your booth today
+            Start designing your space today
           </h2>
           <p style={{
             color: 'var(--fg-soft)', fontSize: '1rem',
             lineHeight: 1.7, margin: '0 0 36px',
           }}>
-            No install needed. Open the designer and build your stall layout
+            No install needed. Open the designer and build your layout
             in minutes — then preview it live in 3D.
           </p>
           <Link
