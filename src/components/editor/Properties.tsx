@@ -470,6 +470,7 @@ export default function Properties({
           </div>
         )}
 
+        {/* 
         <div className="pt-4 border-t border-[var(--line)]">
           <h4 className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider flex items-center gap-2 mb-3">
             <Code className="h-4 w-4" />
@@ -479,6 +480,7 @@ export default function Properties({
             {JSON.stringify(selectedElement || { status: 'idle', workspace: 'ready' }, null, 2)}
           </pre>
         </div>
+        */}
       </div>
     </aside>
   )
