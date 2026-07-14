@@ -5,7 +5,7 @@ import '@babylonjs/loaders/glTF'
 import { GLTF2Export } from '@babylonjs/serializers/glTF/2.0/glTFSerializer'
 import * as GUI from '@babylonjs/gui';
 import { calculateBlueprintMeasurements } from '../../lib/blueprintMath';
-import { GridMaterial, ShadowOnlyMaterial } from '@babylonjs/materials';
+import { GridMaterial } from '@babylonjs/materials';
 
 interface Preview3DProps {
   boothConfig: any;
@@ -51,11 +51,13 @@ export default function Preview3D({
     if (!catcher) {
       catcher = BABYLON.MeshBuilder.CreatePlane("shadowCatcher", { size: 500 }, sceneRef.current);
       catcher.rotation.x = Math.PI / 2;
-      catcher.position.y = 0.001; // Just above 0
+      catcher.position.y = -0.01; // Just below 0 to prevent z-fighting with the floor
       catcher.receiveShadows = true;
       
-      const shadowMat = new ShadowOnlyMaterial("shadowOnly", sceneRef.current);
-      shadowMat.alpha = 0.6; // Adjust shadow darkness
+      const shadowMat = new BABYLON.BackgroundMaterial("shadowOnly", sceneRef.current);
+      shadowMat.primaryColor = BABYLON.Color3.FromHexString(backgroundColor);
+      shadowMat.shadowLevel = 0.6; // Adjust shadow darkness
+      shadowMat.useRGBColor = false;
       catcher.material = shadowMat;
     }
   }, [backgroundColor, isSceneReady]);
@@ -595,13 +597,7 @@ export default function Preview3D({
       if (selectedMesh) {
         selectedMesh.renderOutline = true;
         selectedMesh.outlineColor = new BABYLON.Color3(0, 0.7, 1);
-        selectedMesh.outlineWidth = 0.04;
-        
-        selectedMesh.getChildMeshes().forEach(c => {
-          c.renderOutline = true;
-          c.outlineColor = new BABYLON.Color3(0, 0.7, 1);
-          c.outlineWidth = 0.04;
-        });
+        selectedMesh.outlineWidth = 0.01;
       }
     }
   }, [selectedId, isSceneReady]);

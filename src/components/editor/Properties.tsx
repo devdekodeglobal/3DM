@@ -341,18 +341,48 @@ export default function Properties({
                           const reader = new FileReader();
                           reader.onload = (re) => {
                             const data = re.target?.result as string;
-                            // Auto-fit dimensions based on image aspect ratio
-                            const img = new Image();
-                            img.onload = () => {
-                              const aspect = img.width / img.height;
-                              const defaultWidth = 150; // 1.5m wide base
+                            if (file.type === 'image/svg+xml') {
                               onUpdate(selectedElement.id, {
                                 svgData: data,
-                                width: defaultWidth,
-                                height: defaultWidth / aspect
+                                width: 150,
+                                height: 150
                               });
-                            };
-                            img.src = data;
+                            } else {
+                              const img = new Image();
+                              img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                const MAX_SIZE = 800;
+                                let width = img.width;
+                                let height = img.height;
+                                
+                                if (width > height) {
+                                  if (width > MAX_SIZE) {
+                                    height *= MAX_SIZE / width;
+                                    width = MAX_SIZE;
+                                  }
+                                } else {
+                                  if (height > MAX_SIZE) {
+                                    width *= MAX_SIZE / height;
+                                    height = MAX_SIZE;
+                                  }
+                                }
+                                
+                                canvas.width = width;
+                                canvas.height = height;
+                                const ctx = canvas.getContext('2d');
+                                if (ctx) {
+                                  ctx.drawImage(img, 0, 0, width, height);
+                                  const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                                  const aspect = width / height;
+                                  onUpdate(selectedElement.id, {
+                                    svgData: dataUrl,
+                                    width: 150,
+                                    height: 150 / aspect
+                                  });
+                                }
+                              };
+                              img.src = data;
+                            }
                           };
                           if (file.type === 'image/svg+xml') {
                             reader.readAsText(file);

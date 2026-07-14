@@ -85,6 +85,7 @@ function getInitialData() {
 function EditorPage() {
   const [initialData] = useState(getInitialData)
   const [boothConfig, setBoothConfig] = useState<BoothConfig | null>(initialData.config)
+  const [isMounted, setIsMounted] = useState(false)
 
   // Supabase Auth and Cloud states
   const [sessionUser, setSessionUser] = useState<any>(null)
@@ -152,6 +153,10 @@ function EditorPage() {
     })
 
     return () => subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    setIsMounted(true)
   }, [])
 
   const handleCloudSave = async () => {
@@ -380,6 +385,10 @@ function EditorPage() {
 
   const selectedElement = elements.find((el) => el.id === selectedId)
   const editingWall = editingWallId ? elements.find((el) => el.id === editingWallId) : null
+
+  if (!isMounted) {
+    return <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center">Loading editor...</div>
+  }
 
   if (!boothConfig) {
     return (
