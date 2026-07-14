@@ -9,10 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TestFridgeRouteImport } from './routes/test-fridge'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TestFridgeRoute = TestFridgeRouteImport.update({
+  id: '/test-fridge',
+  path: '/test-fridge',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EditorRoute = EditorRouteImport.update({
   id: '/editor',
   path: '/editor',
@@ -33,34 +39,45 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/editor': typeof EditorRoute
+  '/test-fridge': typeof TestFridgeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/editor': typeof EditorRoute
+  '/test-fridge': typeof TestFridgeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/editor': typeof EditorRoute
+  '/test-fridge': typeof TestFridgeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/editor'
+  fullPaths: '/' | '/about' | '/editor' | '/test-fridge'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/editor'
-  id: '__root__' | '/' | '/about' | '/editor'
+  to: '/' | '/about' | '/editor' | '/test-fridge'
+  id: '__root__' | '/' | '/about' | '/editor' | '/test-fridge'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   EditorRoute: typeof EditorRoute
+  TestFridgeRoute: typeof TestFridgeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/test-fridge': {
+      id: '/test-fridge'
+      path: '/test-fridge'
+      fullPath: '/test-fridge'
+      preLoaderRoute: typeof TestFridgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/editor': {
       id: '/editor'
       path: '/editor'
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   EditorRoute: EditorRoute,
+  TestFridgeRoute: TestFridgeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
