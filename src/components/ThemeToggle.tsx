@@ -130,6 +130,7 @@ export default function ThemeToggle() {
         cursor: 'pointer',
         transition: 'all 180ms ease',
         fontFamily: 'Inter, sans-serif',
+        whiteSpace: 'nowrap',
       }}
     >
       {icon}
