@@ -40,12 +40,12 @@ function OverviewPage() {
         <div className="relative max-w-5xl mx-auto bg-[var(--bg-base)] border border-[var(--line)] rounded-2xl p-2 shadow-2xl">
           <div className="w-full">
             {/* Mock Header */}
-            <div className="h-10 border-b border-[var(--line)] bg-[var(--surface)] flex items-center justify-between px-4 rounded-t-xl">
-             <div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-red-400"></div><div className="w-3 h-3 rounded-full bg-amber-400"></div><div className="w-3 h-3 rounded-full bg-green-400"></div></div>
-             <div className="flex gap-4 text-[10px] font-bold text-[var(--fg-dim)] uppercase tracking-widest">
-               <span>Undo</span><span>Redo</span><span>Save Project</span><span>Export Report</span>
+            <div className="h-6 md:h-10 border-b border-[var(--line)] bg-[var(--surface)] flex items-center justify-between px-2 md:px-4 rounded-t-xl overflow-hidden">
+             <div className="flex gap-1 md:gap-2 shrink-0"><div className="w-1.5 h-1.5 md:w-3 md:h-3 rounded-full bg-red-400"></div><div className="w-1.5 h-1.5 md:w-3 md:h-3 rounded-full bg-amber-400"></div><div className="w-1.5 h-1.5 md:w-3 md:h-3 rounded-full bg-green-400"></div></div>
+             <div className="flex gap-2 md:gap-4 text-[5px] md:text-[10px] font-bold text-[var(--fg-dim)] uppercase tracking-widest whitespace-nowrap ml-2">
+               <span>Undo</span><span>Redo</span><span>Save Project</span><span className="hidden sm:inline">Export Report</span>
              </div>
-          </div>
+            </div>
           
           {/* Mock Workspace Grid */}
           <div className="grid grid-cols-12 gap-1 md:gap-2 p-1 md:p-2 h-[200px] md:h-[400px]">
