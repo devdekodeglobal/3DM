@@ -30,8 +30,61 @@ interface BoothConfig {
   floorColor?: string;
 }
 
+function getInitials(user: any) {
+  if (!user) return '?'
+  const name = user.user_metadata?.full_name || user.user_metadata?.name
+  if (name) {
+    const parts = name.split(' ').filter(Boolean)
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
+  
+  if (user.email) {
+    const parts = user.email.split('@')[0].split(/[._-]/)
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return user.email.substring(0, 2).toUpperCase()
+  }
+  return 'U'
+}
+
+function getInitialData() {
+  if (typeof window === 'undefined') return { config: null, elements: null };
+  const savedStall = window.localStorage.getItem('stall-config');
+  const savedElements = window.localStorage.getItem('stall-elements');
+  if (!savedStall) return { config: null, elements: null };
+
+  const config = JSON.parse(savedStall);
+  let parsedElements = savedElements ? JSON.parse(savedElements) : [];
+
+  // MIGRATION: If old save has structural walls in config but not in elements, convert them
+  if (parsedElements.length > 0) {
+    const hasOuterWalls = parsedElements.some((el: any) => el.isOuter);
+    if (!hasOuterWalls && config.walls) {
+      const PPM = 100;
+      const W = config.width * PPM;
+      const D = config.depth * PPM;
+      const T = (config.wallThickness || 0.1) * 100;
+
+      const migrationWalls: any[] = [];
+      if (config.walls.north) migrationWalls.push({ id: 'outer-north', type: 'wall', isOuter: true, x: W / 2, y: 0, width: W, thickness: T, rotation: 0, fill: '#333333', opacity: 1, wallElements: [] });
+      if (config.walls.south) migrationWalls.push({ id: 'outer-south', type: 'wall', isOuter: true, x: W / 2, y: D, width: W, thickness: T, rotation: 180, fill: '#333333', opacity: 1, wallElements: [] });
+      if (config.walls.west) migrationWalls.push({ id: 'outer-west', type: 'wall', isOuter: true, x: 0, y: D / 2, width: D, thickness: T, rotation: 90, fill: '#333333', opacity: 1, wallElements: [] });
+      if (config.walls.east) migrationWalls.push({ id: 'outer-east', type: 'wall', isOuter: true, x: W, y: D / 2, width: D, thickness: T, rotation: -90, fill: '#333333', opacity: 1, wallElements: [] });
+
+      parsedElements = [...migrationWalls, ...parsedElements];
+    }
+  }
+
+  return { config, elements: parsedElements };
+}
+
 function EditorPage() {
-  const [boothConfig, setBoothConfig] = useState<BoothConfig | null>(null)
+  const [initialData] = useState(getInitialData)
+  const [boothConfig, setBoothConfig] = useState<BoothConfig | null>(initialData.config)
 
   // Supabase Auth and Cloud states
   const [sessionUser, setSessionUser] = useState<any>(null)
@@ -61,9 +114,9 @@ function EditorPage() {
     'tv_lcd': 0
   })
 
-  const [elements, setElements] = useState<any[]>([])
-  const [history, setHistory] = useState<any[][]>([])
-  const [historyStep, setHistoryStep] = useState(-1)
+  const [elements, setElements] = useState<any[]>(initialData.elements || [])
+  const [history, setHistory] = useState<any[][]>(initialData.elements ? [initialData.elements] : [])
+  const [historyStep, setHistoryStep] = useState(initialData.elements ? 0 : -1)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [gridVisible, setGridVisible] = useState(true)
 
@@ -139,42 +192,6 @@ function EditorPage() {
       window.dispatchEvent(new Event('resize'))
     }, 100)
   };
-
-  // Auto-load from local storage
-  useEffect(() => {
-    const savedStall = localStorage.getItem('stall-config')
-    const savedElements = localStorage.getItem('stall-elements')
-
-    if (savedStall) {
-      const config = JSON.parse(savedStall)
-      setBoothConfig(config)
-
-      // MIGRATION: If old save has structural walls in config but not in elements, convert them
-      if (savedElements) {
-        let parsed = JSON.parse(savedElements)
-        const hasOuterWalls = parsed.some((el: any) => el.isOuter)
-
-        if (!hasOuterWalls && config.walls) {
-          const PPM = 100
-          const W = config.width * PPM
-          const D = config.depth * PPM
-          const T = (config.wallThickness || 0.1) * 100
-
-          const migrationWalls: any[] = []
-          if (config.walls.north) migrationWalls.push({ id: 'outer-north', type: 'wall', isOuter: true, x: W / 2, y: 0, width: W, thickness: T, rotation: 0, fill: '#333333', opacity: 1, wallElements: [] })
-          if (config.walls.south) migrationWalls.push({ id: 'outer-south', type: 'wall', isOuter: true, x: W / 2, y: D, width: W, thickness: T, rotation: 180, fill: '#333333', opacity: 1, wallElements: [] })
-          if (config.walls.west) migrationWalls.push({ id: 'outer-west', type: 'wall', isOuter: true, x: 0, y: D / 2, width: D, thickness: T, rotation: 90, fill: '#333333', opacity: 1, wallElements: [] })
-          if (config.walls.east) migrationWalls.push({ id: 'outer-east', type: 'wall', isOuter: true, x: W, y: D / 2, width: D, thickness: T, rotation: -90, fill: '#333333', opacity: 1, wallElements: [] })
-
-          parsed = [...migrationWalls, ...parsed]
-        }
-
-        setElements(parsed)
-        setHistory([parsed])
-        setHistoryStep(0)
-      }
-    }
-  }, [])
 
   // Auto-save to local storage
   useEffect(() => {
@@ -387,7 +404,7 @@ function EditorPage() {
                     <label className="text-sm font-bold text-[var(--sea-ink)]">Width (meters)</label>
                     <span className="text-[var(--lagoon-deep)] font-mono font-bold">{setupWidth.toFixed(1)}m</span>
                   </div>
-                  <input type="range" min="2" max="20" step="0.5" value={setupWidth} onChange={(e) => setSetupWidth(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
+                  <input type="range" min="2" max="20" step="0.1" value={setupWidth} onChange={(e) => setSetupWidth(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
                 </div>
 
                 <div className="text-left bg-[var(--sand)] p-4 rounded-xl border border-[var(--line)]">
@@ -395,7 +412,7 @@ function EditorPage() {
                     <label className="text-sm font-bold text-[var(--sea-ink)]">Depth (meters)</label>
                     <span className="text-[var(--lagoon-deep)] font-mono font-bold">{setupDepth.toFixed(1)}m</span>
                   </div>
-                  <input type="range" min="2" max="20" step="0.5" value={setupDepth} onChange={(e) => setSetupDepth(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
+                  <input type="range" min="2" max="20" step="0.1" value={setupDepth} onChange={(e) => setSetupDepth(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
                 </div>
               </div>
 
@@ -680,10 +697,13 @@ function EditorPage() {
           </div>
 
           {sessionUser ? (
-            <div className="flex items-center gap-1 border-r border-white/10 pr-2 mr-1">
-              <span className="text-[10px] text-white/60 font-semibold max-w-[120px] truncate block px-2">
-                {sessionUser.email}
-              </span>
+            <div className="flex items-center gap-2 border-r border-[var(--border)] pr-3 mr-2">
+              <div 
+                className="w-7 h-7 rounded-full bg-[var(--brand)] text-white flex items-center justify-center text-[10px] font-bold shadow-sm ring-2 ring-[var(--brand)]/20"
+                title={sessionUser.email}
+              >
+                {getInitials(sessionUser)}
+              </div>
               <button
                 onClick={() => setCloudDrawerOpen(true)}
                 className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"

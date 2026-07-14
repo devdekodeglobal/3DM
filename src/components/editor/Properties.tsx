@@ -1,4 +1,4 @@
-import { Settings, Code, Trash2, Layers } from 'lucide-react'
+import { Settings, Trash2, Layers } from 'lucide-react'
 import { WALL_MATERIALS, getWallMaterialProps } from '../../lib/materials'
 import ColorPickerPanel from './ColorPickerPanel'
 
@@ -42,7 +42,7 @@ export default function Properties({
   const floorType = boothConfig?.floorType || 'hardwood'
 
   return (
-    <aside className="w-80 h-full border-l border-[var(--line)] bg-[var(--surface-strong)] flex flex-col overflow-hidden">
+    <aside className="w-72 h-full border-l border-[var(--line)] bg-[var(--surface-strong)] flex flex-col overflow-hidden">
       <div className="p-4 border-b border-[var(--line)] flex justify-between items-center bg-[var(--header-bg)]">
         <h3 className="font-bold text-[var(--sea-ink)] flex items-center gap-2">
           <Settings className="h-5 w-5 text-[var(--lagoon-deep)]" />
@@ -177,14 +177,46 @@ export default function Properties({
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-1">
-                        <label htmlFor="v-scale" className="text-[10px] text-[var(--sea-ink-soft)] font-bold">VERTICAL THICKNESS (Scale)</label>
-                        <span className="text-[10px] font-mono text-[var(--lagoon-deep)]">{(selectedElement.verticalScale || 1).toFixed(2)}x</span>
+                        <label htmlFor="v-scale" className="text-[10px] text-[var(--sea-ink-soft)] font-bold">
+                          {selectedElement.type === 'wall' ? 'WALL HEIGHT (m)' : 'VERTICAL SCALE (x)'}
+                        </label>
+                        <span className="text-[10px] font-mono text-[var(--lagoon-deep)]">
+                          {selectedElement.type === 'wall' 
+                            ? `${(2.5 * (selectedElement.verticalScale || 1)).toFixed(1)}m` 
+                            : `${(selectedElement.verticalScale || 1).toFixed(2)}x`}
+                        </span>
                       </div>
                       <input
                         id="v-scale" name="v-scale"
-                        type="range" min="0.05" max="5" step="0.05"
-                        value={selectedElement.verticalScale || 1}
-                        onChange={(e) => onUpdate(selectedElement.id, { verticalScale: parseFloat(e.target.value) })}
+                        type="range" 
+                        min={selectedElement.type === 'wall' ? "1" : "0.05"} 
+                        max={selectedElement.type === 'wall' ? "10" : "5"} 
+                        step={selectedElement.type === 'wall' ? "0.1" : "0.05"}
+                        value={selectedElement.type === 'wall' 
+                          ? (2.5 * (selectedElement.verticalScale || 1))
+                          : (selectedElement.verticalScale || 1)}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          const newScale = selectedElement.type === 'wall' ? val / 2.5 : val;
+                          const oldScale = selectedElement.verticalScale || 1;
+                          if (newScale === oldScale) return;
+                          
+                          const heightDiffMeters = (newScale - oldScale) * 2.5;
+                          const heightDiffPixels = heightDiffMeters * 100;
+                          
+                          let updatedWallElements = selectedElement.wallElements;
+                          if (updatedWallElements && updatedWallElements.length > 0) {
+                            updatedWallElements = updatedWallElements.map((wel: any) => ({
+                              ...wel,
+                              y: wel.y + heightDiffPixels
+                            }));
+                          }
+                          
+                          onUpdate(selectedElement.id, {
+                            verticalScale: newScale,
+                            ...(updatedWallElements ? { wallElements: updatedWallElements } : {})
+                          });
+                        }}
                         disabled={selectedElement.type === 'asset'}
                         className={`w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)] ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />

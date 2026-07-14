@@ -1031,6 +1031,7 @@ export default function Preview3D({
           const geometryState = JSON.stringify({
             w: vW,
             t: el.thickness || 10,
+            v: el.verticalScale || 1,
             c: cutouts.map((c: any) => ({ t: c.type, x: c.x + delta1, y: c.y, w: c.width, h: c.height }))
           });
 
@@ -1099,12 +1100,14 @@ export default function Preview3D({
           const wVal = vW / PPM;
           const dVal = (el.thickness || 10) / PPM;
           const vScale = el.verticalScale || 1;
+          const wallHeight = h * vScale;
           const cutouts = (el.wallElements || []).filter((wel: any) => ['door', 'window'].includes(wel.type));
           const decorations = (el.wallElements || []).filter((wel: any) => !['door', 'window'].includes(wel.type));
           
           const geometryState = JSON.stringify({
             w: vW,
             t: el.thickness || 10,
+            v: vScale,
             c: cutouts.map((c: any) => ({ t: c.type, x: c.x + delta1, y: c.y, w: c.width, h: c.height }))
           });
 
@@ -1122,7 +1125,7 @@ export default function Preview3D({
               wallDecorationRegistryRef.current.delete(el.id);
             }
 
-            mesh = BABYLON.MeshBuilder.CreateBox(el.id, { width: wVal, height: h, depth: dVal }, scene);
+            mesh = BABYLON.MeshBuilder.CreateBox(el.id, { width: wVal, height: wallHeight, depth: dVal }, scene);
             
             if (cutouts.length > 0) {
               let wallCSG = BABYLON.CSG.FromMesh(mesh);
@@ -1132,7 +1135,7 @@ export default function Preview3D({
               cutouts.forEach((wel: any, index: number) => {
                 const cutW = wel.width / PPM, cutH = wel.height / PPM, cutD = dVal + 0.5;
                 const localX = ((wel.x + delta1) / PPM) - (wVal / 2) + (cutW / 2);
-                const localY = (h / 2) - (wel.y / PPM) - (cutH / 2);
+                const localY = (wallHeight / 2) - (wel.y / PPM) - (cutH / 2);
                 
                 const cutBox = BABYLON.MeshBuilder.CreateBox("cut", { width: cutW, height: cutH, depth: cutD }, scene);
                 cutBox.position.set(localX, localY, 0);
@@ -1213,7 +1216,7 @@ export default function Preview3D({
             decorations.forEach((wel: any) => {
               const cutW = wel.width / PPM, cutH = wel.height / PPM;
               const localX = ((wel.x + delta1) / PPM) - (wVal / 2) + (cutW / 2);
-              const localY = (h / 2) - (wel.y / PPM) - (cutH / 2);
+              const localY = (wallHeight / 2) - (wel.y / PPM) - (cutH / 2);
               let mount: BABYLON.Mesh;
 
               if (wel.type === 'shelf') {
@@ -1267,7 +1270,7 @@ export default function Preview3D({
           }
 
           mesh.position.set(x, (h * vScale / 2) + (el.yOffset || 0), z);
-          mesh.scaling.y = vScale;
+          mesh.scaling.y = el.type === 'wall' ? 1 : vScale;
           mesh.rotation.y = rotY;
           if (!hasWallElements && mesh.metadata && mesh.metadata.baseWidth) {
             mesh.scaling.x = wVal / mesh.metadata.baseWidth;
@@ -1302,7 +1305,7 @@ export default function Preview3D({
               const currentTex = mat.albedoTexture as BABYLON.Texture;
               if (currentTex) {
                 currentTex.uScale = wVal / 2; 
-                currentTex.vScale = h / 2;
+                currentTex.vScale = (h * vScale) / 2;
               }
             } else {
               mat.albedoColor = new BABYLON.Color3(0.92, 0.92, 0.92); mat.albedoTexture = null;

@@ -136,7 +136,8 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
   const PPM = 100
   const SNAP = 10 // 0.1m snap grid
   const wallWidth = wall.width // pixels
-  const wallHeight = 2.5 * PPM // 2.5m fixed height
+  const actualHeightMeters = 2.5 * (wall.verticalScale || 1)
+  const wallHeight = actualHeightMeters * PPM
 
   const ELEMENT_TYPES: Record<string, any> = {
     door: { label: 'Door', emoji: '🚪', defaultW: 0.9, defaultH: 2.0, defaultY: 'floor' },
@@ -307,7 +308,7 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
         <div className="flex items-center gap-3">
           <h2 className="font-bold text-[var(--sea-ink)]">Wall Elevation Editor</h2>
           <span className="text-[10px] font-mono bg-[var(--sand)] border border-[var(--line)] px-2 py-1 rounded text-[var(--sea-ink-soft)]">
-            {(wallWidth / PPM).toFixed(1)}m × 2.5m
+            {(wallWidth / PPM).toFixed(1)}m × {actualHeightMeters.toFixed(1)}m
           </span>
         </div>
         <div className="flex items-center gap-2">

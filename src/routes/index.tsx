@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { useState, useEffect } from 'react'
 
 export const Route = createFileRoute('/')({ component: LandingPage })
 
@@ -168,6 +169,14 @@ const steps = [
 ]
 
 function LandingPage() {
+  const [hasDraft, setHasDraft] = useState(false)
+
+  useEffect(() => {
+    if (localStorage.getItem('stall-config')) {
+      setHasDraft(true)
+    }
+  }, [])
+
   return (
     <>
       {/* ── HERO ── */}
@@ -209,23 +218,38 @@ function LandingPage() {
               </p>
 
               <div className="fade-up d-300" style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                <Link
-                  to="/editor"
-                  id="hero-start-designing"
-                  onClick={() => {
-                    localStorage.removeItem('stall-config')
-                    localStorage.removeItem('stall-elements')
-                  }}
-                  className="btn btn-primary"
-                >
-                  <svg viewBox="0 0 16 16" fill="none" width="15" height="15">
-                    <path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.7"/>
-                  </svg>
-                  Start Designing
-                </Link>
-                <Link to="/editor" id="hero-open-editor" className="btn btn-outline">
-                  Open Editor →
-                </Link>
+                {hasDraft ? (
+                  <>
+                    <Link to="/editor" id="hero-resume-design" className="btn btn-primary">
+                      <svg viewBox="0 0 16 16" fill="none" width="15" height="15">
+                        <path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.7"/>
+                      </svg>
+                      Resume Design
+                    </Link>
+                    <Link
+                      to="/editor"
+                      id="hero-start-new"
+                      onClick={() => {
+                        localStorage.removeItem('stall-config')
+                        localStorage.removeItem('stall-elements')
+                      }}
+                      className="btn btn-outline"
+                    >
+                      Start New Design
+                    </Link>
+                  </>
+                ) : (
+                  <Link
+                    to="/editor"
+                    id="hero-start-designing"
+                    className="btn btn-primary"
+                  >
+                    <svg viewBox="0 0 16 16" fill="none" width="15" height="15">
+                      <path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.7"/>
+                    </svg>
+                    Start Designing
+                  </Link>
+                )}
               </div>
 
               {/* Stats row */}
@@ -393,18 +417,21 @@ function LandingPage() {
             No install needed. Open the designer and build your layout
             in minutes — then preview it live in 3D.
           </p>
-          <Link
-            to="/editor"
-            id="cta-open-designer"
-            onClick={() => {
-              localStorage.removeItem('stall-config')
-              localStorage.removeItem('stall-elements')
-            }}
-            className="btn btn-primary"
-            style={{ fontSize: '1rem', padding: '15px 36px' }}
-          >
-            Open Designer →
-          </Link>
+          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {hasDraft ? (
+              <Link to="/editor" id="cta-resume-design" className="btn btn-primary">
+                Resume Your Design →
+              </Link>
+            ) : (
+              <Link
+                to="/editor"
+                id="cta-open-designer"
+                className="btn btn-primary"
+              >
+                Start Designing Now →
+              </Link>
+            )}
+          </div>
         </div>
       </section>
 

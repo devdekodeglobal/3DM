@@ -31,7 +31,7 @@ const CATEGORY_PALETTE: Record<string, { fill: string; badge: string; text: stri
 const getInitials = (label: string) =>
   label.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
 
-const LetterMarkAsset = ({ shapeProps, onSelect, onChange }: any) => {
+const LetterMarkAsset = ({ shapeProps, onSelect, onChange, isDarkMode }: any) => {
   const label = shapeProps.assetName?.replace(/_/g, ' ') || 'Asset'
   const category = shapeProps.src?.split('/')[2] || 'Fixtures'
   const palette = CATEGORY_PALETTE[category] || CATEGORY_PALETTE.Fixtures
@@ -113,7 +113,7 @@ const LetterMarkAsset = ({ shapeProps, onSelect, onChange }: any) => {
         fontSize={Math.max(8, Math.min(10, w * 0.15))}
         fontFamily="Inter, sans-serif"
         fontStyle="bold"
-        fill={palette.text}
+        fill={isDarkMode ? 'rgba(255,255,255,0.85)' : palette.text}
         align="center"
         width={w}
       />
@@ -261,6 +261,7 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 })
   const [isSpacePressed, setIsSpacePressed] = useState(false)
   const [hasMounted, setHasMounted] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(false)
 
   const PPM = 100 // 100px = 1 Metre
   const gridSnapSize = 50 // 0.5m visual grid (50px)
@@ -277,9 +278,19 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
 
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
+    
+    // Check dark mode
+    const checkDark = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'))
+    }
+    checkDark()
+    const observer = new MutationObserver(checkDark)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
+      observer.disconnect()
     }
   }, [])
 
@@ -472,7 +483,7 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
                     text={`${line.dim}m`}
                     fontSize={16}
                     fontFamily="monospace"
-                    fill="var(--sea-ink)"
+                    fill={isDarkMode ? "rgba(255,255,255,0.5)" : "var(--sea-ink)"}
                     fontStyle="bold"
                     offset={{ x: 20, y: 10 }}
                     rotation={line.rotate || 0}
@@ -501,6 +512,7 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
                     shapeProps={{ ...obj, name: obj.id }}
                     onSelect={() => onSelect(obj.id)}
                     onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
+                    isDarkMode={isDarkMode}
                   />
                 )
               }

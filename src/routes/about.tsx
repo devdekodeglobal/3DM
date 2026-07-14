@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowRight, Monitor, Layers, MousePointer2, Box, Palette, FolderOpen, Save, FileText, Camera } from 'lucide-react'
+import { ArrowRight, Monitor, Layers, Box, Palette, FolderOpen, Save, FileText, Camera } from 'lucide-react'
 
 export const Route = createFileRoute('/about')({
   component: OverviewPage,

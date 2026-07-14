@@ -71,13 +71,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
 
   const handleGoogleOAuth = async () => {
     try {
+      (window as any).isAuthRedirect = true;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin + '/editor'
         }
       })
-      if (error) throw error
+      if (error) {
+        (window as any).isAuthRedirect = false;
+        throw error;
+      }
     } catch (err: any) {
       console.error('Google OAuth error:', err)
       setErrorMsg(err.message || 'Failed to authenticate with Google.')

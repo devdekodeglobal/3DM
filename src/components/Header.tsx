@@ -6,6 +6,27 @@ import { supabase } from '../lib/supabaseClient'
 import { AuthModal } from './editor/AuthModal'
 import { AnimatedHeaderLogo } from './AnimatedHeaderLogo'
 
+function getInitials(user: any) {
+  if (!user) return '?'
+  const name = user.user_metadata?.full_name || user.user_metadata?.name
+  if (name) {
+    const parts = name.split(' ').filter(Boolean)
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
+  
+  if (user.email) {
+    const parts = user.email.split('@')[0].split(/[._-]/)
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return user.email.substring(0, 2).toUpperCase()
+  }
+  return 'U'
+}
+
 export default function Header() {
   const [sessionUser, setSessionUser] = useState<any>(null)
   const [authModalOpen, setAuthModalOpen] = useState(false)
@@ -55,9 +76,12 @@ export default function Header() {
             {/* Auth Controls */}
             {sessionUser ? (
               <div className="flex items-center gap-3 pl-2 sm:pl-0">
-                <span className="hidden sm:block text-[11px] font-semibold text-[var(--fg-soft)] max-w-[140px] truncate">
-                  {sessionUser.email}
-                </span>
+                <div 
+                  className="w-7 h-7 rounded-full bg-[var(--brand)] text-white flex items-center justify-center text-[10px] font-bold shadow-sm ring-2 ring-[var(--brand)]/20"
+                  title={sessionUser.email}
+                >
+                  {getInitials(sessionUser)}
+                </div>
                 <button
                   onClick={async () => {
                     await supabase.auth.signOut()
