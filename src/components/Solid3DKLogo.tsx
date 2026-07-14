@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 
 export function Solid3DKLogo({ size = 36, className = "", progress = 1 }: { size?: number, className?: string, progress?: number }) {
   // Scale and offset to perfectly frame the front-facing cube
@@ -52,7 +52,6 @@ export function Solid3DKLogo({ size = 36, className = "", progress = 1 }: { size
   const leftFront = "var(--logo-left-front)";
   const leftTop = "var(--logo-left-top)";
   const leftSlope = "var(--logo-left-slope)";
-  const leftGap = "var(--logo-left-gap)";
 
   const rightFront = "var(--logo-right-front)";
   const rightTop = "var(--logo-right-top)";

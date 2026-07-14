@@ -1,5 +1,3 @@
-import React from 'react'
-
 export function ThreeDK({ text = "k" }: { text?: string }) {
   const depth = 14; // How thick the 3D extrusion is
 

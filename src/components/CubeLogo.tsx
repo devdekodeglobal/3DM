@@ -1,5 +1,3 @@
-import React from 'react'
-
 export function CubeLogo({ size = 28, animate = false, flat = false }: { size?: number, animate?: boolean, flat?: boolean }) {
   const halfSize = size / 2
   const fontSize = size * 0.55

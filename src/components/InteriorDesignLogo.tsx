@@ -1,5 +1,3 @@
-import React from 'react';
-
 export function InteriorDesignLogo({ size = 34, className = "" }: { size?: number, className?: string }) {
   // Mapping for the 3D K Block in the center of the room
   // Block center bottom is (50, 70). Radius = 18. W = 15.588, H = 9

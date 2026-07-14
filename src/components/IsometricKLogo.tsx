@@ -1,5 +1,3 @@
-import React from 'react';
-
 export function IsometricKLogo({ size = 32, className = "" }: { size?: number, className?: string }) {
   // Center is (50, 50), Radius is 40
   // W = 40 * cos(30) = 34.641

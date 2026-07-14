@@ -1,5 +1,3 @@
-import React from 'react';
-
 export function HouseKLogo({ size = 32, className = "" }: { size?: number, className?: string }) {
   return (
     <svg 
