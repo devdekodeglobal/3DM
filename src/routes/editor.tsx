@@ -383,8 +383,8 @@ function EditorPage() {
     }
   }
 
-  const selectedElement = elements.find((el) => el.id === selectedId)
-  const editingWall = editingWallId ? elements.find((el) => el.id === editingWallId) : null
+  const selectedElement = (elements || []).find((el) => el.id === selectedId)
+  const editingWall = editingWallId ? (elements || []).find((el) => el.id === editingWallId) : null
 
   if (!isMounted) {
     return <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center">Loading editor...</div>
@@ -650,7 +650,7 @@ function EditorPage() {
           <div className="flex items-center gap-2 pr-4 border-r border-[var(--border)]">
             <div className="h-8 w-8 rounded-lg bg-[var(--brand)] flex items-center justify-center text-white font-bold shadow-sm">D</div>
             <span className="font-extrabold text-[var(--fg)] tracking-tight pr-4">
-              Dekode Space Designer
+              DEKODE Space Designer
             </span>
           </div>
           <div className="flex items-center gap-1">
