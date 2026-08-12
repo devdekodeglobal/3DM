@@ -111,7 +111,13 @@ export default function Properties({
                         id="dim-w" name="dim-w"
                         type="number" step="0.05"
                         value={((selectedElement.width || 0) / 100).toFixed(2)}
-                        onChange={(e) => onUpdate(selectedElement.id, { width: parseFloat(e.target.value) * 100 || 0 })}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          onUpdate(selectedElement.id, { 
+                            width: val * 100,
+                            ...(['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? { realWidth: val } : {})
+                          });
+                        }}
                         disabled={selectedElement.type === 'asset'}
                         className={`w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
@@ -122,7 +128,13 @@ export default function Properties({
                         id="dim-h" name="dim-h"
                         type="number" step="0.05"
                         value={((selectedElement.height || 0) / 100).toFixed(2)}
-                        onChange={(e) => onUpdate(selectedElement.id, { height: parseFloat(e.target.value) * 100 || 0 })}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          onUpdate(selectedElement.id, { 
+                            height: val * 100,
+                            ...(['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? { realDepth: val } : {})
+                          });
+                        }}
                         disabled={selectedElement.type === 'asset'}
                         className={`w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
@@ -178,25 +190,35 @@ export default function Properties({
                     <div>
                       <div className="flex justify-between items-center mb-1">
                         <label htmlFor="v-scale" className="text-[10px] text-[var(--sea-ink-soft)] font-bold">
-                          {selectedElement.type === 'wall' ? 'WALL HEIGHT (m)' : 'VERTICAL SCALE (x)'}
+                          {selectedElement.type === 'wall' ? 'WALL HEIGHT (m)' : ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? 'HEIGHT (m)' : 'VERTICAL SCALE (x)'}
                         </label>
                         <span className="text-[10px] font-mono text-[var(--lagoon-deep)]">
                           {selectedElement.type === 'wall' 
                             ? `${(2.5 * (selectedElement.verticalScale || 1)).toFixed(1)}m` 
+                            : ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type)
+                            ? `${(selectedElement.realHeight || 2.5).toFixed(1)}m`
                             : `${(selectedElement.verticalScale || 1).toFixed(2)}x`}
                         </span>
                       </div>
                       <input
                         id="v-scale" name="v-scale"
                         type="range" 
-                        min={selectedElement.type === 'wall' ? "1" : "0.05"} 
-                        max={selectedElement.type === 'wall' ? "10" : "5"} 
-                        step={selectedElement.type === 'wall' ? "0.1" : "0.05"}
+                        min={selectedElement.type === 'wall' || ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? "0.5" : "0.05"} 
+                        max={selectedElement.type === 'wall' || ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? "10" : "5"} 
+                        step={selectedElement.type === 'wall' || ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? "0.1" : "0.05"}
                         value={selectedElement.type === 'wall' 
                           ? (2.5 * (selectedElement.verticalScale || 1))
+                          : ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type)
+                          ? (selectedElement.realHeight || 2.5)
                           : (selectedElement.verticalScale || 1)}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value);
+                          
+                          if (['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type)) {
+                            onUpdate(selectedElement.id, { realHeight: val });
+                            return;
+                          }
+
                           const newScale = selectedElement.type === 'wall' ? val / 2.5 : val;
                           const oldScale = selectedElement.verticalScale || 1;
                           if (newScale === oldScale) return;
@@ -311,6 +333,132 @@ export default function Properties({
                         onChange={(c) => onUpdate(selectedElement.id, { color: c })}
                       />
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* Pillar-specific controls */}
+              {selectedElement.type === 'pillar' && (
+                <div className="space-y-4 mt-4 pt-4 border-t border-[var(--line)]">
+                  <div>
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">
+                      Profile Shape
+                    </label>
+                    <select
+                      value={selectedElement.profile || 'square'}
+                      onChange={(e) => onUpdate(selectedElement.id, { profile: e.target.value })}
+                      className="w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-3 py-2 text-sm outline-none font-bold"
+                    >
+                      <option value="square">Square / Box</option>
+                      <option value="round">Round / Cylinder</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">
+                      Material Color
+                    </label>
+                    <ColorPickerPanel
+                      initialColor={selectedElement.fill || '#aaaaaa'}
+                      onChange={(c) => onUpdate(selectedElement.id, { fill: c })}
+                    />
+                    <div className="mt-2 p-3 bg-[var(--sand)] rounded-lg border border-dashed border-[var(--line)] text-center">
+                      <p className="text-[10px] font-bold text-[var(--sea-ink-soft)]">Texture Upload (Coming Soon)</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Caged Wall controls */}
+              {['caged-wall', 'caged-panel'].includes(selectedElement.type) && (
+                <div className="space-y-4 mt-4 pt-4 border-t border-[var(--line)]">
+                  <div>
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">
+                      Orientation
+                    </label>
+                    <select
+                      value={selectedElement.orientation || 'horizontal'}
+                      onChange={(e) => onUpdate(selectedElement.id, { orientation: e.target.value })}
+                      className="w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-3 py-2 text-sm outline-none font-bold"
+                    >
+                      <option value="horizontal">Horizontal Plates</option>
+                      <option value="vertical">Vertical Plates</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-1">
+                      Number of Plates
+                    </label>
+                    <input
+                      type="number" min="1" max="50" step="1"
+                      value={selectedElement.platesCount || 5}
+                      onChange={(e) => onUpdate(selectedElement.id, { platesCount: parseInt(e.target.value) })}
+                      className="w-full bg-[var(--sand)] border border-[var(--line)] rounded-lg px-3 py-2 text-sm outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-1">
+                      Plate Thickness (m)
+                    </label>
+                    <input
+                      type="number" min="0.01" max="1" step="0.01"
+                      value={selectedElement.plateThickness || 0.05}
+                      onChange={(e) => onUpdate(selectedElement.id, { plateThickness: parseFloat(e.target.value) })}
+                      className="w-full bg-[var(--sand)] border border-[var(--line)] rounded-lg px-3 py-2 text-sm outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-1">
+                      Gap Between Plates (m)
+                    </label>
+                    <input
+                      type="number" min="0.01" max="2" step="0.05"
+                      value={selectedElement.plateGap || 0.2}
+                      onChange={(e) => onUpdate(selectedElement.id, { plateGap: parseFloat(e.target.value) })}
+                      className="w-full bg-[var(--sand)] border border-[var(--line)] rounded-lg px-3 py-2 text-sm outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">
+                      Material Color
+                    </label>
+                    <ColorPickerPanel
+                      initialColor={selectedElement.fill || '#444444'}
+                      onChange={(c) => onUpdate(selectedElement.id, { fill: c })}
+                    />
+                    <div className="mt-2 p-3 bg-[var(--sand)] rounded-lg border border-dashed border-[var(--line)] text-center">
+                      <p className="text-[10px] font-bold text-[var(--sea-ink-soft)]">Texture Upload (Coming Soon)</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Panel controls */}
+              {selectedElement.type === 'panel' && (
+                <div className="space-y-4 mt-4 pt-4 border-t border-[var(--line)]">
+                  <div>
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">
+                      Panel Style
+                    </label>
+                    <select
+                      value={selectedElement.style || 'flat'}
+                      onChange={(e) => onUpdate(selectedElement.id, { style: e.target.value })}
+                      className="w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-3 py-2 text-sm outline-none font-bold"
+                    >
+                      <option value="flat">Flat / Solid</option>
+                      <option value="corrugated">Corrugated Metal</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">
+                      Material Color
+                    </label>
+                    <ColorPickerPanel
+                      initialColor={selectedElement.fill || '#0055ff'}
+                      onChange={(c) => onUpdate(selectedElement.id, { fill: c })}
+                    />
+                    <div className="mt-2 p-3 bg-[var(--sand)] rounded-lg border border-dashed border-[var(--line)] text-center">
+                      <p className="text-[10px] font-bold text-[var(--sea-ink-soft)]">Texture Upload (Coming Soon)</p>
+                    </div>
                   </div>
                 </div>
               )}

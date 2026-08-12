@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+
 
 export function Solid3DKLogo({ size = 36, className = "", progress = 1 }: { size?: number, className?: string, progress?: number }) {
   // Scale and offset to perfectly frame the front-facing cube

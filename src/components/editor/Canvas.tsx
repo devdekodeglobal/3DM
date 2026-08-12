@@ -172,6 +172,84 @@ const WallShape = ({ shapeProps, onSelect, onChange }: any) => {
 }
 
 
+const ParametricStructureShape = ({ shapeProps, onSelect, onChange }: any) => {
+  const isCaged = shapeProps.type === 'caged-wall' || shapeProps.type === 'caged-panel';
+  const isRound = shapeProps.profile === 'round';
+  
+  return (
+    <Group
+      name={shapeProps.name}
+      x={shapeProps.x}
+      y={shapeProps.y}
+      rotation={shapeProps.rotation}
+      draggable
+      onClick={onSelect}
+      onTap={onSelect}
+      onDragEnd={(e) => {
+        onChange({ ...shapeProps, x: e.target.x(), y: e.target.y() })
+      }}
+      onTransform={(e) => {
+        const node = e.target
+        const scaleX = node.scaleX()
+        const scaleY = node.scaleY()
+        
+        node.setAttrs({
+          width: Math.max(5, shapeProps.width * scaleX),
+          height: Math.max(5, shapeProps.height * scaleY),
+          scaleX: 1,
+          scaleY: 1
+        })
+      }}
+      onTransformEnd={(e) => {
+        const node = e.target
+        const scaleX = node.scaleX()
+        const scaleY = node.scaleY()
+        
+        node.scaleX(1)
+        node.scaleY(1)
+        
+        const newWidth = Math.max(5, shapeProps.width * scaleX)
+        const newHeight = Math.max(5, shapeProps.height * scaleY)
+        
+        onChange({
+          ...shapeProps,
+          x: node.x(),
+          y: node.y(),
+          rotation: node.rotation(),
+          width: newWidth,
+          height: newHeight,
+          realWidth: Number((newWidth / 100).toFixed(2)),
+          realDepth: Number((newHeight / 100).toFixed(2))
+        })
+      }}
+    >
+      {/* Background shape */}
+      <Rect
+        x={-shapeProps.width / 2}
+        y={-shapeProps.height / 2}
+        width={shapeProps.width}
+        height={shapeProps.height}
+        fill={isCaged ? 'transparent' : (shapeProps.fill || '#aaaaaa')}
+        stroke={isCaged ? (shapeProps.fill || '#444') : undefined}
+        strokeWidth={isCaged ? 2 : 0}
+        dash={isCaged ? [5, 5] : undefined}
+        cornerRadius={isRound ? Math.max(shapeProps.width, shapeProps.height) : 0}
+      />
+      {/* Pattern for caged wall */}
+      {isCaged && (
+        <Rect
+          x={-shapeProps.width / 2 + 2}
+          y={-shapeProps.height / 2 + 2}
+          width={shapeProps.width - 4}
+          height={shapeProps.height - 4}
+          fill={shapeProps.fill || '#444'}
+          opacity={0.3}
+        />
+      )}
+    </Group>
+  )
+}
+
 const Logo3DShape = ({ shapeProps, onSelect, onChange }: any) => {
   const w = shapeProps.width
   const h = shapeProps.height
@@ -500,6 +578,26 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
                   <WallShape
                     key={obj.id}
                     shapeProps={{ ...obj, name: obj.id, fill: obj.material === 'custom_color' ? (obj.color || '#f0f0f0') : obj.fill }}
+                    onSelect={() => onSelect(obj.id)}
+                    onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
+                  />
+                )
+              }
+              if (['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(obj.type)) {
+                return (
+                  <ParametricStructureShape
+                    key={obj.id}
+                    shapeProps={{ ...obj, name: obj.id }}
+                    onSelect={() => onSelect(obj.id)}
+                    onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
+                  />
+                )
+              }
+              if (['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(obj.type)) {
+                return (
+                  <ParametricStructureShape
+                    key={obj.id}
+                    shapeProps={{ ...obj, name: obj.id }}
                     onSelect={() => onSelect(obj.id)}
                     onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
                   />

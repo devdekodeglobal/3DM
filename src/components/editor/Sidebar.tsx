@@ -57,6 +57,73 @@ export default function Sidebar({
     })
   }
 
+  const addPillar = () => {
+    addElement({
+      id: uuidv4(),
+      type: 'pillar',
+      x: 150, y: 150,
+      width: 40, height: 40,
+      rotation: 0,
+      realWidth: 0.4,
+      realHeight: 3.0,
+      realDepth: 0.4,
+      profile: 'square',
+      fill: '#aaaaaa'
+    })
+  }
+
+  const addCagedWall = () => {
+    addElement({
+      id: uuidv4(),
+      type: 'caged-wall',
+      x: 150, y: 150,
+      width: 200, height: 20,
+      rotation: 0,
+      realWidth: 2.0,
+      realHeight: 2.5,
+      realDepth: 0.2,
+      platesCount: 5,
+      plateThickness: 0.05,
+      plateGap: 0.2,
+      orientation: 'horizontal',
+      fill: '#444444'
+    })
+  }
+
+  const addModularPanel = () => {
+    addElement({
+      id: uuidv4(),
+      type: 'panel',
+      x: 150, y: 150,
+      width: 200, height: 10,
+      rotation: 0,
+      realWidth: 2.0,
+      realHeight: 2.5,
+      realDepth: 0.1,
+      style: 'flat',
+      fill: '#0055ff'
+    })
+  }
+
+  const addCagedPanel = () => {
+    addElement({
+      id: uuidv4(),
+      type: 'caged-panel',
+      x: 150, y: 150,
+      width: 200, height: 200,
+      rotation: 0,
+      yOffset: 2.5, // defaults to a roof
+      realWidth: 2.0,
+      realHeight: 0.2, // total thickness of the grid
+      realDepth: 2.0,
+      platesCount: 5,
+      plateThickness: 0.05,
+      plateGap: 0.3,
+      orientation: 'horizontal',
+      fill: '#444444'
+    })
+  }
+
   const addAsset = (categoryFolder: string, assetName: string) => {
     const asset = ASSET_REGISTRY.find(a => a.id === assetName)
     const dims = ASSET_DIMENSIONS[assetName] as any
@@ -137,18 +204,30 @@ export default function Sidebar({
             {isCoreOpen ? <ChevronDown className="h-4 w-4 text-[var(--sea-ink-soft)]" /> : <ChevronRight className="h-4 w-4 text-[var(--sea-ink-soft)]" />}
           </button>
           {isCoreOpen && (
-            <div className="px-4 pb-4 space-y-2 animate-in fade-in duration-200">
-              <button
-                onClick={addWall}
-                className="w-full flex items-center justify-center gap-2 p-3 bg-[var(--brand)] text-white rounded-xl font-semibold hover:bg-[var(--brand-h)] transition shadow-sm"
-              >
-                <PlusSquare className="h-4 w-4" /> Add Wall
+            <div className="px-4 pb-4 grid grid-cols-2 gap-2 animate-in fade-in duration-200">
+              <button onClick={addWall} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
+                <Box className="h-4 w-4 mb-0.5 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <span className="text-[10px] font-bold tracking-wide text-center">Wall</span>
               </button>
-              <button
-                onClick={add3DLogo}
-                className="w-full flex items-center justify-center gap-2 p-3 bg-[var(--lagoon-deep)] text-white rounded-xl font-semibold hover:bg-[var(--palm)] transition shadow-sm"
-              >
-                <PlusSquare className="h-4 w-4" /> Add 3D Logo
+              <button onClick={addPillar} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
+                <Box className="h-4 w-4 mb-0.5 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <span className="text-[10px] font-bold tracking-wide text-center">Pillar</span>
+              </button>
+              <button onClick={addCagedWall} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
+                <LayoutGrid className="h-4 w-4 mb-0.5 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <span className="text-[10px] font-bold tracking-wide text-center">Caged Wall</span>
+              </button>
+              <button onClick={addModularPanel} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
+                <LayoutGrid className="h-4 w-4 mb-0.5 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <span className="text-[10px] font-bold tracking-wide text-center">Panel</span>
+              </button>
+              <button onClick={addCagedPanel} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
+                <LayoutGrid className="h-4 w-4 mb-0.5 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <span className="text-[10px] font-bold tracking-wide text-center">Caged Roof</span>
+              </button>
+              <button onClick={add3DLogo} className="col-span-2 flex items-center justify-center gap-2 p-2.5 mt-1 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
+                <PlusSquare className="h-4 w-4 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <span className="text-[10px] font-bold tracking-wide">3D Logo</span>
               </button>
             </div>
           )}

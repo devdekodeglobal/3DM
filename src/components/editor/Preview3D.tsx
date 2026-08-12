@@ -1038,13 +1038,21 @@ export default function Preview3D({
           if (!mesh.metadata || mesh.metadata.svgData !== el.svgData || mesh.metadata.depth !== el.depth || mesh.metadata.logoStyle !== el.logoStyle || mesh.metadata.width !== el.width || mesh.metadata.height !== el.height) {
             needsRecreate = true;
           }
+        } else if (['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(el.type)) {
+          const stateStr = JSON.stringify({
+            w: el.width, h: el.height, d: el.realDepth, rh: el.realHeight, f: el.fill,
+            p: el.profile, pc: el.platesCount, pt: el.plateThickness, pg: el.plateGap, o: el.orientation, s: el.style, sx: el.scaleX
+          });
+          if (!mesh.metadata || mesh.metadata.geometryState !== stateStr) {
+            needsRecreate = true;
+          }
         }
       }
 
       if (registry.has(el.id) && !needsRecreate && el.type !== 'wall') {
         const mesh = registry.get(el.id)!;
         const vScale = el.verticalScale || 1;
-        const hActual = el.type === 'wall' ? 2.5 : 1; 
+        const hActual = ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(el.type) ? (el.realHeight || 2.5) : (el.type === 'wall' ? 2.5 : 1);
         
         mesh.position.x = x;
         mesh.position.z = z;
@@ -1417,6 +1425,103 @@ export default function Preview3D({
           };
           registry.set(el.id, pivot);
           attachDragBehavior(pivot, el.id);
+
+        } else if (['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(el.type)) {
+          const w = (el.width / PPM) * Math.abs(el.scaleX || 1);
+          const h = el.realHeight || 2.5;
+          const d = el.realDepth || 0.1;
+          const baseColor = BABYLON.Color3.FromHexString(el.fill || '#aaaaaa');
+
+          let mesh: BABYLON.Mesh;
+          
+          if (el.type === 'pillar') {
+            if (el.profile === 'round') {
+              mesh = BABYLON.MeshBuilder.CreateCylinder(el.id, { diameter: Math.max(w, d), height: h }, scene);
+            } else {
+              mesh = BABYLON.MeshBuilder.CreateBox(el.id, { width: w, height: h, depth: d }, scene);
+            }
+          } else if (el.type === 'caged-wall' || el.type === 'caged-panel') {
+            mesh = new BABYLON.Mesh(el.id, scene);
+            const platesCount = el.platesCount || 5;
+            const plateThickness = el.plateThickness || 0.05;
+            const plateGap = el.plateGap || 0.2;
+            const orientation = el.orientation || 'horizontal';
+            
+            if (el.type === 'caged-wall') {
+              // Generate plates starting from bottom (horizontal) or left (vertical)
+              let offset = orientation === 'horizontal' 
+                ? (-h / 2 + plateThickness / 2) 
+                : (-w / 2 + plateThickness / 2);
+              
+              for (let i = 0; i < platesCount; i++) {
+                const plateName = `${el.id}_plate_${i}`;
+                let plate: BABYLON.Mesh;
+                if (orientation === 'horizontal') {
+                  plate = BABYLON.MeshBuilder.CreateBox(plateName, { width: w, height: plateThickness, depth: d }, scene);
+                  plate.position.y = offset;
+                } else {
+                  plate = BABYLON.MeshBuilder.CreateBox(plateName, { width: plateThickness, height: h, depth: d }, scene);
+                  plate.position.x = offset;
+                }
+                plate.parent = mesh;
+                shadowGenerator.addShadowCaster(plate);
+                plate.receiveShadows = true;
+                offset += plateThickness + plateGap;
+                
+                const pMat = new BABYLON.StandardMaterial(`${plateName}_mat`, scene);
+                pMat.diffuseColor = baseColor;
+                plate.material = pMat;
+              }
+            } else { // caged-panel
+              // Generate plates starting from back (horizontal) or left (vertical)
+              let offset = orientation === 'horizontal' 
+                ? (-d / 2 + plateThickness / 2) 
+                : (-w / 2 + plateThickness / 2);
+              
+              for (let i = 0; i < platesCount; i++) {
+                const plateName = `${el.id}_plate_${i}`;
+                let plate: BABYLON.Mesh;
+                if (orientation === 'horizontal') {
+                  // Plates parallel to X axis, spaced along Z axis
+                  plate = BABYLON.MeshBuilder.CreateBox(plateName, { width: w, height: h, depth: plateThickness }, scene);
+                  plate.position.z = offset;
+                } else {
+                  // Plates parallel to Z axis, spaced along X axis
+                  plate = BABYLON.MeshBuilder.CreateBox(plateName, { width: plateThickness, height: h, depth: d }, scene);
+                  plate.position.x = offset;
+                }
+                plate.parent = mesh;
+                shadowGenerator.addShadowCaster(plate);
+                plate.receiveShadows = true;
+                offset += plateThickness + plateGap;
+                
+                const pMat = new BABYLON.StandardMaterial(`${plateName}_mat`, scene);
+                pMat.diffuseColor = baseColor;
+                plate.material = pMat;
+              }
+            }
+          } else { // panel
+            mesh = BABYLON.MeshBuilder.CreateBox(el.id, { width: w, height: h, depth: d }, scene);
+          }
+
+          mesh.position.set(x, (h / 2) + (el.yOffset || 0), z);
+          mesh.rotation.y = rotY;
+
+          if (el.type !== 'caged-wall' && el.type !== 'caged-panel') {
+            const mat = new BABYLON.StandardMaterial(el.id + "_mat", scene);
+            mat.diffuseColor = baseColor;
+            mesh.material = mat;
+            shadowGenerator.addShadowCaster(mesh);
+            mesh.receiveShadows = true;
+          }
+
+          const stateStr = JSON.stringify({
+            w: el.width, h: el.height, d: el.realDepth, rh: el.realHeight, f: el.fill,
+            p: el.profile, pc: el.platesCount, pt: el.plateThickness, pg: el.plateGap, o: el.orientation, s: el.style, sx: el.scaleX
+          });
+          mesh.metadata = { width: el.width, height: el.height, fill: el.fill, geometryState: stateStr };
+          registry.set(el.id, mesh);
+          attachDragBehavior(mesh, el.id);
 
         } else if (el.type === 'asset') {
           const modelName = el.assetName?.toLowerCase() || 'box';
