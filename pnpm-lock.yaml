@@ -172,7 +172,7 @@ importers:
         specifier: ^3.0.5
         version: 3.2.4(@types/node@22.19.19)(jiti@2.7.0)(jsdom@28.1.0)(lightningcss@1.32.0)
       wrangler:
-        specifier: ^3.109.2
+        specifier: ^3.114.17
         version: 3.114.17
 
 packages:
