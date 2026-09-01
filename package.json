@@ -9,6 +9,7 @@
     "dev": "vite dev --port 3000",
     "build": "vite build",
     "preview": "vite preview",
+    "deploy": "npm run build && wrangler pages deploy dist",
     "test": "vitest run"
   },
   "dependencies": {
@@ -67,7 +68,8 @@
     "typescript": "^5.7.2",
     "vite": "^7.3.1",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.0.5"
+    "vitest": "^3.0.5",
+    "wrangler": "^3.109.2"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
