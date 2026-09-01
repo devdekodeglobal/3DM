@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { Stage, Layer, Rect, Text, Transformer, Line, Group, Circle } from 'react-konva'
-import { X, Save } from 'lucide-react'
+import { X, Save, Layers, ChevronsUp, ChevronsDown } from 'lucide-react'
 import { getCachedImage } from '../../lib/imageCache'
 import ColorPickerPanel from './ColorPickerPanel'
 
@@ -262,6 +262,24 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
     newElements[index] = { ...el, x: nx, y: ny, width: newW, height: newH }
     setElements(newElements)
     setDragLabel(null)
+  }
+
+  const moveLayer = (dir: 'top' | 'up' | 'down' | 'bottom') => {
+    if (!selectedId) return
+    const idx = elements.findIndex(el => el.id === selectedId)
+    if (idx === -1) return
+    const newElements = [...elements]
+    const [item] = newElements.splice(idx, 1)
+    if (dir === 'top') {
+      newElements.push(item)
+    } else if (dir === 'bottom') {
+      newElements.unshift(item)
+    } else if (dir === 'up') {
+      newElements.splice(Math.min(newElements.length, idx + 1), 0, item)
+    } else if (dir === 'down') {
+      newElements.splice(Math.max(0, idx - 1), 0, item)
+    }
+    setElements(newElements)
   }
 
   useEffect(() => {
@@ -539,6 +557,31 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
                     </div>
                   </div>
                 )}
+
+                {/* Layer Ordering (Front / Back) */}
+                <div className="pt-2">
+                  <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold flex items-center gap-1 mb-1">
+                    <Layers className="w-3 h-3 text-[var(--lagoon)]" /> Layer Position
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      onClick={() => moveLayer('top')}
+                      title="Bring to Front"
+                      className="py-2 px-2 bg-[var(--sand)] hover:bg-[var(--chip-bg)] border border-[var(--line)] rounded-lg flex items-center justify-center gap-1.5 text-[10px] font-bold text-[var(--sea-ink)] transition cursor-pointer"
+                    >
+                      <ChevronsUp className="w-3.5 h-3.5 text-[var(--brand)]" />
+                      Bring to Front
+                    </button>
+                    <button
+                      onClick={() => moveLayer('bottom')}
+                      title="Send to Back"
+                      className="py-2 px-2 bg-[var(--sand)] hover:bg-[var(--chip-bg)] border border-[var(--line)] rounded-lg flex items-center justify-center gap-1.5 text-[10px] font-bold text-[var(--sea-ink)] transition cursor-pointer"
+                    >
+                      <ChevronsDown className="w-3.5 h-3.5 text-[var(--sea-ink-soft)]" />
+                      Send to Back
+                    </button>
+                  </div>
+                </div>
 
                 <button onClick={() => { setElements(prev => prev.filter(el => el.id !== selectedId)); setSelectedId(null) }} className="w-full mt-1 py-1.5 rounded-lg bg-red-50 text-red-500 border border-red-200 text-xs font-bold hover:bg-red-100 transition">Delete Element</button>
               </div>

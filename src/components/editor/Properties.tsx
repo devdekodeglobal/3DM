@@ -247,6 +247,36 @@ export default function Properties({
                 </div>
               </div>
 
+              {/* 3D Model Facing Correction */}
+              {selectedElement.type === 'asset' && (
+                <div className="pt-2 border-t border-[var(--line)]">
+                  <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">
+                    3D Model Facing Offset
+                  </label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[0, 90, 180, 270].map((angle) => {
+                      const active = (selectedElement.facingOffset || 0) === angle;
+                      return (
+                        <button
+                          key={angle}
+                          onClick={() => onUpdate(selectedElement.id, { facingOffset: angle })}
+                          className={`py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer ${
+                            active 
+                              ? 'bg-[var(--brand)] text-white border-[var(--brand)] shadow-sm' 
+                              : 'bg-[var(--sand)] text-[var(--sea-ink)] border-[var(--line)] hover:bg-[var(--chip-bg)]'
+                          }`}
+                        >
+                          {angle}°
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-[var(--sea-ink-soft)] mt-1.5 leading-tight">
+                    Adjust if your custom 3D model was exported facing sideways or backwards.
+                  </p>
+                </div>
+              )}
+
               {/* Asset Details */}
               {selectedElement.type === 'asset' && selectedElement.details && (
                 <div className="mt-6 pt-4 border-t border-[var(--line)]">

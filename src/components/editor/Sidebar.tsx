@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Box, PlusSquare, ChevronDown, ChevronRight, Download, LayoutGrid, Search } from 'lucide-react'
+import { Box, PlusSquare, ChevronDown, ChevronRight, Download, LayoutGrid, Search, Upload, Trash2 } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import { ASSET_DIMENSIONS, ASSET_CATEGORIES, ASSET_REGISTRY } from '../../lib/assetRegistry'
 import ColorPickerPanel from './ColorPickerPanel'
@@ -11,20 +11,52 @@ export default function Sidebar({
   activeView = 'perspective',
   onViewChange,
   backgroundColor,
-  setBackgroundColor
+  setBackgroundColor,
+  customAssets = [],
+  onUploadCustomAsset,
+  onDeleteCustomAsset,
+  showAlert
 }: {
   addElement: (el: any) => void;
   activeView?: string;
   onViewChange?: (view: any) => void;
   backgroundColor?: string;
   setBackgroundColor?: (color: string) => void;
+  customAssets?: any[];
+  onUploadCustomAsset?: (file: File) => void;
+  onDeleteCustomAsset?: (id: string) => void;
+  showAlert?: (message: string, type?: 'info' | 'success' | 'warning' | 'error', title?: string) => void;
 }) {
   const [isTechOpen, setIsTechOpen] = useState(false)
   const [isCoreOpen, setIsCoreOpen] = useState(false)
+  const [isUploadsOpen, setIsUploadsOpen] = useState(true)
   const [isModelsOpen, setIsModelsOpen] = useState(true)
   const [isBgOpen, setIsBgOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>(ASSET_CATEGORIES[0].id)
   const [searchQuery, setSearchQuery] = useState('')
+
+  const addCustomAsset = (asset: any) => {
+    addElement({
+      id: uuidv4(),
+      type: 'asset',
+      assetName: asset.id,
+      isCustomAsset: true,
+      assetUrl: asset.assetUrl,
+      label: asset.label,
+      details: 'Custom 3D Upload',
+      x: 150, y: 150,
+      rotation: 0,
+      facingOffset: 0,
+      width: 100,
+      height: 100,
+      specH: asset.specH || 1.0,
+      realWidth: 1.0,
+      realHeight: 1.0,
+      realDepth: 1.0,
+      yOffset: 0,
+      verticalScale: 1
+    })
+  }
 
   const addWall = () => {
     addElement({
@@ -233,6 +265,93 @@ export default function Sidebar({
           )}
         </div>
 
+        {/* My Custom Uploads Accordion */}
+        <div className="border-b border-[var(--line)] shrink-0">
+          <button
+            onClick={() => setIsUploadsOpen(!isUploadsOpen)}
+            className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-light)] transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Upload className="h-4 w-4 text-[var(--brand)]" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink)]">
+                My Custom Uploads
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-[var(--brand)] font-bold bg-[var(--sand)] px-1.5 py-0.5 rounded border border-[var(--line)]">
+                {customAssets.length}/5
+              </span>
+              {isUploadsOpen ? <ChevronDown className="h-4 w-4 text-[var(--sea-ink-soft)]" /> : <ChevronRight className="h-4 w-4 text-[var(--sea-ink-soft)]" />}
+            </div>
+          </button>
+
+          {isUploadsOpen && (
+            <div className="px-4 pb-4 flex flex-col gap-3 animate-in fade-in duration-200">
+              <label className="w-full py-2.5 px-3 bg-[var(--sand)] hover:bg-[var(--chip-bg)] border border-dashed border-[var(--brand)] rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-[var(--sea-ink)] cursor-pointer transition shadow-sm">
+                <Upload className="w-4 h-4 text-[var(--brand)]" />
+                <span>Upload 3D Asset (.glb)</span>
+                <input
+                  type="file"
+                  accept=".glb,.gltf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (customAssets.length >= 5) {
+                        showAlert?.('You have reached the maximum limit of 5 custom 3D assets. Please delete an asset from "My Custom Uploads" to upload a new one.', 'warning', 'Upload Limit Reached');
+                        e.target.value = '';
+                        return;
+                      }
+                      onUploadCustomAsset?.(file);
+                      e.target.value = '';
+                    }
+                  }}
+                />
+              </label>
+
+              {customAssets.length === 0 ? (
+                <div className="text-xs text-center text-gray-400 py-4 px-2 border border-dashed border-[var(--line)] rounded-xl bg-black/5">
+                  <p className="font-bold text-[var(--sea-ink-soft)] text-[11px] mb-1">No custom models uploaded</p>
+                  <p className="text-[9px] text-gray-400">Upload up to 5 custom .glb files to place inside your booth.</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                  {customAssets.map(asset => (
+                    <div
+                      key={asset.id}
+                      className="w-full p-2.5 rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-white hover:border-[var(--brand)] transition group flex items-center justify-between gap-2"
+                    >
+                      <button
+                        onClick={() => addCustomAsset(asset)}
+                        className="flex-1 flex items-center gap-2.5 min-w-0 text-left cursor-pointer"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-[var(--surface-strong)] border border-[var(--line)] flex items-center justify-center text-[10px] font-black text-[var(--brand)] shrink-0">
+                          3D
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-[var(--sea-ink)] truncate group-hover:text-[var(--brand)]">
+                            {asset.label}
+                          </p>
+                          <p className="text-[9px] text-gray-400 truncate mt-0.5 uppercase tracking-wider">
+                            Custom Model
+                          </p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => onDeleteCustomAsset?.(asset.id)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer"
+                        title="Delete Custom Asset"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* 3D Models Accordion */}
         <div className={`border-b border-[var(--line)] flex flex-col ${isModelsOpen ? 'flex-1 min-h-[200px]' : 'shrink-0'}`}>
           <button
@@ -253,6 +372,7 @@ export default function Sidebar({
                 className="w-full p-2 bg-[var(--surface-strong)] border border-[var(--line)] rounded-lg text-xs font-bold text-[var(--sea-ink)] outline-none focus:border-[var(--lagoon)] shrink-0"
               >
                 <option value="all">All Categories</option>
+                <option value="custom-uploads">⭐ My Uploads ({customAssets.length}/5)</option>
                 {ASSET_CATEGORIES.map(c => (
                   <option key={c.id} value={c.id}>{c.label}</option>
                 ))}
@@ -270,7 +390,45 @@ export default function Sidebar({
               </div>
 
               <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar min-h-0">
-                {filteredAssets.length === 0 ? (
+                {selectedCategory === 'custom-uploads' ? (
+                  customAssets.length === 0 ? (
+                    <div className="text-xs text-center text-gray-400 py-6 px-2 border border-dashed border-[var(--line)] rounded-xl">
+                      <p className="font-bold text-[var(--sea-ink-soft)] mb-1">No custom models yet</p>
+                      <p className="text-[10px] text-gray-400">Click "Upload 3D Asset" above to add up to 5 custom .glb files.</p>
+                    </div>
+                  ) : (
+                    customAssets.map(asset => (
+                      <div
+                        key={asset.id}
+                        className="w-full text-left p-2.5 rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-white hover:border-[var(--lagoon)] transition group flex items-center justify-between gap-2"
+                      >
+                        <button
+                          onClick={() => addCustomAsset(asset)}
+                          className="flex-1 flex items-center gap-2.5 min-w-0 text-left cursor-pointer"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-[var(--surface-strong)] border border-[var(--line)] flex items-center justify-center text-[10px] font-black text-[var(--brand)] shrink-0">
+                            3D
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-[var(--sea-ink)] truncate group-hover:text-[var(--lagoon-deep)]">
+                              {asset.label}
+                            </p>
+                            <p className="text-[9px] text-gray-400 truncate mt-0.5 uppercase tracking-wider">
+                              Custom Model
+                            </p>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => onDeleteCustomAsset?.(asset.id)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer"
+                          title="Delete Custom Asset"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))
+                  )
+                ) : filteredAssets.length === 0 ? (
                   <div className="text-xs text-center text-gray-400 py-4">No assets found</div>
                 ) : (
                   filteredAssets.map(asset => (

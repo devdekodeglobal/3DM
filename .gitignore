@@ -17,3 +17,5 @@ todos.json
 .vercel
 3ddown/
 temp/
+*.glb
+

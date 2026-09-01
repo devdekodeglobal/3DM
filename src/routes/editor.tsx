@@ -7,13 +7,14 @@ import Properties from '../components/editor/Properties'
 import Preview3D from '../components/editor/Preview3D'
 import ColorPickerPanel from '../components/editor/ColorPickerPanel'
 import RoofCanvas from '../components/editor/RoofCanvas'
-import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, FileText, Download, Upload, LogOut, Cloud, LogIn, Folder, X } from 'lucide-react'
+import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, FileText, Download, Upload, LogOut, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
 import { supabase } from '../lib/supabaseClient'
 import { AuthModal } from '../components/editor/AuthModal'
 import { CloudProjectsDrawer } from '../components/editor/CloudProjectsDrawer'
+import { saveAssetBlob, getAssetBlob, deleteAssetBlob } from '../lib/customAssetDB'
 
 const DEFAULT_ASSET_SIZE_PX = 100
 
@@ -94,6 +95,87 @@ function EditorPage() {
   const [showSavePrompt, setShowSavePrompt] = useState(false)
   const [projectName, setProjectName] = useState('My Exhibition Stand')
   const [isCloudSaving, setIsCloudSaving] = useState(false)
+  const [toastModal, setToastModal] = useState<{ title?: string; message: string; type?: 'info' | 'success' | 'warning' | 'error' } | null>(null)
+
+  const showAlert = (message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info', title?: string) => {
+    setToastModal({ message, type, title })
+  }
+
+  // Custom 3D Assets state (limit 5 per user)
+  const [customAssets, setCustomAssets] = useState<any[]>([]);
+
+  // Hydrate custom assets from IndexedDB on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const saved = localStorage.getItem('user-custom-assets');
+      if (!saved) return;
+      const metaList: any[] = JSON.parse(saved);
+      
+      Promise.all(
+        metaList.map(async (meta) => {
+          const blob = await getAssetBlob(meta.id);
+          if (blob) {
+            const assetUrl = URL.createObjectURL(blob);
+            return { ...meta, assetUrl };
+          }
+          return meta;
+        })
+      ).then((loaded) => {
+        setCustomAssets(loaded.filter(a => a.assetUrl));
+      });
+    } catch (err) {
+      console.warn('Failed to load custom assets metadata', err);
+    }
+  }, []);
+
+  const handleUploadCustomAsset = async (file: File) => {
+    if (customAssets.length >= 5) {
+      showAlert('You have reached the maximum limit of 5 custom 3D assets. Please delete an asset from "My Custom Uploads" to upload a new one.', 'warning', 'Upload Limit Reached');
+      return;
+    }
+
+    const assetId = 'custom_' + Date.now().toString(36);
+    const objectUrl = URL.createObjectURL(file);
+
+    // Save binary file into IndexedDB
+    await saveAssetBlob(assetId, file);
+
+    const newAsset = {
+      id: assetId,
+      label: file.name.replace(/\.[^/.]+$/, ""),
+      assetUrl: objectUrl,
+      fileName: file.name,
+      w: 1, h: 1,
+      specW: 1.0, specD: 1.0, specH: 1.0
+    };
+
+    const updated = [...customAssets, newAsset];
+    setCustomAssets(updated);
+
+    // Save lightweight metadata only to localStorage
+    const metaList = updated.map(a => ({ id: a.id, label: a.label, fileName: a.fileName }));
+    try {
+      localStorage.setItem('user-custom-assets', JSON.stringify(metaList));
+    } catch (err) {
+      console.warn('Skipping user-custom-assets localStorage write due to quota:', err);
+    }
+    showAlert(`"${newAsset.label}" uploaded successfully!`, 'success', '3D Asset Uploaded');
+  };
+
+  const handleDeleteCustomAsset = async (assetId: string) => {
+    await deleteAssetBlob(assetId);
+    const updated = customAssets.filter(a => a.id !== assetId);
+    setCustomAssets(updated);
+    
+    const metaList = updated.map(a => ({ id: a.id, label: a.label, fileName: a.fileName }));
+    try {
+      localStorage.setItem('user-custom-assets', JSON.stringify(metaList));
+    } catch (err) {
+      console.warn('Failed to update custom assets in storage', err);
+    }
+    showAlert('Custom asset removed.', 'info', 'Asset Deleted');
+  };
 
   // Setup Wizard State
   const [wizardStep, setWizardStep] = useState(1)
@@ -167,6 +249,20 @@ function EditorPage() {
 
     setIsCloudSaving(true)
     try {
+      // Check existing count of projects for user (max 3 per user)
+      const { count, error: countError } = await supabase
+        .from('designs')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', sessionUser.id)
+
+      if (countError) throw countError
+
+      if (count !== null && count >= 3) {
+        showAlert('You have reached the maximum limit of 3 cloud projects per account. Please delete an existing project from your Cloud Projects drawer to save a new one.', 'warning', 'Project Limit Reached')
+        setIsCloudSaving(false)
+        return
+      }
+
       const { error } = await supabase.from('designs').insert({
         user_id: sessionUser.id,
         name: projectName || 'Untitled Design',
@@ -176,11 +272,11 @@ function EditorPage() {
       })
 
       if (error) throw error
-      alert('Design successfully saved to the cloud!')
+      showAlert('Design successfully saved to the cloud!', 'success', 'Design Saved')
       setShowSavePrompt(false)
     } catch (err: any) {
       console.error('Cloud save failed:', err)
-      alert(err.message || 'Failed to save to the cloud.')
+      showAlert(err.message || 'Failed to save to the cloud.', 'error', 'Save Failed')
     } finally {
       setIsCloudSaving(false)
     }
@@ -198,11 +294,22 @@ function EditorPage() {
     }, 100)
   };
 
-  // Auto-save to local storage
+  // Auto-save to local storage (safely stripped of data URLs)
   useEffect(() => {
     if (boothConfig) {
-      localStorage.setItem('stall-config', JSON.stringify(boothConfig))
-      localStorage.setItem('stall-elements', JSON.stringify(elements))
+      try {
+        localStorage.setItem('stall-config', JSON.stringify(boothConfig));
+        const cleanElements = elements.map(el => {
+          if (el.assetUrl && el.assetUrl.startsWith('data:')) {
+            const { assetUrl, ...rest } = el;
+            return rest;
+          }
+          return el;
+        });
+        localStorage.setItem('stall-elements', JSON.stringify(cleanElements));
+      } catch (err) {
+        console.warn('Skipping stall-elements localStorage save due to quota:', err);
+      }
     }
   }, [boothConfig, elements])
 
@@ -308,7 +415,7 @@ function EditorPage() {
           console.log('[Report] Document generated and downloaded.');
         }).catch(err => {
           console.error('[Report] Generation failed:', err);
-          alert('Failed to generate report.');
+          showAlert('Failed to generate report.', 'error', 'Report Failed');
         });
       }, 600);
     }
@@ -322,24 +429,6 @@ function EditorPage() {
       setBlueprintView(baseView as any)
     }
   }, [isCapturingReport])
-
-  const downloadProjectJSON = () => {
-    if (!boothConfig) return;
-    // We preserve the svgData here for 3D Logos, unlike the report generator
-    const dataToSave = {
-      booth: boothConfig,
-      elements: elements
-    };
-    const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `booth_design_${Date.now().toString(36)}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
 
   const handleImportProject = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -361,12 +450,13 @@ function EditorPage() {
           setTimeout(() => {
             window.dispatchEvent(new Event('resize'));
           }, 100);
+          showAlert('Project successfully imported!', 'success', 'Imported');
         } else {
-          alert("Invalid project file format.");
+          showAlert("Invalid project file format.", 'error', 'Import Error');
         }
       } catch (err) {
         console.error("Failed to parse project file:", err);
-        alert("Failed to read the project file.");
+        showAlert("Failed to read the project file.", 'error', 'Import Error');
       }
     };
     reader.readAsText(file);
@@ -723,7 +813,7 @@ function EditorPage() {
               <button
                 onClick={async () => {
                   await supabase.auth.signOut()
-                  alert('Logged out successfully.')
+                  showAlert('Logged out successfully.', 'info', 'Signed Out')
                 }}
                 className="p-2 rounded-lg text-red-400 hover:text-red-500 hover:bg-red-500/10 transition"
                 title="Log Out"
@@ -777,6 +867,10 @@ function EditorPage() {
               onViewChange={setBlueprintView}
               backgroundColor={backgroundColor}
               setBackgroundColor={setBackgroundColor}
+              customAssets={customAssets}
+              onUploadCustomAsset={handleUploadCustomAsset}
+              onDeleteCustomAsset={handleDeleteCustomAsset}
+              showAlert={showAlert}
             />
           </div>
         )}
@@ -836,7 +930,24 @@ function EditorPage() {
             className="shrink-0 min-w-[180px] border-l border-[#2a2d30] bg-[#121415] flex flex-col shadow-2xl z-20 relative"
           >
 
-            {is3DGenerated ? (
+            {!sessionUser ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-[#181a1d] to-[#121415] relative overflow-hidden">
+                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 text-[var(--brand)] shadow-lg">
+                  <Lock className="w-7 h-7" />
+                </div>
+                <h4 className="text-white font-bold mb-1 text-sm font-[Outfit]">3D Preview Locked</h4>
+                <p className="text-gray-400 text-xs max-w-[200px] mb-4 leading-relaxed">
+                  Design in 2D freely! Sign in to unlock and interact with your 3D space.
+                </p>
+                <button
+                  onClick={() => setAuthModalOpen(true)}
+                  className="px-4 py-2 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  Sign In to Unlock 3D
+                </button>
+              </div>
+            ) : is3DGenerated ? (
               <div className="flex-1 w-full relative">
                 <Preview3D
                   boothConfig={boothConfig}
@@ -960,30 +1071,20 @@ function EditorPage() {
                 </button>
 
                 <div className="text-[10px] font-black tracking-wider uppercase text-white/50 pt-3 block border-t border-white/10">
-                  Local Export Options
+                  Export 3D Model Formats
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => {
-                      downloadProjectJSON();
-                      setShowSavePrompt(false);
-                    }}
-                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold py-3.5 px-4 rounded-xl transition flex flex-col items-center justify-center gap-1.5 cursor-pointer text-center"
-                  >
-                    <FileText className="w-5 h-5 text-sky-400" />
-                    <span className="text-[11px]">Download JSON</span>
-                    <span className="text-[8px] text-white/50 leading-none">To edit in kreatekaro later</span>
-                  </button>
+                  {/* GLB */}
                   <button
                     onClick={async () => {
-                      if (!is3DGenerated || !(window as any).exportSceneToGLB) {
-                        alert("Please click 'Generate 3D' first to export the 3D model.");
+                      if (!is3DGenerated || !(window as any).export3DModel) {
+                        showAlert("Please click 'Generate 3D' first to export the 3D model.", 'warning', '3D Required');
                         return;
                       }
                       try {
-                        const glbBlob = await (window as any).exportSceneToGLB();
-                        const url = URL.createObjectURL(glbBlob);
+                        const blob = await (window as any).export3DModel('glb');
+                        const url = URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
                         link.download = `${projectName.replace(/\s+/g, '_')}_booth.glb`;
@@ -994,18 +1095,84 @@ function EditorPage() {
                         setShowSavePrompt(false);
                       } catch (err) {
                         console.error("GLB export failed:", err);
-                        alert("Failed to export 3D model.");
+                        showAlert("Failed to export 3D model.", 'error', 'Export Error');
                       }
                     }}
                     className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold py-3.5 px-4 rounded-xl transition flex flex-col items-center justify-center gap-1.5 cursor-pointer text-center"
                   >
                     <Box className="w-5 h-5 text-amber-400" />
                     <span className="text-[11px]">Download GLB</span>
-                    <span className="text-[8px] text-white/50 leading-none">For Blender & AR</span>
+                    <span className="text-[8px] text-white/50 leading-none">Binary 3D (All-in-one)</span>
+                  </button>
+
+                  {/* OBJ */}
+                  <button
+                    onClick={async () => {
+                      if (!is3DGenerated || !(window as any).export3DModel) {
+                        showAlert("Please click 'Generate 3D' first to export the 3D model.", 'warning', '3D Required');
+                        return;
+                      }
+                      try {
+                        const blob = await (window as any).export3DModel('obj');
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `${projectName.replace(/\s+/g, '_')}_booth.obj`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        setShowSavePrompt(false);
+                      } catch (err) {
+                        console.error("OBJ export failed:", err);
+                        showAlert("Failed to export 3D model.", 'error', 'Export Error');
+                      }
+                    }}
+                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold py-3.5 px-4 rounded-xl transition flex flex-col items-center justify-center gap-1.5 cursor-pointer text-center"
+                  >
+                    <Download className="w-5 h-5 text-emerald-400" />
+                    <span className="text-[11px]">Download OBJ</span>
+                    <span className="text-[8px] text-white/50 leading-none">CAD / Blender Mesh</span>
                   </button>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Custom Alert/Notification Modal */}
+      {toastModal && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div 
+            className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-[#181a1d]/95 backdrop-blur-xl p-6 shadow-2xl transition-all text-center flex flex-col items-center"
+            style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.5)' }}
+          >
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3 shadow-lg ${
+              toastModal.type === 'error' ? 'bg-red-500/10 border border-red-500/20 text-red-400' :
+              toastModal.type === 'success' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' :
+              toastModal.type === 'warning' ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400' :
+              'bg-[var(--brand)]/10 border border-[var(--brand)]/20 text-[var(--brand)]'
+            }`}>
+              {toastModal.type === 'error' ? <AlertCircle className="w-6 h-6" /> :
+               toastModal.type === 'success' ? <CheckCircle className="w-6 h-6" /> :
+               toastModal.type === 'warning' ? <AlertTriangle className="w-6 h-6" /> :
+               <Info className="w-6 h-6" />}
+            </div>
+
+            <h3 className="text-base font-bold font-[Outfit] text-white mb-1">
+              {toastModal.title || (toastModal.type === 'error' ? 'Error' : toastModal.type === 'success' ? 'Success' : toastModal.type === 'warning' ? 'Notice' : 'Information')}
+            </h3>
+
+            <p className="text-xs text-gray-300 mb-5 leading-relaxed">
+              {toastModal.message}
+            </p>
+
+            <button
+              onClick={() => setToastModal(null)}
+              className="w-full py-2.5 px-4 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
+            >
+              Got it
+            </button>
           </div>
         </div>
       )}
