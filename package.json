@@ -9,7 +9,7 @@
     "dev": "vite dev --port 3000",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler pages deploy .vercel/output/static",
+    "deploy": "npm run build && wrangler pages deploy dist",
     "test": "vitest run"
   },
   "dependencies": {

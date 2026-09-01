@@ -14,7 +14,7 @@ const config = defineConfig({
     tsconfigPaths({ projects: ['./tsconfig.json'] }),
     tailwindcss(),
     tanstackStart(),
-    nitro({ preset: 'vercel' }),
+    nitro({ preset: 'cloudflare-pages' }),
     viteReact(),
   ],
   ssr: {
