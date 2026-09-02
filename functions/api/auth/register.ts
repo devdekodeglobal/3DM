@@ -1,7 +1,5 @@
 import {
   hashPassword,
-  createSession,
-  setSessionCookie,
   generateId,
   generateOtp,
   sendOtpEmail,
