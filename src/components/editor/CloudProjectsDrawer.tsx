@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabaseClient'
+import { listDesigns, deleteDesign } from '../../lib/authClient'
+import type { Design } from '../../lib/authClient'
 import { X, FolderOpen, Calendar, Trash2, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 
 interface CloudProjectsDrawerProps {
@@ -15,7 +16,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
   onLoadProject,
   userId
 }) => {
-  const [designs, setDesigns] = useState<any[]>([])
+  const [designs, setDesigns] = useState<Design[]>([])
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -25,12 +26,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
     setLoading(true)
     setErrorMsg(null)
     try {
-      const { data, error } = await supabase
-        .from('designs')
-        .select('*')
-        .order('updated_at', { ascending: false })
-
-      if (error) throw error
+      const data = await listDesigns()
       setDesigns(data || [])
     } catch (err: any) {
       console.error('Fetch error:', err)
@@ -54,13 +50,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
 
     setDeletingId(id)
     try {
-      const { error } = await supabase
-        .from('designs')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw error
-      
+      await deleteDesign(id)
       // Filter out deleted design from view
       setDesigns(prev => prev.filter(d => d.id !== id))
     } catch (err: any) {
@@ -133,8 +123,16 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
               <div
                 key={design.id}
                 onClick={() => {
-                  onLoadProject(design.booth_config, design.elements)
-                  onClose()
+                  try {
+                    // D1 returns JSON as string, so we need to parse it
+                    const config = typeof design.config === 'string' ? JSON.parse(design.config) : design.config
+                    const elements = typeof design.elements === 'string' ? JSON.parse(design.elements) : design.elements
+                    onLoadProject(config, elements)
+                    onClose()
+                  } catch (e) {
+                    console.error('Failed to parse design data', e)
+                    alert('Error loading design data')
+                  }
                 }}
                 className="group relative p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-[var(--brand)] transition cursor-pointer flex flex-col gap-2"
               >
@@ -178,9 +176,10 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
 
         {/* Footer Info */}
         <div className="p-4 border-t border-white/10 bg-white/5 text-[10px] text-center text-white/40 font-semibold tracking-wide">
-          SYNCED SECURELY VIA SUPABASE
+          SYNCED SECURELY VIA CLOUDFLARE D1
         </div>
       </div>
     </div>
   )
 }
+

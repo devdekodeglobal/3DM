@@ -16,7 +16,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   if (!user) return jsonError('Unauthorized', 401)
 
   const { results } = await env.DB.prepare(
-    'SELECT id, name, created_at, updated_at FROM designs WHERE user_id = ? ORDER BY updated_at DESC'
+    'SELECT id, name, config, elements, created_at, updated_at FROM designs WHERE user_id = ? ORDER BY updated_at DESC'
   ).bind(user.id).all()
 
   return json({ designs: results })

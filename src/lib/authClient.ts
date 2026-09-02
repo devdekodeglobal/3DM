@@ -23,7 +23,7 @@ export interface Design {
 export async function getCurrentUser(): Promise<User | null> {
   try {
     const res = await fetch('/api/auth/me', { credentials: 'include' })
-    const data = await res.json<{ user: User | null }>()
+    const data = (await res.json()) as { user: User | null }
     return data.user
   } catch {
     return null
@@ -37,7 +37,7 @@ export async function signUpWithEmail(email: string, password: string, name?: st
     credentials: 'include',
     body: JSON.stringify({ email, password, name }),
   })
-  const data = await res.json<{ message?: string; error?: string }>()
+  const data = (await res.json()) as { message?: string; error?: string }
   if (!res.ok) throw new Error(data.error || 'Registration failed')
   return data
 }
@@ -49,7 +49,7 @@ export async function signInWithEmail(email: string, password: string) {
     credentials: 'include',
     body: JSON.stringify({ email, password }),
   })
-  const data = await res.json<{ message?: string; error?: string }>()
+  const data = (await res.json()) as { message?: string; error?: string }
   if (!res.ok) throw new Error(data.error || 'Sign in failed')
   return data
 }
@@ -58,7 +58,7 @@ export async function verifyOtp(email: string, code: string) {
   const res = await fetch(`/api/auth/verify-otp?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`, {
     credentials: 'include',
   })
-  const data = await res.json<{ message?: string; error?: string }>()
+  const data = (await res.json()) as { message?: string; error?: string }
   if (!res.ok) throw new Error(data.error || 'Verification failed')
   return data
 }
@@ -80,7 +80,7 @@ export async function signOut() {
 export async function listDesigns(): Promise<Design[]> {
   const res = await fetch('/api/designs', { credentials: 'include' })
   if (!res.ok) return []
-  const data = await res.json<{ designs: Design[] }>()
+  const data = (await res.json()) as { designs: Design[] }
   return data.designs || []
 }
 
@@ -91,7 +91,7 @@ export async function saveDesign(name: string, config: unknown, elements: unknow
     credentials: 'include',
     body: JSON.stringify({ name, config, elements }),
   })
-  const data = await res.json<{ design?: Design; error?: string }>()
+  const data = (await res.json()) as { design?: Design; error?: string }
   if (!res.ok) throw new Error(data.error || 'Failed to save design')
   return data.design!
 }
@@ -103,7 +103,7 @@ export async function updateDesign(id: string, updates: { name?: string; config?
     credentials: 'include',
     body: JSON.stringify(updates),
   })
-  const data = await res.json<{ design?: Design; error?: string }>()
+  const data = (await res.json()) as { design?: Design; error?: string }
   if (!res.ok) throw new Error(data.error || 'Failed to update design')
   return data.design!
 }

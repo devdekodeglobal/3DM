@@ -11,7 +11,7 @@ import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Bo
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
-import { supabase } from '../lib/supabaseClient'
+import { getCurrentUser, saveDesign, signOut } from '../lib/authClient'
 import { AuthModal } from '../components/editor/AuthModal'
 import { CloudProjectsDrawer } from '../components/editor/CloudProjectsDrawer'
 import { saveAssetBlob, getAssetBlob, deleteAssetBlob } from '../lib/customAssetDB'
@@ -224,17 +224,19 @@ function EditorPage() {
     setSelectedId(id)
   }, [])
 
-  // Supabase Auth state listener
+  // Auth state listener
+  const checkAuth = async () => {
+    const user = await getCurrentUser()
+    setSessionUser(user)
+  }
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSessionUser(session?.user || null)
-    })
+    checkAuth()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSessionUser(session?.user || null)
-    })
-
-    return () => subscription.unsubscribe()
+    // Check if redirecting back from Google auth
+    if ((window as any).isAuthRedirect) {
+      setTimeout(checkAuth, 1000)
+    }
   }, [])
 
   useEffect(() => {
@@ -249,29 +251,7 @@ function EditorPage() {
 
     setIsCloudSaving(true)
     try {
-      // Check existing count of projects for user (max 3 per user)
-      const { count, error: countError } = await supabase
-        .from('designs')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', sessionUser.id)
-
-      if (countError) throw countError
-
-      if (count !== null && count >= 3) {
-        showAlert('You have reached the maximum limit of 3 cloud projects per account. Please delete an existing project from your Cloud Projects drawer to save a new one.', 'warning', 'Project Limit Reached')
-        setIsCloudSaving(false)
-        return
-      }
-
-      const { error } = await supabase.from('designs').insert({
-        user_id: sessionUser.id,
-        name: projectName || 'Untitled Design',
-        booth_config: boothConfig,
-        elements: elements,
-        updated_at: new Date().toISOString()
-      })
-
-      if (error) throw error
+      await saveDesign(projectName || 'Untitled Design', boothConfig, elements)
       showAlert('Design successfully saved to the cloud!', 'success', 'Design Saved')
       setShowSavePrompt(false)
     } catch (err: any) {
@@ -812,7 +792,8 @@ function EditorPage() {
               </button>
               <button
                 onClick={async () => {
-                  await supabase.auth.signOut()
+                  await signOut()
+                  setSessionUser(null)
                   showAlert('Logged out successfully.', 'info', 'Signed Out')
                 }}
                 className="p-2 rounded-lg text-red-400 hover:text-red-500 hover:bg-red-500/10 transition"

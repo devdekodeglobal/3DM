@@ -2,7 +2,7 @@ import {
   generateId,
   json,
   jsonError,
-} from '../_auth-utils'
+} from '../../_auth-utils'
 
 interface Env {
   DB: D1Database
