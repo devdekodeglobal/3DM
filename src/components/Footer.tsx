@@ -24,7 +24,9 @@ export default function Footer() {
         </Link>
 
         <p style={{ margin: 0, color: 'var(--fg-dim)', fontSize: '0.82rem' }}>
-          Advanced 3D Spatial Design Software &nbsp;·&nbsp; © {year}
+          Advanced 3D Spatial Design Software &nbsp;·&nbsp; © {year} &nbsp;·&nbsp;
+          <Link to="/privacy" className="text-[var(--fg-soft)] hover:text-[var(--brand)] transition-colors">Privacy</Link> &nbsp;·&nbsp;
+          <Link to="/terms" className="text-[var(--fg-soft)] hover:text-[var(--brand)] transition-colors">Terms</Link>
         </p>
       </div>
     </footer>
