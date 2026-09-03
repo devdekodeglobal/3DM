@@ -1,6 +1,7 @@
 import { Outlet, createRootRoute, useRouterState } from '@tanstack/react-router'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
+import CookieConsent from '../components/CookieConsent'
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -24,6 +25,7 @@ function RootComponent() {
         <Outlet />
       </main>
       {!isEditor && <Footer />}
+      <CookieConsent />
     </>
   )
 }

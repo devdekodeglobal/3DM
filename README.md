@@ -25,6 +25,12 @@
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
 - **State**: React State Hooks + Local Storage Persistence
 
+### Consent-controlled analytics on Cloudflare Pages
+
+Set `VITE_GOOGLE_ANALYTICS_ID` as a Cloudflare Pages build-time environment variable to enable Google Analytics. The application still blocks the analytics script until the visitor explicitly accepts analytics.
+
+Keep Cloudflare Web Analytics automatic injection disabled in the Cloudflare dashboard. Dashboard injection bypasses the application consent gate. If Cloudflare Web Analytics is introduced later, load its beacon through the consent manager and update the Cookie Policy first.
+
 ---
 
 ## 🚀 Getting Started

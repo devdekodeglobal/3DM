@@ -13,6 +13,7 @@ import { Route as TestFridgeRouteImport } from './routes/test-fridge'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as EditorRouteImport } from './routes/editor'
+import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -36,6 +37,11 @@ const EditorRoute = EditorRouteImport.update({
   path: '/editor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CookiePolicyRoute = CookiePolicyRouteImport.update({
+  id: '/cookie-policy',
+  path: '/cookie-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -50,6 +56,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/cookie-policy': typeof CookiePolicyRoute
   '/editor': typeof EditorRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/cookie-policy': typeof CookiePolicyRoute
   '/editor': typeof EditorRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/cookie-policy': typeof CookiePolicyRoute
   '/editor': typeof EditorRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
@@ -74,13 +83,28 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/editor' | '/privacy' | '/terms' | '/test-fridge'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/cookie-policy'
+    | '/editor'
+    | '/privacy'
+    | '/terms'
+    | '/test-fridge'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/editor' | '/privacy' | '/terms' | '/test-fridge'
+  to:
+    | '/'
+    | '/about'
+    | '/cookie-policy'
+    | '/editor'
+    | '/privacy'
+    | '/terms'
+    | '/test-fridge'
   id:
     | '__root__'
     | '/'
     | '/about'
+    | '/cookie-policy'
     | '/editor'
     | '/privacy'
     | '/terms'
@@ -90,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  CookiePolicyRoute: typeof CookiePolicyRoute
   EditorRoute: typeof EditorRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
@@ -126,6 +151,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EditorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cookie-policy': {
+      id: '/cookie-policy'
+      path: '/cookie-policy'
+      fullPath: '/cookie-policy'
+      preLoaderRoute: typeof CookiePolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -146,6 +178,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  CookiePolicyRoute: CookiePolicyRoute,
   EditorRoute: EditorRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,

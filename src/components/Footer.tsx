@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { openCookieSettings } from '../lib/cookieConsent'
 
 export default function Footer() {
   const year = new Date().getFullYear()
@@ -23,11 +24,17 @@ export default function Footer() {
           </span>
         </Link>
 
-        <p style={{ margin: 0, color: 'var(--fg-dim)', fontSize: '0.82rem' }}>
-          Advanced 3D Spatial Design Software &nbsp;·&nbsp; © {year} &nbsp;·&nbsp;
-          <Link to="/privacy" className="text-[var(--fg-soft)] hover:text-[var(--brand)] transition-colors">Privacy</Link> &nbsp;·&nbsp;
-          <Link to="/terms" className="text-[var(--fg-soft)] hover:text-[var(--brand)] transition-colors">Terms</Link>
-        </p>
+        <div className="footer-meta">
+          <p>Advanced 3D Spatial Design Software &nbsp;·&nbsp; © {year}</p>
+          <span aria-hidden="true">·</span>
+          <Link to="/privacy">Privacy</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/terms">Terms</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/cookie-policy">Cookie policy</Link>
+          <span aria-hidden="true">·</span>
+          <button type="button" onClick={openCookieSettings}>Cookie settings</button>
+        </div>
       </div>
     </footer>
   )

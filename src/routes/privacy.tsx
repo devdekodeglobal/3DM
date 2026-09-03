@@ -27,14 +27,14 @@ function PrivacyPolicy() {
         <section>
           <h2 className="text-2xl font-semibold text-[var(--fg)] mb-4">3. Data Storage and Security</h2>
           <p>
-            Your 3D designs and personal information are securely stored using industry-standard encryption. We use Cloudflare and robust database technologies to ensure your data is highly available and protected against unauthorized access.
+            Cloud-saved account and design information is processed through Cloudflare Pages Functions and stored in Cloudflare D1. Local editor drafts and uploaded custom assets remain in your browser unless you deliberately use a cloud-save feature.
           </p>
         </section>
 
         <section>
           <h2 className="text-2xl font-semibold text-[var(--fg)] mb-4">4. Third-Party Services</h2>
           <p>
-            We may use third-party services like Google for authentication (OAuth) and Amazon SES / Resend for email delivery. These services have their own privacy policies governing the data they collect and process on our behalf.
+            We use Cloudflare for hosting, Workers, and D1 database services; Google for optional OAuth sign-in and consent-based analytics; and Resend for transactional email delivery. Optional analytics is disabled until you consent and can be changed through Cookie settings.
           </p>
         </section>
 
