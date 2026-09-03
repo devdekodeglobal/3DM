@@ -1,0 +1,9 @@
+name = "3dm"
+compatibility_date = "2024-09-25"
+compatibility_flags = ["nodejs_compat"]
+# pages_build_output_dir = "./dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kreatekaro-db"
+database_id = "d61064e3-e08a-4efb-afd3-36be54998d6d"

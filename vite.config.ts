@@ -1,25 +1,27 @@
 import { defineConfig } from 'vite'
 import { devtools } from '@tanstack/devtools-vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
-
-import { tanstackStart } from '@tanstack/react-start/plugin/vite'
-import { nitro } from 'nitro/vite'
-
+import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-const config = defineConfig({
+export default defineConfig({
   plugins: [
     devtools(),
     tsconfigPaths({ projects: ['./tsconfig.json'] }),
     tailwindcss(),
-    tanstackStart(),
-    nitro({ preset: 'vercel' }),
+    TanStackRouterVite(),
     viteReact(),
   ],
   ssr: {
     noExternal: ['konva', 'react-konva'],
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8788',
+        changeOrigin: true,
+      }
+    }
+  }
 })
-
-export default config

@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestFridgeRouteImport } from './routes/test-fridge'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -17,6 +19,16 @@ import { Route as IndexRouteImport } from './routes/index'
 const TestFridgeRoute = TestFridgeRouteImport.update({
   id: '/test-fridge',
   path: '/test-fridge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EditorRoute = EditorRouteImport.update({
@@ -39,12 +51,16 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/editor': typeof EditorRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/test-fridge': typeof TestFridgeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/editor': typeof EditorRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/test-fridge': typeof TestFridgeRoute
 }
 export interface FileRoutesById {
@@ -52,20 +68,31 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/editor': typeof EditorRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/test-fridge': typeof TestFridgeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/editor' | '/test-fridge'
+  fullPaths: '/' | '/about' | '/editor' | '/privacy' | '/terms' | '/test-fridge'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/editor' | '/test-fridge'
-  id: '__root__' | '/' | '/about' | '/editor' | '/test-fridge'
+  to: '/' | '/about' | '/editor' | '/privacy' | '/terms' | '/test-fridge'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/editor'
+    | '/privacy'
+    | '/terms'
+    | '/test-fridge'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   EditorRoute: typeof EditorRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
   TestFridgeRoute: typeof TestFridgeRoute
 }
 
@@ -76,6 +103,20 @@ declare module '@tanstack/react-router' {
       path: '/test-fridge'
       fullPath: '/test-fridge'
       preLoaderRoute: typeof TestFridgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/editor': {
@@ -106,17 +147,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   EditorRoute: EditorRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   TestFridgeRoute: TestFridgeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { Menu, X } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
-import { supabase } from '../lib/supabaseClient'
+import { getCurrentUser, signOut } from '../lib/authClient'
+import type { User } from '../lib/authClient'
 import { AuthModal } from './editor/AuthModal'
 import { AnimatedHeaderLogo } from './AnimatedHeaderLogo'
 
-function getInitials(user: any) {
+function getInitials(user: User | null) {
   if (!user) return '?'
-  const name = user.user_metadata?.full_name || user.user_metadata?.name
+  const name = user.name
   if (name) {
     const parts = name.split(' ').filter(Boolean)
     if (parts.length >= 2) {
@@ -28,7 +29,7 @@ function getInitials(user: any) {
 }
 
 export default function Header() {
-  const [sessionUser, setSessionUser] = useState<any>(null)
+  const [sessionUser, setSessionUser] = useState<User | null>(null)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const router = useRouterState()
@@ -38,14 +39,18 @@ export default function Header() {
     setMobileMenuOpen(false)
   }, [router.location.pathname])
 
+  const checkAuth = async () => {
+    const user = await getCurrentUser()
+    setSessionUser(user)
+  }
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSessionUser(session?.user || null)
-    })
-    const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
-      setSessionUser(session?.user || null)
-    })
-    return () => authListener.subscription.unsubscribe()
+    checkAuth()
+    
+    // Check if redirecting back from Google auth
+    if ((window as any).isAuthRedirect) {
+      setTimeout(checkAuth, 1000)
+    }
   }, [])
 
   return (
@@ -84,7 +89,8 @@ export default function Header() {
                 </div>
                 <button
                   onClick={async () => {
-                    await supabase.auth.signOut()
+                    await signOut()
+                    setSessionUser(null)
                   }}
                   className="text-xs font-bold text-red-500 hover:text-red-600 transition whitespace-nowrap"
                 >
@@ -144,7 +150,10 @@ export default function Header() {
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
-        onSuccess={() => setAuthModalOpen(false)}
+        onSuccess={() => {
+          setAuthModalOpen(false)
+          checkAuth()
+        }}
       />
     </>
   )
