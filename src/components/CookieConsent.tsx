@@ -125,8 +125,9 @@ export default function CookieConsent() {
             <h2>Your privacy, your choice</h2>
             <p>
               We use necessary cookies to keep accounts secure and remember your
-              choice. With your permission, we also use analytics to understand
-              how KreateKaro is used. Analytics stays off unless you accept.{" "}
+              preferences. With your permission, optional analytics may be used
+              to understand how KreateKaro is used. Analytics stays off unless
+              you accept.{" "}
               <Link to="/cookie-policy">Read our cookie policy</Link>.
             </p>
           </div>
@@ -136,7 +137,7 @@ export default function CookieConsent() {
               className="cookie-action cookie-action--secondary"
               onClick={() => chooseAnalytics(false)}
             >
-              Reject analytics
+              Only necessary cookies
             </button>
             <button
               type="button"
@@ -144,13 +145,6 @@ export default function CookieConsent() {
               onClick={() => chooseAnalytics(true)}
             >
               Accept analytics
-            </button>
-            <button
-              type="button"
-              className="cookie-manage"
-              onClick={() => setSettingsOpen(true)}
-            >
-              Manage settings
             </button>
           </div>
         </section>
@@ -198,11 +192,12 @@ export default function CookieConsent() {
               <div>
                 <h3>Necessary cookies</h3>
                 <p>
-                  Required for secure account sessions and to save your consent
-                  choice.
+                  Used only when required for secure sign-in and to remember
+                  your cookie choice. If you are not signed in, the session
+                  cookie is not set.
                 </p>
               </div>
-              <span className="cookie-always-on">Always active</span>
+              <span className="cookie-always-on">Required when needed</span>
             </div>
 
             <label className="cookie-preference cookie-preference--clickable">
@@ -239,7 +234,7 @@ export default function CookieConsent() {
                 className="cookie-action cookie-action--secondary"
                 onClick={() => chooseAnalytics(false)}
               >
-                Reject analytics
+                Only necessary cookies
               </button>
               <button
                 type="button"
