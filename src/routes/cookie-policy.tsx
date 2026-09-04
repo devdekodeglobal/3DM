@@ -19,7 +19,7 @@ function CookiePolicyPage() {
           used, how long it lasts, and when information is shared with another
           provider.
         </p>
-        <p className="policy-updated">Last updated: 3 September 2026</p>
+        <p className="policy-updated">Last updated: 4 September 2026</p>
       </header>
 
       <section className="policy-section">
@@ -29,9 +29,9 @@ function CookiePolicyPage() {
         </div>
         <p>
           Necessary cookies support secure sign-in and remember your privacy
-          choice. Optional Google Analytics is disabled by default and its
-          script is loaded only after you select “Accept analytics” or enable
-          analytics in Cookie settings.
+          choice. Google Analytics is planned but is not currently active. If
+          it is enabled later, its script will load only after you select
+          “Accept analytics” or enable analytics in Cookie settings.
         </p>
         <button
           type="button"
@@ -108,19 +108,19 @@ function CookiePolicyPage() {
                   <code>_ga</code>
                 </td>
                 <td>
-                  Google Analytics
+                  Google Analytics (planned)
                   <br />
                   <span>Analytics</span>
                 </td>
                 <td>
-                  Distinguishes browsers so aggregate visits and usage can be
-                  measured.
+                  If activated with your consent, it will distinguish browsers
+                  so aggregate visits and usage can be measured.
                 </td>
                 <td>Up to 2 years</td>
                 <td>
-                  Usage, device, and request information is shared with Google
-                  as our analytics provider and may be processed outside your
-                  country under applicable safeguards.
+                  If activated, usage, device, and request information will be
+                  shared with Google as our analytics provider and may be
+                  processed outside your country under applicable safeguards.
                 </td>
               </tr>
               <tr>
@@ -128,26 +128,27 @@ function CookiePolicyPage() {
                   <code>_ga_&lt;container-id&gt;</code>
                 </td>
                 <td>
-                  Google Analytics
+                  Google Analytics (planned)
                   <br />
                   <span>Analytics</span>
                 </td>
                 <td>
-                  Maintains session state for KreateKaro’s configured analytics
-                  property.
+                  If activated with your consent, it will maintain session state
+                  for KreateKaro’s configured analytics property.
                 </td>
                 <td>Up to 2 years</td>
                 <td>
-                  Usage, device, and request information is shared with Google
-                  as described above.
+                  If activated, usage, device, and request information will be
+                  shared with Google as described above.
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
         <p className="policy-note">
-          Google Analytics cookies are not created when analytics is rejected or
-          no choice has been made. Browser settings or provider changes may
+          Google Analytics is not currently active. If it is activated later,
+          its cookies will not be created when only necessary cookies are chosen
+          or no choice has been made. Browser settings or provider changes may
           shorten these maximum lifetimes.
         </p>
       </section>
@@ -198,10 +199,10 @@ function CookiePolicyPage() {
         <h2>Changing or withdrawing consent</h2>
         <p>
           Use the persistent “Cookie settings” link in the footer at any time.
-          Rejecting analytics stops future Google Analytics collection and
-          removes analytics cookies accessible to KreateKaro. You can also clear
-          cookies and site data in your browser; the consent banner will appear
-          again on your next visit.
+          Choosing “Only necessary cookies” stops future Google Analytics
+          collection and removes analytics cookies accessible to KreateKaro.
+          You can also clear cookies and site data in your browser; the consent
+          banner will appear again on your next visit.
         </p>
         <p>
           For privacy questions, contact{" "}
