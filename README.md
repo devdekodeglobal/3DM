@@ -43,8 +43,8 @@ Keep Cloudflare Web Analytics automatic injection disabled in the Cloudflare das
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/vansshparikh-arch/3dproj.git
-   cd 3dproj
+   git clone https://github.com/devdekodeglobal/3DM.git
+   cd 3DM
    ```
 
 2. **Install dependencies**
