@@ -18,7 +18,9 @@ const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo'
 
 function getRedirectUri(request: Request): string {
   const url = new URL(request.url)
-  return `${url.protocol}//${url.host}/api/auth/google`
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || url.host
+  const proto = request.headers.get('x-forwarded-proto') || url.protocol.replace(':', '')
+  return `${proto}://${host}/api/auth/google`
 }
 
 // GET /api/auth/google — either start OAuth flow or handle callback
@@ -91,15 +93,17 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     const sessionId = await createSession(env.DB, userId)
 
     // Redirect to editor with session cookie set
+    const baseUrl = getRedirectUri(request).replace('/api/auth/google', '')
     return new Response(null, {
       status: 302,
       headers: {
-        Location: '/editor',
+        Location: `${baseUrl}/editor`,
         'Set-Cookie': setSessionCookie(sessionId),
       },
     })
   } catch (err) {
     console.error('Google OAuth error:', err)
-    return Response.redirect('/?error=google_auth_failed', 302)
+    const baseUrl = getRedirectUri(request).replace('/api/auth/google', '')
+    return Response.redirect(`${baseUrl}/?error=google_auth_failed`, 302)
   }
 }

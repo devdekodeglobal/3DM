@@ -683,6 +683,8 @@ function EditorPage() {
                           y: spawnY,
                           width: DEFAULT_ASSET_SIZE_PX * dims.w,
                           height: DEFAULT_ASSET_SIZE_PX * dims.h,
+                          specH: reg ? reg.specH : undefined,
+                          facingOffset: reg ? (reg as any).facingOffset : 0,
                           rotation: 0
                         });
                         spawnX += 0.8 * PPM; // Move right by 0.8m
@@ -745,6 +747,60 @@ function EditorPage() {
             <div className="w-px h-6 bg-[var(--line)] mx-1" />
             <button onClick={clearAll} className="p-2 rounded-lg hover:bg-red-50 text-red-500 transition-colors" title="Clear Workspace">
               <Trash2 className="h-4 w-4" />
+            </button>
+            <button 
+              onClick={() => {
+                if(confirm('Debug: Load all 62 assets in a grid? This will replace your current workspace and expand the booth to fit them.')) {
+                  const PPM = 100;
+                  const newElements: any[] = [];
+                  let spawnX = 1 * PPM;
+                  let spawnY = 1 * PPM;
+                  const cols = 8;
+                  const xSpacing = 1.5 * PPM;
+                  const ySpacing = 1.5 * PPM;
+                  
+                  ASSET_REGISTRY.forEach((reg, i) => {
+                    const dims = ASSET_DIMENSIONS[reg.id] || { w: 1, h: 1 };
+                    newElements.push({
+                      id: `${reg.id}_debug`,
+                      type: 'asset',
+                      assetName: reg.id,
+                      categoryFolder: reg.categoryFolder || 'models',
+                      label: reg.label,
+                      details: reg.details,
+                      x: spawnX,
+                      y: spawnY,
+                      width: 100 * dims.w,
+                      height: 100 * dims.h,
+                      specH: reg ? reg.specH : undefined,
+                      facingOffset: reg ? (reg as any).facingOffset : 0,
+                      rotation: 0
+                    });
+                    
+                    spawnX += xSpacing;
+                    if ((i + 1) % cols === 0) {
+                      spawnX = 1 * PPM;
+                      spawnY += ySpacing;
+                    }
+                  });
+                  
+                  const reqWidth = (cols + 1) * 1.5;
+                  const reqDepth = Math.ceil(ASSET_REGISTRY.length / cols) * 1.5 + 2;
+                  
+                  setBoothConfig(prev => ({
+                    ...(prev || { wallThickness: 0.1, walls: {north:true,south:false,east:true,west:true}, floorType: 'hardwood' }),
+                    width: Math.max(prev?.width || 0, reqWidth),
+                    depth: Math.max(prev?.depth || 0, reqDepth)
+                  }));
+                  
+                  setElements(newElements);
+                  saveToHistory(newElements);
+                }
+              }} 
+              className="p-2 rounded-lg hover:bg-purple-50 text-purple-600 transition-colors" 
+              title="Debug: Grid All Assets"
+            >
+              <Box className="h-4 w-4" />
             </button>
           </div>
         </div>

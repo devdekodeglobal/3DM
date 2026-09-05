@@ -3,6 +3,7 @@ import { Box, PlusSquare, ChevronDown, ChevronRight, Download, LayoutGrid, Searc
 import { v4 as uuidv4 } from 'uuid'
 import { ASSET_DIMENSIONS, ASSET_CATEGORIES, ASSET_REGISTRY } from '../../lib/assetRegistry'
 import ColorPickerPanel from './ColorPickerPanel'
+import { ArchitecturalSymbolSVG } from './ArchitecturalSymbolSVG'
 
 const DEFAULT_ASSET_SIZE_PX = 100
 
@@ -189,7 +190,8 @@ export default function Sidebar({
       realHeight: dims?.specH ? Number(dims.specH.toFixed(2)) : 1.0,
       realDepth: Number((h / 100).toFixed(2)),
       yOffset: 0,
-      verticalScale: 1
+      verticalScale: 1,
+      facingOffset: asset ? (asset as any).facingOffset || 0 : 0
     })
   }
 
@@ -434,11 +436,15 @@ export default function Sidebar({
                   filteredAssets.map(asset => (
                     <button
                       key={asset.id}
-                      onClick={() => addAsset(asset.category, asset.id)}
+                      onClick={() => addAsset((asset as any).categoryFolder || asset.category, asset.id)}
                       className="w-full text-left p-2.5 rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-white hover:border-[var(--lagoon)] transition group flex items-center gap-3"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-[var(--surface-strong)] border border-[var(--line)] flex items-center justify-center text-[10px] font-black text-[var(--lagoon-deep)] shrink-0">
-                        {asset.id.substring(0, 2).toUpperCase()}
+                      <div className="w-8 h-8 rounded-lg bg-[var(--surface-strong)] border border-[var(--line)] flex items-center justify-center shrink-0 p-1 text-[var(--sea-ink)] group-hover:border-[var(--lagoon)] transition-colors">
+                        <ArchitecturalSymbolSVG
+                          category={asset.category}
+                          assetName={asset.id}
+                          className="w-6 h-6"
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-[var(--sea-ink)] truncate group-hover:text-[var(--lagoon-deep)]">

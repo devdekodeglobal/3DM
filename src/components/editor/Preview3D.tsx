@@ -7,6 +7,7 @@ import { OBJExport } from '@babylonjs/serializers/OBJ/objSerializer'
 import * as GUI from '@babylonjs/gui';
 import { calculateBlueprintMeasurements } from '../../lib/blueprintMath';
 import { GridMaterial } from '@babylonjs/materials';
+import { ASSET_REGISTRY } from '../../lib/assetRegistry';
 
 interface Preview3DProps {
   boothConfig: any;
@@ -83,11 +84,14 @@ export default function Preview3D({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Shift') isShiftPressedRef.current = true; };
     const handleKeyUp = (e: KeyboardEvent) => { if (e.key === 'Shift') isShiftPressedRef.current = false; };
+    const handleBlur = () => { isShiftPressedRef.current = false; };
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
     };
   }, []);
   const [debouncedElements, setDebouncedElements] = useState(elements);
@@ -903,7 +907,11 @@ export default function Preview3D({
         }
 
         if (isRotating) {
-           const finalRot = pivotMesh.rotation.y * (180 / Math.PI);
+           const nativeOffset = pivotMesh.metadata?.nativeOffset || 0;
+           const facingOffsetRad = BABYLON.Tools.ToRadians(pivotMesh.metadata?.facingOffset || 0);
+           const pureRotY = pivotMesh.rotation.y - nativeOffset - facingOffsetRad;
+           
+           const finalRot = pureRotY * (180 / Math.PI);
            let normalized = Math.round(finalRot) % 360;
            if (normalized < 0) normalized += 360;
            onUpdateElement?.(elementId, { rotation: normalized });
@@ -920,6 +928,10 @@ export default function Preview3D({
              y: snapToGrid(newY) 
            });
         }
+        
+        // Reset shift state after drag ends just in case
+        isRotating = false;
+        isShiftPressedRef.current = false;
       });
 
       pivotMesh.addBehavior(dragBehavior);
@@ -1072,8 +1084,10 @@ export default function Preview3D({
         }
         
         if (mesh.rotationQuaternion) mesh.rotationQuaternion = null;
-        mesh.rotation.y = rotY + BABYLON.Tools.ToRadians(el.facingOffset || 0);
-        mesh.scaling.y = vScale;
+        mesh.rotation.y = rotY + (mesh.metadata?.nativeOffset || 0) + BABYLON.Tools.ToRadians(el.facingOffset || 0);
+        if (el.type !== 'asset') {
+          mesh.scaling.y = vScale;
+        }
 
         if (el.type === 'asset' && mesh.metadata && mesh.metadata.nativeLength) {
           if (!el.isCustomAsset) {
@@ -1540,11 +1554,21 @@ export default function Preview3D({
           attachDragBehavior(mesh, el.id);
 
         } else if (el.type === 'asset') {
-          const modelName = el.assetName?.toLowerCase() || 'box';
+          // Preserve original case for filename (e.g. Fridge.glb, MicrowaveOven.glb, WallOven.glb)
+          const modelFileName = el.assetName || 'box';
+          const modelName = modelFileName.toLowerCase();
           const pivot = BABYLON.MeshBuilder.CreateBox("pivot_" + el.id, { size: 0.01 }, scene);
           pivot.isVisible = false;
           pivot.position.set(x, el.yOffset || 0, z);
-          pivot.rotation.y = rotY + BABYLON.Tools.ToRadians(el.facingOffset || 0);
+          
+          const regEntry = ASSET_REGISTRY.find(a => a.id === el.assetName) as any;
+          const facingOffset = (regEntry?.facingOffset) ?? el.facingOffset ?? 0;
+          
+          // Original git orientation: no nativeOffset applied — models load in their native .glb orientation
+          pivot.rotation.y = rotY + BABYLON.Tools.ToRadians(facingOffset);
+          
+          pivot.metadata = { nativeLength: 0, nativeHeight: 0 };
+          
           registry.set(el.id, pivot);
           attachDragBehavior(pivot, el.id);
 
@@ -1584,9 +1608,18 @@ export default function Preview3D({
               }
               pivot.scaling.set(s, sY, s);
               
+              // Use inverse pivot world matrix to correctly convert world-space bbox center
+              // to pivot-local space, accounting for pivot position and scale.
+              // Without this, wrapper.position -= center.x/z subtracts world coords
+              // instead of the local offset, causing assets to fly to wrong positions.
               const center = bbox.min.add(sz.scale(0.5));
-              wrapper.position.x -= center.x;
-              wrapper.position.z -= center.z;
+              const worldOffset = center.subtract(pivot.position);
+              const invPivotMatrix = new BABYLON.Matrix();
+              pivot.getWorldMatrix().invertToRef(invPivotMatrix);
+              const localOffset = BABYLON.Vector3.TransformNormal(worldOffset, invPivotMatrix);
+              wrapper.position.x -= localOffset.x;
+              wrapper.position.z -= localOffset.z;
+              // Floor the model to ground level (bbox.min.y is world-space bottom before scaling)
               wrapper.position.y -= bbox.min.y;
             }
           };
@@ -1604,9 +1637,10 @@ export default function Preview3D({
             
             const basePath = el.categoryFolder ? `/models/${el.categoryFolder}/` : "/models/";
             const ext = el.fileName?.toLowerCase().endsWith('.gltf') ? '.gltf' : '.glb';
+            // Preserve original filename case (e.g. Fridge.glb, MicrowaveOven.glb, WallOven.glb)
             const loadPromise = el.assetUrl
               ? BABYLON.SceneLoader.LoadAssetContainerAsync("", el.assetUrl, scene, undefined, ext)
-              : BABYLON.SceneLoader.LoadAssetContainerAsync(basePath, `${modelName}.glb`, scene);
+              : BABYLON.SceneLoader.LoadAssetContainerAsync(basePath, `${modelFileName}.glb`, scene);
             
             cache.set(cacheKey, loadPromise);
             loadPromise.then(container => instantiateAndSetup(container)).catch(e => console.error("Failed to load model", cacheKey, e));

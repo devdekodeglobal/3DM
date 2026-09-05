@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Stage, Layer, Rect, Line, Transformer, Group, Text } from 'react-konva'
+import { ArchitecturalSymbol2D } from './ArchitecturalSymbol2D'
 
 export interface BoothConfig {
   width: number;
@@ -28,20 +29,12 @@ const CATEGORY_PALETTE: Record<string, { fill: string; badge: string; text: stri
   Electronics: { fill: 'rgba(14,165,233,0.15)', badge: '#0ea5e9', text: '#075985' },
 }
 
-const getInitials = (label: string) =>
-  label.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
-
 const LetterMarkAsset = ({ shapeProps, onSelect, onChange, isDarkMode }: any) => {
-  const label = shapeProps.assetName?.replace(/_/g, ' ') || 'Asset'
-  const category = shapeProps.src?.split('/')[2] || 'Fixtures'
-  const palette = CATEGORY_PALETTE[category] || CATEGORY_PALETTE.Fixtures
-  const initials = getInitials(label)
+  const label = shapeProps.label || shapeProps.assetName?.replace(/_/g, ' ') || 'Asset'
+  const category = shapeProps.categoryFolder || shapeProps.category || shapeProps.src?.split('/')[2] || 'chairs'
+  const palette = CATEGORY_PALETTE[category] || { fill: 'rgba(255,255,255,0.9)', badge: '#0ea5e9', text: '#0f172a' }
   const w = shapeProps.width
   const h = shapeProps.height
-  const badgeSize = Math.min(w, h) * 0.45
-  // In group-local space, (0,0) is the tile top-left, (w,h) is bottom-right
-  const badgeCX = w / 2
-  const badgeCY = h * 0.38
 
   return (
     <Group
@@ -73,49 +66,33 @@ const LetterMarkAsset = ({ shapeProps, onSelect, onChange, isDarkMode }: any) =>
         })
       }}
     >
-      {/* Background tile: fills (0,0)→(w,h) in group-local space */}
-      <Rect
-        x={0} y={0}
-        width={w} height={h}
-        fill={palette.fill}
-        stroke={palette.badge}
-        strokeWidth={1.5}
-        cornerRadius={6}
+      {/* 2D Architectural Line-Art Symbol */}
+      <ArchitecturalSymbol2D
+        w={w}
+        h={h}
+        category={category}
+        assetName={shapeProps.assetName}
+        label={label}
+        isDarkMode={isDarkMode}
+        palette={{
+          fill: palette.fill,
+          stroke: '#1e293b',
+          accent: palette.badge,
+          text: palette.text
+        }}
       />
-      {/* Badge: centered at (badgeCX, badgeCY) in local space */}
-      <Rect
-        x={badgeCX} y={badgeCY}
-        width={badgeSize} height={badgeSize}
-        offsetX={badgeSize / 2} offsetY={badgeSize / 2}
-        fill={palette.badge}
-        cornerRadius={badgeSize * 0.25}
-        opacity={0.9}
-      />
-      {/* Initials text: same center as badge */}
+
+      {/* Label: below object */}
       <Text
-        x={badgeCX - badgeSize / 2}
-        y={badgeCY - badgeSize / 2}
-        text={initials}
-        fontSize={badgeSize * 0.42}
-        fontFamily="Inter, sans-serif"
-        fontStyle="bold"
-        fill="white"
-        align="center"
-        verticalAlign="middle"
-        width={badgeSize}
-        height={badgeSize}
-      />
-      {/* Label: below badge */}
-      <Text
-        x={0}
-        y={h * 0.72}
+        x={-w * 0.2}
+        y={h + 4}
         text={label}
         fontSize={Math.max(8, Math.min(10, w * 0.15))}
         fontFamily="Inter, sans-serif"
         fontStyle="bold"
-        fill={isDarkMode ? 'rgba(255,255,255,0.85)' : palette.text}
+        fill={isDarkMode ? 'rgba(255,255,255,0.85)' : '#334155'}
         align="center"
-        width={w}
+        width={w * 1.4}
       />
     </Group>
   )
