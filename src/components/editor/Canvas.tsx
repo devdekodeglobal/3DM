@@ -298,7 +298,7 @@ const WallShape = ({ shapeProps, isSelected, onSelect, onChange, isDarkMode }: a
     })
   }
 
-  const handleCutoutDragEnd = (elId: string, e: any) => {
+  const handleCutoutDragEnd = (_elId: string, e: any) => {
     e.cancelBubble = true
     // Reset the node's local translate offset so it renders cleanly from the updated x in state
     e.target.x(0)
@@ -1050,7 +1050,54 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
                 shadowBlur={40}
               />
             </Group>
-              
+            {/* Cardinal Directions */}
+            <Group name="cardinalDirections" listening={false}>
+              <Text
+                x={boothW / 2 - 20}
+                y={-70}
+                text="N"
+                fontSize={32}
+                fontFamily="Inter, sans-serif"
+                fontStyle="bold"
+                fill={isDarkMode ? "rgba(255,255,255,0.15)" : "rgba(15,23,42,0.1)"}
+                align="center"
+                width={40}
+              />
+              <Text
+                x={boothW / 2 - 20}
+                y={boothD + 45}
+                text="S"
+                fontSize={32}
+                fontFamily="Inter, sans-serif"
+                fontStyle="bold"
+                fill={isDarkMode ? "rgba(255,255,255,0.15)" : "rgba(15,23,42,0.1)"}
+                align="center"
+                width={40}
+              />
+              <Text
+                x={-70}
+                y={boothD / 2 - 16}
+                text="W"
+                fontSize={32}
+                fontFamily="Inter, sans-serif"
+                fontStyle="bold"
+                fill={isDarkMode ? "rgba(255,255,255,0.15)" : "rgba(15,23,42,0.1)"}
+                align="center"
+                width={40}
+              />
+              <Text
+                x={boothW + 30}
+                y={boothD / 2 - 16}
+                text="E"
+                fontSize={32}
+                fontFamily="Inter, sans-serif"
+                fontStyle="bold"
+                fill={isDarkMode ? "rgba(255,255,255,0.15)" : "rgba(15,23,42,0.1)"}
+                align="center"
+                width={40}
+              />
+            </Group>
+
             {/* Architectural Dimension Chains around Space Boundaries */}
             <Group name="architecturalDimensions">
               {/* North Dimension Line */}

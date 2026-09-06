@@ -1069,7 +1069,7 @@ export default function Preview3D({
         }
       }
 
-      if (registry.has(el.id) && !needsRecreate && el.type !== 'wall') {
+      if (registry.has(el.id) && !needsRecreate) {
         const mesh = registry.get(el.id)!;
         const vScale = el.verticalScale || 1;
         const hActual = ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(el.type) ? (el.realHeight || 2.5) : (el.type === 'wall' ? 2.5 : 1);
@@ -1121,6 +1121,10 @@ export default function Preview3D({
               sideMat.albedoColor = baseColor;
             }
           }
+        }
+
+        if (el.type === 'wall' && !el.isOuter) {
+          attachDragBehavior(mesh, el.id);
         }
       } else {
         if (needsRecreate) {
@@ -1354,6 +1358,9 @@ export default function Preview3D({
             wallDir: el.id.split('-')[1] 
           };
           registry.set(el.id, mesh);
+          if (!el.isOuter) {
+            attachDragBehavior(mesh, el.id);
+          }
 
         } else if (el.type === '3d_logo') {
           const depth = (el.depth || 5) / PPM;
