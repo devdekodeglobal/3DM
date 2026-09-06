@@ -1,3 +1,4 @@
+/// <reference types="@cloudflare/workers-types" />
 // Shared auth utilities for Cloudflare Pages Functions
 // All functions run inside the Cloudflare Worker runtime
 
@@ -17,7 +18,7 @@ function hexToBuffer(hex: string): Uint8Array {
   for (let i = 0; i < length; i++) {
     bytes[i] = parseInt(hex.substr(i * 2, 2), 16)
   }
-  return bytes
+  return new Uint8Array(bytes.buffer)
 }
 
 // Constant-time string comparison to prevent timing attacks

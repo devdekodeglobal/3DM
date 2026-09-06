@@ -113,9 +113,24 @@ export default function Properties({
                         value={((selectedElement.width || 0) / 100).toFixed(2)}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value) || 0;
+                          let targetWidth = val * 100;
+                          let updatedWallElements = selectedElement.wallElements;
+
+                          if (selectedElement.type === 'wall' && selectedElement.wallElements?.length > 0) {
+                            const minRequired = selectedElement.wallElements.reduce((max: number, wel: any) => {
+                              return Math.max(max, (wel.x || 0) + (wel.width || 0) + 10)
+                            }, 30);
+                            targetWidth = Math.max(targetWidth, minRequired);
+                            updatedWallElements = selectedElement.wallElements.map((wel: any) => ({
+                              ...wel,
+                              x: Math.min(wel.x, Math.max(0, targetWidth - wel.width))
+                            }));
+                          }
+
                           onUpdate(selectedElement.id, { 
-                            width: val * 100,
-                            ...(['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? { realWidth: val } : {})
+                            width: targetWidth,
+                            ...(updatedWallElements ? { wallElements: updatedWallElements } : {}),
+                            ...(['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? { realWidth: targetWidth / 100 } : {})
                           });
                         }}
                         disabled={selectedElement.type === 'asset'}
@@ -363,6 +378,86 @@ export default function Properties({
                         onChange={(c) => onUpdate(selectedElement.id, { color: c })}
                       />
                     )}
+                  </div>
+
+                  {/* Wall Openings & Cutouts (Doors, Windows) */}
+                  <div className="border-t border-[var(--line)] pt-3 mt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider">
+                        Openings & Cutouts ({selectedElement.wallElements?.length || 0})
+                      </label>
+                    </div>
+
+                    {selectedElement.wallElements && selectedElement.wallElements.length > 0 ? (
+                      <div className="space-y-1.5 mb-3">
+                        {selectedElement.wallElements.map((wel: any) => (
+                          <div key={wel.id} className="flex items-center justify-between bg-[var(--sand)] px-2.5 py-1.5 rounded-lg border border-[var(--line)] text-xs">
+                            <span className="flex items-center gap-1.5 font-semibold text-[var(--sea-ink)]">
+                              <span>{wel.type === 'door' ? '🚪' : wel.type === 'window' ? '🪟' : '📦'}</span>
+                              <span className="capitalize">{wel.type}</span>
+                              <span className="text-[10px] font-mono text-[var(--sea-ink-soft)]">({(wel.width / 100).toFixed(1)}m)</span>
+                            </span>
+                            <button
+                              onClick={() => {
+                                const remaining = (selectedElement.wallElements || []).filter((w: any) => w.id !== wel.id)
+                                onUpdate(selectedElement.id, { wallElements: remaining })
+                              }}
+                              className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded transition"
+                              title="Remove Opening (Restore Full Wall)"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-[var(--sea-ink-soft)] mb-2 italic">
+                        Full solid wall. No door or window cutouts.
+                      </p>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        onClick={() => {
+                          const existing = selectedElement.wallElements || []
+                          const doorWidth = Math.min(90, selectedElement.width * 0.45)
+                          const newDoor = {
+                            id: Math.random().toString(36).substr(2, 8),
+                            type: 'door',
+                            x: Math.max(10, selectedElement.width / 2 - doorWidth / 2),
+                            y: 50,
+                            width: doorWidth,
+                            height: 200,
+                            swingSide: 'right',
+                            swingDirection: 'inward',
+                            color: '#8b643c'
+                          }
+                          onUpdate(selectedElement.id, { wallElements: [...existing, newDoor] })
+                        }}
+                        className="py-1.5 px-2 rounded-lg border border-[var(--line)] bg-[var(--surface-strong)] hover:border-[var(--brand)] hover:bg-[var(--sand)] text-[10px] font-bold text-[var(--sea-ink)] transition flex items-center justify-center gap-1"
+                      >
+                        <span>🚪</span> + Door
+                      </button>
+                      <button
+                        onClick={() => {
+                          const existing = selectedElement.wallElements || []
+                          const winWidth = Math.min(120, selectedElement.width * 0.5)
+                          const newWin = {
+                            id: Math.random().toString(36).substr(2, 8),
+                            type: 'window',
+                            x: Math.max(10, selectedElement.width / 2 - winWidth / 2),
+                            y: 75,
+                            width: winWidth,
+                            height: 100,
+                            color: '#00BFFF'
+                          }
+                          onUpdate(selectedElement.id, { wallElements: [...existing, newWin] })
+                        }}
+                        className="py-1.5 px-2 rounded-lg border border-[var(--line)] bg-[var(--surface-strong)] hover:border-[var(--brand)] hover:bg-[var(--sand)] text-[10px] font-bold text-[var(--sea-ink)] transition flex items-center justify-center gap-1"
+                      >
+                        <span>🪟</span> + Window
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

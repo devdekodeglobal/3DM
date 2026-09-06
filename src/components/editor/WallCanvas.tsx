@@ -473,6 +473,26 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
                   </div>
                 )}
 
+                {selectedEl.type === 'door' && (
+                  <div className="pt-2">
+                    <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold block mb-1">Door Swing Direction</label>
+                    <div className="grid grid-cols-2 gap-1.5 mb-1.5">
+                      <button
+                        onClick={() => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, swingSide: (el.swingSide || 'right') === 'right' ? 'left' : 'right' } : el))}
+                        className="py-1.5 px-2 rounded-lg border border-[var(--line)] bg-[var(--sand)] text-[10px] font-bold text-[var(--sea-ink)] hover:border-[var(--brand)] transition"
+                      >
+                        Hinge: {(selectedEl.swingSide || 'right') === 'right' ? 'Right ⮞' : '⮜ Left'}
+                      </button>
+                      <button
+                        onClick={() => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, swingDirection: (el.swingDirection || 'inward') === 'inward' ? 'outward' : 'inward' } : el))}
+                        className="py-1.5 px-2 rounded-lg border border-[var(--line)] bg-[var(--sand)] text-[10px] font-bold text-[var(--sea-ink)] hover:border-[var(--brand)] transition"
+                      >
+                        Swing: {(selectedEl.swingDirection || 'inward') === 'inward' ? 'Inward ⮟' : 'Outward ⮝'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {selectedEl.type === 'frame' && (
                   <div className="pt-2">
                     <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold block mb-1">Frame Shape</label>

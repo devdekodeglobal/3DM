@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { listDesigns, deleteDesign } from '../../lib/authClient'
 import type { Design } from '../../lib/authClient'
 import { X, FolderOpen, Calendar, Trash2, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
+import { ConfirmModal } from './ConfirmModal'
 
 interface CloudProjectsDrawerProps {
   isOpen: boolean
@@ -20,6 +21,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmModalState, setConfirmModalState] = useState<{ isOpen: boolean; title?: string; message: string; confirmText?: string; onConfirm: () => void } | null>(null)
 
   const fetchDesigns = async () => {
     if (!userId) return
@@ -44,21 +46,28 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
 
   if (!isOpen) return null
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
+  const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!confirm('Are you sure you want to delete this cloud design?')) return
-
-    setDeletingId(id)
-    try {
-      await deleteDesign(id)
-      // Filter out deleted design from view
-      setDesigns(prev => prev.filter(d => d.id !== id))
-    } catch (err: any) {
-      console.error('Delete error:', err)
-      alert(err.message || 'Failed to delete design.')
-    } finally {
-      setDeletingId(null)
-    }
+    setConfirmModalState({
+      isOpen: true,
+      title: 'Delete Design',
+      message: 'Are you sure you want to delete this cloud design? This cannot be undone.',
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        setDeletingId(id)
+        try {
+          await deleteDesign(id)
+          // Filter out deleted design from view
+          setDesigns(prev => prev.filter(d => d.id !== id))
+        } catch (err: any) {
+          console.error('Delete error:', err)
+          setErrorMsg(err.message || 'Failed to delete design.')
+        } finally {
+          setDeletingId(null)
+          setConfirmModalState(null)
+        }
+      }
+    })
   }
 
   return (
@@ -179,6 +188,15 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
           SYNCED SECURELY VIA CLOUDFLARE D1
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!confirmModalState}
+        title={confirmModalState?.title}
+        message={confirmModalState?.message || ''}
+        confirmText={confirmModalState?.confirmText}
+        onConfirm={() => confirmModalState?.onConfirm()}
+        onCancel={() => setConfirmModalState(null)}
+      />
     </div>
   )
 }

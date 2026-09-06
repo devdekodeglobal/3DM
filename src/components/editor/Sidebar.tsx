@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Box, PlusSquare, ChevronDown, ChevronRight, Download, LayoutGrid, Search, Upload, Trash2 } from 'lucide-react'
+import { Box, PlusSquare, ChevronDown, ChevronRight, LayoutGrid, Search, Upload, Trash2 } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import { ASSET_DIMENSIONS, ASSET_CATEGORIES, ASSET_REGISTRY } from '../../lib/assetRegistry'
 import ColorPickerPanel from './ColorPickerPanel'
@@ -9,8 +9,6 @@ const DEFAULT_ASSET_SIZE_PX = 100
 
 export default function Sidebar({
   addElement,
-  activeView = 'perspective',
-  onViewChange,
   backgroundColor,
   setBackgroundColor,
   customAssets = [],
@@ -28,7 +26,6 @@ export default function Sidebar({
   onDeleteCustomAsset?: (id: string) => void;
   showAlert?: (message: string, type?: 'info' | 'success' | 'warning' | 'error', title?: string) => void;
 }) {
-  const [isTechOpen, setIsTechOpen] = useState(false)
   const [isCoreOpen, setIsCoreOpen] = useState(false)
   const [isUploadsOpen, setIsUploadsOpen] = useState(true)
   const [isModelsOpen, setIsModelsOpen] = useState(true)
@@ -71,6 +68,60 @@ export default function Sidebar({
       realDepth: 0.1, // same as thickness
       fill: '#333333', opacity: 1,
       material: 'Solid Wall',
+    })
+  }
+
+  const addWallWithDoor = () => {
+    addElement({
+      id: uuidv4(),
+      type: 'wall',
+      x: 150, y: 150,
+      width: 200, height: 20,
+      thickness: 10, rotation: 0,
+      realWidth: 2.0,
+      realHeight: 2.5,
+      realDepth: 0.1,
+      fill: '#333333', opacity: 1,
+      material: 'Solid Wall',
+      wallElements: [
+        {
+          id: uuidv4().substr(0, 8),
+          type: 'door',
+          x: 55,
+          y: 50,
+          width: 90,
+          height: 200,
+          swingSide: 'right',
+          swingDirection: 'inward',
+          color: '#8b643c'
+        }
+      ]
+    })
+  }
+
+  const addWallWithWindow = () => {
+    addElement({
+      id: uuidv4(),
+      type: 'wall',
+      x: 150, y: 150,
+      width: 200, height: 20,
+      thickness: 10, rotation: 0,
+      realWidth: 2.0,
+      realHeight: 2.5,
+      realDepth: 0.1,
+      fill: '#333333', opacity: 1,
+      material: 'Solid Wall',
+      wallElements: [
+        {
+          id: uuidv4().substr(0, 8),
+          type: 'window',
+          x: 40,
+          y: 75,
+          width: 120,
+          height: 100,
+          color: '#00BFFF'
+        }
+      ]
     })
   }
 
@@ -195,14 +246,14 @@ export default function Sidebar({
     })
   }
 
-  const TECHNICAL_VIEWS = [
+  /* const TECHNICAL_VIEWS = [
     { id: 'perspective', label: '3D Orbit', icon: <Box className="w-3 h-3" /> },
     { id: 'top', label: 'Top View', icon: <Download className="w-3 h-3" /> },
     { id: 'north', label: 'North Elev', icon: <Download className="w-3 h-3" /> },
     { id: 'south', label: 'South Elev', icon: <Download className="w-3 h-3" /> },
     { id: 'east', label: 'East Elev', icon: <Download className="w-3 h-3" /> },
     { id: 'west', label: 'West Elev', icon: <Download className="w-3 h-3" /> },
-  ]
+  ] */
 
   const filteredAssets = useMemo(() => {
     let filtered = ASSET_REGISTRY
@@ -258,6 +309,14 @@ export default function Sidebar({
               <button onClick={addCagedPanel} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
                 <LayoutGrid className="h-4 w-4 mb-0.5 opacity-70 group-hover:opacity-100 transition-opacity" />
                 <span className="text-[10px] font-bold tracking-wide text-center">Caged Roof</span>
+              </button>
+              <button onClick={addWallWithDoor} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
+                <span className="text-base leading-none">🚪</span>
+                <span className="text-[10px] font-bold tracking-wide text-center">Door Wall</span>
+              </button>
+              <button onClick={addWallWithWindow} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
+                <span className="text-base leading-none">🪟</span>
+                <span className="text-[10px] font-bold tracking-wide text-center">Window Wall</span>
               </button>
               <button onClick={add3DLogo} className="col-span-2 flex items-center justify-center gap-2 p-2.5 mt-1 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
                 <PlusSquare className="h-4 w-4 opacity-70 group-hover:opacity-100 transition-opacity" />
@@ -484,7 +543,7 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Fixed Bottom Technical Section */}
+      {/* Technical Drawings - temporarily commented out
       <div className="border-t border-[var(--line)] bg-[var(--surface-light)] shrink-0">
         <button
           onClick={() => setIsTechOpen(!isTechOpen)}
@@ -528,6 +587,7 @@ export default function Sidebar({
           </div>
         )}
       </div>
+      */}
     </aside>
   )
 }

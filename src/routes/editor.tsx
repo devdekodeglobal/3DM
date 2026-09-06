@@ -7,7 +7,7 @@ import Properties from '../components/editor/Properties'
 import Preview3D from '../components/editor/Preview3D'
 import ColorPickerPanel from '../components/editor/ColorPickerPanel'
 import RoofCanvas from '../components/editor/RoofCanvas'
-import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, FileText, Download, Upload, LogOut, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react'
+import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Download, LogOut, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
@@ -15,6 +15,7 @@ import { getCurrentUser, saveDesign, signOut } from '../lib/authClient'
 import { AuthModal } from '../components/editor/AuthModal'
 import { CloudProjectsDrawer } from '../components/editor/CloudProjectsDrawer'
 import { saveAssetBlob, getAssetBlob, deleteAssetBlob } from '../lib/customAssetDB'
+import { ConfirmModal } from '../components/editor/ConfirmModal'
 
 const DEFAULT_ASSET_SIZE_PX = 100
 
@@ -96,6 +97,7 @@ function EditorPage() {
   const [projectName, setProjectName] = useState('My Exhibition Stand')
   const [isCloudSaving, setIsCloudSaving] = useState(false)
   const [toastModal, setToastModal] = useState<{ title?: string; message: string; type?: 'info' | 'success' | 'warning' | 'error' } | null>(null)
+  const [confirmModalState, setConfirmModalState] = useState<{ isOpen: boolean; title?: string; message: string; confirmText?: string; onConfirm: () => void } | null>(null)
 
   const showAlert = (message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info', title?: string) => {
     setToastModal({ message, type, title })
@@ -202,11 +204,12 @@ function EditorPage() {
   const [setupWallMaterial, setSetupWallMaterial] = useState('White Paint')
   const [setupWallColor, setSetupWallColor] = useState('#f0f0f0')
   const [setupAssets, setSetupAssets] = useState<Record<string, number>>({
-    'chair_1': 0,
-    'round_table_1': 0,
-    'plant': 0,
-    'dustbin': 0,
-    'tv_lcd': 0
+    'petilia': 1,
+    'catifa_bar': 1,
+    'catifa': 1,
+    'neos_s': 1,
+    'medola_conference': 0,
+    'brio_70': 0,
   })
 
   const [elements, setElements] = useState<any[]>(initialData.elements || [])
@@ -422,69 +425,19 @@ function EditorPage() {
     }
   }, [isCapturingReport])
 
-  const handleImportProject = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Enforce 5MB file size limit on project JSON imports (KK 07)
-    const MAX_PROJECT_BYTES = 5 * 1024 * 1024;
-    if (file.size > MAX_PROJECT_BYTES) {
-      showAlert('Project file exceeds the 5MB size limit.', 'error', 'File Too Large');
-      event.target.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string;
-        const parsed = JSON.parse(content);
-
-        // Validate project structure and sanity limits (KK 07)
-        if (
-          parsed &&
-          typeof parsed === 'object' &&
-          parsed.booth &&
-          typeof parsed.booth === 'object' &&
-          typeof parsed.booth.width === 'number' &&
-          typeof parsed.booth.depth === 'number' &&
-          parsed.booth.width > 0 &&
-          parsed.booth.width <= 100 &&
-          parsed.booth.depth > 0 &&
-          parsed.booth.depth <= 100 &&
-          Array.isArray(parsed.elements) &&
-          parsed.elements.length <= 1000
-        ) {
-          setBoothConfig(parsed.booth);
-          setElements(parsed.elements);
-          setHistory([parsed.elements]);
-          setHistoryStep(0);
-
-          // Force layout refresh if needed
-          setTimeout(() => {
-            window.dispatchEvent(new Event('resize'));
-          }, 100);
-          showAlert('Project successfully imported!', 'success', 'Imported');
-        } else {
-          showAlert('Invalid or malformed project file format.', 'error', 'Import Error');
-        }
-      } catch (err) {
-        console.error('Failed to parse project file:', err);
-        showAlert('Failed to read the project file.', 'error', 'Import Error');
-      }
-    };
-    reader.readAsText(file);
-
-    // Reset file input so the same file can be selected again if needed
-    event.target.value = '';
-  };
-
   const clearAll = () => {
-    if (confirm('Clear the workspace?')) {
-      setElements([])
-      saveToHistory([])
-      localStorage.removeItem('stall-elements')
-    }
+    setConfirmModalState({
+      isOpen: true,
+      title: 'Clear Workspace',
+      message: 'Are you sure you want to clear the workspace? This cannot be undone.',
+      confirmText: 'Clear',
+      onConfirm: () => {
+        setElements([])
+        saveToHistory([])
+        localStorage.removeItem('stall-elements')
+        setConfirmModalState(null)
+      }
+    })
   }
 
   const selectedElement = (elements || []).find((el) => el.id === selectedId)
@@ -660,17 +613,17 @@ function EditorPage() {
 
               <div className="grid grid-cols-2 gap-3 text-left">
                 {[
-                  { id: 'bombo', name: 'Bar Stool' },
-                  { id: 'catifa_bar', name: 'High Stool' },
-                  { id: 'catifa_46', name: 'Chair' },
-                  { id: 'berthe', name: 'Office Chair' },
-                  { id: 'medola_weiss', name: 'Meeting Table' },
-                  { id: 'luna_110', name: 'Bar Table' },
+                  { id: 'petilia', name: 'Bar Stool (Bombo)' },
+                  { id: 'catifa_bar', name: 'High Stool (Catifa)' },
+                  { id: 'catifa', name: 'Chair (Catifa)' },
+                  { id: 'neos_s', name: 'Office Chair (Neos S)' },
+                  { id: 'medola_conference', name: 'Meeting Table' },
+                  { id: 'brio_70', name: 'Bar Table (Brio)' },
                 ].map(asset => (
                   <div key={asset.id} className="flex items-center justify-between bg-[var(--sand)] p-3 rounded-xl border border-[var(--line)]">
                     <span className="text-xs font-bold text-[var(--sea-ink)]">{asset.name}</span>
                     <select
-                      value={setupAssets[asset.id] || 0}
+                      value={setupAssets[asset.id] ?? 0}
                       onChange={(e) => setSetupAssets(prev => ({ ...prev, [asset.id]: parseInt(e.target.value) }))}
                       className="bg-[var(--surface-strong)] border border-[var(--line)] rounded text-xs p-1 font-mono text-[var(--sea-ink)]"
                     >
@@ -710,7 +663,7 @@ function EditorPage() {
                           id: `${assetId}_${Math.random().toString(36).substring(2, 7)}`,
                           type: 'asset',
                           assetName: assetId,
-                          categoryFolder: reg ? reg.category : 'models',
+                          categoryFolder: reg ? (reg.categoryFolder || reg.category) : 'models',
                           label: reg ? reg.label : assetId,
                           details: reg ? reg.details : '',
                           x: spawnX,
@@ -762,10 +715,17 @@ function EditorPage() {
           <div className="flex items-center gap-1">
             <button
               onClick={() => {
-                if (confirm('Return to Setup Wizard? Current space dimensions will be reset.')) {
-                  setBoothConfig(null)
-                  setWizardStep(1)
-                }
+                setConfirmModalState({
+                  isOpen: true,
+                  title: 'Return to Setup Wizard',
+                  message: 'Current space dimensions will be reset. Are you sure?',
+                  confirmText: 'Reset',
+                  onConfirm: () => {
+                    setBoothConfig(null)
+                    setWizardStep(1)
+                    setConfirmModalState(null)
+                  }
+                })
               }}
               className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--sand)] text-[var(--sea-ink)] text-xs font-bold transition hover:bg-[var(--lagoon)] hover:text-white"
             >
@@ -781,60 +741,6 @@ function EditorPage() {
             <div className="w-px h-6 bg-[var(--line)] mx-1" />
             <button onClick={clearAll} className="p-2 rounded-lg hover:bg-red-50 text-red-500 transition-colors" title="Clear Workspace">
               <Trash2 className="h-4 w-4" />
-            </button>
-            <button 
-              onClick={() => {
-                if(confirm('Debug: Load all 62 assets in a grid? This will replace your current workspace and expand the booth to fit them.')) {
-                  const PPM = 100;
-                  const newElements: any[] = [];
-                  let spawnX = 1 * PPM;
-                  let spawnY = 1 * PPM;
-                  const cols = 8;
-                  const xSpacing = 1.5 * PPM;
-                  const ySpacing = 1.5 * PPM;
-                  
-                  ASSET_REGISTRY.forEach((reg, i) => {
-                    const dims = ASSET_DIMENSIONS[reg.id] || { w: 1, h: 1 };
-                    newElements.push({
-                      id: `${reg.id}_debug`,
-                      type: 'asset',
-                      assetName: reg.id,
-                      categoryFolder: reg.categoryFolder || 'models',
-                      label: reg.label,
-                      details: reg.details,
-                      x: spawnX,
-                      y: spawnY,
-                      width: 100 * dims.w,
-                      height: 100 * dims.h,
-                      specH: reg ? reg.specH : undefined,
-                      facingOffset: reg ? (reg as any).facingOffset : 0,
-                      rotation: 0
-                    });
-                    
-                    spawnX += xSpacing;
-                    if ((i + 1) % cols === 0) {
-                      spawnX = 1 * PPM;
-                      spawnY += ySpacing;
-                    }
-                  });
-                  
-                  const reqWidth = (cols + 1) * 1.5;
-                  const reqDepth = Math.ceil(ASSET_REGISTRY.length / cols) * 1.5 + 2;
-                  
-                  setBoothConfig(prev => ({
-                    ...(prev || { wallThickness: 0.1, walls: {north:true,south:false,east:true,west:true}, floorType: 'hardwood' }),
-                    width: Math.max(prev?.width || 0, reqWidth),
-                    depth: Math.max(prev?.depth || 0, reqDepth)
-                  }));
-                  
-                  setElements(newElements);
-                  saveToHistory(newElements);
-                }
-              }} 
-              className="p-2 rounded-lg hover:bg-purple-50 text-purple-600 transition-colors" 
-              title="Debug: Grid All Assets"
-            >
-              <Box className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -901,27 +807,42 @@ function EditorPage() {
             </button>
           )}
 
-          <label className="cursor-pointer px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1">
-            <Upload className="h-4 w-4" /> Import Project
-            <input type="file" accept=".json" onChange={handleImportProject} className="hidden" />
-          </label>
           <button
             onClick={() => setShowSavePrompt(true)}
             className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
           >
             <Download className="h-4 w-4" /> Save Project
           </button>
-          <button
+          {/* <button
             onClick={submitExport}
             className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
           >
             <FileText className="h-4 w-4" /> Report
-          </button>
+          </button> */}
           <button
-            onClick={() => setIs3DGenerated(true)}
-            className="px-5 py-2 rounded-full bg-[var(--lagoon-deep)] text-white text-sm font-bold flex items-center gap-2 hover:bg-[var(--palm)] transition shadow-md"
+            onClick={() => {
+              if (!sessionUser) {
+                setAuthModalOpen(true)
+                return
+              }
+              setIs3DGenerated(true)
+            }}
+            className={`px-5 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition shadow-md ${
+              !sessionUser
+                ? 'bg-gray-700/80 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-600/50'
+                : 'bg-[var(--lagoon-deep)] text-white hover:bg-[var(--palm)]'
+            }`}
+            title={!sessionUser ? 'Login to generate and view 3D' : ''}
           >
-            <Box className="h-4 w-4" /> {is3DGenerated ? 'Live 3D Syncing' : 'Generate 3D'}
+            {!sessionUser ? (
+              <>
+                <Lock className="h-4 w-4 text-amber-400" /> Generate 3D
+              </>
+            ) : (
+              <>
+                <Box className="h-4 w-4" /> {is3DGenerated ? 'Live 3D Syncing' : 'Generate 3D'}
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -1247,6 +1168,15 @@ function EditorPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!confirmModalState}
+        title={confirmModalState?.title}
+        message={confirmModalState?.message || ''}
+        confirmText={confirmModalState?.confirmText}
+        onConfirm={() => confirmModalState?.onConfirm()}
+        onCancel={() => setConfirmModalState(null)}
+      />
     </div>
   )
 }

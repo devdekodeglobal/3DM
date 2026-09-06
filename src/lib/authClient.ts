@@ -23,8 +23,9 @@ export interface Design {
 export async function getCurrentUser(): Promise<User | null> {
   try {
     const res = await fetch('/api/auth/me', { credentials: 'include' })
+    if (!res.ok) return null
     const data = (await res.json()) as { user: User | null }
-    return data.user
+    return data?.user || null
   } catch {
     return null
   }
