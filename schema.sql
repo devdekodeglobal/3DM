@@ -42,6 +42,14 @@ CREATE TABLE IF NOT EXISTS designs (
   updated_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Rate limits table for authentication & abuse prevention (KK 06)
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key TEXT PRIMARY KEY,
+  count INTEGER DEFAULT 1,
+  reset_at INTEGER NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_designs_user_id ON designs(user_id);
 CREATE INDEX IF NOT EXISTS idx_otp_email ON otp_codes(email, type);
+CREATE INDEX IF NOT EXISTS idx_rate_limits_reset_at ON rate_limits(reset_at);

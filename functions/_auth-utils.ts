@@ -1,17 +1,116 @@
 // Shared auth utilities for Cloudflare Pages Functions
 // All functions run inside the Cloudflare Worker runtime
 
-// ─── Password hashing using Web Crypto (built into CF Workers) ───────────────
+// ─── Helpers: byte <-> hex conversion ────────────────────────────────────────
+function bufferToHex(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer)
+  let hex = ''
+  for (let i = 0; i < bytes.length; i++) {
+    hex += bytes[i].toString(16).padStart(2, '0')
+  }
+  return hex
+}
+
+function hexToBuffer(hex: string): Uint8Array {
+  const length = hex.length / 2
+  const bytes = new Uint8Array(length)
+  for (let i = 0; i < length; i++) {
+    bytes[i] = parseInt(hex.substr(i * 2, 2), 16)
+  }
+  return bytes
+}
+
+// Constant-time string comparison to prevent timing attacks
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false
+  }
+  let result = 0
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+  return result === 0
+}
+
+// ─── Password hashing using Web Crypto PBKDF2 (KK 01) ────────────────────────
+const PBKDF2_ITERATIONS = 100_000
+const SALT_BYTES = 16
+
 export async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES))
+  const encoder = new TextEncoder()
+  const passwordKey = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits', 'deriveKey']
+  )
+
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt,
+      iterations: PBKDF2_ITERATIONS,
+      hash: 'SHA-256',
+    },
+    passwordKey,
+    256 // 32 bytes
+  )
+
+  const saltHex = bufferToHex(salt.buffer)
+  const hashHex = bufferToHex(derivedBits)
+  return `pbkdf2:${PBKDF2_ITERATIONS}:${saltHex}:${hashHex}`
+}
+
+export async function verifyPassword(
+  password: string,
+  storedHash: string
+): Promise<{ valid: boolean; needsRehash: boolean }> {
+  // Check if password matches new PBKDF2 format
+  if (storedHash.startsWith('pbkdf2:')) {
+    const parts = storedHash.split(':')
+    if (parts.length !== 4) return { valid: false, needsRehash: false }
+    const iterations = parseInt(parts[1], 10)
+    const salt = hexToBuffer(parts[2])
+    const expectedHashHex = parts[3]
+
+    const encoder = new TextEncoder()
+    const passwordKey = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(password),
+      { name: 'PBKDF2' },
+      false,
+      ['deriveBits', 'deriveKey']
+    )
+
+    const derivedBits = await crypto.subtle.deriveBits(
+      {
+        name: 'PBKDF2',
+        salt,
+        iterations,
+        hash: 'SHA-256',
+      },
+      passwordKey,
+      256
+    )
+
+    const computedHashHex = bufferToHex(derivedBits)
+    const valid = timingSafeEqual(computedHashHex, expectedHashHex)
+    return { valid, needsRehash: iterations < PBKDF2_ITERATIONS }
+  }
+
+  // Legacy fallback: plain SHA-256 (base64)
   const encoder = new TextEncoder()
   const data = encoder.encode(password)
   const hash = await crypto.subtle.digest('SHA-256', data)
-  return btoa(String.fromCharCode(...new Uint8Array(hash)))
-}
+  const legacyHash = btoa(String.fromCharCode(...new Uint8Array(hash)))
 
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  const computed = await hashPassword(password)
-  return computed === hash
+  if (timingSafeEqual(legacyHash, storedHash)) {
+    return { valid: true, needsRehash: true }
+  }
+
+  return { valid: false, needsRehash: false }
 }
 
 // ─── Session management ───────────────────────────────────────────────────────
@@ -19,8 +118,12 @@ export function generateId(): string {
   return crypto.randomUUID().replace(/-/g, '')
 }
 
+// Cryptographically secure 6-digit OTP (KK 06)
 export function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString()
+  const array = new Uint32Array(1)
+  crypto.getRandomValues(array)
+  const code = (array[0] % 900000) + 100000
+  return code.toString()
 }
 
 export async function createSession(db: D1Database, userId: string): Promise<string> {
@@ -58,11 +161,68 @@ export function clearSessionCookie(): string {
 
 export function getSessionId(request: Request): string | null {
   const cookie = request.headers.get('Cookie') || ''
-  const match = cookie.match(/session=([^;]+)/)
+  const match = cookie.match(/(?:^|;\s*)session=([^;]+)/)
   return match ? match[1] : null
 }
 
-// ─── CORS / JSON helpers ──────────────────────────────────────────────────────
+// ─── Rate limiting using D1 (KK 06) ───────────────────────────────────────────
+export async function checkRateLimit(
+  db: D1Database,
+  key: string,
+  limit: number,
+  windowSeconds: number
+): Promise<{ allowed: boolean; remaining: number }> {
+  try {
+    const now = Math.floor(Date.now() / 1000)
+    const resetAt = now + windowSeconds
+
+    // Clean up expired rate limit entries periodically
+    await db.prepare('DELETE FROM rate_limits WHERE reset_at < ?').bind(now).run()
+
+    // Query existing record
+    const existing = await db.prepare(
+      'SELECT count, reset_at FROM rate_limits WHERE key = ?'
+    ).bind(key).first<{ count: number; reset_at: number }>()
+
+    if (!existing) {
+      await db.prepare(
+        'INSERT INTO rate_limits (key, count, reset_at) VALUES (?, 1, ?)'
+      ).bind(key, resetAt).run()
+      return { allowed: true, remaining: limit - 1 }
+    }
+
+    if (existing.reset_at < now) {
+      await db.prepare(
+        'UPDATE rate_limits SET count = 1, reset_at = ? WHERE key = ?'
+      ).bind(resetAt, key).run()
+      return { allowed: true, remaining: limit - 1 }
+    }
+
+    if (existing.count >= limit) {
+      return { allowed: false, remaining: 0 }
+    }
+
+    await db.prepare(
+      'UPDATE rate_limits SET count = count + 1 WHERE key = ?'
+    ).bind(key).run()
+
+    return { allowed: true, remaining: limit - (existing.count + 1) }
+  } catch (err) {
+    console.error('Rate limit check error:', err)
+    // Fail open if table isn't created yet or transient DB issue
+    return { allowed: true, remaining: 1 }
+  }
+}
+
+export function getClientIp(request: Request): string {
+  return (
+    request.headers.get('cf-connecting-ip') ||
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    '127.0.0.1'
+  )
+}
+
+// ─── CORS / JSON helpers with anti-caching defaults (KK 10) ───────────────────
 export function json(data: unknown, status = 200, headers: Record<string, string> = {}) {
   return new Response(JSON.stringify(data), {
     status,
@@ -70,13 +230,16 @@ export function json(data: unknown, status = 200, headers: Record<string, string
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Credentials': 'true',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+      'Pragma': 'no-cache',
+      'Expires': '0',
       ...headers,
     },
   })
 }
 
-export function jsonError(message: string, status = 400) {
-  return json({ error: message }, status)
+export function jsonError(message: string, status = 400, headers: Record<string, string> = {}) {
+  return json({ error: message }, status, headers)
 }
 
 // ─── Send OTP email via Resend ────────────────────────────────────────────────

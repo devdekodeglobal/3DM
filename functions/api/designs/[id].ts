@@ -9,6 +9,8 @@ interface Env {
   DB: D1Database
 }
 
+const MAX_DESIGN_PAYLOAD_SIZE = 2 * 1024 * 1024 // 2MB
+
 // GET /api/designs/[id] — load a specific design
 export const onRequestGet: PagesFunction<Env> = async ({ request, env, params }) => {
   const sessionId = getSessionId(request)
@@ -30,12 +32,35 @@ export const onRequestPut: PagesFunction<Env> = async ({ request, env, params })
   const user = await getSessionUser(env.DB, sessionId || '')
   if (!user) return jsonError('Unauthorized', 401)
 
+  // Enforce maximum payload size (KK 07)
+  const contentLength = parseInt(request.headers.get('content-length') || '0', 10)
+  if (contentLength > MAX_DESIGN_PAYLOAD_SIZE) {
+    return jsonError('Payload exceeds maximum allowed size of 2MB', 413)
+  }
+
+  const rawBody = await request.text()
+  if (rawBody.length > MAX_DESIGN_PAYLOAD_SIZE) {
+    return jsonError('Payload exceeds maximum allowed size of 2MB', 413)
+  }
+
+  let parsed: { name?: string; config?: unknown; elements?: unknown }
+  try {
+    parsed = JSON.parse(rawBody)
+  } catch {
+    return jsonError('Invalid JSON body', 400)
+  }
+
   const id = params.id as string
-  const { name, config, elements } = await request.json<{
-    name?: string
-    config?: unknown
-    elements?: unknown
-  }>()
+  const { name, config, elements } = parsed
+
+  if (name !== undefined) {
+    if (typeof name !== 'string' || name.trim().length === 0) {
+      return jsonError('Design name cannot be empty')
+    }
+    if (name.length > 100) {
+      return jsonError('Design name must not exceed 100 characters')
+    }
+  }
 
   const { results } = await env.DB.prepare(`
     UPDATE designs
@@ -46,7 +71,7 @@ export const onRequestPut: PagesFunction<Env> = async ({ request, env, params })
     WHERE id = ? AND user_id = ?
     RETURNING id, name, updated_at
   `).bind(
-    name ?? null,
+    name !== undefined ? name.trim() : null,
     config ? JSON.stringify(config) : null,
     elements ? JSON.stringify(elements) : null,
     id,

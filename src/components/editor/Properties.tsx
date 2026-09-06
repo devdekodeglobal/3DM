@@ -503,11 +503,15 @@ export default function Properties({
                     <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">Upload Logo (SVG/PNG/JPG)</label>
                     {selectedElement.svgData && (
                       <div className="relative group rounded-lg overflow-hidden border border-[var(--line)] h-20 bg-black/5 mb-2 flex items-center justify-center">
-                        {selectedElement.svgData.startsWith('data:') ? (
-                          <img src={selectedElement.svgData} className="max-w-full max-h-full object-contain p-2" />
-                        ) : (
-                          <div dangerouslySetInnerHTML={{ __html: selectedElement.svgData }} className="w-full h-full p-2 [&>svg]:w-full [&>svg]:h-full" />
-                        )}
+                        <img
+                          src={
+                            selectedElement.svgData.startsWith('data:')
+                              ? selectedElement.svgData
+                              : `data:image/svg+xml;utf8,${encodeURIComponent(selectedElement.svgData)}`
+                          }
+                          alt="Logo Preview"
+                          className="max-w-full max-h-full object-contain p-2 select-none pointer-events-none"
+                        />
                         <button onClick={() => onUpdate(selectedElement.id, { svgData: null })} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold">Remove</button>
                       </div>
                     )}

@@ -1,6 +1,11 @@
 allowBuilds:
   esbuild: true
   protobufjs: true
-  puppeteer: set this to true or false
+  puppeteer: true
   sharp: true
-  workerd: set this to true or false
+  workerd: true
+
+overrides:
+  nanoid: '>=3.3.18'
+  postcss: '>=8.5.18'
+  fflate: '>=0.8.3'

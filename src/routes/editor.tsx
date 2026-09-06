@@ -130,6 +130,18 @@ function EditorPage() {
   }, []);
 
   const handleUploadCustomAsset = async (file: File) => {
+    // Enforce 15MB file size limit on 3D asset uploads (KK 07)
+    const MAX_ASSET_BYTES = 15 * 1024 * 1024;
+    if (file.size > MAX_ASSET_BYTES) {
+      showAlert('Custom 3D model exceeds the 15MB size limit.', 'error', 'File Too Large');
+      return;
+    }
+
+    if (!file.name.toLowerCase().endsWith('.glb')) {
+      showAlert('Only .glb files are supported for custom 3D models.', 'error', 'Invalid File Type');
+      return;
+    }
+
     if (customAssets.length >= 5) {
       showAlert('You have reached the maximum limit of 5 custom 3D assets. Please delete an asset from "My Custom Uploads" to upload a new one.', 'warning', 'Upload Limit Reached');
       return;
@@ -414,13 +426,35 @@ function EditorPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Enforce 5MB file size limit on project JSON imports (KK 07)
+    const MAX_PROJECT_BYTES = 5 * 1024 * 1024;
+    if (file.size > MAX_PROJECT_BYTES) {
+      showAlert('Project file exceeds the 5MB size limit.', 'error', 'File Too Large');
+      event.target.value = '';
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
         const parsed = JSON.parse(content);
 
-        if (parsed.booth && parsed.elements) {
+        // Validate project structure and sanity limits (KK 07)
+        if (
+          parsed &&
+          typeof parsed === 'object' &&
+          parsed.booth &&
+          typeof parsed.booth === 'object' &&
+          typeof parsed.booth.width === 'number' &&
+          typeof parsed.booth.depth === 'number' &&
+          parsed.booth.width > 0 &&
+          parsed.booth.width <= 100 &&
+          parsed.booth.depth > 0 &&
+          parsed.booth.depth <= 100 &&
+          Array.isArray(parsed.elements) &&
+          parsed.elements.length <= 1000
+        ) {
           setBoothConfig(parsed.booth);
           setElements(parsed.elements);
           setHistory([parsed.elements]);
@@ -432,11 +466,11 @@ function EditorPage() {
           }, 100);
           showAlert('Project successfully imported!', 'success', 'Imported');
         } else {
-          showAlert("Invalid project file format.", 'error', 'Import Error');
+          showAlert('Invalid or malformed project file format.', 'error', 'Import Error');
         }
       } catch (err) {
-        console.error("Failed to parse project file:", err);
-        showAlert("Failed to read the project file.", 'error', 'Import Error');
+        console.error('Failed to parse project file:', err);
+        showAlert('Failed to read the project file.', 'error', 'Import Error');
       }
     };
     reader.readAsText(file);

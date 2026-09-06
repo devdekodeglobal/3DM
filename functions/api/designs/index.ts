@@ -9,6 +9,8 @@ interface Env {
   DB: D1Database
 }
 
+const MAX_DESIGN_PAYLOAD_SIZE = 2 * 1024 * 1024 // 2MB
+
 // GET /api/designs — list all designs for current user
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const sessionId = getSessionId(request)
@@ -28,13 +30,33 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const user = await getSessionUser(env.DB, sessionId || '')
   if (!user) return jsonError('Unauthorized', 401)
 
-  const { name, config, elements } = await request.json<{
-    name: string
-    config: unknown
-    elements: unknown
-  }>()
+  // Enforce maximum payload size (KK 07)
+  const contentLength = parseInt(request.headers.get('content-length') || '0', 10)
+  if (contentLength > MAX_DESIGN_PAYLOAD_SIZE) {
+    return jsonError('Payload exceeds maximum allowed size of 2MB', 413)
+  }
 
-  if (!name) return jsonError('Design name is required')
+  const rawBody = await request.text()
+  if (rawBody.length > MAX_DESIGN_PAYLOAD_SIZE) {
+    return jsonError('Payload exceeds maximum allowed size of 2MB', 413)
+  }
+
+  let parsed: { name?: string; config?: unknown; elements?: unknown }
+  try {
+    parsed = JSON.parse(rawBody)
+  } catch {
+    return jsonError('Invalid JSON body', 400)
+  }
+
+  const { name, config, elements } = parsed
+
+  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    return jsonError('Design name is required')
+  }
+
+  if (name.length > 100) {
+    return jsonError('Design name must not exceed 100 characters')
+  }
 
   // Limit to 10 designs per user on free tier
   const { results: existing } = await env.DB.prepare(
@@ -46,7 +68,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
   const { results } = await env.DB.prepare(
     'INSERT INTO designs (user_id, name, config, elements) VALUES (?, ?, ?, ?) RETURNING id, name, created_at'
-  ).bind(user.id, name, JSON.stringify(config || {}), JSON.stringify(elements || [])).all()
+  ).bind(user.id, name.trim(), JSON.stringify(config || {}), JSON.stringify(elements || [])).all()
 
   return json({ design: results[0] }, 201)
 }

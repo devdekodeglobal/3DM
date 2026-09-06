@@ -1,5 +1,6 @@
 import {
-  generateId,
+  checkRateLimit,
+  getClientIp,
   json,
   jsonError,
 } from '../../_auth-utils'
@@ -14,11 +15,24 @@ interface Env {
 // Step 1: GET /api/auth/verify-otp?email=&code= → verify the OTP
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   try {
+    const ip = getClientIp(request)
     const url = new URL(request.url)
-    const email = url.searchParams.get('email')?.toLowerCase()
-    const code = url.searchParams.get('code')
+    const email = url.searchParams.get('email')?.trim().toLowerCase()
+    const code = url.searchParams.get('code')?.trim()
 
     if (!email || !code) return jsonError('Email and code are required')
+
+    // Rate limit OTP verification attempts to prevent brute-forcing 6-digit codes (KK 06)
+    // Max 5 attempts per email per 10 minutes
+    const otpLimit = await checkRateLimit(env.DB, `otp_verify:${email}`, 5, 10 * 60)
+    if (!otpLimit.allowed) {
+      return jsonError('Too many invalid verification attempts. Please request a new code.', 429)
+    }
+
+    const ipLimit = await checkRateLimit(env.DB, `otp_ip:${ip}`, 15, 10 * 60)
+    if (!ipLimit.allowed) {
+      return jsonError('Too many verification attempts from this IP. Please wait.', 429)
+    }
 
     const otp = await env.DB.prepare(`
       SELECT id FROM otp_codes

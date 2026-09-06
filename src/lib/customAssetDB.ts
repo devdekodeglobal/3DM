@@ -51,7 +51,25 @@ export async function deleteAssetBlob(id: string): Promise<void> {
     const db = await openDB();
     const tx = db.transaction(STORE_NAME, 'readwrite');
     tx.objectStore(STORE_NAME).delete(id);
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = resolve;
+      tx.onerror = reject;
+    });
   } catch (err) {
     console.warn('IndexedDB delete warning:', err);
+  }
+}
+
+export async function clearAllAssetBlobs(): Promise<void> {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).clear();
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = resolve;
+      tx.onerror = reject;
+    });
+  } catch (err) {
+    console.warn('IndexedDB clear warning:', err);
   }
 }

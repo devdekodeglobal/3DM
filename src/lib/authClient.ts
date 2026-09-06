@@ -69,10 +69,30 @@ export function signInWithGoogle() {
 }
 
 export async function signOut() {
-  await fetch('/api/auth/me', {
-    method: 'DELETE',
-    credentials: 'include',
-  })
+  try {
+    await fetch('/api/auth/me', {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+  } finally {
+    // Shared browser privacy cleanup (KK 08)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('stall-config')
+        localStorage.removeItem('stall-elements')
+        localStorage.removeItem('user-custom-assets')
+      } catch (e) {
+        console.warn('Failed to clear local design cache on sign out:', e)
+      }
+
+      try {
+        const { clearAllAssetBlobs } = await import('./customAssetDB')
+        await clearAllAssetBlobs()
+      } catch (e) {
+        console.warn('Failed to clear IndexedDB assets on sign out:', e)
+      }
+    }
+  }
 }
 
 // ─── Designs ──────────────────────────────────────────────────────────────────
