@@ -1,0 +1,188 @@
+
+ RUN  v3.2.4 C:/Users/abc/Desktop/3DM
+
+(node:16456) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+stderr | security-audit/security.test.ts > original vulnerabilities and regression checks > unverified Google email must not link or authenticate
+Google OAuth error: TypeError: Provided value cannot be bound to SQLite parameter 3.
+    at Object.run (C:\Users\abc\Desktop\3DM\security-audit\security.test.ts:18:50)
+    at Module.onRequestGet (C:\Users\abc\Desktop\3DM\functions\api\auth\google.ts:85:75)
+    at C:\Users\abc\Desktop\3DM\security-audit\security.test.ts:69:11
+    at file:///C:/Users/abc/Desktop/3DM/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20 {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+
+ ❯ security-audit/security.test.ts (10 tests | 5 failed) 73ms
+   ✓ ownership and SQL binding > denies read/update/rename/delete across users and SQL metacharacters 31ms
+   ✓ ownership and SQL binding > rejects a logged-out session and has secure cookie attributes 2ms
+   ✓ original vulnerabilities and regression checks > password storage baseline: identical passwords produce identical hashes 2ms
+   × original vulnerabilities and regression checks > expired session on current UTC day must be denied 11ms
+     → expected { id: 'a', …(4) } to be null
+   × original vulnerabilities and regression checks > expired OTP must be denied 4ms
+     → expected 200 to be 400 // Object.is equality
+   × original vulnerabilities and regression checks > OAuth callback without state must stop before token exchange 7ms
+     → expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      "https://oauth2.googleapis.com/token",
+      Object {
+        "body": URLSearchParams {},
+        "headers": Object {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        "method": "POST",
+      },
+    ]
+
+
+Number of calls: 1
+
+   × original vulnerabilities and regression checks > unverified Google email must not link or authenticate 5ms
+     → expected 302 to be 400 // Object.is equality
+   ✓ original vulnerabilities and regression checks > documents absence of application login throttling with 12 bounded synthetic attempts 5ms
+   ✓ original vulnerabilities and regression checks > documents missing design schema: object elements accepted 3ms
+   × original vulnerabilities and regression checks > authenticated responses must not be cached 1ms
+     → expected null to be 'no-store' // Object.is equality
+ ❯ security-audit/svg.test.tsx (1 test | 1 failed) 182ms
+   × uploaded or imported logo cannot introduce an active HTML event handler 181ms
+     → expected 1 to be undefined
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  security-audit/security.test.ts > original vulnerabilities and regression checks > expired session on current UTC day must be denied
+AssertionError: expected { id: 'a', …(4) } to be null
+
+- Expected: 
+null
+
++ Received: 
+{
+  "avatar_url": null,
+  "email": "a@example.test",
+  "email_verified": 1,
+  "id": "a",
+  "name": null,
+}
+
+ ❯ security-audit/security.test.ts:53:46
+     51|   const {db,sql}=database(); const expired=new Date(Date.now()-60000).…
+     52|   sql.prepare("UPDATE sessions SET expires_at=? WHERE id='sa'").run(ex…
+     53|   expect(await auth.getSessionUser(db,'sa')).toBeNull()
+       |                                              ^
+     54|  })
+     55|  it('expired OTP must be denied',async()=>{
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  security-audit/security.test.ts > original vulnerabilities and regression checks > expired OTP must be denied
+AssertionError: expected 200 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 200
+
+ ❯ security-audit/security.test.ts:59:20
+     57|   sql.prepare("INSERT INTO otp_codes(id,email,code,type,expires_at) VA…
+     58|   const r=await otp.onRequestGet({env:{DB:db},request:new Request('htt…
+     59|   expect(r.status).toBe(400)
+       |                    ^
+     60|  })
+     61|  it('OAuth callback without state must stop before token exchange',asy…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  security-audit/security.test.ts > original vulnerabilities and regression checks > OAuth callback without state must stop before token exchange
+AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      "https://oauth2.googleapis.com/token",
+      Object {
+        "body": URLSearchParams {},
+        "headers": Object {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        "method": "POST",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ security-audit/security.test.ts:64:43
+     62|   const {db}=database(); const mock=vi.fn(async()=>new Response('{}',{…
+     63|   const r=await google.onRequestGet({env:{DB:db,GOOGLE_CLIENT_ID:'test…
+     64|   vi.unstubAllGlobals(); expect(mock).not.toHaveBeenCalled(); expect(r…
+       |                                           ^
+     65|  })
+     66|  it('unverified Google email must not link or authenticate',async()=>{
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  security-audit/security.test.ts > original vulnerabilities and regression checks > unverified Google email must not link or authenticate
+AssertionError: expected 302 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 302
+
+ ❯ security-audit/security.test.ts:70:43
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  security-audit/security.test.ts > original vulnerabilities and regression checks > authenticated responses must not be cached
+AssertionError: expected null to be 'no-store' // Object.is equality
+
+- Expected: 
+"no-store"
+
++ Received: 
+null
+
+ ❯ security-audit/security.test.ts:79:124
+     77|   const {db}=database(); const r=await designs.onRequestPost(context(d…
+     78|  })
+     79|  it('authenticated responses must not be cached',async()=>{ expect(aut…
+       |                                                                                                                            ^
+     80| })
+     81| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  security-audit/svg.test.tsx > uploaded or imported logo cannot introduce an active HTML event handler
+AssertionError: expected 1 to be undefined
+
+- Expected: 
+undefined
+
++ Received: 
+1
+
+ ❯ security-audit/svg.test.tsx:11:42
+      9|  const dom=new JSDOM(markup,{runScripts:'dangerously',url:'https://www…
+     10|  dom.window.document.querySelector('image[onerror]')?.dispatchEvent(ne…
+     11|  expect((dom.window as any).auditMarker).toBeUndefined()
+       |                                          ^
+     12|  expect(dom.window.document.querySelector('[onerror]')).toBeNull()
+     13|  dom.window.close()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  6 failed | 5 passed (11)
+   Start at  11:43:31
+   Duration  17.48s (transform 494ms, setup 0ms, collect 16.69s, tests 255ms, environment 0ms, prepare 244ms)
+

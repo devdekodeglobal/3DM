@@ -2,7 +2,6 @@ import {
   generateId,
   createSession,
   setSessionCookie,
-  json,
   jsonError,
 } from '../../_auth-utils'
 
@@ -18,9 +17,7 @@ const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo'
 
 function getRedirectUri(request: Request): string {
   const url = new URL(request.url)
-  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || url.host
-  const proto = request.headers.get('x-forwarded-proto') || url.protocol.replace(':', '')
-  return `${proto}://${host}/api/auth/google`
+  return `${url.origin}/api/auth/google`
 }
 
 // GET /api/auth/google — either start OAuth flow or handle callback
@@ -39,8 +36,16 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       state,
       access_type: 'offline',
     })
-    return Response.redirect(`${GOOGLE_AUTH_URL}?${params}`, 302)
+    return new Response(null, { status: 302, headers: {
+      Location: `${GOOGLE_AUTH_URL}?${params}`,
+      'Set-Cookie': `oauth_state=${state}; Path=/api/auth/google; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
+      'Cache-Control': 'no-store',
+    } })
   }
+
+  const state = url.searchParams.get('state')
+  const cookieState = (request.headers.get('Cookie') || '').match(/(?:^|;\s*)oauth_state=([^;]+)/)?.[1]
+  if (!state || !cookieState || state !== cookieState) return jsonError('Invalid OAuth state', 400)
 
   // ── Step 2: Handle callback — exchange code for tokens ─────────────────────
   try {
@@ -70,12 +75,18 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       email: string
       name: string
       picture: string
+      email_verified: boolean
     }>()
+
+    if (typeof googleUser.sub !== 'string' || !googleUser.sub ||
+        typeof googleUser.email !== 'string' || !googleUser.email || googleUser.email_verified !== true) {
+      return jsonError('Google identity must have a verified email', 400)
+    }
 
     // Upsert user in D1
     const existing = await env.DB.prepare(
-      'SELECT id FROM users WHERE google_id = ? OR email = ?'
-    ).bind(googleUser.sub, googleUser.email.toLowerCase()).first<{ id: string }>()
+      'SELECT id FROM users WHERE google_id = ?'
+    ).bind(googleUser.sub).first<{ id: string }>()
 
     let userId: string
     if (existing) {
@@ -84,6 +95,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
         'UPDATE users SET google_id = ?, name = ?, avatar_url = ?, email_verified = 1, updated_at = datetime(\'now\') WHERE id = ?'
       ).bind(googleUser.sub, googleUser.name, googleUser.picture, userId).run()
     } else {
+      // Linking requires a separate flow authenticated as the existing account.
+      // Never promote an unverified password account or trust email as a stable subject.
+      const emailAccount = await env.DB.prepare('SELECT id FROM users WHERE email = ?')
+        .bind(googleUser.email.toLowerCase()).first()
+      if (emailAccount) return jsonError('Sign in using your existing account method', 409)
       userId = generateId()
       await env.DB.prepare(
         'INSERT INTO users (id, email, google_id, name, avatar_url, email_verified) VALUES (?, ?, ?, ?, ?, 1)'
@@ -94,12 +110,15 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
 
     // Redirect to editor with session cookie set
     const baseUrl = getRedirectUri(request).replace('/api/auth/google', '')
+    const headers = new Headers({
+      Location: `${baseUrl}/editor`,
+      'Cache-Control': 'no-store',
+    })
+    headers.append('Set-Cookie', setSessionCookie(sessionId))
+    headers.append('Set-Cookie', 'oauth_state=; Path=/api/auth/google; HttpOnly; Secure; SameSite=Lax; Max-Age=0')
     return new Response(null, {
       status: 302,
-      headers: {
-        Location: `${baseUrl}/editor`,
-        'Set-Cookie': setSessionCookie(sessionId),
-      },
+      headers,
     })
   } catch (err) {
     console.error('Google OAuth error:', err)

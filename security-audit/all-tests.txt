@@ -1,0 +1,18 @@
+
+> test
+> vitest run
+
+
+ RUN  v3.2.4 C:/Users/abc/Desktop/3DM
+
+(node:31368) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ security-audit/security.test.ts (14 tests) 90ms
+ ✓ src/lib/cookieConsent.test.ts (5 tests) 42ms
+ ✓ security-audit/svg.test.tsx (1 test) 150ms
+
+ Test Files  3 passed (3)
+      Tests  20 passed (20)
+   Start at  11:49:32
+   Duration  2.87s (transform 353ms, setup 0ms, collect 2.31s, tests 282ms, environment 1.80s, prepare 762ms)
+

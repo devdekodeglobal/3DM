@@ -506,7 +506,7 @@ export default function Properties({
                         {selectedElement.svgData.startsWith('data:') ? (
                           <img src={selectedElement.svgData} className="max-w-full max-h-full object-contain p-2" />
                         ) : (
-                          <div dangerouslySetInnerHTML={{ __html: selectedElement.svgData }} className="w-full h-full p-2 [&>svg]:w-full [&>svg]:h-full" />
+                          <img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(selectedElement.svgData)}`} alt="Logo preview" className="max-w-full max-h-full object-contain p-2" />
                         )}
                         <button onClick={() => onUpdate(selectedElement.id, { svgData: null })} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold">Remove</button>
                       </div>

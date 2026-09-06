@@ -1,0 +1,17 @@
+{
+  "severity": {
+    "HIGH": 3,
+    "MEDIUM": 6,
+    "LOW": 3
+  },
+  "status": {
+    "OPEN": 7,
+    "FIXED AND VERIFIED": 3,
+    "FIXED BUT NEEDS MANUAL VERIFICATION": 2
+  },
+  "docx_zip": "PASS",
+  "all_findings_and_sections": "PASS",
+  "page_field": "PASS",
+  "secret_value_check": "PASS",
+  "visual_layout": "NOT VERIFIED: packaged renderer missing LibreOffice; Word COM rendering stalled and was stopped."
+}

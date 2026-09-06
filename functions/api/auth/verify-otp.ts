@@ -23,7 +23,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     const otp = await env.DB.prepare(`
       SELECT id FROM otp_codes
       WHERE email = ? AND code = ? AND type = 'verify_email'
-        AND used = 0 AND expires_at > datetime('now')
+        AND used = 0 AND julianday(expires_at) > julianday('now')
       ORDER BY created_at DESC LIMIT 1
     `).bind(email, code).first<{ id: string }>()
 

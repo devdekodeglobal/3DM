@@ -38,7 +38,7 @@ export async function getSessionUser(db: D1Database, sessionId: string) {
     SELECT u.id, u.email, u.name, u.avatar_url, u.email_verified
     FROM sessions s
     JOIN users u ON s.user_id = u.id
-    WHERE s.id = ? AND s.expires_at > datetime('now')
+    WHERE s.id = ? AND julianday(s.expires_at) > julianday('now')
   `).bind(sessionId).first()
   return result || null
 }
@@ -58,7 +58,7 @@ export function clearSessionCookie(): string {
 
 export function getSessionId(request: Request): string | null {
   const cookie = request.headers.get('Cookie') || ''
-  const match = cookie.match(/session=([^;]+)/)
+  const match = cookie.match(/(?:^|;\s*)session=([^;]+)/)
   return match ? match[1] : null
 }
 
@@ -68,6 +68,7 @@ export function json(data: unknown, status = 200, headers: Record<string, string
     status,
     headers: {
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-store',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Credentials': 'true',
       ...headers,
