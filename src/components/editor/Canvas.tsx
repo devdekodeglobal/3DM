@@ -277,13 +277,17 @@ const WallShape = ({ shapeProps, isSelected, onSelect, onChange, isDarkMode }: a
     if (!currentEl) return
 
     const initialX = currentEl.x || 0
-    const rawX = initialX + e.target.x()
+    const deltaX = e.target.x()
+    
+    // Reset the drag node's local position to prevent double-applying the drag offset
+    // since the React state update will shift the actual rendered position.
+    e.target.x(0)
+    e.target.y(0)
+
+    const rawX = initialX + deltaX
     const minX = 0
     const maxX = Math.max(0, wallWidth - currentEl.width)
     const clampedX = Math.max(minX, Math.min(maxX, Math.round(rawX)))
-
-    // Keep the drag visual strictly clamped along the wall midline
-    e.target.y(0)
 
     const updatedWallElements = wallElements.map((wel: any) => {
       if (wel.id === elId) {
