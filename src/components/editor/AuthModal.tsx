@@ -47,8 +47,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           setErrorMsg('Please fill in all fields.')
           return
         }
-        await signUpWithEmail(email, password)
-        setSuccessMsg('Sign-up successful! Please check your email for the verification code.')
+        const response = await signUpWithEmail(email, password)
+        setSuccessMsg(response.message || 'Check your email for the next step.')
         setIsOtpStep(true)
       } else {
         if (!email || !password) {

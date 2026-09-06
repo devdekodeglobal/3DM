@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { listDesigns, deleteDesign } from '../../lib/authClient'
+import { listDesigns, deleteDesign, loadDesign } from '../../lib/authClient'
 import type { Design } from '../../lib/authClient'
 import { X, FolderOpen, Calendar, Trash2, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 
@@ -122,11 +122,12 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
             designs.map((design) => (
               <div
                 key={design.id}
-                onClick={() => {
+                onClick={async () => {
                   try {
+                    const detail = await loadDesign(design.id)
                     // D1 returns JSON as string, so we need to parse it
-                    const config = typeof design.config === 'string' ? JSON.parse(design.config) : design.config
-                    const elements = typeof design.elements === 'string' ? JSON.parse(design.elements) : design.elements
+                    const config = JSON.parse(detail.config)
+                    const elements = JSON.parse(detail.elements)
                     onLoadProject(config, elements)
                     onClose()
                   } catch (e) {

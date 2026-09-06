@@ -1,0 +1,8 @@
+
+> test:workers
+> node security-audit/worker-integration.mjs
+
+PASS actual workerd KDF round-trip, milliseconds: 879 pbkdf2-sha256-v1
+PASS actual workerd + D1 API headers, unsupported method and cross-origin rejection
+PASS actual D1 single-use verification, password login, atomic ten-design quota and logout revocation
+PASS actual workerd OAuth PKCE exchange and one-use state with mocked provider

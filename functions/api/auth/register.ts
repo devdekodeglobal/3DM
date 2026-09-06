@@ -1,66 +1,36 @@
-import {
-  hashPassword,
-  generateId,
-  generateOtp,
-  sendOtpEmail,
-  json,
-  jsonError,
-} from '../../_auth-utils'
-
-interface Env {
-  DB: D1Database
-  RESEND_API_KEY: string
-}
-
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
-  try {
-    const { email, password, name } = await request.json<{
-      email: string
-      password: string
-      name?: string
-    }>()
-
-    if (!email || !password) return jsonError('Email and password are required')
-    if (password.length < 8) return jsonError('Password must be at least 8 characters')
-
-    // Check if email already exists
-    const existing = await env.DB.prepare(
-      'SELECT id FROM users WHERE email = ?'
-    ).bind(email.toLowerCase()).first()
-
-    if (existing) return jsonError('An account with this email already exists', 409)
-
-    // Hash password and create user
-    const passwordHash = await hashPassword(password)
-    const userId = generateId()
-
-    await env.DB.prepare(
-      'INSERT INTO users (id, email, password_hash, name, email_verified) VALUES (?, ?, ?, ?, 0)'
-    ).bind(userId, email.toLowerCase(), passwordHash, name || null).run()
-
-    // Generate and store OTP
-    const otp = generateOtp()
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
-    await env.DB.prepare(
-      'INSERT INTO otp_codes (id, email, code, type, expires_at) VALUES (?, ?, ?, ?, ?)'
-    ).bind(generateId(), email.toLowerCase(), otp, 'verify_email', expiresAt).run()
-
-    // Send verification email
-    await sendOtpEmail(env.RESEND_API_KEY, email, otp, 'verify_email')
-
-    return json({ message: 'Account created. Check your email for a verification code.' }, 201)
-  } catch (err) {
-    console.error('Register error:', err)
-    return jsonError('Internal server error', 500)
+import { hashPassword, generateId, generateOtp, sendOtpEmail, json } from '../../_auth-utils'
+import { secure, readJson, authLimits, rateLimit, HttpError } from '../../_security'
+import { codeDigest } from '../../_verification'
+import { emailAddress, passwordValue, onlyKeys } from '../../../shared/validation'
+interface Env { DB: D1Database; RESEND_API_KEY: string; SECURITY_SECRET: string; RESEND_FROM?: string }
+export const onRequestPost = secure<Env>(async ({ request, env, waitUntil }) => {
+  const data = await readJson(request)
+  onlyKeys(data, ['email','password','name'])
+  const email = emailAddress(data.email)
+  const password = passwordValue(data.password, true)
+  if (data.name !== undefined && (typeof data.name !== 'string' || data.name.length > 100)) throw new HttpError('Name must be at most 100 characters')
+  await authLimits(env.DB, request, email, 'registration', 3, 20, 3600)
+  await rateLimit(env.DB, 'registration:total', 'daily', 500, 86400)
+  const code = generateOtp()
+  const digest = await codeDigest(env.SECURITY_SECRET, email, code)
+  const passwordHash = await hashPassword(password)
+  const existing = await env.DB.prepare('SELECT email_verified, google_id FROM users WHERE email = ?').bind(email).first<{ email_verified: number; google_id: string | null }>()
+  if (!existing?.email_verified && !existing?.google_id) {
+    const now = Math.floor(Date.now() / 1000)
+    await env.DB.prepare(`INSERT INTO registration_challenges (email,user_id,password_hash,name,code_hash,expires_at)
+      VALUES (?,?,?,?,?,?) ON CONFLICT(email) DO UPDATE SET user_id=excluded.user_id,
+      password_hash=excluded.password_hash,name=excluded.name,code_hash=excluded.code_hash,expires_at=excluded.expires_at`)
+      .bind(email, generateId(), passwordHash, typeof data.name === 'string' ? data.name.trim() : null, digest, now + 600).run()
+    await env.DB.prepare('DELETE FROM registration_challenges WHERE email IN (SELECT email FROM registration_challenges WHERE expires_at < ? LIMIT 20)').bind(now).run()
+    // Avoid exposing provider latency/failure in registration responses.
+    waitUntil((async () => {
+      try {
+        if (!await sendOtpEmail(env.RESEND_API_KEY, email, code, 'verify_email', env.RESEND_FROM)) throw new Error('Delivery rejected')
+      } catch {
+        await env.DB.prepare('DELETE FROM registration_challenges WHERE email=? AND code_hash=?').bind(email, digest).run()
+        console.error('Verification delivery failed')
+      }
+    })())
   }
-}
-
-export const onRequestOptions: PagesFunction = async () => {
-  return new Response(null, {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  })
-}
+  return json({ message: 'If this email can be registered, a verification code will arrive. Existing customers can sign in using their usual method.' }, 202)
+})

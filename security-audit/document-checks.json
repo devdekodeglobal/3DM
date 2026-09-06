@@ -5,9 +5,8 @@
     "LOW": 3
   },
   "status": {
-    "OPEN": 7,
-    "FIXED AND VERIFIED": 3,
-    "FIXED BUT NEEDS MANUAL VERIFICATION": 2
+    "FIXED BUT NEEDS MANUAL VERIFICATION": 3,
+    "FIXED AND VERIFIED": 9
   },
   "docx_zip": "PASS",
   "all_findings_and_sections": "PASS",

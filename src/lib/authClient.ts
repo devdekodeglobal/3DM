@@ -21,13 +21,10 @@ export interface Design {
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export async function getCurrentUser(): Promise<User | null> {
-  try {
-    const res = await fetch('/api/auth/me', { credentials: 'include' })
-    const data = (await res.json()) as { user: User | null }
-    return data.user
-  } catch {
-    return null
-  }
+  const res = await fetch('/api/auth/me', { credentials: 'include', cache: 'no-store' })
+  if (!res.ok) throw new Error('Unable to check your account. Please try again.')
+  const data = (await res.json()) as { user: User | null }
+  return data.user
 }
 
 export async function signUpWithEmail(email: string, password: string, name?: string) {
@@ -55,8 +52,11 @@ export async function signInWithEmail(email: string, password: string) {
 }
 
 export async function verifyOtp(email: string, code: string) {
-  const res = await fetch(`/api/auth/verify-otp?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`, {
+  const res = await fetch('/api/auth/verify-otp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
+    body: JSON.stringify({ email, code }),
   })
   const data = (await res.json()) as { message?: string; error?: string }
   if (!res.ok) throw new Error(data.error || 'Verification failed')
@@ -69,17 +69,18 @@ export function signInWithGoogle() {
 }
 
 export async function signOut() {
-  await fetch('/api/auth/me', {
+  const res = await fetch('/api/auth/me', {
     method: 'DELETE',
     credentials: 'include',
   })
+  if (!res.ok) throw new Error('Sign out failed. Please try again.')
 }
 
 // ─── Designs ──────────────────────────────────────────────────────────────────
 
 export async function listDesigns(): Promise<Design[]> {
   const res = await fetch('/api/designs', { credentials: 'include' })
-  if (!res.ok) return []
+  if (!res.ok) throw new Error('Unable to load your projects')
   const data = (await res.json()) as { designs: Design[] }
   return data.designs || []
 }
@@ -109,8 +110,15 @@ export async function updateDesign(id: string, updates: { name?: string; config?
 }
 
 export async function deleteDesign(id: string): Promise<void> {
-  await fetch(`/api/designs/${id}`, {
+  const res = await fetch(`/api/designs/${encodeURIComponent(id)}`, {
     method: 'DELETE',
     credentials: 'include',
   })
+  if (!res.ok) throw new Error('Unable to delete this project')
+}
+
+export async function loadDesign(id: string): Promise<Design> {
+  const res = await fetch(`/api/designs/${encodeURIComponent(id)}`, { credentials: 'include', cache: 'no-store' })
+  if (!res.ok) throw new Error('Unable to load this project')
+  return (await res.json() as { design: Design }).design
 }

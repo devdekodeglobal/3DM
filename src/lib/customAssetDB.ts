@@ -18,17 +18,18 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
-export async function saveAssetBlob(id: string, blob: Blob): Promise<void> {
+export async function saveAssetBlob(id: string, blob: Blob, expectedToken?: string): Promise<void> {
   try {
     const db = await openDB();
+    if (expectedToken && JSON.parse(localStorage.getItem('kreatekaro-workspace-owner') || 'null')?.token !== expectedToken) { db.close(); throw new Error('Workspace changed') }
     const tx = db.transaction(STORE_NAME, 'readwrite');
     tx.objectStore(STORE_NAME).put(blob, id);
     await new Promise((resolve, reject) => {
-      tx.oncomplete = resolve;
-      tx.onerror = reject;
+      tx.oncomplete = () => { db.close(); resolve(undefined) };
+      tx.onerror = () => { db.close(); reject(tx.error) };
     });
   } catch (err) {
-    console.warn('IndexedDB save warning:', err);
+    throw err;
   }
 }
 
@@ -38,8 +39,8 @@ export async function getAssetBlob(id: string): Promise<Blob | null> {
     const tx = db.transaction(STORE_NAME, 'readonly');
     const request = tx.objectStore(STORE_NAME).get(id);
     return new Promise((resolve) => {
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => resolve(null);
+      request.onsuccess = () => { db.close(); resolve(request.result || null) };
+      request.onerror = () => { db.close(); resolve(null) };
     });
   } catch {
     return null;
@@ -54,4 +55,17 @@ export async function deleteAssetBlob(id: string): Promise<void> {
   } catch (err) {
     console.warn('IndexedDB delete warning:', err);
   }
+}
+
+export async function clearAssetBlobs(): Promise<void> {
+  const db = await openDB()
+  try {
+    const tx = db.transaction(STORE_NAME, 'readwrite')
+    tx.objectStore(STORE_NAME).clear()
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+      tx.onabort = () => reject(tx.error)
+    })
+  } finally { db.close() }
 }

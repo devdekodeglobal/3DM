@@ -1,53 +1,25 @@
-import {
-  generateId,
-  json,
-  jsonError,
-} from '../../_auth-utils'
-
-interface Env {
-  DB: D1Database
-  RESEND_API_KEY: string
-  GOOGLE_CLIENT_SECRET: string
-  GOOGLE_CLIENT_ID: string
-}
-
-// Step 1: GET /api/auth/verify-otp?email=&code= → verify the OTP
-export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
-  try {
-    const url = new URL(request.url)
-    const email = url.searchParams.get('email')?.toLowerCase()
-    const code = url.searchParams.get('code')
-
-    if (!email || !code) return jsonError('Email and code are required')
-
-    const otp = await env.DB.prepare(`
-      SELECT id FROM otp_codes
-      WHERE email = ? AND code = ? AND type = 'verify_email'
-        AND used = 0 AND julianday(expires_at) > julianday('now')
-      ORDER BY created_at DESC LIMIT 1
-    `).bind(email, code).first<{ id: string }>()
-
-    if (!otp) return jsonError('Invalid or expired code', 400)
-
-    // Mark OTP used and verify user's email
-    await env.DB.batch([
-      env.DB.prepare('UPDATE otp_codes SET used = 1 WHERE id = ?').bind(otp.id),
-      env.DB.prepare('UPDATE users SET email_verified = 1 WHERE email = ?').bind(email),
-    ])
-
-    return json({ message: 'Email verified successfully. You can now sign in.' })
-  } catch (err) {
-    console.error('Verify OTP error:', err)
-    return jsonError('Internal server error', 500)
-  }
-}
-
-export const onRequestOptions: PagesFunction = async () => {
-  return new Response(null, {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  })
-}
+import { json, jsonError } from '../../_auth-utils'
+import { secure, readJson, authLimits, HttpError } from '../../_security'
+import { codeDigest } from '../../_verification'
+import { emailAddress, onlyKeys } from '../../../shared/validation'
+interface Env { DB: D1Database; SECURITY_SECRET: string }
+export const onRequestPost = secure<Env>(async ({ request, env }) => {
+  const data = await readJson(request)
+  onlyKeys(data, ['email','code'])
+  const email = emailAddress(data.email)
+  if (typeof data.code !== 'string' || !/^\d{6}$/.test(data.code)) throw new HttpError('Enter a six-digit code')
+  await authLimits(env.DB, request, email, 'verify', 5, 30, 600)
+  const digest = await codeDigest(env.SECURITY_SECRET, email, data.code)
+  const now = Math.floor(Date.now() / 1000)
+  // D1 batch is transactional: consume the code in the mutation, not a prior read.
+  const [created] = await env.DB.batch([
+    env.DB.prepare(`INSERT INTO users (id,email,password_hash,name,email_verified)
+      SELECT user_id,email,password_hash,name,1 FROM registration_challenges
+      WHERE email=? AND code_hash=? AND expires_at>?
+      ON CONFLICT(email) DO UPDATE SET password_hash=excluded.password_hash,name=excluded.name,email_verified=1
+      WHERE users.email_verified=0 AND users.google_id IS NULL`).bind(email, digest, now),
+    env.DB.prepare('DELETE FROM registration_challenges WHERE email=? AND code_hash=? AND expires_at>?').bind(email, digest, now),
+  ])
+  if (!created.meta.changes) return jsonError('Invalid or expired code', 400)
+  return json({ message: 'Email verified successfully. You can now sign in.' })
+})

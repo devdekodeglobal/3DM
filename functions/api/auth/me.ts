@@ -1,44 +1,12 @@
-import {
-  getSessionId,
-  getSessionUser,
-  deleteSession,
-  clearSessionCookie,
-  json,
-  jsonError,
-} from '../../_auth-utils'
-
-interface Env {
-  DB: D1Database
-}
-
-// GET /api/auth/me — return current user from session cookie
-export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
-  const sessionId = getSessionId(request)
-  if (!sessionId) return json({ user: null })
-
-  const user = await getSessionUser(env.DB, sessionId)
-  return json({ user })
-}
-
-// DELETE /api/auth/me — sign out (delete session)
-export const onRequestDelete: PagesFunction<Env> = async ({ request, env }) => {
-  const sessionId = getSessionId(request)
-  if (sessionId) await deleteSession(env.DB, sessionId)
-
-  return json(
-    { message: 'Signed out' },
-    200,
-    { 'Set-Cookie': clearSessionCookie() }
-  )
-}
-
-export const onRequestOptions: PagesFunction = async () => {
-  return new Response(null, {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Allow-Credentials': 'true',
-    },
-  })
-}
+import { getSessionId, getSessionUser, deleteSession, clearSessionCookie, json } from '../../_auth-utils'
+import { secure } from '../../_security'
+interface Env { DB: D1Database }
+export const onRequestGet = secure<Env>(async ({ request, env }) => {
+  const id = getSessionId(request)
+  return json({ user: id ? await getSessionUser(env.DB, id) : null })
+})
+export const onRequestDelete = secure<Env>(async ({ request, env }) => {
+  const id = getSessionId(request)
+  if (id) await deleteSession(env.DB, id)
+  return json({ message: 'Signed out' }, 200, { 'Set-Cookie': clearSessionCookie() })
+})

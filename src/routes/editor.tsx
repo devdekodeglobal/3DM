@@ -15,11 +15,14 @@ import { getCurrentUser, saveDesign, signOut } from '../lib/authClient'
 import { AuthModal } from '../components/editor/AuthModal'
 import { CloudProjectsDrawer } from '../components/editor/CloudProjectsDrawer'
 import { saveAssetBlob, getAssetBlob, deleteAssetBlob } from '../lib/customAssetDB'
+import { prepareWorkspace, isCurrentScope, writeWorkspace, WORKSPACE_OWNER, type WorkspaceScope } from '../lib/workspacePrivacy'
+import { validateGlb } from '../lib/assetValidation'
+import { MAX_DESIGN_BYTES, validateProject, validateDesign } from '../../shared/validation'
 
 const DEFAULT_ASSET_SIZE_PX = 100
 
 export const Route = createFileRoute('/editor')({
-  component: EditorPage,
+  component: EditorWorkspace,
 })
 
 interface BoothConfig {
@@ -53,6 +56,7 @@ function getInitials(user: any) {
 }
 
 function getInitialData() {
+  try {
   if (typeof window === 'undefined') return { config: null, elements: null };
   const savedStall = window.localStorage.getItem('stall-config');
   const savedElements = window.localStorage.getItem('stall-elements');
@@ -80,16 +84,40 @@ function getInitialData() {
     }
   }
 
+  validateDesign({ name: 'Local draft', config, elements: parsedElements })
   return { config, elements: parsedElements };
+  } catch { return { config: null, elements: null } }
 }
 
-function EditorPage() {
+function EditorWorkspace() {
+  const [workspace, setWorkspace] = useState<{ user: any; scope: WorkspaceScope } | null>(null)
+  const [error, setError] = useState('')
+  const refresh = useCallback(async (preserveGuest = false) => {
+    try {
+      const user = await getCurrentUser()
+      const scope = await prepareWorkspace(user?.id || null, preserveGuest)
+      setWorkspace({ user, scope }); setError('')
+    } catch (err) { setWorkspace(null); setError(err instanceof Error ? err.message : 'Unable to open workspace') }
+  }, [])
+  useEffect(() => {
+    void refresh()
+    const focus = () => { void refresh() }
+    const storage = (event: StorageEvent) => { if (event.key === WORKSPACE_OWNER) { setWorkspace(null); void refresh() } }
+    window.addEventListener('focus', focus)
+    window.addEventListener('storage', storage)
+    return () => { window.removeEventListener('focus', focus); window.removeEventListener('storage', storage) }
+  }, [refresh])
+  if (!workspace) return <div className="p-8">{error || 'Opening your workspace...'}{error && <button className="ml-4 underline" onClick={() => { void refresh() }}>Retry</button>}</div>
+  return <EditorPage key={workspace.scope.token} initialUser={workspace.user} scope={workspace.scope} onSignedIn={() => { void refresh(true) }} />
+}
+
+function EditorPage({ initialUser, scope, onSignedIn }: { initialUser: any; scope: WorkspaceScope; onSignedIn: () => void }) {
   const [initialData] = useState(getInitialData)
   const [boothConfig, setBoothConfig] = useState<BoothConfig | null>(initialData.config)
   const [isMounted, setIsMounted] = useState(false)
 
   // Supabase Auth and Cloud states
-  const [sessionUser, setSessionUser] = useState<any>(null)
+  const [sessionUser, setSessionUser] = useState<any>(initialUser)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [cloudDrawerOpen, setCloudDrawerOpen] = useState(false)
   const [showSavePrompt, setShowSavePrompt] = useState(false)
@@ -116,13 +144,14 @@ function EditorPage() {
         metaList.map(async (meta) => {
           const blob = await getAssetBlob(meta.id);
           if (blob) {
+            try { await validateGlb(blob, meta.fileName || '') } catch { return null }
             const assetUrl = URL.createObjectURL(blob);
             return { ...meta, assetUrl };
           }
           return meta;
         })
       ).then((loaded) => {
-        setCustomAssets(loaded.filter(a => a.assetUrl));
+        if (isCurrentScope(scope)) setCustomAssets(loaded.filter(a => a?.assetUrl));
       });
     } catch (err) {
       console.warn('Failed to load custom assets metadata', err);
@@ -130,6 +159,8 @@ function EditorPage() {
   }, []);
 
   const handleUploadCustomAsset = async (file: File) => {
+    try { await validateGlb(file, file.name) } catch (err) { showAlert(err instanceof Error ? err.message : 'Invalid model', 'error'); return }
+    if (!isCurrentScope(scope)) return
     if (customAssets.length >= 5) {
       showAlert('You have reached the maximum limit of 5 custom 3D assets. Please delete an asset from "My Custom Uploads" to upload a new one.', 'warning', 'Upload Limit Reached');
       return;
@@ -139,7 +170,8 @@ function EditorPage() {
     const objectUrl = URL.createObjectURL(file);
 
     // Save binary file into IndexedDB
-    await saveAssetBlob(assetId, file);
+    try { await saveAssetBlob(assetId, file, scope.token) } catch { URL.revokeObjectURL(objectUrl); showAlert('Unable to store the model', 'error'); return }
+    if (!isCurrentScope(scope)) { URL.revokeObjectURL(objectUrl); return }
 
     const newAsset = {
       id: assetId,
@@ -156,7 +188,7 @@ function EditorPage() {
     // Save lightweight metadata only to localStorage
     const metaList = updated.map(a => ({ id: a.id, label: a.label, fileName: a.fileName }));
     try {
-      localStorage.setItem('user-custom-assets', JSON.stringify(metaList));
+      writeWorkspace(scope, 'user-custom-assets', JSON.stringify(metaList));
     } catch (err) {
       console.warn('Skipping user-custom-assets localStorage write due to quota:', err);
     }
@@ -170,7 +202,7 @@ function EditorPage() {
     
     const metaList = updated.map(a => ({ id: a.id, label: a.label, fileName: a.fileName }));
     try {
-      localStorage.setItem('user-custom-assets', JSON.stringify(metaList));
+      writeWorkspace(scope, 'user-custom-assets', JSON.stringify(metaList));
     } catch (err) {
       console.warn('Failed to update custom assets in storage', err);
     }
@@ -224,20 +256,7 @@ function EditorPage() {
     setSelectedId(id)
   }, [])
 
-  // Auth state listener
-  const checkAuth = async () => {
-    const user = await getCurrentUser()
-    setSessionUser(user)
-  }
-
-  useEffect(() => {
-    checkAuth()
-
-    // Check if redirecting back from Google auth
-    if ((window as any).isAuthRedirect) {
-      setTimeout(checkAuth, 1000)
-    }
-  }, [])
+  // Auth is checked by the workspace boundary before private data is hydrated.
 
   useEffect(() => {
     setIsMounted(true)
@@ -263,6 +282,8 @@ function EditorPage() {
   };
 
   const loadCloudDesign = (loadedConfig: any, loadedElements: any[]) => {
+    validateDesign({ name: 'Cloud design', config: loadedConfig, elements: loadedElements })
+    if (!isCurrentScope(scope)) return
     setBoothConfig(loadedConfig)
     setElements(loadedElements)
     setHistory([loadedElements])
@@ -278,7 +299,7 @@ function EditorPage() {
   useEffect(() => {
     if (boothConfig) {
       try {
-        localStorage.setItem('stall-config', JSON.stringify(boothConfig));
+        writeWorkspace(scope, 'stall-config', JSON.stringify(boothConfig));
         const cleanElements = elements.map(el => {
           if (el.assetUrl && el.assetUrl.startsWith('data:')) {
             const { assetUrl, ...rest } = el;
@@ -286,7 +307,7 @@ function EditorPage() {
           }
           return el;
         });
-        localStorage.setItem('stall-elements', JSON.stringify(cleanElements));
+        writeWorkspace(scope, 'stall-elements', JSON.stringify(cleanElements));
       } catch (err) {
         console.warn('Skipping stall-elements localStorage save due to quota:', err);
       }
@@ -413,12 +434,14 @@ function EditorPage() {
   const handleImportProject = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_DESIGN_BYTES) { showAlert('Project file must be at most 1 MiB', 'error', 'Import Error'); event.target.value = ''; return }
 
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
-        const parsed = JSON.parse(content);
+        const parsed = validateProject(JSON.parse(content));
+        if (!isCurrentScope(scope)) return
 
         if (parsed.booth && parsed.elements) {
           setBoothConfig(parsed.booth);
@@ -848,9 +871,11 @@ function EditorPage() {
               </button>
               <button
                 onClick={async () => {
-                  await signOut()
-                  setSessionUser(null)
-                  showAlert('Logged out successfully.', 'info', 'Signed Out')
+                  try {
+                    await signOut()
+                    await prepareWorkspace(null)
+                    window.location.replace('/editor')
+                  } catch (err) { showAlert(err instanceof Error ? err.message : 'Sign out failed', 'error') }
                 }}
                 className="p-2 rounded-lg text-red-400 hover:text-red-500 hover:bg-red-500/10 transition"
                 title="Log Out"
@@ -1062,6 +1087,7 @@ function EditorPage() {
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
+        onSuccess={onSignedIn}
       />
 
       <CloudProjectsDrawer

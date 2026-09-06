@@ -1,0 +1,25 @@
+
+> test
+> vitest run
+
+
+ RUN  v3.2.7 C:/Users/abc/Desktop/3DM
+
+(node:27968) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ security-audit/assets.test.ts (2 tests) 6ms
+ ✓ security-audit/security.test.ts (20 tests) 4883ms
+   ✓ password and login security > backfills dormant passwords in bounded batches without changing credentials  1385ms
+   ✓ password and login security > salts each password, rejects wrong passwords and malformed stored parameters  1103ms
+   ✓ password and login security > upgrades legacy hashes on successful login without changing the password  347ms
+   ✓ password and login security > rejects a password retained on a previously Google-linked account  551ms
+   ✓ registration and single-use verification > uses identical registration replies and stores only a keyed code digest  853ms
+   ✓ registration and single-use verification > does not retain a pre-registration password after the email owner registers  577ms
+ ✓ src/lib/cookieConsent.test.ts (5 tests) 22ms
+ ✓ security-audit/svg.test.tsx (1 test) 137ms
+ ✓ security-audit/privacy.test.ts (3 tests) 14ms
+
+ Test Files  5 passed (5)
+      Tests  31 passed (31)
+   Start at  15:14:30
+   Duration  16.38s (transform 1.79s, setup 0ms, collect 17.03s, tests 5.06s, environment 29.00s, prepare 3.42s)

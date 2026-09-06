@@ -1,0 +1,2 @@
+PASS built editor renders a valid draft under enforced CSP; no page errors or CSP violations
+PASS sign-out clears private drafts and unmounts the authenticated editor in both tabs

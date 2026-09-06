@@ -1,6 +1,7 @@
 import { Settings, Trash2, Layers } from 'lucide-react'
 import { WALL_MATERIALS, getWallMaterialProps } from '../../lib/materials'
 import ColorPickerPanel from './ColorPickerPanel'
+import { validateLogo } from '../../lib/assetValidation'
 
 interface PropertiesProps {
   selectedElement: any
@@ -513,9 +514,10 @@ export default function Properties({
                     )}
                     <label htmlFor="svg-upload" className="cursor-pointer w-full py-2 rounded-lg bg-[var(--sand)] border border-[var(--line)] text-[10px] font-bold text-[var(--sea-ink)] text-center hover:bg-[var(--chip-bg)] hover:border-[var(--lagoon)] transition block">
                       {selectedElement.svgData ? 'Replace Logo' : '+ Upload Logo'}
-                      <input id="svg-upload" type="file" accept=".svg,.png,.jpg,.jpeg" className="hidden" onChange={(e) => {
+                      <input id="svg-upload" type="file" accept=".svg,.png,.jpg,.jpeg" className="hidden" onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
+                          try { await validateLogo(file) } catch (error) { alert(error instanceof Error ? error.message : 'Invalid logo'); return }
                           const reader = new FileReader();
                           reader.onload = (re) => {
                             const data = re.target?.result as string;

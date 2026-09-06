@@ -1,6 +1,7 @@
 allowBuilds:
   esbuild: true
-  protobufjs: true
-  puppeteer: set this to true or false
-  sharp: true
-  workerd: set this to true or false
+  protobufjs: false
+  sharp: false
+  workerd: true
+overrides:
+  undici@7.28.0: 7.29.0

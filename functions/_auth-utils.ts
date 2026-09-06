@@ -1,18 +1,9 @@
 // Shared auth utilities for Cloudflare Pages Functions
 // All functions run inside the Cloudflare Worker runtime
 
-// ─── Password hashing using Web Crypto (built into CF Workers) ───────────────
-export async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(password)
-  const hash = await crypto.subtle.digest('SHA-256', data)
-  return btoa(String.fromCharCode(...new Uint8Array(hash)))
-}
-
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  const computed = await hashPassword(password)
-  return computed === hash
-}
+// Password hashing uses the Workers-compatible Node crypto implementation.
+export { hashPassword, verifyPassword, upgradeLegacyHash, isLegacyPasswordHash } from './_password'
+import { API_HEADERS } from './_security'
 
 // ─── Session management ───────────────────────────────────────────────────────
 export function generateId(): string {
@@ -20,7 +11,9 @@ export function generateId(): string {
 }
 
 export function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString()
+  const values = new Uint32Array(1)
+  do { crypto.getRandomValues(values) } while (values[0] >= 4294000000)
+  return String(values[0] % 1000000).padStart(6, '0')
 }
 
 export async function createSession(db: D1Database, userId: string): Promise<string> {
@@ -67,10 +60,7 @@ export function json(data: unknown, status = 200, headers: Record<string, string
   return new Response(JSON.stringify(data), {
     status,
     headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Credentials': 'true',
+      ...API_HEADERS,
       ...headers,
     },
   })
@@ -85,7 +75,8 @@ export async function sendOtpEmail(
   resendApiKey: string,
   to: string,
   otp: string,
-  type: 'verify_email' | 'reset_password'
+  type: 'verify_email' | 'reset_password',
+  from = 'kreatekaro <onboarding@resend.dev>'
 ) {
   const subject = type === 'verify_email'
     ? 'Verify your kreatekaro account'
@@ -108,7 +99,8 @@ export async function sendOtpEmail(
       'Authorization': `Bearer ${resendApiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: 'kreatekaro <onboarding@resend.dev>', to, subject, html }),
+    body: JSON.stringify({ from, to, subject, html }),
+    signal: AbortSignal.timeout(10000),
   })
 
   return res.ok

@@ -294,7 +294,7 @@ export default function Sidebar({
                 <span>Upload 3D Asset (.glb)</span>
                 <input
                   type="file"
-                  accept=".glb,.gltf"
+                  accept=".glb"
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];

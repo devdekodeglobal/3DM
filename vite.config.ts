@@ -1,5 +1,4 @@
 import { defineConfig } from 'vite'
-import { devtools } from '@tanstack/devtools-vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import viteReact from '@vitejs/plugin-react'
@@ -7,7 +6,6 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [
-    devtools(),
     tsconfigPaths({ projects: ['./tsconfig.json'] }),
     tailwindcss(),
     TanStackRouterVite(),
@@ -20,11 +18,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:8788',
-        changeOrigin: true,
-        headers: {
-          'x-forwarded-host': 'localhost:5173',
-          'x-forwarded-proto': 'http',
-        }
+        changeOrigin: false,
       }
     }
   }

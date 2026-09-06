@@ -1,53 +1,21 @@
-import {
-  verifyPassword,
-  createSession,
-  setSessionCookie,
-  json,
-  jsonError,
-} from '../../_auth-utils'
-
-interface Env {
-  DB: D1Database
-}
-
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
-  try {
-    const { email, password } = await request.json<{ email: string; password: string }>()
-
-    if (!email || !password) return jsonError('Email and password are required')
-
-    const user = await env.DB.prepare(
-      'SELECT id, password_hash, email_verified FROM users WHERE email = ? AND password_hash IS NOT NULL'
-    ).bind(email.toLowerCase()).first<{ id: string; password_hash: string; email_verified: number }>()
-
-    if (!user) return jsonError('Invalid email or password', 401)
-
-    const valid = await verifyPassword(password, user.password_hash)
-    if (!valid) return jsonError('Invalid email or password', 401)
-
-    if (!user.email_verified) {
-      return jsonError('Please verify your email before signing in. Check your inbox for the OTP code.', 403)
-    }
-
-    const sessionId = await createSession(env.DB, user.id)
-
-    return json(
-      { message: 'Signed in successfully' },
-      200,
-      { 'Set-Cookie': setSessionCookie(sessionId) }
-    )
-  } catch (err) {
-    console.error('Login error:', err)
-    return jsonError('Internal server error', 500)
+import { verifyPassword, hashPassword, isLegacyPasswordHash, createSession, setSessionCookie, json, jsonError } from '../../_auth-utils'
+import { secure, readJson, authLimits } from '../../_security'
+import { emailAddress, passwordValue, onlyKeys } from '../../../shared/validation'
+interface Env { DB: D1Database }
+export const onRequestPost = secure<Env>(async ({ request, env }) => {
+  const data = await readJson(request)
+  onlyKeys(data, ['email','password'])
+  const email = emailAddress(data.email)
+  const password = passwordValue(data.password)
+  await authLimits(env.DB, request, email, 'login', 10, 40, 900)
+  const user = await env.DB.prepare('SELECT id, password_hash, email_verified FROM users WHERE email = ? AND password_hash IS NOT NULL AND google_id IS NULL')
+    .bind(email).first<{ id: string; password_hash: string; email_verified: number }>()
+  if (!user) { await hashPassword(password); return jsonError('Invalid email or password', 401) }
+  if (!await verifyPassword(password, user.password_hash) || !user.email_verified) return jsonError('Invalid email or password', 401)
+  if (isLegacyPasswordHash(user.password_hash)) {
+    const upgraded = await hashPassword(password)
+    const result = await env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ? AND password_hash = ?').bind(upgraded, user.id, user.password_hash).run()
+    if (result.meta.changes !== 1) return jsonError('Please try signing in again', 409)
   }
-}
-
-export const onRequestOptions: PagesFunction = async () => {
-  return new Response(null, {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  })
-}
+  return json({ message: 'Signed in successfully' }, 200, { 'Set-Cookie': setSessionCookie(await createSession(env.DB, user.id)) })
+})
