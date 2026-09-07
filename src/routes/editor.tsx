@@ -382,6 +382,7 @@ function EditorPage() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedId, historyStep, history, editingWallId])
 
+  /*
   const submitExport = () => {
     setIsCapturingReport(true)
     setReportScreenshots({})
@@ -395,6 +396,7 @@ function EditorPage() {
 
     setCaptureQueue(queue)
   }
+  */
 
   useEffect(() => {
     if (!isCapturingReport) return;

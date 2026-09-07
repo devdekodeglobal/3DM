@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Box, PlusSquare, ChevronDown, ChevronRight, LayoutGrid, Search, Upload, Trash2 } from 'lucide-react'
+import { Box, PlusSquare, ChevronDown, ChevronRight, LayoutGrid, Search, Trash2 } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import { ASSET_DIMENSIONS, ASSET_CATEGORIES, ASSET_REGISTRY } from '../../lib/assetRegistry'
 import ColorPickerPanel from './ColorPickerPanel'
@@ -12,9 +12,9 @@ export default function Sidebar({
   backgroundColor,
   setBackgroundColor,
   customAssets = [],
-  onUploadCustomAsset,
+  // onUploadCustomAsset,
   onDeleteCustomAsset,
-  showAlert
+  // showAlert
 }: {
   addElement: (el: any) => void;
   activeView?: string;
@@ -27,7 +27,7 @@ export default function Sidebar({
   showAlert?: (message: string, type?: 'info' | 'success' | 'warning' | 'error', title?: string) => void;
 }) {
   const [isCoreOpen, setIsCoreOpen] = useState(false)
-  const [isUploadsOpen, setIsUploadsOpen] = useState(true)
+  // const [isUploadsOpen, setIsUploadsOpen] = useState(true)
   const [isModelsOpen, setIsModelsOpen] = useState(true)
   const [isBgOpen, setIsBgOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>(ASSET_CATEGORIES[0].id)
