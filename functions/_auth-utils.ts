@@ -271,7 +271,7 @@ export async function sendOtpEmail(
       'Authorization': `Bearer ${resendApiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: 'kreatekaro <onboarding@resend.dev>', to, subject, html }),
+    body: JSON.stringify({ from: 'kreatekaro <noreply@kreatekaro.co>', to, subject, html }),
   })
 
   if (!res.ok) {
