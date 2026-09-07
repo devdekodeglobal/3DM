@@ -72,7 +72,10 @@ function BoothIllustration() {
 
       {/* Door Swing */}
       <g className="stroke-sky-600 dark:stroke-sky-400">
-        <path d="M 280 230 A 60 60 0 0 0 220 170" fill="rgba(14,165,233,0.1)" strokeWidth="1.5" strokeDasharray="3 3" />
+        {/* Door Fill */}
+        <path d="M 280 230 L 220 230 A 60 60 0 0 1 280 170 Z" fill="rgba(14,165,233,0.1)" stroke="none" />
+        {/* Door Arc Line */}
+        <path d="M 220 230 A 60 60 0 0 1 280 170" fill="none" strokeWidth="1.5" strokeDasharray="3 3" />
         {/* Door Panel */}
         <line x1="220" y1="230" x2="280" y2="230" strokeWidth="4" className="stroke-amber-700 dark:stroke-amber-600" strokeLinecap="round" />
         <line x1="280" y1="170" x2="290" y2="170" strokeWidth="1.5" className="stroke-slate-700 dark:stroke-slate-400"/>
