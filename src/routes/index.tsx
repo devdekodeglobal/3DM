@@ -15,90 +15,96 @@ function BoothIllustration() {
     >
       <defs>
         <pattern id="grid-p" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(79,70,229,0.10)" strokeWidth="0.6"/>
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.6"/>
+          <path d="M 0 20 L 20 20" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.6"/>
         </pattern>
         <filter id="glow">
           <feGaussianBlur stdDeviation="2.5" result="blur"/>
           <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
+        <filter id="wall-glow">
+          <feGaussianBlur stdDeviation="1.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
       </defs>
 
       {/* Grid background */}
+      <rect width="320" height="260" fill="#0a0a0a" rx="12"/>
       <rect width="320" height="260" fill="url(#grid-p)" rx="12"/>
 
       {/* Outer booth walls */}
       <rect x="28" y="28" width="264" height="204" rx="3"
-        fill="none" stroke="var(--brand)" strokeWidth="5" filter="url(#glow)"/>
+        fill="none" stroke="#ffffff" strokeWidth="5" filter="url(#wall-glow)"/>
 
       {/* Door gap on front wall */}
-      <line x1="122" y1="28" x2="166" y2="28" stroke="var(--bg-page)" strokeWidth="7"/>
+      <line x1="122" y1="28" x2="166" y2="28" stroke="#0a0a0a" strokeWidth="7"/>
       {/* Door swing arc */}
       <path d="M 122 28 Q 122 68 166 28" fill="none"
-        stroke="var(--brand)" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.6"/>
+        stroke="#06b6d4" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.8"/>
 
       {/* Interior divider */}
-      <line x1="28" y1="142" x2="185" y2="142" stroke="var(--brand)" strokeWidth="3.5" opacity="0.8"/>
+      <line x1="28" y1="142" x2="185" y2="142" stroke="#ffffff" strokeWidth="3.5" opacity="0.9" filter="url(#wall-glow)"/>
 
       {/* Reception desk */}
       <rect x="42" y="42" width="68" height="34" rx="3"
-        fill="var(--accent-bg)" stroke="var(--accent)" strokeWidth="1.6"/>
-      <line x1="55" y1="56" x2="95" y2="56" stroke="var(--accent)" strokeWidth="1.2"/>
-      <line x1="55" y1="63" x2="85" y2="63" stroke="var(--accent)" strokeWidth="0.8" opacity="0.5"/>
+        fill="rgba(6,182,212,0.15)" stroke="#06b6d4" strokeWidth="1.6"/>
+      <line x1="55" y1="56" x2="95" y2="56" stroke="#06b6d4" strokeWidth="1.2"/>
+      <line x1="55" y1="63" x2="85" y2="63" stroke="#06b6d4" strokeWidth="0.8" opacity="0.5"/>
 
       {/* Chairs */}
       {[48, 68, 88].map((x, i) => (
         <rect key={i} x={x} y={83} width={14} height={14} rx="2.5"
-          fill="var(--brand-bg)" stroke="var(--brand)" strokeWidth="1.2" opacity="0.85"/>
+          fill="rgba(99,102,241,0.15)" stroke="#6366f1" strokeWidth="1.2" opacity="0.85"/>
       ))}
 
       {/* Display unit right */}
       <rect x="212" y="42" width="66" height="90" rx="3"
-        fill="rgba(234,88,12,0.08)" stroke="var(--cta)" strokeWidth="1.6"/>
-      <line x1="224" y1="58" x2="266" y2="58" stroke="var(--cta)" strokeWidth="1"/>
-      <line x1="224" y1="70" x2="266" y2="70" stroke="var(--cta)" strokeWidth="0.7" opacity="0.5"/>
-      <line x1="224" y1="82" x2="260" y2="82" stroke="var(--cta)" strokeWidth="0.7" opacity="0.5"/>
+        fill="rgba(245,158,11,0.15)" stroke="#f59e0b" strokeWidth="1.6"/>
+      <line x1="224" y1="58" x2="266" y2="58" stroke="#f59e0b" strokeWidth="1"/>
+      <line x1="224" y1="70" x2="266" y2="70" stroke="#f59e0b" strokeWidth="0.7" opacity="0.5"/>
+      <line x1="224" y1="82" x2="260" y2="82" stroke="#f59e0b" strokeWidth="0.7" opacity="0.5"/>
       <rect x="230" y="95" width="28" height="28" rx="2"
-        fill="rgba(234,88,12,0.12)" stroke="var(--cta)" strokeWidth="1" opacity="0.7"/>
+        fill="rgba(245,158,11,0.2)" stroke="#f59e0b" strokeWidth="1" opacity="0.7"/>
 
       {/* Branding sign */}
       <rect x="106" y="42" width="90" height="26" rx="4"
-        fill="var(--brand-bg)" stroke="var(--brand)" strokeWidth="1.4"/>
-      <line x1="122" y1="52" x2="180" y2="52" stroke="var(--brand)" strokeWidth="1.5"/>
-      <line x1="126" y1="59" x2="170" y2="59" stroke="var(--brand)" strokeWidth="1" opacity="0.45"/>
+        fill="rgba(168,85,247,0.15)" stroke="#a855f7" strokeWidth="1.4"/>
+      <line x1="122" y1="52" x2="180" y2="52" stroke="#a855f7" strokeWidth="1.5"/>
+      <line x1="126" y1="59" x2="170" y2="59" stroke="#a855f7" strokeWidth="1" opacity="0.45"/>
 
       {/* Bottom shelves */}
       {[42, 96, 150].map((x, i) => (
         <rect key={i} x={x} y={157} width={42} height={42} rx="3"
-          fill="rgba(8,145,178,0.08)" stroke="var(--accent)" strokeWidth="1.4"/>
+          fill="rgba(14,165,233,0.15)" stroke="#0ea5e9" strokeWidth="1.4"/>
       ))}
 
       {/* Corner lounge */}
       <rect x="212" y="157" width="66" height="62" rx="3"
-        fill="rgba(79,70,229,0.06)" stroke="var(--brand)" strokeWidth="1.4" opacity="0.7"/>
+        fill="rgba(16,185,129,0.15)" stroke="#10b981" strokeWidth="1.4" opacity="0.8"/>
       <rect x="220" y="165" width="22" height="22" rx="2"
-        fill="var(--brand-bg)" stroke="var(--brand)" strokeWidth="1" opacity="0.6"/>
+        fill="rgba(16,185,129,0.3)" stroke="#10b981" strokeWidth="1" opacity="0.6"/>
       <rect x="248" y="165" width="22" height="22" rx="2"
-        fill="var(--brand-bg)" stroke="var(--brand)" strokeWidth="1" opacity="0.6"/>
+        fill="rgba(16,185,129,0.3)" stroke="#10b981" strokeWidth="1" opacity="0.6"/>
 
       {/* Dimension labels */}
-      <line x1="28" y1="16" x2="292" y2="16" stroke="var(--fg-dim)" strokeWidth="0.7"/>
-      <line x1="28" y1="12" x2="28" y2="20" stroke="var(--fg-dim)" strokeWidth="0.7"/>
-      <line x1="292" y1="12" x2="292" y2="20" stroke="var(--fg-dim)" strokeWidth="0.7"/>
-      <text x="160" y="13" fontSize="8.5" fill="var(--fg-dim)" textAnchor="middle" fontFamily="Inter">6 m</text>
+      <line x1="28" y1="16" x2="292" y2="16" stroke="rgba(255,255,255,0.3)" strokeWidth="0.7"/>
+      <line x1="28" y1="12" x2="28" y2="20" stroke="rgba(255,255,255,0.3)" strokeWidth="0.7"/>
+      <line x1="292" y1="12" x2="292" y2="20" stroke="rgba(255,255,255,0.3)" strokeWidth="0.7"/>
+      <text x="160" y="13" fontSize="8.5" fill="rgba(255,255,255,0.4)" textAnchor="middle" fontFamily="Inter">6 m</text>
 
-      <line x1="310" y1="28" x2="310" y2="232" stroke="var(--fg-dim)" strokeWidth="0.7"/>
-      <line x1="306" y1="28" x2="314" y2="28" stroke="var(--fg-dim)" strokeWidth="0.7"/>
-      <line x1="306" y1="232" x2="314" y2="232" stroke="var(--fg-dim)" strokeWidth="0.7"/>
-      <text x="316" y="134" fontSize="8.5" fill="var(--fg-dim)" textAnchor="middle"
+      <line x1="310" y1="28" x2="310" y2="232" stroke="rgba(255,255,255,0.3)" strokeWidth="0.7"/>
+      <line x1="306" y1="28" x2="314" y2="28" stroke="rgba(255,255,255,0.3)" strokeWidth="0.7"/>
+      <line x1="306" y1="232" x2="314" y2="232" stroke="rgba(255,255,255,0.3)" strokeWidth="0.7"/>
+      <text x="316" y="134" fontSize="8.5" fill="rgba(255,255,255,0.4)" textAnchor="middle"
         fontFamily="Inter" transform="rotate(90, 316, 134)">5 m</text>
 
       {/* Live badge */}
       <rect x="230" y="242" width="62" height="14" rx="7"
-        fill="var(--brand)" opacity="0.12"/>
-      <circle cx="238" cy="249" r="3" fill="var(--brand)">
+        fill="#06b6d4" opacity="0.15"/>
+      <circle cx="238" cy="249" r="3" fill="#06b6d4">
         <animate attributeName="opacity" values="1;0.3;1" dur="1.6s" repeatCount="indefinite"/>
       </circle>
-      <text x="244" y="253" fontSize="7" fill="var(--brand)" fontWeight="700" fontFamily="Inter">LIVE SYNC</text>
+      <text x="244" y="253" fontSize="7" fill="#06b6d4" fontWeight="700" fontFamily="Inter">LIVE SYNC</text>
     </svg>
   )
 }
@@ -278,19 +284,19 @@ function LandingPage() {
               position: 'relative',
               padding: 20,
               borderRadius: 20,
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-brand)',
-              boxShadow: 'var(--shadow-lg)',
+              background: '#0a0a0a',
+              border: '1px solid #262626',
+              boxShadow: '0 20px 48px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05)',
             }}>
               {/* Glow orbs */}
               <div style={{
                 position: 'absolute', width: 180, height: 180,
-                background: 'radial-gradient(circle, rgba(79,70,229,0.14), transparent 70%)',
+                background: 'radial-gradient(circle, rgba(6,182,212,0.1), transparent 70%)',
                 borderRadius: '50%', top: -30, right: -30, pointerEvents: 'none',
               }}/>
               <div style={{
                 position: 'absolute', width: 140, height: 140,
-                background: 'radial-gradient(circle, rgba(8,145,178,0.10), transparent 70%)',
+                background: 'radial-gradient(circle, rgba(79,70,229,0.1), transparent 70%)',
                 borderRadius: '50%', bottom: -20, left: -20, pointerEvents: 'none',
               }}/>
               {/* Header bar of mock window */}
@@ -299,7 +305,7 @@ function LandingPage() {
                   <div key={c} style={{ width: 10, height: 10, borderRadius: '50%', background: c }}/>
                 ))}
                 <div style={{
-                  marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--fg-dim)',
+                  marginLeft: 'auto', fontSize: '0.7rem', color: '#737373',
                   fontFamily: 'Inter', fontWeight: 500,
                 }}>2D Floor Plan · 6×5 m</div>
               </div>
