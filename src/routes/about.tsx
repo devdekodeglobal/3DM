@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowRight, Monitor, Layers, Box, Palette, FolderOpen, Save, FileText, Camera } from 'lucide-react'
 import { useEffect } from 'react'
-
+import { ArchitecturalSymbolSVG } from '../components/editor/ArchitecturalSymbolSVG'
 export const Route = createFileRoute('/about')({
   component: OverviewPage,
 })
@@ -124,17 +124,33 @@ function OverviewPage() {
           </div>
           <div className="w-full md:flex-1 island-shell p-6 rounded-3xl border border-[var(--line)]">
              <ul className="space-y-3">
-               <li className="flex items-center gap-4 p-3 bg-[var(--bg-base)] rounded-lg">
-                 <div className="w-8 h-8 bg-[var(--brand)] rounded-md flex items-center justify-center text-white text-xs font-bold">SO</div>
+               {/* Sofa */}
+               <li className="flex items-center gap-4 p-3 bg-[var(--bg-base)] rounded-lg hover:bg-[var(--surface)] transition-colors cursor-default border border-transparent hover:border-[var(--line)]">
+                 <div className="w-9 h-9 bg-[var(--brand)]/10 rounded-md flex items-center justify-center p-1">
+                   <ArchitecturalSymbolSVG category="lounge" assetName="format" className="w-full h-full text-[var(--brand)]" />
+                 </div>
                  <div><p className="font-bold text-[var(--fg)] text-sm">Alcove Sofa</p><p className="text-[10px] text-[var(--fg-dim)]">Armchairs & Lounges</p></div>
                </li>
-               <li className="flex items-center gap-4 p-3 bg-[var(--bg-base)] rounded-lg border border-[var(--brand)] relative">
-                 <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[var(--brand)] rounded-full border-4 border-[var(--surface)]" />
-                 <div className="w-8 h-8 bg-[var(--brand)]/50 rounded-md flex items-center justify-center text-white text-xs font-bold">TA</div>
+               
+               {/* Table */}
+               <li className="flex items-center gap-4 p-3 bg-[var(--bg-base)] rounded-lg border border-[var(--brand)] relative shadow-[var(--shadow-brand)]">
+                 <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[var(--brand)] rounded-full border-4 border-[var(--bg-page)]" />
+                 <div className="w-9 h-9 bg-[var(--brand)]/20 rounded-md flex items-center justify-center p-1">
+                   <ArchitecturalSymbolSVG category="table" assetName="round" className="w-full h-full text-[var(--brand)]" />
+                 </div>
                  <div><p className="font-bold text-[var(--fg)] text-sm">Round Table</p><p className="text-[10px] text-[var(--fg-dim)]">Tables & Desks</p></div>
                </li>
-               <li className="flex items-center gap-4 p-3 bg-[var(--bg-base)] rounded-lg">
-                 <div className="w-8 h-8 bg-[var(--brand)]/20 rounded-md flex items-center justify-center text-[var(--brand)] text-xs font-bold">PL</div>
+               
+               {/* Plant */}
+               <li className="flex items-center gap-4 p-3 bg-[var(--bg-base)] rounded-lg hover:bg-[var(--surface)] transition-colors cursor-default border border-transparent hover:border-[var(--line)]">
+                 <div className="w-9 h-9 bg-[var(--brand)]/5 rounded-md flex items-center justify-center p-1">
+                   {/* Custom Plant SVG since ArchitecturalSymbolSVG doesn't have one */}
+                   <svg viewBox="-16 -16 32 32" className="w-full h-full text-[var(--brand)]" fill="none" stroke="currentColor" strokeWidth="1.5">
+                     <circle cx="0" cy="0" r="10" className="fill-current opacity-20" />
+                     <path d="M-6 -6 Q0 -12 6 -6 Q12 0 6 6 Q0 12 -6 6 Q-12 0 -6 -6" className="fill-current opacity-40" />
+                     <circle cx="0" cy="0" r="3" className="fill-current" />
+                   </svg>
+                 </div>
                  <div><p className="font-bold text-[var(--fg)] text-sm">Potted Plant</p><p className="text-[10px] text-[var(--fg-dim)]">Decorations</p></div>
                </li>
              </ul>
