@@ -274,5 +274,10 @@ export async function sendOtpEmail(
     body: JSON.stringify({ from: 'kreatekaro <onboarding@resend.dev>', to, subject, html }),
   })
 
+  if (!res.ok) {
+    const errorText = await res.text()
+    console.error(`Resend API Error (${res.status}):`, errorText)
+  }
+
   return res.ok
 }
