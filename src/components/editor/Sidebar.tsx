@@ -326,7 +326,7 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* My Custom Uploads Accordion */}
+        {/* My Custom Uploads Accordion 
         <div className="border-b border-[var(--line)] shrink-0">
           <button
             onClick={() => setIsUploadsOpen(!isUploadsOpen)}
@@ -412,6 +412,7 @@ export default function Sidebar({
             </div>
           )}
         </div>
+        */}
 
         {/* 3D Models Accordion */}
         <div className={`border-b border-[var(--line)] flex flex-col ${isModelsOpen ? 'flex-1 min-h-[200px]' : 'shrink-0'}`}>
@@ -433,7 +434,7 @@ export default function Sidebar({
                 className="w-full p-2 bg-[var(--surface-strong)] border border-[var(--line)] rounded-lg text-xs font-bold text-[var(--sea-ink)] outline-none focus:border-[var(--lagoon)] shrink-0"
               >
                 <option value="all">All Categories</option>
-                <option value="custom-uploads">⭐ My Uploads ({customAssets.length}/5)</option>
+                {/* <option value="custom-uploads">⭐ My Uploads ({customAssets.length}/5)</option> */}
                 {ASSET_CATEGORIES.map(c => (
                   <option key={c.id} value={c.id}>{c.label}</option>
                 ))}

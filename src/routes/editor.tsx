@@ -1066,12 +1066,13 @@ function EditorPage() {
                   {isCloudSaving ? 'Saving...' : sessionUser ? 'Save to Cloud' : 'Login to Cloud Save'}
                 </button>
 
+                {/* 
                 <div className="text-[10px] font-black tracking-wider uppercase text-white/50 pt-3 block border-t border-white/10">
                   Export 3D Model Formats
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  {/* GLB */}
+                  // GLB 
                   <button
                     onClick={async () => {
                       if (!is3DGenerated || !(window as any).export3DModel) {
@@ -1083,7 +1084,7 @@ function EditorPage() {
                         const url = URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
-                        link.download = `${projectName.replace(/\s+/g, '_')}_booth.glb`;
+                        link.download = `${projectName.replace(/\\s+/g, '_')}_booth.glb`;
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
@@ -1101,7 +1102,7 @@ function EditorPage() {
                     <span className="text-[8px] text-white/50 leading-none">Binary 3D (All-in-one)</span>
                   </button>
 
-                  {/* OBJ */}
+                  // OBJ
                   <button
                     onClick={async () => {
                       if (!is3DGenerated || !(window as any).export3DModel) {
@@ -1113,7 +1114,7 @@ function EditorPage() {
                         const url = URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
-                        link.download = `${projectName.replace(/\s+/g, '_')}_booth.obj`;
+                        link.download = `${projectName.replace(/\\s+/g, '_')}_booth.obj`;
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
@@ -1131,6 +1132,7 @@ function EditorPage() {
                     <span className="text-[8px] text-white/50 leading-none">CAD / Blender Mesh</span>
                   </button>
                 </div>
+                */}
               </div>
             </div>
           </div>
