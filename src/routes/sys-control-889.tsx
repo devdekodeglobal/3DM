@@ -64,7 +64,7 @@ function AdminPage() {
   }
 
   return (
-    <main className="page-wrap px-4 py-12 max-w-7xl mx-auto space-y-8">
+    <main className="page-wrap px-4 py-12 max-w-7xl mx-auto space-y-8 min-h-[calc(100vh-80px)]">
       <div className="flex items-center gap-3 border-b border-[var(--line)] pb-6">
         <div className="p-3 bg-[var(--brand)]/10 rounded-xl">
           <Users className="w-8 h-8 text-[var(--brand)]" />
@@ -90,7 +90,7 @@ function AdminPage() {
           </button>
         </div>
 
-        <div className="overflow-x-auto custom-scrollbar max-h-[60vh]">
+        <div className="overflow-x-auto custom-scrollbar h-[600px] overflow-y-auto">
           {loading ? (
             <div className="flex flex-col items-center justify-center p-12 text-[var(--fg-soft)]">
               <Loader2 className="w-8 h-8 animate-spin text-[var(--brand)] mb-4" />
