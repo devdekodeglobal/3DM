@@ -255,13 +255,13 @@ export async function sendOtpEmail(
     : 'Reset your kreatekaro password'
 
   const html = `
-    <div style="font-family:Inter,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#0f0f0f;color:#f5f5f5;border-radius:12px">
+    <div style="font-family:Inter,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#ffffff;color:#1e293b;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.05)">
       <h1 style="font-size:24px;margin:0 0 8px;color:#7c6ff7">kreatekaro</h1>
-      <p style="color:#999;margin:0 0 32px;font-size:14px">3D Space Designer</p>
+      <p style="color:#64748b;margin:0 0 32px;font-size:14px">3D Space Designer</p>
       <h2 style="font-size:18px;margin:0 0 16px">${type === 'verify_email' ? 'Verify your email' : 'Reset your password'}</h2>
-      <p style="color:#ccc;margin:0 0 24px">Your one-time code is:</p>
-      <div style="background:#1a1a2e;border:1px solid #7c6ff7;border-radius:8px;padding:24px;text-align:center;font-size:36px;font-weight:700;letter-spacing:8px;color:#7c6ff7">${otp}</div>
-      <p style="color:#666;margin:24px 0 0;font-size:12px">This code expires in 10 minutes. If you did not request this, ignore this email.</p>
+      <p style="color:#475569;margin:0 0 24px">Your one-time code is:</p>
+      <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:24px;text-align:center;font-size:36px;font-weight:700;letter-spacing:8px;color:#7c6ff7">${otp}</div>
+      <p style="color:#94a3b8;margin:24px 0 0;font-size:12px">This code expires in 10 minutes. If you did not request this, ignore this email.</p>
     </div>
   `
 
