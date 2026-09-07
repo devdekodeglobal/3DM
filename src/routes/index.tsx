@@ -30,7 +30,7 @@ function BoothIllustration() {
       <rect width="320" height="380" fill="url(#grid-p)" rx="12"/>
 
       {/* Blueprint Dimension Lines */}
-      {/* Top Dimension */}
+      {/* Top Outer Dimension */}
       <g className="stroke-sky-500 fill-sky-500 font-sans text-[10px] font-bold">
         <line x1="30" y1="40" x2="290" y2="40" strokeWidth="1.5"/>
         <line x1="30" y1="35" x2="30" y2="45" strokeWidth="1.5"/>
@@ -39,13 +39,37 @@ function BoothIllustration() {
         <text x="160" y="44" textAnchor="middle">4.10m</text>
       </g>
       
-      {/* Left Dimension */}
+      {/* Left Outer Dimension */}
       <g className="stroke-sky-500 fill-sky-500 font-sans text-[10px] font-bold">
         <line x1="18" y1="60" x2="18" y2="340" strokeWidth="1.5"/>
         <line x1="13" y1="60" x2="23" y2="60" strokeWidth="1.5"/>
         <line x1="13" y1="340" x2="23" y2="340" strokeWidth="1.5"/>
         <rect x="10" y="175" width="16" height="50" rx="4" className="fill-slate-50 dark:fill-slate-900 stroke-sky-500" strokeWidth="1"/>
         <text x="17" y="200" textAnchor="middle" transform="rotate(90, 17, 200)">5.50m</text>
+      </g>
+
+      {/* Door Width Dimension (Inner) */}
+      <g className="stroke-sky-400/80 fill-sky-500/80 font-sans text-[8px] font-semibold">
+        <line x1="295" y1="170" x2="295" y2="230" strokeWidth="1" strokeDasharray="2 2" />
+        <line x1="292" y1="170" x2="298" y2="170" strokeWidth="1"/>
+        <line x1="292" y1="230" x2="298" y2="230" strokeWidth="1"/>
+        <text x="303" y="200" textAnchor="middle" transform="rotate(90, 303, 200)">0.90m</text>
+      </g>
+
+      {/* Window Width Dimension (Inner) */}
+      <g className="stroke-sky-400/80 fill-sky-500/80 font-sans text-[8px] font-semibold">
+        <line x1="22" y1="160" x2="22" y2="220" strokeWidth="1" strokeDasharray="2 2" />
+        <line x1="19" y1="160" x2="25" y2="160" strokeWidth="1"/>
+        <line x1="19" y1="220" x2="25" y2="220" strokeWidth="1"/>
+        <text x="14" y="190" textAnchor="middle" transform="rotate(-90, 14, 190)">1.20m</text>
+      </g>
+
+      {/* Room Inner Dimension (Horizontal) */}
+      <g className="stroke-slate-400/50 fill-slate-500/80 font-sans text-[8px] font-medium">
+        <line x1="40" y1="325" x2="280" y2="325" strokeWidth="1" />
+        <line x1="40" y1="322" x2="40" y2="328" strokeWidth="1"/>
+        <line x1="280" y1="322" x2="280" y2="328" strokeWidth="1"/>
+        <text x="160" y="321" textAnchor="middle">3.80m</text>
       </g>
 
       {/* Architectural Walls */}
@@ -82,7 +106,7 @@ function BoothIllustration() {
       </g>
 
       {/* Furniture Symbols using ArchitecturalSymbolSVG via nested SVG */}
-      <g className="text-[8px] font-sans font-semibold fill-slate-700 dark:fill-slate-300" textAnchor="middle">
+      <g className="text-[7.5px] font-sans font-semibold fill-slate-700 dark:fill-slate-300" textAnchor="middle">
         
         {/* TV on the left wall */}
         <g transform="translate(30, 90)">
@@ -96,35 +120,37 @@ function BoothIllustration() {
         <text x="60" y="118">85" TV</text>
 
         {/* Conference Table */}
-        <svg x="100" y="120" width="120" height="80">
-          <ArchitecturalSymbolSVG category="table" assetName="table" className="w-full h-full text-slate-800 dark:text-slate-200" />
-        </svg>
-        <text x="160" y="163">CONFERENCE TABLE</text>
+        <g transform="translate(160, 160)">
+          <svg x="-60" y="-40" width="120" height="80">
+            <ArchitecturalSymbolSVG category="table" assetName="table" className="w-full h-full text-slate-800 dark:text-slate-200" />
+          </svg>
+          <text x="0" y="2" className="fill-slate-500/70 text-[6.5px] font-medium tracking-widest">CONF. TABLE</text>
+        </g>
 
-        {/* Top Chair */}
-        <g transform="translate(160, 105) rotate(180)">
-          <svg x="-20" y="-20" width="40" height="40">
+        {/* Top Chair (tucked in) */}
+        <g transform="translate(160, 112) rotate(180)">
+          <svg x="-16" y="-16" width="32" height="32">
             <ArchitecturalSymbolSVG category="chairs" assetName="catifa" className="w-full h-full text-slate-800 dark:text-slate-200" />
           </svg>
         </g>
 
-        {/* Bottom Chair */}
-        <g transform="translate(160, 215) rotate(0)">
-          <svg x="-20" y="-20" width="40" height="40">
+        {/* Bottom Chair (tucked in) */}
+        <g transform="translate(160, 208) rotate(0)">
+          <svg x="-16" y="-16" width="32" height="32">
             <ArchitecturalSymbolSVG category="chairs" assetName="catifa" className="w-full h-full text-slate-800 dark:text-slate-200" />
           </svg>
         </g>
 
-        {/* Left Chair */}
-        <g transform="translate(85, 160) rotate(90)">
-          <svg x="-20" y="-20" width="40" height="40">
+        {/* Left Chair (tucked in) */}
+        <g transform="translate(100, 160) rotate(90)">
+          <svg x="-16" y="-16" width="32" height="32">
             <ArchitecturalSymbolSVG category="chairs" assetName="catifa" className="w-full h-full text-slate-800 dark:text-slate-200" />
           </svg>
         </g>
 
-        {/* Right Chair */}
-        <g transform="translate(235, 160) rotate(-90)">
-          <svg x="-20" y="-20" width="40" height="40">
+        {/* Right Chair (tucked in) */}
+        <g transform="translate(220, 160) rotate(-90)">
+          <svg x="-16" y="-16" width="32" height="32">
             <ArchitecturalSymbolSVG category="chairs" assetName="catifa" className="w-full h-full text-slate-800 dark:text-slate-200" />
           </svg>
         </g>
