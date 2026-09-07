@@ -13,7 +13,7 @@ export async function requireAdmin(request: Request, env: Env) {
   const sessionId = getSessionId(request)
   if (!sessionId) return null
   const user = await getSessionUser(env.DB, sessionId)
-  if (!user || user.email !== 'devdekodeglobal@gmail.com') return null
+  if (!user || (user.email !== 'devdekodeglobal@gmail.com' && user.email !== 'dev.dekodeglobal@gmail.com')) return null
   return user
 }
 

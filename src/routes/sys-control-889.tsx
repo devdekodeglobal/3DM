@@ -8,7 +8,7 @@ import { ConfirmModal } from '../components/editor/ConfirmModal'
 export const Route = createFileRoute('/sys-control-889')({
   beforeLoad: async () => {
     const user = await getCurrentUser()
-    if (!user || user.email !== 'devdekodeglobal@gmail.com') {
+    if (!user || (user.email !== 'devdekodeglobal@gmail.com' && user.email !== 'dev.dekodeglobal@gmail.com')) {
       throw redirect({ to: '/' })
     }
   },
