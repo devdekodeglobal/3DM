@@ -11,10 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestFridgeRouteImport } from './routes/test-fridge'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as SysControl889RouteImport } from './routes/sys-control-889'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -26,6 +26,11 @@ const TestFridgeRoute = TestFridgeRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SysControl889Route = SysControl889RouteImport.update({
+  id: '/sys-control-889',
+  path: '/sys-control-889',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -43,11 +48,6 @@ const CookiePolicyRoute = CookiePolicyRouteImport.update({
   path: '/cookie-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -62,20 +62,20 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/editor': typeof EditorRoute
   '/privacy': typeof PrivacyRoute
+  '/sys-control-889': typeof SysControl889Route
   '/terms': typeof TermsRoute
   '/test-fridge': typeof TestFridgeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/editor': typeof EditorRoute
   '/privacy': typeof PrivacyRoute
+  '/sys-control-889': typeof SysControl889Route
   '/terms': typeof TermsRoute
   '/test-fridge': typeof TestFridgeRoute
 }
@@ -83,10 +83,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/editor': typeof EditorRoute
   '/privacy': typeof PrivacyRoute
+  '/sys-control-889': typeof SysControl889Route
   '/terms': typeof TermsRoute
   '/test-fridge': typeof TestFridgeRoute
 }
@@ -95,30 +95,30 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
-    | '/admin'
     | '/cookie-policy'
     | '/editor'
     | '/privacy'
+    | '/sys-control-889'
     | '/terms'
     | '/test-fridge'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
-    | '/admin'
     | '/cookie-policy'
     | '/editor'
     | '/privacy'
+    | '/sys-control-889'
     | '/terms'
     | '/test-fridge'
   id:
     | '__root__'
     | '/'
     | '/about'
-    | '/admin'
     | '/cookie-policy'
     | '/editor'
     | '/privacy'
+    | '/sys-control-889'
     | '/terms'
     | '/test-fridge'
   fileRoutesById: FileRoutesById
@@ -126,10 +126,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  AdminRoute: typeof AdminRoute
   CookiePolicyRoute: typeof CookiePolicyRoute
   EditorRoute: typeof EditorRoute
   PrivacyRoute: typeof PrivacyRoute
+  SysControl889Route: typeof SysControl889Route
   TermsRoute: typeof TermsRoute
   TestFridgeRoute: typeof TestFridgeRoute
 }
@@ -148,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sys-control-889': {
+      id: '/sys-control-889'
+      path: '/sys-control-889'
+      fullPath: '/sys-control-889'
+      preLoaderRoute: typeof SysControl889RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -171,13 +178,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CookiePolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -198,10 +198,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  AdminRoute: AdminRoute,
   CookiePolicyRoute: CookiePolicyRoute,
   EditorRoute: EditorRoute,
   PrivacyRoute: PrivacyRoute,
+  SysControl889Route: SysControl889Route,
   TermsRoute: TermsRoute,
   TestFridgeRoute: TestFridgeRoute,
 }

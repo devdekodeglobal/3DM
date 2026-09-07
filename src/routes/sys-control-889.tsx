@@ -1,11 +1,11 @@
-import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { getCurrentUser } from '../lib/authClient'
 import { getAdminUsers, deleteAdminUser, type AdminUser } from '../lib/adminClient'
 import { Trash2, Users, AlertCircle, Loader2 } from 'lucide-react'
 import { ConfirmModal } from '../components/editor/ConfirmModal'
 
-export const Route = createFileRoute('/admin')({
+export const Route = createFileRoute('/sys-control-889')({
   beforeLoad: async () => {
     const user = await getCurrentUser()
     if (!user || user.email !== 'devdekodeglobal@gmail.com') {
