@@ -14,7 +14,7 @@ function TermsOfServicePage() {
         </span>
         <h1 className="display">Terms of Service</h1>
         <p>
-          By accessing or using KreateKaro, you agree to be bound by these Terms of Service.
+          By accessing or using Krafc, you agree to be bound by these Terms of Service.
         </p>
         <p className="policy-updated">Last updated: 3 September 2026</p>
       </header>
@@ -22,7 +22,7 @@ function TermsOfServicePage() {
       <section className="policy-section">
         <h2>1. Use of Service</h2>
         <p>
-          KreateKaro provides an online platform for 3D space design and visualization. You are responsible for any activity that occurs under your account. You agree not to use the service for any illegal or unauthorized purpose.
+          Krafc provides an online platform for 3D space design and visualization. You are responsible for any activity that occurs under your account. You agree not to use the service for any illegal or unauthorized purpose.
         </p>
       </section>
 
@@ -36,7 +36,7 @@ function TermsOfServicePage() {
       <section className="policy-section">
         <h2>3. Intellectual Property</h2>
         <p>
-          The service and its original content (excluding user-provided content), features, and functionality are and will remain the exclusive property of KreateKaro and its licensors.
+          The service and its original content (excluding user-provided content), features, and functionality are and will remain the exclusive property of Krafc and its licensors.
         </p>
       </section>
 

@@ -14,7 +14,7 @@ function PrivacyPolicyPage() {
         </span>
         <h1 className="display">Privacy Policy</h1>
         <p>
-          This policy explains what information we collect, how we use it, and your choices regarding your privacy when using KreateKaro.
+          This policy explains what information we collect, how we use it, and your choices regarding your privacy when using Krafc.
         </p>
         <p className="policy-updated">Last updated: 3 September 2026</p>
       </header>
@@ -33,10 +33,10 @@ function PrivacyPolicyPage() {
         <h2>2. How we use information</h2>
         <p>We use your information to:</p>
         <ul>
-          <li>Provide the KreateKaro editor, account, cloud-save, and project-management features you request.</li>
+          <li>Provide the Krafc editor, account, cloud-save, and project-management features you request.</li>
           <li>Authenticate users, verify email addresses, maintain sessions, and protect the service from misuse.</li>
           <li>Send essential account, verification, security, and support communications.</li>
-          <li>Maintain, troubleshoot, and improve the reliability and security of KreateKaro.</li>
+          <li>Maintain, troubleshoot, and improve the reliability and security of Krafc.</li>
           <li>Comply with applicable legal obligations and enforce applicable terms.</li>
         </ul>
       </section>
@@ -44,10 +44,10 @@ function PrivacyPolicyPage() {
       <section className="policy-section">
         <h2>3. Where information is stored</h2>
         <p>
-          KreateKaro uses a mix of local browser storage and cloud services. The difference matters: local storage is kept in your browser; cloud-saved data is sent to KreateKaro services so it can be available when you sign in.
+          Krafc uses a mix of local browser storage and cloud services. The difference matters: local storage is kept in your browser; cloud-saved data is sent to Krafc services so it can be available when you sign in.
         </p>
         <p>
-          Your editor drafts, settings, and uploaded custom 3D asset files may be stored in local storage or IndexedDB under the KreateKaro browser database. Cloud-saved design/project data, account records, and session records are stored in our Cloudflare D1 database.
+          Your editor drafts, settings, and uploaded custom 3D asset files may be stored in local storage or IndexedDB under the Krafc browser database. Cloud-saved design/project data, account records, and session records are stored in our Cloudflare D1 database.
         </p>
       </section>
 
@@ -64,7 +64,7 @@ function PrivacyPolicyPage() {
       <section className="policy-section">
         <h2>5. When we share information</h2>
         <p>
-          We do not sell, trade, or rent personal information. We may share information with service providers that help operate KreateKaro, such as Cloudflare (hosting and databases), Google (OAuth sign-in), and Resend (transactional emails). We may also disclose information where required by law or to protect rights and security.
+          We do not sell, trade, or rent personal information. We may share information with service providers that help operate Krafc, such as Cloudflare (hosting and databases), Google (OAuth sign-in), and Resend (transactional emails). We may also disclose information where required by law or to protect rights and security.
         </p>
       </section>
 
@@ -78,14 +78,14 @@ function PrivacyPolicyPage() {
       <section className="policy-section">
         <h2>7. Your choices and rights</h2>
         <p>
-          Depending on your location and applicable law, you may have rights to request access to, correction of, deletion of, restriction of, or a copy of your personal information. You can delete individual cloud designs in the KreateKaro editor, sign out to end the current browser session, and clear local drafts through your browser site-data controls.
+          Depending on your location and applicable law, you may have rights to request access to, correction of, deletion of, restriction of, or a copy of your personal information. You can delete individual cloud designs in the Krafc editor, sign out to end the current browser session, and clear local drafts through your browser site-data controls.
         </p>
       </section>
 
       <section className="policy-section">
         <h2>8. Contact</h2>
         <p>
-          For privacy questions or requests, contact: <a href="mailto:support@kreatekaro.co">support@kreatekaro.co</a>. You may also contact DEKODE at <a href="mailto:contactus@dekodeglobal.com">contactus@dekodeglobal.com</a>.
+          For privacy questions or requests, contact: <a href="mailto:support@krafc.com">support@krafc.com</a>. You may also contact DEKODE at <a href="mailto:contactus@dekodeglobal.com">contactus@dekodeglobal.com</a>.
         </p>
       </section>
     </main>

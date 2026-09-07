@@ -251,12 +251,12 @@ export async function sendOtpEmail(
   type: 'verify_email' | 'reset_password'
 ) {
   const subject = type === 'verify_email'
-    ? 'Verify your kreatekaro account'
-    : 'Reset your kreatekaro password'
+    ? 'Verify your Krafc account'
+    : 'Reset your Krafc password'
 
   const html = `
     <div style="font-family:Inter,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#ffffff;color:#1e293b;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.05)">
-      <h1 style="font-size:24px;margin:0 0 8px;color:#7c6ff7">kreatekaro</h1>
+      <h1 style="font-size:24px;margin:0 0 8px;color:#7c6ff7">Krafc</h1>
       <p style="color:#64748b;margin:0 0 32px;font-size:14px">3D Space Designer</p>
       <h2 style="font-size:18px;margin:0 0 16px">${type === 'verify_email' ? 'Verify your email' : 'Reset your password'}</h2>
       <p style="color:#475569;margin:0 0 24px">Your one-time code is:</p>
@@ -271,7 +271,7 @@ export async function sendOtpEmail(
       'Authorization': `Bearer ${resendApiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: 'kreatekaro <noreply@kreatekaro.co>', to, subject, html }),
+    body: JSON.stringify({ from: 'Krafc <noreply@krafc.com>', to, subject, html }),
   })
 
   if (!res.ok) {

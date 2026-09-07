@@ -15,7 +15,7 @@ function CookiePolicyPage() {
         </span>
         <h1 className="display">Cookie policy</h1>
         <p>
-          This policy explains what KreateKaro stores in your browser, why it is
+          This policy explains what Krafc stores in your browser, why it is
           used, how long it lasts, and when information is shared with another
           provider.
         </p>
@@ -71,7 +71,7 @@ function CookiePolicyPage() {
                   <code>session</code>
                 </td>
                 <td>
-                  KreateKaro, delivered through Cloudflare Pages and D1
+                  Krafc, delivered through Cloudflare Pages and D1
                   <br />
                   <span>Necessary</span>
                 </td>
@@ -84,7 +84,7 @@ function CookiePolicyPage() {
                 <td>Up to 30 days, or until you sign out</td>
                 <td>
                   Cloudflare processes the identifier and related requests as
-                  KreateKaro’s hosting, Workers, and database provider.
+                  Krafc’s hosting, Workers, and database provider.
                 </td>
               </tr>
               <tr>
@@ -92,7 +92,7 @@ function CookiePolicyPage() {
                   <code>kk_cookie_consent</code>
                 </td>
                 <td>
-                  KreateKaro
+                  Krafc
                   <br />
                   <span>Necessary</span>
                 </td>
@@ -134,7 +134,7 @@ function CookiePolicyPage() {
                 </td>
                 <td>
                   If activated with your consent, it will maintain session state
-                  for KreateKaro’s configured analytics property.
+                  for Krafc’s configured analytics property.
                 </td>
                 <td>Up to 2 years</td>
                 <td>
@@ -156,7 +156,7 @@ function CookiePolicyPage() {
       <section className="policy-section">
         <h2>Similar browser technologies</h2>
         <p>
-          KreateKaro also uses browser storage that is not technically a cookie:
+          Krafc also uses browser storage that is not technically a cookie:
         </p>
         <ul>
           <li>
@@ -171,13 +171,13 @@ function CookiePolicyPage() {
           </li>
           <li>
             <strong>Uploaded 3D assets</strong> — custom model files may be
-            stored in IndexedDB on your device. They are not sent to KreateKaro
+            stored in IndexedDB on your device. They are not sent to Krafc
             merely by being stored locally.
           </li>
           <li>
             <strong>Cloud-saved projects</strong> — if you deliberately save a
             project to the cloud, account and design data is sent to
-            KreateKaro’s Cloudflare Workers and D1 database.
+            Krafc’s Cloudflare Workers and D1 database.
           </li>
         </ul>
       </section>
@@ -200,13 +200,13 @@ function CookiePolicyPage() {
         <p>
           Use the persistent “Cookie settings” link in the footer at any time.
           Choosing “Only necessary cookies” stops future Google Analytics
-          collection and removes analytics cookies accessible to KreateKaro.
+          collection and removes analytics cookies accessible to Krafc.
           You can also clear cookies and site data in your browser; the consent
           banner will appear again on your next visit.
         </p>
         <p>
           For privacy questions, contact{" "}
-          <a href="mailto:support@kreatekaro.co">support@kreatekaro.co</a>. This
+          <a href="mailto:support@krafc.com">support@krafc.com</a>. This
           policy should be read together with our{" "}
           <a href="/privacy">Privacy Policy</a>.
         </p>

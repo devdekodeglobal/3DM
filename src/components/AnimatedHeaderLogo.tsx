@@ -42,7 +42,7 @@ export function AnimatedHeaderLogo() {
             display: 'inline-block',
             whiteSpace: 'nowrap'
           }}>
-          kreatekaro
+          Krafc
         </span>
       </div>
     </Link>

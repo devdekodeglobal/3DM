@@ -1,6 +1,6 @@
-# kreatekaro | Professional Platform for 3D Spaces
+# Krafc | Professional Platform for 3D Spaces
 
-**kreatekaro** is an advanced, high-performance browser-based design suite built specifically for professional designers of 3D spaces and architecture. It seamlessly bridges the gap between precise 2D floor planning and immersive, real-time 3D visualization.
+**Krafc** is an advanced, high-performance browser-based design suite built specifically for professional designers of 3D spaces and architecture. It seamlessly bridges the gap between precise 2D floor planning and immersive, real-time 3D visualization.
 
 ---
 

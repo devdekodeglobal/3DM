@@ -90,7 +90,7 @@ function EditorPage() {
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
-    document.title = '3D Editor | Kreate Karo'
+    document.title = '3D Editor | Krafc'
   }, [])
 
   // Supabase Auth and Cloud states

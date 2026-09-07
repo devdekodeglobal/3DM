@@ -126,7 +126,7 @@ export default function CookieConsent() {
             <p>
               We use necessary cookies to keep accounts secure and remember your
               preferences. With your permission, optional analytics may be used
-              to understand how KreateKaro is used. Analytics stays off unless
+              to understand how Krafc is used. Analytics stays off unless
               you accept.{" "}
               <Link to="/cookie-policy">Read our cookie policy</Link>.
             </p>
@@ -183,7 +183,7 @@ export default function CookieConsent() {
             </div>
 
             <p className="cookie-modal__intro">
-              Choose whether KreateKaro may use optional analytics. Necessary
+              Choose whether Krafc may use optional analytics. Necessary
               cookies cannot be switched off because they provide secure sign-in
               and remember this choice.
             </p>
