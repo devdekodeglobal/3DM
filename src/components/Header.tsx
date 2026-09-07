@@ -72,6 +72,11 @@ export default function Header() {
             <Link to="/editor" className="nav-link" activeProps={{ className: 'nav-link is-active' }}>
               Editor
             </Link>
+            {sessionUser?.email === 'devdekodeglobal@gmail.com' && (
+              <Link to="/admin" className="nav-link" activeProps={{ className: 'nav-link is-active' }}>
+                Admin
+              </Link>
+            )}
           </div>
 
           {/* Right side */}
@@ -133,6 +138,11 @@ export default function Header() {
               <Link to="/editor" className="text-[var(--fg)] font-bold text-lg py-2 border-b border-[var(--color-border)]" activeProps={{ className: 'text-[var(--brand)]' }}>
                 Editor
               </Link>
+              {sessionUser?.email === 'devdekodeglobal@gmail.com' && (
+                <Link to="/admin" className="text-[var(--fg)] font-bold text-lg py-2 border-b border-[var(--color-border)]" activeProps={{ className: 'text-[var(--brand)]' }}>
+                  Admin
+                </Link>
+              )}
               
               {!sessionUser && (
                 <button
