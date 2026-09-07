@@ -7,6 +7,7 @@
   or switch your CSS language mode to "Tailwind CSS".
 */
 @plugin "@tailwindcss/typography";
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
