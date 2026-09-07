@@ -228,8 +228,8 @@ const features = [
         <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
       </svg>
     ),
-    title: 'Export Ready',
-    desc: 'Generate JSON, share layouts, and export high-fidelity plans for vendor applications.',
+    title: 'Save to Cloud',
+    desc: 'Save your 2D and 3D layouts securely to the cloud and access them from any device.',
     color: 'var(--cta)',
     bg: 'rgba(234,88,12,0.08)',
   },
