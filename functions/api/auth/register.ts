@@ -72,6 +72,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         'INSERT INTO otp_codes (id, email, code, type, expires_at) VALUES (?, ?, ?, ?, ?)'
       ).bind(generateId(), normalizedEmail, otp, 'verify_email', expiresAt).run()
 
+      console.log(`[DEV BYPASS] OTP for ${normalizedEmail} is: ${otp}`)
       await sendOtpEmail(env.RESEND_API_KEY, normalizedEmail, otp, 'verify_email')
       return json({ message: 'If this email is eligible, a verification code has been sent. Please check your inbox.' }, 200)
     }
@@ -92,6 +93,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     ).bind(generateId(), normalizedEmail, otp, 'verify_email', expiresAt).run()
 
     // Send verification email
+    console.log(`[DEV BYPASS] OTP for ${normalizedEmail} is: ${otp}`)
     await sendOtpEmail(env.RESEND_API_KEY, normalizedEmail, otp, 'verify_email')
 
     return json({ message: 'If this email is eligible, a verification code has been sent. Please check your inbox.' }, 201)
