@@ -89,6 +89,10 @@ function EditorPage() {
   const [boothConfig, setBoothConfig] = useState<BoothConfig | null>(initialData.config)
   const [isMounted, setIsMounted] = useState(false)
 
+  useEffect(() => {
+    document.title = '3D Editor | Kreate Karo'
+  }, [])
+
   // Supabase Auth and Cloud states
   const [sessionUser, setSessionUser] = useState<any>(null)
   const [authModalOpen, setAuthModalOpen] = useState(false)

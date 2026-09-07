@@ -23,6 +23,10 @@ function AdminPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [confirmModalState, setConfirmModalState] = useState<{ isOpen: boolean; title?: string; message: string; confirmText?: string; onConfirm: () => void } | null>(null)
 
+  useEffect(() => {
+    document.title = 'Admin Dashboard | Kreate Karo'
+  }, [])
+
   const fetchUsers = async () => {
     setLoading(true)
     setErrorMsg(null)

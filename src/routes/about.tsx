@@ -1,11 +1,16 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowRight, Monitor, Layers, Box, Palette, FolderOpen, Save, FileText, Camera } from 'lucide-react'
+import { useEffect } from 'react'
 
 export const Route = createFileRoute('/about')({
   component: OverviewPage,
 })
 
 function OverviewPage() {
+  useEffect(() => {
+    document.title = 'Overview | Kreate Karo'
+  }, [])
+
   return (
     <main className="page-wrap px-4 py-12 md:py-24 max-w-7xl mx-auto space-y-32">
       
