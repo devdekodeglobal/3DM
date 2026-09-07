@@ -82,31 +82,59 @@ function BoothIllustration() {
       </g>
 
       {/* Furniture Symbols using ArchitecturalSymbolSVG via nested SVG */}
-      <g className="text-[9px] font-sans font-semibold fill-slate-700 dark:fill-slate-300" textAnchor="middle">
+      <g className="text-[8px] font-sans font-semibold fill-slate-700 dark:fill-slate-300" textAnchor="middle">
         
-        {/* Bombo */}
-        <svg x="40" y="70" width="60" height="60">
-          <ArchitecturalSymbolSVG category="chairs" assetName="bombo" className="w-full h-full text-slate-800 dark:text-slate-200" />
-        </svg>
-        <text x="70" y="140">Bombo</text>
+        {/* TV on the left wall */}
+        <g transform="translate(30, 90)">
+          {/* Mount */}
+          <rect x="0" y="15" width="4" height="20" className="fill-slate-400" />
+          {/* Screen Profile */}
+          <rect x="4" y="0" width="6" height="50" rx="2" className="fill-slate-800 dark:fill-slate-200" />
+          {/* Screen glow */}
+          <rect x="10" y="5" width="2" height="40" className="fill-sky-400 opacity-80" />
+        </g>
+        <text x="60" y="118">85" TV</text>
 
-        {/* Catifa Bar */}
-        <svg x="120" y="140" width="50" height="50">
-          <ArchitecturalSymbolSVG category="chairs" assetName="catifa" className="w-full h-full text-slate-800 dark:text-slate-200" />
+        {/* Conference Table */}
+        <svg x="100" y="120" width="120" height="80">
+          <ArchitecturalSymbolSVG category="table" assetName="table" className="w-full h-full text-slate-800 dark:text-slate-200" />
         </svg>
-        <text x="145" y="200">CATIFA BAR</text>
+        <text x="160" y="163">CONFERENCE TABLE</text>
 
-        {/* Catifa */}
-        <svg x="80" y="200" width="60" height="60">
-          <ArchitecturalSymbolSVG category="chairs" assetName="catifa" className="w-full h-full text-slate-800 dark:text-slate-200" />
-        </svg>
-        <text x="110" y="270">CATIFA</text>
+        {/* Top Chair */}
+        <g transform="translate(160, 105) rotate(180)">
+          <svg x="-20" y="-20" width="40" height="40">
+            <ArchitecturalSymbolSVG category="chairs" assetName="catifa" className="w-full h-full text-slate-800 dark:text-slate-200" />
+          </svg>
+        </g>
 
-        {/* NEOS S */}
-        <svg x="180" y="130" width="70" height="70">
-          <ArchitecturalSymbolSVG category="chairs" assetName="cubo" className="w-full h-full text-slate-800 dark:text-slate-200" />
-        </svg>
-        <text x="215" y="210">NEOS S</text>
+        {/* Bottom Chair */}
+        <g transform="translate(160, 215) rotate(0)">
+          <svg x="-20" y="-20" width="40" height="40">
+            <ArchitecturalSymbolSVG category="chairs" assetName="catifa" className="w-full h-full text-slate-800 dark:text-slate-200" />
+          </svg>
+        </g>
+
+        {/* Left Chair */}
+        <g transform="translate(85, 160) rotate(90)">
+          <svg x="-20" y="-20" width="40" height="40">
+            <ArchitecturalSymbolSVG category="chairs" assetName="catifa" className="w-full h-full text-slate-800 dark:text-slate-200" />
+          </svg>
+        </g>
+
+        {/* Right Chair */}
+        <g transform="translate(235, 160) rotate(-90)">
+          <svg x="-20" y="-20" width="40" height="40">
+            <ArchitecturalSymbolSVG category="chairs" assetName="catifa" className="w-full h-full text-slate-800 dark:text-slate-200" />
+          </svg>
+        </g>
+
+        {/* Corner Plant */}
+        <g transform="translate(260, 70)">
+          <circle cx="0" cy="0" r="14" className="fill-emerald-100 dark:fill-emerald-900 stroke-emerald-600 dark:stroke-emerald-400" strokeWidth="1.5" />
+          <path d="M-8 -8 Q0 -15 8 -8 Q15 0 8 8 Q0 15 -8 8 Q-15 0 -8 -8" className="fill-emerald-200 dark:fill-emerald-800 opacity-70" />
+          <circle cx="0" cy="0" r="4" className="fill-emerald-700 dark:fill-emerald-300" />
+        </g>
         
       </g>
 
