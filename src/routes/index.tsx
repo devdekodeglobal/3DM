@@ -4,101 +4,117 @@ import { useState, useEffect } from 'react'
 export const Route = createFileRoute('/')({ component: LandingPage })
 
 /* ── inline SVG: top-down booth floor plan ── */
+import { ArchitecturalSymbolSVG } from '../components/editor/ArchitecturalSymbolSVG'
+
 function BoothIllustration() {
   return (
     <svg
-      viewBox="0 0 320 260"
+      viewBox="0 0 320 380"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
       style={{ width: '100%', maxWidth: 420 }}
+      className="text-slate-800 dark:text-slate-200"
     >
       <defs>
         <pattern id="grid-p" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(79,70,229,0.10)" strokeWidth="0.6"/>
+          <path d="M 20 0 L 0 0 0 20" fill="none" className="stroke-slate-200 dark:stroke-slate-800" strokeWidth="1"/>
+          <path d="M 0 20 L 20 20" fill="none" className="stroke-slate-200 dark:stroke-slate-800" strokeWidth="1"/>
         </pattern>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="2.5" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
       </defs>
 
-      {/* Grid background */}
-      <rect width="320" height="260" fill="url(#grid-p)" rx="12"/>
+      {/* Background with Theme colors */}
+      <rect width="320" height="380" className="fill-slate-50 dark:fill-slate-950" rx="12"/>
+      
+      {/* Grid */}
+      <rect width="320" height="380" fill="url(#grid-p)" rx="12"/>
 
-      {/* Outer booth walls */}
-      <rect x="28" y="28" width="264" height="204" rx="3"
-        fill="none" stroke="var(--brand)" strokeWidth="5" filter="url(#glow)"/>
+      {/* Blueprint Dimension Lines */}
+      {/* Top Dimension */}
+      <g className="stroke-sky-500 fill-sky-500 font-sans text-[10px] font-bold">
+        <line x1="30" y1="40" x2="290" y2="40" strokeWidth="1.5"/>
+        <line x1="30" y1="35" x2="30" y2="45" strokeWidth="1.5"/>
+        <line x1="290" y1="35" x2="290" y2="45" strokeWidth="1.5"/>
+        <rect x="135" y="32" width="50" height="16" rx="4" className="fill-slate-50 dark:fill-slate-900 stroke-sky-500" strokeWidth="1"/>
+        <text x="160" y="44" textAnchor="middle">4.10m</text>
+      </g>
+      
+      {/* Left Dimension */}
+      <g className="stroke-sky-500 fill-sky-500 font-sans text-[10px] font-bold">
+        <line x1="18" y1="60" x2="18" y2="340" strokeWidth="1.5"/>
+        <line x1="13" y1="60" x2="23" y2="60" strokeWidth="1.5"/>
+        <line x1="13" y1="340" x2="23" y2="340" strokeWidth="1.5"/>
+        <rect x="10" y="175" width="16" height="50" rx="4" className="fill-slate-50 dark:fill-slate-900 stroke-sky-500" strokeWidth="1"/>
+        <text x="17" y="200" textAnchor="middle" transform="rotate(90, 17, 200)">5.50m</text>
+      </g>
 
-      {/* Door gap on front wall */}
-      <line x1="122" y1="28" x2="166" y2="28" stroke="var(--bg-page)" strokeWidth="7"/>
-      {/* Door swing arc */}
-      <path d="M 122 28 Q 122 68 166 28" fill="none"
-        stroke="var(--brand)" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.6"/>
+      {/* Architectural Walls */}
+      <g className="stroke-slate-700 dark:stroke-slate-400 fill-slate-100 dark:fill-slate-800" strokeWidth="1.5">
+        {/* Top Wall */}
+        <rect x="30" y="50" width="260" height="10" />
+        
+        {/* Left Wall (Split for Window) */}
+        <rect x="30" y="60" width="10" height="100" />
+        <rect x="30" y="220" width="10" height="120" />
+        
+        {/* Right Wall (Split for Door) */}
+        <rect x="280" y="60" width="10" height="110" />
+        <rect x="280" y="230" width="10" height="110" />
+      </g>
 
-      {/* Interior divider */}
-      <line x1="28" y1="142" x2="185" y2="142" stroke="var(--brand)" strokeWidth="3.5" opacity="0.8"/>
+      {/* Window */}
+      <g className="stroke-sky-400" strokeWidth="2">
+        <line x1="32" y1="160" x2="32" y2="220" />
+        <line x1="38" y1="160" x2="38" y2="220" />
+        <line x1="30" y1="160" x2="40" y2="160" strokeWidth="1.5" className="stroke-slate-700 dark:stroke-slate-400"/>
+        <line x1="30" y1="220" x2="40" y2="220" strokeWidth="1.5" className="stroke-slate-700 dark:stroke-slate-400"/>
+      </g>
 
-      {/* Reception desk */}
-      <rect x="42" y="42" width="68" height="34" rx="3"
-        fill="var(--accent-bg)" stroke="var(--accent)" strokeWidth="1.6"/>
-      <line x1="55" y1="56" x2="95" y2="56" stroke="var(--accent)" strokeWidth="1.2"/>
-      <line x1="55" y1="63" x2="85" y2="63" stroke="var(--accent)" strokeWidth="0.8" opacity="0.5"/>
+      {/* Door Swing */}
+      <g className="stroke-sky-600 dark:stroke-sky-400">
+        <path d="M 280 230 A 60 60 0 0 0 220 170" fill="rgba(14,165,233,0.1)" strokeWidth="1.5" strokeDasharray="3 3" />
+        {/* Door Panel */}
+        <line x1="220" y1="230" x2="280" y2="230" strokeWidth="4" className="stroke-amber-700 dark:stroke-amber-600" strokeLinecap="round" />
+        <line x1="280" y1="170" x2="290" y2="170" strokeWidth="1.5" className="stroke-slate-700 dark:stroke-slate-400"/>
+      </g>
 
-      {/* Chairs */}
-      {[48, 68, 88].map((x, i) => (
-        <rect key={i} x={x} y={83} width={14} height={14} rx="2.5"
-          fill="var(--brand-bg)" stroke="var(--brand)" strokeWidth="1.2" opacity="0.85"/>
-      ))}
+      {/* Furniture Symbols using ArchitecturalSymbolSVG via nested SVG */}
+      <g className="text-[9px] font-sans font-semibold fill-slate-700 dark:fill-slate-300" textAnchor="middle">
+        
+        {/* Bombo */}
+        <svg x="40" y="70" width="60" height="60">
+          <ArchitecturalSymbolSVG category="chairs" assetName="bombo" className="w-full h-full text-slate-800 dark:text-slate-200" />
+        </svg>
+        <text x="70" y="140">Bombo</text>
 
-      {/* Display unit right */}
-      <rect x="212" y="42" width="66" height="90" rx="3"
-        fill="rgba(234,88,12,0.08)" stroke="var(--cta)" strokeWidth="1.6"/>
-      <line x1="224" y1="58" x2="266" y2="58" stroke="var(--cta)" strokeWidth="1"/>
-      <line x1="224" y1="70" x2="266" y2="70" stroke="var(--cta)" strokeWidth="0.7" opacity="0.5"/>
-      <line x1="224" y1="82" x2="260" y2="82" stroke="var(--cta)" strokeWidth="0.7" opacity="0.5"/>
-      <rect x="230" y="95" width="28" height="28" rx="2"
-        fill="rgba(234,88,12,0.12)" stroke="var(--cta)" strokeWidth="1" opacity="0.7"/>
+        {/* Catifa Bar */}
+        <svg x="120" y="140" width="50" height="50">
+          <ArchitecturalSymbolSVG category="chairs" assetName="catifa" className="w-full h-full text-slate-800 dark:text-slate-200" />
+        </svg>
+        <text x="145" y="200">CATIFA BAR</text>
 
-      {/* Branding sign */}
-      <rect x="106" y="42" width="90" height="26" rx="4"
-        fill="var(--brand-bg)" stroke="var(--brand)" strokeWidth="1.4"/>
-      <line x1="122" y1="52" x2="180" y2="52" stroke="var(--brand)" strokeWidth="1.5"/>
-      <line x1="126" y1="59" x2="170" y2="59" stroke="var(--brand)" strokeWidth="1" opacity="0.45"/>
+        {/* Catifa */}
+        <svg x="80" y="200" width="60" height="60">
+          <ArchitecturalSymbolSVG category="chairs" assetName="catifa" className="w-full h-full text-slate-800 dark:text-slate-200" />
+        </svg>
+        <text x="110" y="270">CATIFA</text>
 
-      {/* Bottom shelves */}
-      {[42, 96, 150].map((x, i) => (
-        <rect key={i} x={x} y={157} width={42} height={42} rx="3"
-          fill="rgba(8,145,178,0.08)" stroke="var(--accent)" strokeWidth="1.4"/>
-      ))}
-
-      {/* Corner lounge */}
-      <rect x="212" y="157" width="66" height="62" rx="3"
-        fill="rgba(79,70,229,0.06)" stroke="var(--brand)" strokeWidth="1.4" opacity="0.7"/>
-      <rect x="220" y="165" width="22" height="22" rx="2"
-        fill="var(--brand-bg)" stroke="var(--brand)" strokeWidth="1" opacity="0.6"/>
-      <rect x="248" y="165" width="22" height="22" rx="2"
-        fill="var(--brand-bg)" stroke="var(--brand)" strokeWidth="1" opacity="0.6"/>
-
-      {/* Dimension labels */}
-      <line x1="28" y1="16" x2="292" y2="16" stroke="var(--fg-dim)" strokeWidth="0.7"/>
-      <line x1="28" y1="12" x2="28" y2="20" stroke="var(--fg-dim)" strokeWidth="0.7"/>
-      <line x1="292" y1="12" x2="292" y2="20" stroke="var(--fg-dim)" strokeWidth="0.7"/>
-      <text x="160" y="13" fontSize="8.5" fill="var(--fg-dim)" textAnchor="middle" fontFamily="Inter">6 m</text>
-
-      <line x1="310" y1="28" x2="310" y2="232" stroke="var(--fg-dim)" strokeWidth="0.7"/>
-      <line x1="306" y1="28" x2="314" y2="28" stroke="var(--fg-dim)" strokeWidth="0.7"/>
-      <line x1="306" y1="232" x2="314" y2="232" stroke="var(--fg-dim)" strokeWidth="0.7"/>
-      <text x="316" y="134" fontSize="8.5" fill="var(--fg-dim)" textAnchor="middle"
-        fontFamily="Inter" transform="rotate(90, 316, 134)">5 m</text>
+        {/* NEOS S */}
+        <svg x="180" y="130" width="70" height="70">
+          <ArchitecturalSymbolSVG category="chairs" assetName="cubo" className="w-full h-full text-slate-800 dark:text-slate-200" />
+        </svg>
+        <text x="215" y="210">NEOS S</text>
+        
+      </g>
 
       {/* Live badge */}
-      <rect x="230" y="242" width="62" height="14" rx="7"
-        fill="var(--brand)" opacity="0.12"/>
-      <circle cx="238" cy="249" r="3" fill="var(--brand)">
-        <animate attributeName="opacity" values="1;0.3;1" dur="1.6s" repeatCount="indefinite"/>
-      </circle>
-      <text x="244" y="253" fontSize="7" fill="var(--brand)" fontWeight="700" fontFamily="Inter">LIVE SYNC</text>
+      <g transform="translate(240, 350)">
+        <rect x="0" y="0" width="62" height="14" rx="7" fill="#06b6d4" opacity="0.15"/>
+        <circle cx="8" cy="7" r="3" fill="#06b6d4">
+          <animate attributeName="opacity" values="1;0.3;1" dur="1.6s" repeatCount="indefinite"/>
+        </circle>
+        <text x="14" y="10" fontSize="7" fill="#06b6d4" fontWeight="700" fontFamily="Inter">LIVE SYNC</text>
+      </g>
     </svg>
   )
 }
