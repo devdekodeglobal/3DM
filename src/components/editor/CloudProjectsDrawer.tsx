@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { listDesigns, deleteDesign } from '../../lib/authClient'
+import { listDesigns, deleteDesign, updateDesign } from '../../lib/authClient'
 import type { Design } from '../../lib/authClient'
-import { X, FolderOpen, Calendar, Trash2, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
+import { X, FolderOpen, Calendar, Trash2, Loader2, AlertCircle, RefreshCw, Pencil, Check } from 'lucide-react'
 import { ConfirmModal } from './ConfirmModal'
 
 interface CloudProjectsDrawerProps {
@@ -33,6 +33,9 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [confirmModalState, setConfirmModalState] = useState<{ isOpen: boolean; title?: string; message: string; confirmText?: string; onConfirm: () => void } | null>(null)
 
   const fetchDesigns = async () => {
@@ -80,6 +83,27 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
         }
       }
     })
+  }
+
+  const handleRename = async (id: string, newName: string) => {
+    if (!newName.trim()) { setEditingId(null); return }
+    setUpdatingId(id)
+    try {
+      const target = designs.find(d => d.id === id)
+      if (!target) return
+      
+      const config = typeof target.config === 'string' ? JSON.parse(target.config) : target.config
+      const elements = typeof target.elements === 'string' ? JSON.parse(target.elements) : target.elements
+      
+      await updateDesign(id, { name: newName.trim(), config, elements })
+      setDesigns(prev => prev.map(d => d.id === id ? { ...d, name: newName.trim(), updated_at: new Date().toISOString() } : d))
+    } catch (err: any) {
+      console.error('Rename error:', err)
+      setErrorMsg(err.message || 'Failed to rename design.')
+    } finally {
+      setUpdatingId(null)
+      setEditingId(null)
+    }
   }
 
   return (
@@ -159,23 +183,66 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
               >
                 {/* Title & Actions */}
                 <div className="flex items-start justify-between gap-4">
-                  <span className="font-bold text-xs text-white font-[Outfit] group-hover:text-[var(--brand)] transition break-words flex-1">
-                    {design.name}
-                  </span>
-                  
-                  {/* Trash delete */}
-                  <button
-                    disabled={deletingId === design.id}
-                    onClick={(e) => handleDelete(design.id, e)}
-                    className="p-1 rounded text-red-400 hover:text-red-500 hover:bg-red-500/10 transition opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-50"
-                    title="Delete design"
-                  >
-                    {deletingId === design.id ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-3.5 h-3.5" />
-                    )}
-                  </button>
+                  {editingId === design.id ? (
+                    <div className="flex flex-1 items-center gap-2" onClick={e => e.stopPropagation()}>
+                      <input 
+                        autoFocus
+                        value={editName}
+                        onChange={e => setEditName(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') handleRename(design.id, editName)
+                          if (e.key === 'Escape') setEditingId(null)
+                        }}
+                        disabled={updatingId === design.id}
+                        className="flex-1 bg-black/40 border border-[var(--brand)] text-white text-xs px-2 py-1 rounded outline-none w-full"
+                      />
+                      <button
+                        onClick={() => handleRename(design.id, editName)}
+                        disabled={updatingId === design.id}
+                        className="p-1 rounded text-[var(--brand)] hover:bg-white/10"
+                        title="Save name"
+                      >
+                        {updatingId === design.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        disabled={updatingId === design.id}
+                        className="p-1 rounded text-white/50 hover:bg-white/10"
+                        title="Cancel"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="font-bold text-xs text-white font-[Outfit] group-hover:text-[var(--brand)] transition break-words flex-1">
+                        {design.name}
+                      </span>
+                      
+                      {/* Actions */}
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEditingId(design.id); setEditName(design.name); }}
+                          className="p-1 rounded text-[var(--brand)] hover:text-sky-400 hover:bg-white/10"
+                          title="Edit name"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          disabled={deletingId === design.id}
+                          onClick={(e) => handleDelete(design.id, e)}
+                          className="p-1 rounded text-red-400 hover:text-red-500 hover:bg-red-500/10 disabled:opacity-50"
+                          title="Delete design"
+                        >
+                          {deletingId === design.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Timestamp footer */}
