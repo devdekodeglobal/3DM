@@ -13,7 +13,7 @@ function BoothIllustration() {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
-      style={{ width: '100%', maxWidth: 420 }}
+      style={{ width: '100%', maxWidth: 420, display: 'block', margin: '0 auto' }}
       className="text-slate-800 dark:text-slate-200"
     >
       <defs>
@@ -354,6 +354,9 @@ function LandingPage() {
               background: 'var(--bg-card)',
               border: '1px solid var(--border-brand)',
               boxShadow: 'var(--shadow-lg)',
+              maxWidth: 500,
+              margin: '0 auto',
+              width: '100%',
             }}>
               {/* Glow orbs */}
               <div style={{
