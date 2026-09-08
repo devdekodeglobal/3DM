@@ -739,7 +739,7 @@ function EditorPage() {
       <div className="h-14 border-b border-[var(--line)] bg-[var(--surface-strong)] flex items-center justify-between px-4 z-20 shadow-sm transition-all shrink-0 overflow-x-auto whitespace-nowrap scrollbar-hide">
         <div className="flex items-center gap-4 shrink-0">
           <div className="flex items-center gap-2 pr-4 border-r border-[var(--border)]">
-            <div className="h-8 w-8 rounded-lg bg-[var(--brand)] flex items-center justify-center text-white font-bold shadow-sm">D</div>
+            <div className="px-2.5 py-1 rounded-md bg-[var(--brand)]/10 text-[var(--brand)] text-[10px] font-bold uppercase tracking-wider">Project</div>
             <div className="flex items-center gap-2 pr-4 group">
               <input
                 value={projectName}
