@@ -33,10 +33,12 @@ interface BoothConfig {
 }
 
 function getInitialData() {
-  if (typeof window === 'undefined') return { config: null, elements: null };
+  if (typeof window === 'undefined') return { config: null, elements: null, id: null, name: null };
   const savedStall = window.localStorage.getItem('stall-config');
   const savedElements = window.localStorage.getItem('stall-elements');
-  if (!savedStall) return { config: null, elements: null };
+  const savedId = window.localStorage.getItem('current-design-id');
+  const savedName = window.localStorage.getItem('current-design-name');
+  if (!savedStall) return { config: null, elements: null, id: null, name: null };
 
   const config = JSON.parse(savedStall);
   let parsedElements = savedElements ? JSON.parse(savedElements) : [];
@@ -60,7 +62,7 @@ function getInitialData() {
     }
   }
 
-  return { config, elements: parsedElements };
+  return { config, elements: parsedElements, id: savedId, name: savedName };
 }
 
 function EditorPage() {
@@ -77,7 +79,7 @@ function EditorPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [cloudDrawerOpen, setCloudDrawerOpen] = useState(false)
   const [showSavePrompt, setShowSavePrompt] = useState(false)
-  const [projectName, setProjectName] = useState('My Design 1')
+  const [projectName, setProjectName] = useState(initialData.name || 'My Design 1')
   const [isCloudSaving, setIsCloudSaving] = useState(false)
   const [toastModal, setToastModal] = useState<{ title?: string; message: string; type?: 'info' | 'success' | 'warning' | 'error' } | null>(null)
   const [confirmModalState, setConfirmModalState] = useState<{ isOpen: boolean; title?: string; message: string; confirmText?: string; onConfirm: () => void } | null>(null)
@@ -200,7 +202,15 @@ function EditorPage() {
   const [historyStep, setHistoryStep] = useState(initialData.elements ? 0 : -1)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [gridVisible, setGridVisible] = useState(true)
-  const [currentDesignId, setCurrentDesignId] = useState<string | null>(null)
+  const [currentDesignId, setCurrentDesignId] = useState<string | null>(initialData.id || null)
+
+  // Sync id and name to localStorage
+  useEffect(() => {
+    if (currentDesignId) {
+      localStorage.setItem('current-design-id', currentDesignId)
+      localStorage.setItem('current-design-name', projectName)
+    }
+  }, [currentDesignId, projectName])
 
   // Layout States
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -452,7 +462,11 @@ function EditorPage() {
       onConfirm: () => {
         setElements([])
         saveToHistory([])
+        setCurrentDesignId(null)
+        setProjectName('Untitled Design')
         localStorage.removeItem('stall-elements')
+        localStorage.removeItem('current-design-id')
+        localStorage.removeItem('current-design-name')
         setConfirmModalState(null)
       }
     })

@@ -145,6 +145,8 @@ function DashboardPage() {
     try {
       localStorage.setItem('stall-config', design.config)
       localStorage.setItem('stall-elements', design.elements)
+      localStorage.setItem('current-design-id', design.id)
+      localStorage.setItem('current-design-name', design.name)
     } catch {}
     navigate({ to: '/editor' })
   }
@@ -171,6 +173,8 @@ function DashboardPage() {
   const handleNewDesign = () => {
     localStorage.removeItem('stall-config')
     localStorage.removeItem('stall-elements')
+    localStorage.removeItem('current-design-id')
+    localStorage.removeItem('current-design-name')
     navigate({ to: '/editor' })
   }
 
