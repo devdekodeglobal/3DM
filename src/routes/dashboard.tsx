@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { getCurrentUser, listDesigns, deleteDesign, type User, type Design } from '../lib/authClient'
-import { PlusCircle, Trash2, Calendar, LayoutGrid, Loader2, Box } from 'lucide-react'
+import { getCurrentUser, listDesigns, deleteDesign, updateDesign, type User, type Design } from '../lib/authClient'
+import { PlusCircle, Trash2, Calendar, LayoutGrid, Loader2, Box, Pencil, Check, X } from 'lucide-react'
 import { ConfirmModal } from '../components/editor/ConfirmModal'
 
 export const Route = createFileRoute('/dashboard')({ component: DashboardPage })
@@ -51,10 +51,12 @@ function BoothMiniSVG({ config }: { config: any }) {
   )
 }
 
-function ProjectCard({ design, index, onOpen, onDeleteRequest }: {
-  design: Design; index: number; onOpen: () => void; onDeleteRequest: (id: string, name: string) => void
+function ProjectCard({ design, index, onOpen, onDeleteRequest, onRenameRequest }: {
+  design: Design; index: number; onOpen: () => void; onDeleteRequest: (id: string, name: string) => void; onRenameRequest: (id: string, name: string) => void
 }) {
   const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length]
+  const [isEditing, setIsEditing] = useState(false)
+  const [editName, setEditName] = useState(design.name)
   let config: any = null
   try { config = JSON.parse(design.config) } catch {}
 
@@ -89,28 +91,74 @@ function ProjectCard({ design, index, onOpen, onDeleteRequest }: {
     >
       <div style={{ height: 140, background: gradient, position: 'relative', padding: 16 }}>
         <BoothMiniSVG config={config} />
-        <button
-          onClick={handleDelete}
-          style={{
-            position: 'absolute', top: 10, right: 10,
-            width: 32, height: 32, borderRadius: 8,
-            background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)',
-            color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', opacity: 0, transition: 'opacity 0.2s',
-          }}
-          className="group-hover:opacity-100"
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.7)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.4)')}
-        >
-          <Trash2 size={14} />
-        </button>
+        <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', gap: 6 }} className="group-hover:opacity-100 opacity-0 transition-opacity">
+          <button
+            onClick={(e) => { e.stopPropagation(); setIsEditing(true); setEditName(design.name); }}
+            style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)',
+              color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(79,70,229,0.7)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.4)')}
+            title="Edit name"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            onClick={handleDelete}
+            style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)',
+              color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.7)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.4)')}
+            title="Delete project"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </div>
       <div style={{ padding: '14px 16px' }}>
-        <h3 style={{
-          margin: '0 0 6px', fontSize: '0.95rem', fontWeight: 700,
-          fontFamily: 'Outfit, sans-serif', color: 'var(--fg)',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>{design.name}</h3>
+        {isEditing ? (
+          <div style={{ display: 'flex', gap: 6, marginBottom: 6 }} onClick={e => e.stopPropagation()}>
+            <input 
+              autoFocus
+              value={editName}
+              onChange={e => setEditName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  if (editName.trim()) { onRenameRequest(design.id, editName.trim()); }
+                  setIsEditing(false)
+                }
+                if (e.key === 'Escape') {
+                  setIsEditing(false)
+                }
+              }}
+              style={{
+                flex: 1, background: 'var(--surface-strong)', border: '1px solid var(--brand)',
+                color: 'white', fontSize: '0.9rem', borderRadius: 4, padding: '2px 6px',
+                outline: 'none', width: '100%'
+              }}
+            />
+            <button onClick={() => { if (editName.trim()) onRenameRequest(design.id, editName.trim()); setIsEditing(false) }} style={{ color: 'var(--brand)' }} title="Save">
+              <Check size={16} />
+            </button>
+            <button onClick={() => setIsEditing(false)} style={{ color: 'var(--fg-dim)' }} title="Cancel">
+              <X size={16} />
+            </button>
+          </div>
+        ) : (
+          <h3 style={{
+            margin: '0 0 6px', fontSize: '0.95rem', fontWeight: 700,
+            fontFamily: 'Outfit, sans-serif', color: 'var(--fg)',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>{design.name}</h3>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--fg-dim)', fontSize: '0.75rem' }}>
           <Calendar size={11} />
           <span>{timeAgo(design.updated_at || design.created_at)}</span>
@@ -168,6 +216,19 @@ function DashboardPage() {
         }
       }
     })
+  }
+
+  const handleRenameRequest = async (id: string, newName: string) => {
+    try {
+      // Find the existing design so we don't lose config
+      const target = designs.find(d => d.id === id)
+      if (!target) return
+      
+      await updateDesign(id, { name: newName, config: JSON.parse(target.config), elements: JSON.parse(target.elements) })
+      setDesigns(prev => prev.map(d => d.id === id ? { ...d, name: newName, updated_at: new Date().toISOString() } : d))
+    } catch (err) {
+      console.error("Failed to rename", err)
+    }
   }
 
   const handleNewDesign = () => {
@@ -267,6 +328,7 @@ function DashboardPage() {
                 index={i}
                 onOpen={() => handleOpen(design)}
                 onDeleteRequest={handleDeleteRequest}
+                onRenameRequest={handleRenameRequest}
               />
             ))}
           </div>
