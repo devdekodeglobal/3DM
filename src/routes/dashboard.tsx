@@ -204,9 +204,7 @@ function DashboardPage() {
               <h1 style={{ margin: 0, fontFamily: 'Outfit, sans-serif', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', fontWeight: 800, color: 'var(--fg)' }}>
                 Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}!
               </h1>
-              <p style={{ margin: '8px 0 0', color: 'var(--fg-dim)', fontSize: '0.9rem' }}>
-                {loading ? 'Loading your designs…' : `${designs.length} design${designs.length !== 1 ? 's' : ''} saved to cloud`}
-              </p>
+
             </div>
             <button onClick={handleNewDesign} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <PlusCircle size={16} /> New Design
