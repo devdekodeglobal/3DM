@@ -514,7 +514,29 @@ function EditorPage() {
     return (
       <div key="setup-screen" suppressHydrationWarning className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] bg-[var(--bg-base)] p-4">
         <div className="island-shell p-8 rounded-2xl w-full max-w-[500px] flex flex-col gap-6 text-center rise-in">
-          <h2 className="text-3xl font-bold text-[var(--sea-ink)] display-title">Space Setup Wizard</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-2xl font-bold text-[var(--sea-ink)] display-title">Space Setup Wizard</h2>
+            <button
+              onClick={() => {
+                const PPM = 100
+                const W = 6 * PPM
+                const D = 5 * PPM
+                const T = 0.1 * 100
+                const wallProps = { material: 'White Paint' }
+                
+                setBoothConfig({ width: 6, depth: 5, wallThickness: 0.1, walls: { north: true, south: true, east: true, west: true }, floorType: 'hardwood', floorColor: '#eee' })
+                setElements([
+                  { id: 'outer-north', type: 'wall', isOuter: true, x: W / 2, y: 0, width: W, thickness: T, rotation: 0, wallElements: [], ...wallProps },
+                  { id: 'outer-south', type: 'wall', isOuter: true, x: W / 2, y: D, width: W, thickness: T, rotation: 0, wallElements: [], ...wallProps },
+                  { id: 'outer-west', type: 'wall', isOuter: true, x: 0, y: D / 2, width: D, thickness: T, rotation: 90, wallElements: [], ...wallProps },
+                  { id: 'outer-east', type: 'wall', isOuter: true, x: W, y: D / 2, width: D, thickness: T, rotation: 90, wallElements: [], ...wallProps }
+                ])
+              }}
+              className="text-xs font-bold text-[var(--sea-ink-soft)] hover:text-[var(--brand)] transition px-3 py-1.5 rounded-full bg-[var(--sand)] hover:bg-gray-200"
+            >
+              Skip Setup
+            </button>
+          </div>
 
           <div className="flex gap-2 mb-2">
             <div className={`h-1.5 flex-1 rounded-full ${wizardStep >= 1 ? 'bg-[var(--lagoon)]' : 'bg-[var(--line)]'}`} />
