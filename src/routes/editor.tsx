@@ -883,7 +883,7 @@ function EditorPage() {
 
           {sessionUser && currentDesignId && (
             <div className="flex items-center gap-2 mr-2">
-              <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider">
+              <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-[var(--fg-dim)] hover:text-[var(--fg-soft)] transition uppercase tracking-wider">
                 <input
                   type="checkbox"
                   checked={autoSaveToCloud}
@@ -895,9 +895,30 @@ function EditorPage() {
                 />
                 Auto-Sync
               </label>
-              {autoSaveToCloud && cloudSyncStatus !== 'idle' && (
-                <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${cloudSyncStatus === 'saving' ? 'bg-amber-100 text-amber-700' : cloudSyncStatus === 'saved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                  {cloudSyncStatus === 'saving' ? 'Syncing...' : cloudSyncStatus === 'saved' ? 'Synced' : 'Error'}
+              {autoSaveToCloud && (
+                <span
+                  title={
+                    cloudSyncStatus === 'saving'
+                      ? 'Syncing changes to cloud...'
+                      : cloudSyncStatus === 'saved'
+                      ? 'All changes saved to cloud'
+                      : cloudSyncStatus === 'error'
+                      ? 'Sync error'
+                      : 'Auto-sync active'
+                  }
+                  className="inline-flex items-center justify-center w-4 h-4"
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      cloudSyncStatus === 'saving'
+                        ? 'bg-amber-400 animate-ping'
+                        : cloudSyncStatus === 'saved'
+                        ? 'bg-emerald-500 scale-110'
+                        : cloudSyncStatus === 'error'
+                        ? 'bg-red-500'
+                        : 'bg-emerald-500/40'
+                    }`}
+                  />
                 </span>
               )}
             </div>

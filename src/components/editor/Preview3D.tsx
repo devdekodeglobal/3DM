@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { Camera, Maximize, Minimize } from 'lucide-react'
 import * as BABYLON from '@babylonjs/core'
 import '@babylonjs/loaders/glTF'
 import { GLTF2Export } from '@babylonjs/serializers/glTF/2.0/glTFSerializer'
@@ -34,8 +33,7 @@ export default function Preview3D({
   backgroundColor = '#1d1f21',
 }: Preview3DProps) {
   const [isSceneReady, setIsSceneReady] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [cameraMode, setCameraMode] = useState<'orbit' | 'flight'>('orbit');
+  const [cameraMode] = useState<'orbit' | 'flight'>('orbit');
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<BABYLON.Engine | null>(null);
@@ -1642,7 +1640,8 @@ export default function Preview3D({
             phMat.wireframe = true; phMat.emissiveColor = new BABYLON.Color3(0, 0.8, 1); phMat.alpha = 0.5;
             ph.material = phMat;
             
-            const basePath = el.categoryFolder ? `/models/${el.categoryFolder}/` : "/models/";
+            const categoryFolder = el.categoryFolder || regEntry?.categoryFolder;
+            const basePath = categoryFolder ? `/models/${categoryFolder}/` : "/models/";
             const ext = el.fileName?.toLowerCase().endsWith('.gltf') ? '.gltf' : '.glb';
             // Preserve original filename case (e.g. Fridge.glb, MicrowaveOven.glb, WallOven.glb)
             const loadPromise = el.assetUrl
@@ -1674,148 +1673,10 @@ export default function Preview3D({
     }
   }, [cameraMode]);
 
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-      setTimeout(() => {
-        if (engineRef.current) engineRef.current.resize();
-      }, 100);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
-
-  const takeScreenshot = () => {
-    const scene = sceneRef.current;
-    const engine = engineRef.current;
-    if (!scene || !engine || !canvasRef.current) return;
-    
-    // Hide grid for screenshot if visible
-    const grid = scene.getMeshByName("blueprintGrid");
-    const wasGridVisible = grid ? grid.isVisible : false;
-    if (grid) grid.isVisible = false;
-    
-    const captureW = 3840, captureH = 2160; // 4K Resolution
-    engine.setSize(captureW, captureH);
-    scene.render();
-    
-    BABYLON.Tools.CreateScreenshot(engine, scene.activeCamera!, { width: captureW, height: captureH }, (data) => {
-      if (grid) grid.isVisible = wasGridVisible;
-      engine.resize();
-      const link = document.createElement('a');
-      link.href = data;
-      link.download = `3d-snapshot-${Date.now()}.png`;
-      link.click();
-    });
-  };
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen().catch(err => {
-        console.error("Error attempting to enable fullscreen:", err);
-      });
-    } else {
-      document.exitFullscreen();
-    }
-  };
-
-  const setCameraAngle = (alpha: number, beta: number) => {
-    const scene = sceneRef.current;
-    if (!scene) return;
-    const orbitCam = scene.getCameraByName("orbitCam") as BABYLON.ArcRotateCamera;
-    if (!orbitCam) return;
-    
-    if (cameraMode !== 'orbit') {
-      setCameraMode('orbit');
-    }
-
-    const ease = new BABYLON.CubicEase();
-    ease.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-
-    BABYLON.Animation.CreateAndStartAnimation('camMoveAlpha', orbitCam, 'alpha', 60, 30, orbitCam.alpha, alpha, 2, ease);
-    BABYLON.Animation.CreateAndStartAnimation('camMoveBeta', orbitCam, 'beta', 60, 30, orbitCam.beta, beta, 2, ease);
-    
-    const centerX = boothConfig?.width / 2 || 0;
-    const centerZ = boothConfig?.depth / 2 || 0;
-    const target = new BABYLON.Vector3(centerX, 0.5, centerZ);
-    
-    BABYLON.Animation.CreateAndStartAnimation('camTarget', orbitCam, 'target', 60, 30, orbitCam.getTarget(), target, 2, ease);
-  };
-
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--bg-base)] p-4 gap-4">
-      {activeView === 'perspective' && !isFullscreen && (
-        <div className="w-full flex justify-between items-center max-w-[calc(100vh*16/9)]">
-          <div className="flex gap-2">
-            <div className="px-3 py-1.5 rounded-lg bg-[rgba(0,0,0,0.6)] border border-[rgba(255,255,255,0.1)] text-[10px] font-bold text-white uppercase backdrop-blur-md">
-              {cameraMode === 'orbit' ? 'Orbit Mode 🌐' : 'Flight Mode 🛸'}
-            </div>
-            <div className="px-3 py-1.5 rounded-lg bg-[rgba(0,180,255,0.2)] border border-[rgba(0,180,255,0.3)] text-[10px] font-bold text-[#bbf] uppercase backdrop-blur-md">
-              Hold Shift to Rotate Assets
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => {
-                const currentHQ = localStorage.getItem('hq_3d') === 'true';
-                localStorage.setItem('hq_3d', currentHQ ? 'false' : 'true');
-                window.location.reload();
-              }} 
-              className="px-4 py-2 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--brand)] border border-[rgba(255,255,255,0.1)] text-xs font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors cursor-pointer"
-            >
-              {localStorage.getItem('hq_3d') === 'true' ? "HQ: ON" : "HQ: OFF"}
-            </button>
-            <button onClick={() => setCameraMode(prev => prev === 'orbit' ? 'flight' : 'orbit')} className="px-4 py-2 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--sea-ink)] border border-[rgba(255,255,255,0.1)] text-xs font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors cursor-pointer">
-              {cameraMode === 'orbit' ? "Flight Mode" : "Orbit Mode"}
-            </button>
-          </div>
-        </div>
-      )}
-      <div ref={containerRef} className={`w-full relative overflow-hidden shadow-2xl ring-1 ring-white/10 ${isFullscreen ? 'h-screen max-w-none rounded-none' : 'max-h-full aspect-video rounded-2xl'}`} style={{ backgroundColor: '#0d0d0f' }}>
+    <div className="w-full h-full flex flex-col items-center justify-center bg-transparent">
+      <div ref={containerRef} className="w-full h-full relative overflow-hidden shadow-2xl ring-1 ring-white/10 aspect-video rounded-2xl" style={{ backgroundColor: '#0d0d0f' }}>
         <canvas ref={canvasRef} className="w-full h-full block outline-none touch-none" />
-        
-        {/* UI Overlay */}
-        <div className="absolute top-4 right-4 flex gap-2">
-          <button 
-            onClick={takeScreenshot}
-            className="p-3 rounded-xl bg-black/40 hover:bg-black/60 border border-white/10 text-white backdrop-blur-md transition-all shadow-lg group flex items-center justify-center"
-            title="Take High-Res Snapshot"
-          >
-            <Camera className="w-5 h-5 group-hover:scale-110 transition-transform" />
-          </button>
-          <button 
-            onClick={toggleFullscreen}
-            className="p-3 rounded-xl bg-black/40 hover:bg-black/60 border border-white/10 text-white backdrop-blur-md transition-all shadow-lg group flex items-center justify-center"
-            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen View"}
-          >
-            {isFullscreen ? <Minimize className="w-5 h-5 group-hover:scale-110 transition-transform" /> : <Maximize className="w-5 h-5 group-hover:scale-110 transition-transform" />}
-          </button>
-        </div>
-        
-        {isFullscreen && activeView === 'perspective' && (
-          <>
-            <div className="absolute top-4 left-4 flex gap-2">
-               <div className="px-3 py-1.5 rounded-lg bg-[rgba(0,0,0,0.6)] border border-[rgba(255,255,255,0.1)] text-[10px] font-bold text-white uppercase backdrop-blur-md">
-                  {cameraMode === 'orbit' ? 'Orbit Mode 🌐' : 'Flight Mode 🛸'}
-                </div>
-                <button onClick={() => setCameraMode(prev => prev === 'orbit' ? 'flight' : 'orbit')} className="px-3 py-1.5 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--sea-ink)] border border-[rgba(255,255,255,0.1)] text-[10px] font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors cursor-pointer">
-                  Switch Camera
-                </button>
-            </div>
-
-            {/* Camera Presets Menu */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 bg-black/60 backdrop-blur-md p-2 rounded-2xl border border-white/10 shadow-2xl">
-              <button onClick={() => setCameraAngle(-Math.PI / 2, 0.01)} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition">Top</button>
-              <button onClick={() => setCameraAngle(-Math.PI / 2, Math.PI / 3)} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition">Front</button>
-              <button onClick={() => setCameraAngle(Math.PI / 2, Math.PI / 3)} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition">Back</button>
-              <button onClick={() => setCameraAngle(Math.PI, Math.PI / 3)} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition">Left</button>
-              <button onClick={() => setCameraAngle(0, Math.PI / 3)} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition">Right</button>
-              <div className="w-px bg-white/20 mx-1"></div>
-              <button onClick={() => setCameraAngle(-Math.PI / 4, Math.PI / 3)} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition">Iso L</button>
-              <button onClick={() => setCameraAngle(-3 * Math.PI / 4, Math.PI / 3)} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition">Iso R</button>
-            </div>
-          </>
-        )}
       </div>
     </div>
   );

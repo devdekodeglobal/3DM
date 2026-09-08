@@ -64,6 +64,30 @@ export async function verifyOtp(email: string, code: string) {
   return data
 }
 
+export async function requestPasswordReset(email: string) {
+  const res = await fetch('/api/auth/forgot-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ email }),
+  })
+  const data = (await res.json()) as { message?: string; error?: string }
+  if (!res.ok) throw new Error(data.error || 'Failed to request password reset')
+  return data
+}
+
+export async function resetPassword(email: string, code: string, newPassword: string) {
+  const res = await fetch('/api/auth/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ email, code, newPassword }),
+  })
+  const data = (await res.json()) as { message?: string; error?: string }
+  if (!res.ok) throw new Error(data.error || 'Failed to reset password')
+  return data
+}
+
 export function signInWithGoogle(returnTo?: string) {
   // Redirect to Google OAuth — the Pages Function handles the flow
   // Pass return_to so the callback knows where to redirect after login

@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
+import { ScrollReveal } from '../components/ScrollReveal'
+import { InteractiveWorkflowShowcase } from '../components/InteractiveWorkflowShowcase'
 
 export const Route = createFileRoute('/')({ component: LandingPage })
 
@@ -267,7 +269,7 @@ function LandingPage() {
                   background: 'var(--brand)', display: 'inline-block',
                   animation: 'pulse-dot 1.6s ease-in-out infinite',
                 }}/>
-                v1.0 — Live 3D Sync
+                v1.0 • Live 3D Sync
               </div>
 
               <h1 className="display fade-up d-100" style={{
@@ -287,7 +289,7 @@ function LandingPage() {
                 maxWidth: 440,
               }}>
                 Professional 2D floor planning with snap-to-grid mechanics and
-                a real-time 3D preview — all in your browser.
+                a real-time 3D preview, all in your browser.
               </p>
 
               <div className="fade-up d-300" style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
@@ -377,7 +379,7 @@ function LandingPage() {
                 <div style={{
                   marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--fg-dim)',
                   fontFamily: 'Inter', fontWeight: 500,
-                }}>2D Floor Plan · 6×5 m</div>
+                }}>2D Floor Plan • 6×5 m</div>
               </div>
               <BoothIllustration />
             </div>
@@ -388,38 +390,40 @@ function LandingPage() {
       {/* ── FEATURES ── */}
       <section style={{ padding: '72px 0' }}>
         <div className="page-wrap">
-          <div style={{ textAlign: 'center', marginBottom: 52 }}>
-            <p className="label-caps" style={{ color: 'var(--brand)', marginBottom: 10 }}>Features</p>
-            <h2 className="display" style={{
-              fontSize: 'clamp(1.8rem, 3vw, 2.6rem)',
-              color: 'var(--fg)', margin: 0,
-            }}>
-              Everything you need to design a perfect space
-            </h2>
-          </div>
+          <ScrollReveal animation="fade-up">
+            <div style={{ textAlign: 'center', marginBottom: 52 }}>
+              <p className="label-caps" style={{ color: 'var(--brand)', marginBottom: 10 }}>Features</p>
+              <h2 className="display" style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.6rem)',
+                color: 'var(--fg)', margin: 0,
+              }}>
+                Everything you need to design a perfect space
+              </h2>
+            </div>
+          </ScrollReveal>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
             {features.map((f, i) => (
-              <article id={f.id} key={f.id} className="card fade-up" style={{
-                padding: 28, animationDelay: `${i * 90}ms`,
-              }}>
-                <div style={{
-                  width: 48, height: 48, borderRadius: 12,
-                  background: f.bg, color: f.color,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginBottom: 18, border: `1px solid ${f.color}22`,
-                }}>
-                  {f.icon}
-                </div>
-                <h3 style={{
-                  margin: '0 0 10px',
-                  fontFamily: 'Outfit, sans-serif',
-                  fontWeight: 700, fontSize: '1.08rem', color: 'var(--fg)',
-                }}>{f.title}</h3>
-                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--fg-soft)', lineHeight: 1.65 }}>
-                  {f.desc}
-                </p>
-              </article>
+              <ScrollReveal key={f.id} animation="fade-up" delay={i * 180}>
+                <article id={f.id} className="card" style={{ padding: 28, height: '100%' }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 12,
+                    background: f.bg, color: f.color,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    marginBottom: 18, border: `1px solid ${f.color}22`,
+                  }}>
+                    {f.icon}
+                  </div>
+                  <h3 style={{
+                    margin: '0 0 10px',
+                    fontFamily: 'Outfit, sans-serif',
+                    fontWeight: 700, fontSize: '1.08rem', color: 'var(--fg)',
+                  }}>{f.title}</h3>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--fg-soft)', lineHeight: 1.65 }}>
+                    {f.desc}
+                  </p>
+                </article>
+              </ScrollReveal>
             ))}
           </div>
         </div>
@@ -428,87 +432,77 @@ function LandingPage() {
       {/* ── HOW IT WORKS ── */}
       <section style={{ padding: '72px 0', background: 'var(--bg-subtle)' }}>
         <div className="page-wrap">
-          <div style={{ textAlign: 'center', marginBottom: 52 }}>
-            <p className="label-caps" style={{ color: 'var(--brand)', marginBottom: 10 }}>Workflow</p>
-            <h2 className="display" style={{
-              fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: 'var(--fg)', margin: 0,
-            }}>How it works</h2>
-          </div>
+          <ScrollReveal animation="fade-up">
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <p className="label-caps" style={{ color: 'var(--brand)', marginBottom: 10 }}>Workflow</p>
+              <h2 className="display" style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: 'var(--fg)', margin: 0,
+              }}>How it works</h2>
+            </div>
+          </ScrollReveal>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
-            {steps.map((s, i) => (
-              <div id={s.id} key={s.id} className="card fade-up" style={{
-                padding: 32, animationDelay: `${i * 100}ms`,
-                display: 'flex', flexDirection: 'column', gap: 16,
-              }}>
-                <div className="step-num">{s.num}</div>
-                <h3 style={{
-                  margin: 0, fontFamily: 'Outfit, sans-serif',
-                  fontWeight: 700, fontSize: '1.1rem', color: 'var(--fg)',
-                }}>{s.title}</h3>
-                <p style={{ margin: 0, color: 'var(--fg-soft)', fontSize: '0.9rem', lineHeight: 1.65 }}>
-                  {s.desc}
-                </p>
-              </div>
-            ))}
-          </div>
+          <ScrollReveal animation="zoom-in" delay={150}>
+            <InteractiveWorkflowShowcase />
+          </ScrollReveal>
         </div>
       </section>
 
       {/* ── CTA BANNER ── */}
       <section style={{ padding: '80px 16px' }}>
-        <div style={{
-          maxWidth: 760, margin: '0 auto', textAlign: 'center',
-          padding: '56px 40px',
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-brand)',
-          borderRadius: 24,
-          boxShadow: 'var(--shadow-lg)',
-          position: 'relative', overflow: 'hidden',
-        }}>
-          {/* Decorative gradient blobs */}
+        <ScrollReveal animation="zoom-in">
           <div style={{
-            position: 'absolute', inset: 0, pointerEvents: 'none',
-            background: 'radial-gradient(ellipse 70% 60% at 0% 0%, rgba(79,70,229,0.08), transparent), radial-gradient(ellipse 60% 50% at 100% 100%, rgba(8,145,178,0.07), transparent)',
-          }}/>
-
-          <div className="badge" style={{ marginBottom: 24, display: 'inline-flex' }}>
-            <svg viewBox="0 0 16 16" fill="none" width="12" height="12">
-              <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-            Ready in seconds
-          </div>
-
-          <h2 className="display" style={{
-            fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
-            color: 'var(--fg)', margin: '0 0 16px',
+            maxWidth: 760, margin: '0 auto', textAlign: 'center',
+            padding: '56px 40px',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-brand)',
+            borderRadius: 24,
+            boxShadow: 'var(--shadow-lg)',
+            position: 'relative', overflow: 'hidden',
           }}>
-            Start designing your space today
-          </h2>
-          <p style={{
-            color: 'var(--fg-soft)', fontSize: '1rem',
-            lineHeight: 1.7, margin: '0 0 36px',
-          }}>
-            No install needed. Open the designer and build your layout
-            in minutes — then preview it live in 3D.
-          </p>
-          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {hasDraft ? (
-              <Link to="/editor" id="cta-resume-design" className="btn btn-primary">
-                Resume Your Design →
-              </Link>
-            ) : (
-              <Link
-                to="/editor"
-                id="cta-open-designer"
-                className="btn btn-primary"
-              >
-                Start Designing Now →
-              </Link>
-            )}
+            {/* Decorative gradient blobs */}
+            <div style={{
+              position: 'absolute', inset: 0, pointerEvents: 'none',
+              background: 'radial-gradient(ellipse 70% 60% at 0% 0%, rgba(79,70,229,0.08), transparent), radial-gradient(ellipse 60% 50% at 100% 100%, rgba(8,145,178,0.07), transparent)',
+            }}/>
+
+            <div className="badge" style={{ marginBottom: 24, display: 'inline-flex' }}>
+              <svg viewBox="0 0 16 16" fill="none" width="12" height="12">
+                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              Ready in seconds
+            </div>
+
+            <h2 className="display" style={{
+              fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
+              color: 'var(--fg)', margin: '0 0 16px',
+            }}>
+              Start designing your space today
+            </h2>
+            <p style={{
+              color: 'var(--fg-soft)', fontSize: '1rem',
+              lineHeight: 1.7, margin: '0 0 36px',
+            }}>
+              No install needed. Open the designer and build your layout
+              in minutes — then preview it live in 3D.
+            </p>
+            <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {hasDraft ? (
+                <Link to="/editor" id="cta-resume-design" className="btn btn-primary">
+                  Resume Your Design →
+                </Link>
+              ) : (
+                <Link
+                  to="/editor"
+                  id="cta-open-designer"
+                  className="btn btn-primary"
+                >
+                  Start Designing Now →
+                </Link>
+              )}
+            </div>
           </div>
-        </div>
+        </ScrollReveal>
       </section>
 
       <style>{`
@@ -523,3 +517,4 @@ function LandingPage() {
     </>
   )
 }
+

@@ -1,6 +1,13 @@
 import React, { useState } from 'react'
-import { signUpWithEmail, signInWithEmail, verifyOtp, signInWithGoogle } from '../../lib/authClient'
-import { X, Mail, Lock, Loader2, AlertCircle, CheckCircle, KeyRound } from 'lucide-react'
+import {
+  signUpWithEmail,
+  signInWithEmail,
+  verifyOtp,
+  signInWithGoogle,
+  requestPasswordReset,
+  resetPassword,
+} from '../../lib/authClient'
+import { X, Mail, Lock, Loader2, AlertCircle, CheckCircle, KeyRound, ArrowLeft } from 'lucide-react'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -13,8 +20,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   const [isSignUp, setIsSignUp] = useState(false)
   const [isOtpStep, setIsOtpStep] = useState(false)
   
+  // Password Reset Flow States
+  const [isForgotPassword, setIsForgotPassword] = useState(false)
+  const [isResetConfirmStep, setIsResetConfirmStep] = useState(false)
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
   const [otpCode, setOtpCode] = useState('')
   
   const [loading, setLoading] = useState(false)
@@ -23,6 +35,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
 
   if (!isOpen) return null
 
+  const resetAllStates = () => {
+    setErrorMsg(null)
+    setSuccessMsg(null)
+    setOtpCode('')
+    setPassword('')
+    setNewPassword('')
+  }
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -30,7 +50,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
     setSuccessMsg(null)
 
     try {
-      if (isOtpStep) {
+      if (isForgotPassword) {
+        if (isResetConfirmStep) {
+          if (!email || !otpCode || !newPassword) {
+            setErrorMsg('Please enter your email, verification code, and new password.')
+            return
+          }
+          await resetPassword(email, otpCode, newPassword)
+          setSuccessMsg('Password reset successfully! You can now log in with your new password.')
+          setTimeout(() => {
+            setIsForgotPassword(false)
+            setIsResetConfirmStep(false)
+            resetAllStates()
+          }, 2000)
+        } else {
+          if (!email) {
+            setErrorMsg('Please enter your email address.')
+            return
+          }
+          const res = await requestPasswordReset(email)
+          setSuccessMsg(res.message || 'Reset code sent! Check your inbox.')
+          setIsResetConfirmStep(true)
+        }
+      } else if (isOtpStep) {
         if (!otpCode) {
           setErrorMsg('Please enter the verification code.')
           return
@@ -40,8 +82,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         setTimeout(() => {
           setIsOtpStep(false)
           setIsSignUp(false)
-          setOtpCode('')
-          setSuccessMsg(null)
+          resetAllStates()
         }, 2000)
       } else if (isSignUp) {
         if (!email || !password) {
@@ -97,17 +138,44 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           <X className="w-5 h-5" />
         </button>
 
+        {/* Back Button for Forgot Password Flow */}
+        {isForgotPassword && (
+          <button
+            onClick={() => {
+              if (isResetConfirmStep) {
+                setIsResetConfirmStep(false)
+              } else {
+                setIsForgotPassword(false)
+              }
+              resetAllStates()
+            }}
+            className="absolute top-4 left-4 p-1.5 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition flex items-center gap-1 text-xs"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back
+          </button>
+        )}
+
         {/* Header */}
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold font-[Outfit] text-white">
-            {isOtpStep ? 'Verify Email' : isSignUp ? 'Create Account' : 'Welcome Back'}
+            {isForgotPassword
+              ? isResetConfirmStep ? 'Set New Password' : 'Reset Password'
+              : isOtpStep ? 'Verify Email' : isSignUp ? 'Create Account' : 'Welcome Back'}
           </h2>
           <p className="text-xs text-white/60 mt-1">
-            {isOtpStep ? `Enter the 6-digit code sent to ${email}` : isSignUp ? 'Register to save your 3D designs to the cloud' : 'Log in to sync and load your custom booths'}
+            {isForgotPassword
+              ? isResetConfirmStep
+                ? `Enter the 6-digit code sent to ${email} and your new password`
+                : 'Enter your email to receive a secure password reset code'
+              : isOtpStep
+                ? `Enter the 6-digit code sent to ${email}`
+                : isSignUp
+                  ? 'Register to save your 3D designs to the cloud'
+                  : 'Log in to sync and load your custom booths'}
           </p>
         </div>
 
-        {!isOtpStep && (
+        {!isOtpStep && !isForgotPassword && (
           <>
             {/* Google OAuth */}
             <button
@@ -133,49 +201,66 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
 
         {/* Form */}
         <form onSubmit={handleAuth} className="space-y-4">
-          {!isOtpStep ? (
-            <>
-              {/* Email field */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black tracking-wider uppercase text-white/70 block">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-white/40 pointer-events-none">
-                    <Mail className="w-4 h-4" />
-                  </span>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full bg-white/5 border border-white/10 text-white rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] transition"
-                  />
-                </div>
+          {/* Email Field */}
+          {(!isOtpStep && !isResetConfirmStep) && (
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black tracking-wider uppercase text-white/70 block">
+                Email Address
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-white/40 pointer-events-none">
+                  <Mail className="w-4 h-4" />
+                </span>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] transition"
+                />
               </div>
+            </div>
+          )}
 
-              {/* Password field */}
-              <div className="space-y-1.5">
+          {/* Password Field (for Sign In & Sign Up) */}
+          {(!isOtpStep && !isForgotPassword) && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
                 <label className="text-[10px] font-black tracking-wider uppercase text-white/70 block">
                   Password
                 </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-white/40 pointer-events-none">
-                    <Lock className="w-4 h-4" />
-                  </span>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-white/5 border border-white/10 text-white rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] transition"
-                  />
-                </div>
+                {!isSignUp && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsForgotPassword(true)
+                      resetAllStates()
+                    }}
+                    className="text-[10px] text-[var(--brand)] hover:underline font-bold focus:outline-none"
+                  >
+                    Forgot Password?
+                  </button>
+                )}
               </div>
-            </>
-          ) : (
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-white/40 pointer-events-none">
+                  <Lock className="w-4 h-4" />
+                </span>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] transition"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Verification Code Field (for OTP & Password Reset Confirm) */}
+          {(isOtpStep || (isForgotPassword && isResetConfirmStep)) && (
             <div className="space-y-1.5">
               <label className="text-[10px] font-black tracking-wider uppercase text-white/70 block">
                 Verification Code
@@ -191,6 +276,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                   onChange={(e) => setOtpCode(e.target.value)}
                   placeholder="123456"
                   className="w-full bg-white/5 border border-white/10 text-white rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] tracking-[0.5em] text-center transition"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* New Password Field (for Password Reset Confirm) */}
+          {(isForgotPassword && isResetConfirmStep) && (
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black tracking-wider uppercase text-white/70 block">
+                New Password
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-white/40 pointer-events-none">
+                  <Lock className="w-4 h-4" />
+                </span>
+                <input
+                  type="password"
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] transition"
                 />
               </div>
             </div>
@@ -222,6 +329,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Processing...
               </>
+            ) : isForgotPassword ? (
+              isResetConfirmStep ? 'Reset Password' : 'Send Reset Code'
             ) : isOtpStep ? (
               'Verify Email'
             ) : isSignUp ? (
@@ -233,15 +342,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         </form>
 
         {/* Tab Toggle Footer */}
-        {!isOtpStep && (
+        {!isOtpStep && !isForgotPassword && (
           <div className="border-t border-white/10 mt-6 pt-4 text-center">
             <p className="text-xs text-white/60">
               {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
               <button
                 onClick={() => {
                   setIsSignUp(!isSignUp)
-                  setErrorMsg(null)
-                  setSuccessMsg(null)
+                  resetAllStates()
                 }}
                 className="text-[var(--brand)] hover:underline font-bold focus:outline-none cursor-pointer"
               >
@@ -254,3 +362,4 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
     </div>
   )
 }
+
