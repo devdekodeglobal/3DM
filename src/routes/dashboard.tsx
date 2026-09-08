@@ -68,6 +68,7 @@ function ProjectCard({ design, index, onOpen, onDeleteRequest, onRenameRequest }
   return (
     <div
       onClick={onOpen}
+      className="group"
       style={{
         background: 'var(--bg-card)',
         border: '1px solid var(--border)',
