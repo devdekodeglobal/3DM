@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { getCurrentUser, listDesigns, deleteDesign, signOut, type User, type Design } from '../lib/authClient'
-import { PlusCircle, Trash2, Calendar, LayoutGrid, LogOut, Loader2, Box } from 'lucide-react'
+import { getCurrentUser, listDesigns, deleteDesign, type User, type Design } from '../lib/authClient'
+import { PlusCircle, Trash2, Calendar, LayoutGrid, Loader2, Box } from 'lucide-react'
 
 export const Route = createFileRoute('/dashboard')({ component: DashboardPage })
 
@@ -156,49 +156,20 @@ function DashboardPage() {
     navigate({ to: '/editor' })
   }
 
-  const handleSignOut = async () => {
-    await signOut()
-    navigate({ to: '/' })
-  }
-
-  const initials = user?.name
-    ? user.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
-    : user?.email?.slice(0, 2).toUpperCase() || 'U'
-
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: 80 }}>
-      {/* Header */}
+      {/* Page title bar — no auth controls (those live in the main site Header) */}
       <div style={{
-        borderBottom: '1px solid var(--border)', padding: '18px 0',
-        background: 'var(--bg-card)', position: 'sticky', top: 0, zIndex: 50,
+        borderBottom: '1px solid var(--border)', padding: '14px 0',
+        background: 'var(--bg-card)', position: 'sticky', top: 'var(--header-height, 56px)', zIndex: 40,
         backdropFilter: 'blur(12px)',
       }}>
-        <div className="page-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <LayoutGrid size={20} color="var(--brand)" />
-            <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '1rem', color: 'var(--fg)' }}>My Projects</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {user?.avatar_url
-              ? <img src={user.avatar_url} alt="" style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid var(--border-brand)' }} />
-              : <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, color: 'white' }}>{initials}</div>
-            }
-            <span style={{ fontSize: '0.85rem', color: 'var(--fg-soft)', fontWeight: 500 }}>
-              {user?.name || user?.email}
-            </span>
-            <button
-              onClick={handleSignOut}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
-                borderRadius: 8, background: 'transparent', border: '1px solid var(--border)',
-                color: 'var(--fg-dim)', cursor: 'pointer', fontSize: '0.8rem', transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--border-brand)'; el.style.color = 'var(--fg)' }}
-              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--border)'; el.style.color = 'var(--fg-dim)' }}
-            >
-              <LogOut size={14} /> Sign out
-            </button>
-          </div>
+        <div className="page-wrap" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <LayoutGrid size={18} color="var(--brand)" />
+          <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '0.95rem', color: 'var(--fg)' }}>My Projects</span>
+          <span style={{ marginLeft: 'auto', fontSize: '0.78rem', color: 'var(--fg-dim)' }}>
+            {!loading && `${designs.length} design${designs.length !== 1 ? 's' : ''}`}
+          </span>
         </div>
       </div>
 
