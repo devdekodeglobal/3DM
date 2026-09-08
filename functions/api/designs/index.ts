@@ -58,13 +58,13 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return jsonError('Design name must not exceed 100 characters')
   }
 
-  // Limit to 10 designs per user on free tier
+  // Limit to 3 designs per user
   const { results: existing } = await env.DB.prepare(
     'SELECT COUNT(*) as count FROM designs WHERE user_id = ?'
   ).bind(user.id).all<{ count: number }>()
 
   const count = existing[0]?.count ?? 0
-  if (count >= 10) return jsonError('Free plan limit: 10 designs. Delete one to save more.', 403)
+  if (count >= 3) return jsonError('Max capacity reached: Limit of 3 designs per user. Please delete an old design to save a new one.', 403)
 
   const { results } = await env.DB.prepare(
     'INSERT INTO designs (user_id, name, config, elements) VALUES (?, ?, ?, ?) RETURNING id, name, created_at'
