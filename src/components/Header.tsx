@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, LogOut } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 import { getCurrentUser, signOut } from '../lib/authClient'
 import type { User } from '../lib/authClient'
@@ -67,23 +67,25 @@ export default function Header() {
             <ThemeToggle />
 
             {sessionUser ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 sm:gap-2 p-1 bg-[var(--color-bg-card)] rounded-full border border-[var(--color-border)] shadow-sm">
                 {sessionUser.avatar_url ? (
-                  <Link to="/dashboard">
-                    <img src={sessionUser.avatar_url} alt="" className="w-7 h-7 rounded-full ring-2 ring-[var(--brand)]/20" style={{ objectFit: 'cover' }} />
+                  <Link to="/dashboard" title="My Projects" className="transition hover:opacity-80 flex-shrink-0">
+                    <img src={sessionUser.avatar_url} alt="" className="w-7 h-7 rounded-full" style={{ objectFit: 'cover' }} />
                   </Link>
                 ) : (
-                  <Link to="/dashboard">
-                    <div className="w-7 h-7 rounded-full bg-[var(--brand)] text-white flex items-center justify-center text-[10px] font-bold shadow-sm ring-2 ring-[var(--brand)]/20" title={sessionUser.email}>
+                  <Link to="/dashboard" title="My Projects" className="transition hover:opacity-80 flex-shrink-0">
+                    <div className="w-7 h-7 rounded-full bg-[var(--brand)] text-white flex items-center justify-center text-[10px] font-bold" title={sessionUser.email}>
                       {getInitials(sessionUser)}
                     </div>
                   </Link>
                 )}
+                <div className="w-[1px] h-4 bg-[var(--color-border)] mx-0.5"></div>
                 <button
                   onClick={async () => { await signOut(); setSessionUser(null) }}
-                  className="text-xs font-bold text-red-500 hover:text-red-600 transition whitespace-nowrap"
+                  className="p-1.5 text-[var(--fg-soft)] hover:text-red-500 hover:bg-red-500/10 rounded-full transition"
+                  title="Log Out"
                 >
-                  Log Out
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
@@ -112,7 +114,10 @@ export default function Header() {
               <Link to="/about" className="text-[var(--fg)] font-bold text-lg py-2 border-b border-[var(--color-border)]" activeProps={{ className: 'text-[var(--brand)]' }}>Overview</Link>
               <Link to="/editor" className="text-[var(--fg)] font-bold text-lg py-2 border-b border-[var(--color-border)]" activeProps={{ className: 'text-[var(--brand)]' }}>Editor</Link>
               {sessionUser && (
-                <Link to="/dashboard" className="text-[var(--fg)] font-bold text-lg py-2 border-b border-[var(--color-border)]" activeProps={{ className: 'text-[var(--brand)]' }}>Dashboard</Link>
+                <>
+                  <Link to="/dashboard" className="text-[var(--fg)] font-bold text-lg py-2 border-b border-[var(--color-border)]" activeProps={{ className: 'text-[var(--brand)]' }}>Dashboard</Link>
+                  <button onClick={async () => { await signOut(); setSessionUser(null); setMobileMenuOpen(false) }} className="text-left font-bold text-lg py-2 text-red-500">Log Out</button>
+                </>
               )}
               {!sessionUser && (
                 <button onClick={() => { setAuthModalOpen(true); setMobileMenuOpen(false) }} className="text-left font-bold text-lg py-2 text-[var(--brand)]">Sign In</button>

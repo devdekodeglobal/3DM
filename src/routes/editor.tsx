@@ -7,11 +7,11 @@ import Properties from '../components/editor/Properties'
 import Preview3D from '../components/editor/Preview3D'
 import ColorPickerPanel from '../components/editor/ColorPickerPanel'
 import RoofCanvas from '../components/editor/RoofCanvas'
-import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Download, LogOut, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react'
+import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Download, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
-import { getCurrentUser, saveDesign, signOut } from '../lib/authClient'
+import { getCurrentUser, saveDesign } from '../lib/authClient'
 import { AuthModal } from '../components/editor/AuthModal'
 import { CloudProjectsDrawer } from '../components/editor/CloudProjectsDrawer'
 import { saveAssetBlob, getAssetBlob, deleteAssetBlob } from '../lib/customAssetDB'
@@ -30,27 +30,6 @@ interface BoothConfig {
   walls: { north: boolean; south: boolean; east: boolean; west: boolean };
   floorType?: string;
   floorColor?: string;
-}
-
-function getInitials(user: any) {
-  if (!user) return '?'
-  const name = user.user_metadata?.full_name || user.user_metadata?.name
-  if (name) {
-    const parts = name.split(' ').filter(Boolean)
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    }
-    return name.substring(0, 2).toUpperCase()
-  }
-  
-  if (user.email) {
-    const parts = user.email.split('@')[0].split(/[._-]/)
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    }
-    return user.email.substring(0, 2).toUpperCase()
-  }
-  return 'U'
 }
 
 function getInitialData() {
