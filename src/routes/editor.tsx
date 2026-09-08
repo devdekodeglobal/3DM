@@ -7,11 +7,11 @@ import Properties from '../components/editor/Properties'
 import Preview3D from '../components/editor/Preview3D'
 import ColorPickerPanel from '../components/editor/ColorPickerPanel'
 import RoofCanvas from '../components/editor/RoofCanvas'
-import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Download, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react'
+import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
-import { getCurrentUser, saveDesign } from '../lib/authClient'
+import { getCurrentUser, saveDesign, updateDesign } from '../lib/authClient'
 import { AuthModal } from '../components/editor/AuthModal'
 import { CloudProjectsDrawer } from '../components/editor/CloudProjectsDrawer'
 import { saveAssetBlob, getAssetBlob, deleteAssetBlob } from '../lib/customAssetDB'
@@ -200,6 +200,7 @@ function EditorPage() {
   const [historyStep, setHistoryStep] = useState(initialData.elements ? 0 : -1)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [gridVisible, setGridVisible] = useState(true)
+  const [currentDesignId, setCurrentDesignId] = useState<string | null>(null)
 
   // Layout States
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -249,8 +250,18 @@ function EditorPage() {
 
     setIsCloudSaving(true)
     try {
-      await saveDesign(projectName || 'Untitled Design', boothConfig, elements)
-      showAlert('Design successfully saved to the cloud!', 'success', 'Design Saved')
+      if (currentDesignId) {
+        await updateDesign(currentDesignId, {
+          name: projectName || 'Untitled Design',
+          config: boothConfig,
+          elements: elements
+        })
+        showAlert('Design successfully updated!', 'success', 'Design Updated')
+      } else {
+        const newDesign = await saveDesign(projectName || 'Untitled Design', boothConfig, elements)
+        setCurrentDesignId(newDesign.id)
+        showAlert('Design successfully saved to the cloud!', 'success', 'Design Saved')
+      }
       setShowSavePrompt(false)
     } catch (err: any) {
       console.error('Cloud save failed:', err)
@@ -260,11 +271,33 @@ function EditorPage() {
     }
   };
 
-  const loadCloudDesign = (loadedConfig: any, loadedElements: any[]) => {
+  const handleCloudSaveAs = async () => {
+    if (!sessionUser) {
+      setAuthModalOpen(true)
+      return
+    }
+
+    setIsCloudSaving(true)
+    try {
+      const newDesign = await saveDesign(projectName || 'Untitled Design', boothConfig, elements)
+      setCurrentDesignId(newDesign.id)
+      showAlert('Saved as a new design!', 'success', 'Design Saved')
+      setShowSavePrompt(false)
+    } catch (err: any) {
+      console.error('Cloud save failed:', err)
+      showAlert(err.message || 'Failed to save to the cloud.', 'error', 'Save Failed')
+    } finally {
+      setIsCloudSaving(false)
+    }
+  };
+
+  const loadCloudDesign = (loadedConfig: any, loadedElements: any[], designId?: string, designName?: string) => {
     setBoothConfig(loadedConfig)
     setElements(loadedElements)
     setHistory([loadedElements])
     setHistoryStep(0)
+    if (designId) setCurrentDesignId(designId)
+    if (designName) setProjectName(designName)
 
     // Force canvas refresh
     setTimeout(() => {
@@ -779,7 +812,7 @@ function EditorPage() {
             onClick={() => setShowSavePrompt(true)}
             className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
           >
-            <Download className="h-4 w-4" /> Save Project
+            <Cloud className="h-4 w-4" /> Save Project
           </button>
           {/* <button
             onClick={submitExport}
@@ -1020,15 +1053,24 @@ function EditorPage() {
                 />
               </div>
 
-              <div className="space-y-4 pt-2">
+              <div className="space-y-3 pt-2">
                 <button
                   onClick={handleCloudSave}
                   disabled={isCloudSaving}
                   className="w-full bg-[var(--lagoon-deep)] hover:bg-[var(--palm)] text-white text-xs font-bold py-3.5 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
                 >
                   <Cloud className="w-5 h-5" />
-                  {isCloudSaving ? 'Saving...' : sessionUser ? 'Save to Cloud' : 'Login to Cloud Save'}
+                  {isCloudSaving ? 'Saving...' : sessionUser ? (currentDesignId ? 'Update Design' : 'Save to Cloud') : 'Login to Cloud Save'}
                 </button>
+                {currentDesignId && sessionUser && (
+                  <button
+                    onClick={handleCloudSaveAs}
+                    disabled={isCloudSaving}
+                    className="w-full bg-white/5 hover:bg-white/10 text-white text-xs font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer border border-white/10 disabled:opacity-50"
+                  >
+                    Save as New Design
+                  </button>
+                )}
 
                 {/* 
                 <div className="text-[10px] font-black tracking-wider uppercase text-white/50 pt-3 block border-t border-white/10">

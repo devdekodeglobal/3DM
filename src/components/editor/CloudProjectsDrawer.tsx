@@ -7,8 +7,20 @@ import { ConfirmModal } from './ConfirmModal'
 interface CloudProjectsDrawerProps {
   isOpen: boolean
   onClose: () => void
-  onLoadProject: (boothConfig: any, elements: any[]) => void
+  onLoadProject: (boothConfig: any, elements: any[], designId?: string, designName?: string) => void
   userId: string | null
+}
+
+function timeAgo(dateStr: string): string {
+  const normalized = dateStr.endsWith('Z') ? dateStr : dateStr.replace(' ', 'T') + 'Z'
+  const date = new Date(normalized)
+  const now = new Date()
+  const diff = Math.floor((now.getTime() - date.getTime()) / 1000)
+  if (diff < 60) return 'just now'
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  if (diff < 2592000) return `${Math.floor(diff / 86400)}d ago`
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
@@ -86,7 +98,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
           <div className="flex items-center gap-2">
             <FolderOpen className="w-5 h-5 text-[var(--brand)]" />
             <h2 className="text-sm font-black font-[Outfit] text-white tracking-wide uppercase">
-              My Cloud Designs
+              My Designs
             </h2>
           </div>
           <div className="flex items-center gap-1">
@@ -136,7 +148,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
                     // D1 returns JSON as string, so we need to parse it
                     const config = typeof design.config === 'string' ? JSON.parse(design.config) : design.config
                     const elements = typeof design.elements === 'string' ? JSON.parse(design.elements) : design.elements
-                    onLoadProject(config, elements)
+                    onLoadProject(config, elements, design.id, design.name)
                     onClose()
                   } catch (e) {
                     console.error('Failed to parse design data', e)
@@ -170,12 +182,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
                 <div className="flex items-center gap-1.5 text-[10px] text-white/40 font-medium">
                   <Calendar className="w-3 h-3 shrink-0" />
                   <span>
-                    Saved {new Date(design.updated_at).toLocaleDateString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    {timeAgo(design.updated_at)}
                   </span>
                 </div>
               </div>
