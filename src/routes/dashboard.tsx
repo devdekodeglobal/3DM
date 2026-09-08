@@ -2,11 +2,15 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { getCurrentUser, listDesigns, deleteDesign, type User, type Design } from '../lib/authClient'
 import { PlusCircle, Trash2, Calendar, LayoutGrid, Loader2, Box } from 'lucide-react'
+import { ConfirmModal } from '../components/editor/ConfirmModal'
 
 export const Route = createFileRoute('/dashboard')({ component: DashboardPage })
 
 function timeAgo(dateStr: string): string {
-  const date = new Date(dateStr)
+  // SQLite returns dates like "2024-03-05 12:00:00" which are UTC. 
+  // We append 'Z' (and replace space with T) to ensure the browser parses it as UTC, not local time.
+  const normalized = dateStr.endsWith('Z') ? dateStr : dateStr.replace(' ', 'T') + 'Z'
+  const date = new Date(normalized)
   const now = new Date()
   const diff = Math.floor((now.getTime() - date.getTime()) / 1000)
   if (diff < 60) return 'just now'
@@ -47,19 +51,16 @@ function BoothMiniSVG({ config }: { config: any }) {
   )
 }
 
-function ProjectCard({ design, index, onOpen, onDelete }: {
-  design: Design; index: number; onOpen: () => void; onDelete: () => void
+function ProjectCard({ design, index, onOpen, onDeleteRequest }: {
+  design: Design; index: number; onOpen: () => void; onDeleteRequest: (id: string, name: string) => void
 }) {
-  const [deleting, setDeleting] = useState(false)
   const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length]
   let config: any = null
   try { config = JSON.parse(design.config) } catch {}
 
-  const handleDelete = async (e: React.MouseEvent) => {
+  const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!confirm(`Delete "${design.name}"? This cannot be undone.`)) return
-    setDeleting(true)
-    await onDelete()
+    onDeleteRequest(design.id, design.name)
   }
 
   return (
@@ -90,18 +91,18 @@ function ProjectCard({ design, index, onOpen, onDelete }: {
         <BoothMiniSVG config={config} />
         <button
           onClick={handleDelete}
-          disabled={deleting}
           style={{
             position: 'absolute', top: 10, right: 10,
             width: 32, height: 32, borderRadius: 8,
             background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)',
             color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', transition: 'background 0.2s',
+            cursor: 'pointer', opacity: 0, transition: 'opacity 0.2s',
           }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.7)'}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.4)'}
+          className="group-hover:opacity-100"
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.7)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.4)')}
         >
-          {deleting ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Trash2 size={14} />}
+          <Trash2 size={14} />
         </button>
       </div>
       <div style={{ padding: '14px 16px' }}>
@@ -124,6 +125,9 @@ function DashboardPage() {
   const [user, setUser] = useState<User | null>(null)
   const [designs, setDesigns] = useState<Design[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmModalState, setConfirmModalState] = useState<{
+    isOpen: boolean; title?: string; message: string; confirmText?: string; onConfirm: () => void
+  } | null>(null)
 
   useEffect(() => {
     document.title = 'My Projects | Krafc'
@@ -145,9 +149,23 @@ function DashboardPage() {
     navigate({ to: '/editor' })
   }
 
-  const handleDelete = async (id: string) => {
-    await deleteDesign(id)
-    setDesigns(prev => prev.filter(d => d.id !== id))
+  const handleDeleteRequest = (id: string, name: string) => {
+    setConfirmModalState({
+      isOpen: true,
+      title: 'Delete Design',
+      message: `Are you sure you want to delete "${name}"? This cannot be undone.`,
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        try {
+          await deleteDesign(id)
+          setDesigns(prev => prev.filter(d => d.id !== id))
+        } catch (err) {
+          console.error("Failed to delete", err)
+        } finally {
+          setConfirmModalState(null)
+        }
+      }
+    })
   }
 
   const handleNewDesign = () => {
@@ -246,12 +264,21 @@ function DashboardPage() {
                 design={design}
                 index={i}
                 onOpen={() => handleOpen(design)}
-                onDelete={() => handleDelete(design.id)}
+                onDeleteRequest={handleDeleteRequest}
               />
             ))}
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={!!confirmModalState}
+        title={confirmModalState?.title}
+        message={confirmModalState?.message || ''}
+        confirmText={confirmModalState?.confirmText}
+        onConfirm={() => confirmModalState?.onConfirm()}
+        onCancel={() => setConfirmModalState(null)}
+      />
     </div>
   )
 }
