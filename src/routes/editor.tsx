@@ -203,6 +203,11 @@ function EditorPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [gridVisible, setGridVisible] = useState(true)
   const [currentDesignId, setCurrentDesignId] = useState<string | null>(initialData.id || null)
+  const [autoSaveToCloud, setAutoSaveToCloud] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('auto-save-cloud') === 'true';
+  })
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   // Sync id and name to localStorage
   useEffect(() => {
@@ -333,6 +338,32 @@ function EditorPage() {
       }
     }
   }, [boothConfig, elements])
+
+  // Auto-save to cloud
+  useEffect(() => {
+    if (!autoSaveToCloud || !currentDesignId || !sessionUser) return;
+    
+    setCloudSyncStatus('saving');
+    
+    const handler = setTimeout(async () => {
+      try {
+        await updateDesign(currentDesignId, {
+          name: projectName || 'Untitled Design',
+          config: boothConfig,
+          elements: elements
+        });
+        setCloudSyncStatus('saved');
+        setTimeout(() => {
+          setCloudSyncStatus(prev => prev === 'saved' ? 'idle' : prev);
+        }, 3000);
+      } catch (err) {
+        console.error('Auto-save to cloud failed:', err);
+        setCloudSyncStatus('error');
+      }
+    }, 2500);
+
+    return () => clearTimeout(handler);
+  }, [boothConfig, elements, projectName, autoSaveToCloud, currentDesignId, sessionUser]);
 
   const saveToHistory = useCallback((newElements: any[]) => {
     setHistory(prev => {
@@ -826,6 +857,28 @@ function EditorPage() {
             >
               <LogIn className="h-4 w-4 text-[var(--brand)]" /> Login
             </button>
+          )}
+
+          {sessionUser && currentDesignId && (
+            <div className="flex items-center gap-2 mr-2">
+              <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider">
+                <input
+                  type="checkbox"
+                  checked={autoSaveToCloud}
+                  onChange={(e) => {
+                    setAutoSaveToCloud(e.target.checked)
+                    localStorage.setItem('auto-save-cloud', e.target.checked ? 'true' : 'false')
+                  }}
+                  className="w-3.5 h-3.5 rounded text-[var(--brand)] focus:ring-[var(--brand)] cursor-pointer"
+                />
+                Auto-Sync
+              </label>
+              {autoSaveToCloud && cloudSyncStatus !== 'idle' && (
+                <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${cloudSyncStatus === 'saving' ? 'bg-amber-100 text-amber-700' : cloudSyncStatus === 'saved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {cloudSyncStatus === 'saving' ? 'Syncing...' : cloudSyncStatus === 'saved' ? 'Synced' : 'Error'}
+                </span>
+              )}
+            </div>
           )}
 
           <button
