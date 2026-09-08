@@ -47,7 +47,7 @@ function PrivacyPolicyPage() {
           Krafc uses a mix of local browser storage and cloud services. The difference matters: local storage is kept in your browser; cloud-saved data is sent to Krafc services so it can be available when you sign in.
         </p>
         <p>
-          Your editor drafts, settings, and uploaded custom 3D asset files may be stored in local storage or IndexedDB under the Krafc browser database. Cloud-saved design/project data, account records, and session records are stored in our Cloudflare D1 database.
+          Your editor drafts, settings, and uploaded custom 3D asset files may be stored in local storage or IndexedDB under the Krafc browser database. Cloud-saved design/project data, account records, and session records are stored in our secure cloud database.
         </p>
       </section>
 
@@ -64,7 +64,7 @@ function PrivacyPolicyPage() {
       <section className="policy-section">
         <h2>5. When we share information</h2>
         <p>
-          We do not sell, trade, or rent personal information. We may share information with service providers that help operate Krafc, such as Cloudflare (hosting and databases), Google (OAuth sign-in), and Resend (transactional emails). We may also disclose information where required by law or to protect rights and security.
+          We do not sell, trade, or rent personal information. We may share information with service providers that help operate Krafc, such as our secure hosting providers, Google (OAuth sign-in), and Resend (transactional emails). We may also disclose information where required by law or to protect rights and security.
         </p>
       </section>
 

@@ -9,7 +9,7 @@ import {
   type CookieConsent as CookieConsentValue,
 } from "../lib/cookieConsent";
 
-const ANALYTICS_SCRIPT_ID = "kreatekaro-analytics";
+const ANALYTICS_SCRIPT_ID = "krafc-analytics";
 const measurementId = import.meta.env.VITE_GOOGLE_ANALYTICS_ID?.trim();
 
 declare global {

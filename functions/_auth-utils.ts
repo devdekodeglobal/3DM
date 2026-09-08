@@ -1,6 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
-// Shared auth utilities for Cloudflare Pages Functions
-// All functions run inside the Cloudflare Worker runtime
+// Shared auth utilities for backend functions
+// All functions run inside the serverless runtime
 
 // ─── Helpers: byte <-> hex conversion ────────────────────────────────────────
 function bufferToHex(buffer: ArrayBuffer): string {

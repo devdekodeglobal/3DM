@@ -45,13 +45,17 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
 
   // ── Step 1: Redirect to Google ──────────────────────────────────────────────
   if (!code) {
-    const state = generateId()
+    const stateId = generateId()
+    // Encode return_to path in state as JSON so we can recover it after callback
+    const returnTo = url.searchParams.get('return_to') || '/dashboard'
+    const statePayload = JSON.stringify({ id: stateId, returnTo })
+    const encodedState = btoa(statePayload)
     const params = new URLSearchParams({
       client_id: env.GOOGLE_CLIENT_ID,
       redirect_uri: getRedirectUri(request),
       response_type: 'code',
       scope: 'openid email profile',
-      state,
+      state: encodedState,
       access_type: 'offline',
       prompt: 'select_account',
     })
@@ -60,23 +64,44 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       status: 302,
       headers: {
         Location: `${GOOGLE_AUTH_URL}?${params}`,
-        'Set-Cookie': setOAuthStateCookie(state),
+        'Set-Cookie': setOAuthStateCookie(stateId),
       },
     })
   }
 
   // ── Step 2: Handle callback — verify state (KK 04) & exchange tokens ────────
-  const expectedState = getOAuthStateCookie(request)
-  if (!incomingState || !expectedState || incomingState !== expectedState) {
-    console.error('OAuth state verification failed. Possible CSRF attack.')
-    const baseUrl = getRedirectUri(request).replace('/api/auth/google', '')
-    return new Response(null, {
-      status: 302,
-      headers: {
-        Location: `${baseUrl}/?error=oauth_state_invalid`,
-        'Set-Cookie': clearOAuthStateCookie(),
-      },
-    })
+  let returnTo = '/dashboard'
+  try {
+    const decoded = JSON.parse(atob(incomingState || ''))
+    if (decoded?.returnTo && typeof decoded.returnTo === 'string' && decoded.returnTo.startsWith('/')) {
+      returnTo = decoded.returnTo
+    }
+    // Verify just the ID part
+    const expectedState = getOAuthStateCookie(request)
+    if (!decoded?.id || !expectedState || decoded.id !== expectedState) {
+      console.error('OAuth state verification failed. Possible CSRF attack.')
+      const baseUrl = getRedirectUri(request).replace('/api/auth/google', '')
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: `${baseUrl}/?error=oauth_state_invalid`,
+          'Set-Cookie': clearOAuthStateCookie(),
+        },
+      })
+    }
+  } catch {
+    const expectedState = getOAuthStateCookie(request)
+    if (!incomingState || !expectedState || incomingState !== expectedState) {
+      console.error('OAuth state verification failed. Possible CSRF attack.')
+      const baseUrl = getRedirectUri(request).replace('/api/auth/google', '')
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: `${baseUrl}/?error=oauth_state_invalid`,
+          'Set-Cookie': clearOAuthStateCookie(),
+        },
+      })
+    }
   }
 
   try {
@@ -163,12 +188,12 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
 
     const sessionId = await createSession(env.DB, userId)
 
-    // Redirect to editor with session cookie set and clear the oauth_state cookie
+    // Redirect to the return_to path with session cookie set
     const baseUrl = getRedirectUri(request).replace('/api/auth/google', '')
     return new Response(null, {
       status: 302,
       headers: [
-        ['Location', `${baseUrl}/editor`],
+        ['Location', `${baseUrl}${returnTo}`],
         ['Set-Cookie', setSessionCookie(sessionId)],
         ['Set-Cookie', clearOAuthStateCookie()],
       ],

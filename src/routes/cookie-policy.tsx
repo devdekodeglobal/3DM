@@ -71,7 +71,7 @@ function CookiePolicyPage() {
                   <code>session</code>
                 </td>
                 <td>
-                  Krafc, delivered through Cloudflare Pages and D1
+                  Krafc, delivered through our secure cloud infrastructure
                   <br />
                   <span>Necessary</span>
                 </td>
@@ -83,8 +83,8 @@ function CookiePolicyPage() {
                 </td>
                 <td>Up to 30 days, or until you sign out</td>
                 <td>
-                  Cloudflare processes the identifier and related requests as
-                  Krafc’s hosting, Workers, and database provider.
+                  Our hosting provider processes the identifier and related requests as
+                  Krafc’s cloud backend and database provider.
                 </td>
               </tr>
               <tr>
@@ -177,15 +177,15 @@ function CookiePolicyPage() {
           <li>
             <strong>Cloud-saved projects</strong> — if you deliberately save a
             project to the cloud, account and design data is sent to
-            Krafc’s Cloudflare Workers and D1 database.
+            Krafc’s secure cloud backend.
           </li>
         </ul>
       </section>
 
       <section className="policy-section">
-        <h2>Cloudflare, Google sign-in, and service delivery</h2>
+        <h2>Infrastructure, Google sign-in, and service delivery</h2>
         <p>
-          Cloudflare processes technical request data required to deliver and
+          Our hosting provider processes technical request data required to deliver and
           secure the website. This necessary infrastructure processing is
           separate from optional analytics. If you choose Google sign-in, Google
           may use its own cookies on Google-controlled domains during

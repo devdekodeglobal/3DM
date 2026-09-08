@@ -1,4 +1,4 @@
-const DB_NAME = 'kreatekaro_assets_db';
+const DB_NAME = 'krafc_assets_db';
 const STORE_NAME = 'custom_blobs';
 
 function openDB(): Promise<IDBDatabase> {

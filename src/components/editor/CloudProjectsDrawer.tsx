@@ -185,7 +185,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
 
         {/* Footer Info */}
         <div className="p-4 border-t border-white/10 bg-white/5 text-[10px] text-center text-white/40 font-semibold tracking-wide">
-          SYNCED SECURELY VIA CLOUDFLARE D1
+          SYNCED SECURELY TO CLOUD
         </div>
       </div>
 

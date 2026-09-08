@@ -1,0 +1,286 @@
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { getCurrentUser, listDesigns, deleteDesign, signOut, type User, type Design } from '../lib/authClient'
+import { PlusCircle, Trash2, Calendar, LayoutGrid, LogOut, Loader2, Box } from 'lucide-react'
+
+export const Route = createFileRoute('/dashboard')({ component: DashboardPage })
+
+function timeAgo(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diff = Math.floor((now.getTime() - date.getTime()) / 1000)
+  if (diff < 60) return 'just now'
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  if (diff < 2592000) return `${Math.floor(diff / 86400)}d ago`
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+const CARD_GRADIENTS = [
+  'linear-gradient(135deg, #4f46e5 0%, #0891b2 100%)',
+  'linear-gradient(135deg, #7c3aed 0%, #db2777 100%)',
+  'linear-gradient(135deg, #0891b2 0%, #059669 100%)',
+  'linear-gradient(135deg, #d97706 0%, #dc2626 100%)',
+  'linear-gradient(135deg, #059669 0%, #0891b2 100%)',
+  'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+]
+
+function BoothMiniSVG({ config }: { config: any }) {
+  const w = config?.width || 4
+  const d = config?.depth || 3
+  const walls = config?.walls || {}
+  const ratio = Math.max(w, d)
+  const sw = (w / ratio) * 80
+  const sh = (d / ratio) * 80
+  const ox = (100 - sw) / 2
+  const oy = (100 - sh) / 2
+  return (
+    <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ opacity: 0.8 }}>
+      <rect width="100" height="100" fill="none" />
+      <rect x={ox} y={oy} width={sw} height={sh} fill="rgba(255,255,255,0.1)" rx="2" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+      {walls.north && <line x1={ox} y1={oy} x2={ox + sw} y2={oy} stroke="rgba(255,255,255,0.8)" strokeWidth="2.5" strokeLinecap="round" />}
+      {walls.south && <line x1={ox} y1={oy + sh} x2={ox + sw} y2={oy + sh} stroke="rgba(255,255,255,0.8)" strokeWidth="2.5" strokeLinecap="round" />}
+      {walls.east && <line x1={ox + sw} y1={oy} x2={ox + sw} y2={oy + sh} stroke="rgba(255,255,255,0.8)" strokeWidth="2.5" strokeLinecap="round" />}
+      {walls.west && <line x1={ox} y1={oy} x2={ox} y2={oy + sh} stroke="rgba(255,255,255,0.8)" strokeWidth="2.5" strokeLinecap="round" />}
+      <text x="50" y="96" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="6" fontFamily="Inter, sans-serif">{w}m x {d}m</text>
+    </svg>
+  )
+}
+
+function ProjectCard({ design, index, onOpen, onDelete }: {
+  design: Design; index: number; onOpen: () => void; onDelete: () => void
+}) {
+  const [deleting, setDeleting] = useState(false)
+  const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length]
+  let config: any = null
+  try { config = JSON.parse(design.config) } catch {}
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!confirm(`Delete "${design.name}"? This cannot be undone.`)) return
+    setDeleting(true)
+    await onDelete()
+  }
+
+  return (
+    <div
+      onClick={onOpen}
+      style={{
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        borderRadius: 16,
+        overflow: 'hidden',
+        cursor: 'pointer',
+        transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
+      }}
+      onMouseEnter={e => {
+        const el = e.currentTarget as HTMLElement
+        el.style.transform = 'translateY(-4px)'
+        el.style.boxShadow = '0 20px 40px rgba(0,0,0,0.3)'
+        el.style.borderColor = 'var(--border-brand)'
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget as HTMLElement
+        el.style.transform = 'translateY(0)'
+        el.style.boxShadow = 'none'
+        el.style.borderColor = 'var(--border)'
+      }}
+    >
+      <div style={{ height: 140, background: gradient, position: 'relative', padding: 16 }}>
+        <BoothMiniSVG config={config} />
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          style={{
+            position: 'absolute', top: 10, right: 10,
+            width: 32, height: 32, borderRadius: 8,
+            background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)',
+            color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', transition: 'background 0.2s',
+          }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.7)'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.4)'}
+        >
+          {deleting ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Trash2 size={14} />}
+        </button>
+      </div>
+      <div style={{ padding: '14px 16px' }}>
+        <h3 style={{
+          margin: '0 0 6px', fontSize: '0.95rem', fontWeight: 700,
+          fontFamily: 'Outfit, sans-serif', color: 'var(--fg)',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>{design.name}</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--fg-dim)', fontSize: '0.75rem' }}>
+          <Calendar size={11} />
+          <span>{timeAgo(design.updated_at || design.created_at)}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DashboardPage() {
+  const navigate = useNavigate()
+  const [user, setUser] = useState<User | null>(null)
+  const [designs, setDesigns] = useState<Design[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    document.title = 'My Projects | Krafc'
+    ;(async () => {
+      const u = await getCurrentUser()
+      if (!u) { navigate({ to: '/' }); return }
+      setUser(u)
+      const d = await listDesigns()
+      setDesigns(d)
+      setLoading(false)
+    })()
+  }, [])
+
+  const handleOpen = (design: Design) => {
+    try {
+      localStorage.setItem('stall-config', design.config)
+      localStorage.setItem('stall-elements', design.elements)
+    } catch {}
+    navigate({ to: '/editor' })
+  }
+
+  const handleDelete = async (id: string) => {
+    await deleteDesign(id)
+    setDesigns(prev => prev.filter(d => d.id !== id))
+  }
+
+  const handleNewDesign = () => {
+    localStorage.removeItem('stall-config')
+    localStorage.removeItem('stall-elements')
+    navigate({ to: '/editor' })
+  }
+
+  const handleSignOut = async () => {
+    await signOut()
+    navigate({ to: '/' })
+  }
+
+  const initials = user?.name
+    ? user.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
+    : user?.email?.slice(0, 2).toUpperCase() || 'U'
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: 80 }}>
+      {/* Header */}
+      <div style={{
+        borderBottom: '1px solid var(--border)', padding: '18px 0',
+        background: 'var(--bg-card)', position: 'sticky', top: 0, zIndex: 50,
+        backdropFilter: 'blur(12px)',
+      }}>
+        <div className="page-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <LayoutGrid size={20} color="var(--brand)" />
+            <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '1rem', color: 'var(--fg)' }}>My Projects</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {user?.avatar_url
+              ? <img src={user.avatar_url} alt="" style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid var(--border-brand)' }} />
+              : <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, color: 'white' }}>{initials}</div>
+            }
+            <span style={{ fontSize: '0.85rem', color: 'var(--fg-soft)', fontWeight: 500 }}>
+              {user?.name || user?.email}
+            </span>
+            <button
+              onClick={handleSignOut}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                borderRadius: 8, background: 'transparent', border: '1px solid var(--border)',
+                color: 'var(--fg-dim)', cursor: 'pointer', fontSize: '0.8rem', transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--border-brand)'; el.style.color = 'var(--fg)' }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--border)'; el.style.color = 'var(--fg-dim)' }}
+            >
+              <LogOut size={14} /> Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="page-wrap" style={{ paddingTop: 48 }}>
+        {/* Greeting */}
+        <div style={{ marginBottom: 48 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div>
+              <p style={{ margin: '0 0 4px', fontSize: '0.82rem', color: 'var(--brand)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Dashboard</p>
+              <h1 style={{ margin: 0, fontFamily: 'Outfit, sans-serif', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', fontWeight: 800, color: 'var(--fg)' }}>
+                Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}!
+              </h1>
+              <p style={{ margin: '8px 0 0', color: 'var(--fg-dim)', fontSize: '0.9rem' }}>
+                {loading ? 'Loading your designs…' : `${designs.length} design${designs.length !== 1 ? 's' : ''} saved to cloud`}
+              </p>
+            </div>
+            <button onClick={handleNewDesign} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <PlusCircle size={16} /> New Design
+            </button>
+          </div>
+        </div>
+
+        {/* Loading */}
+        {loading && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '80px 0', color: 'var(--fg-dim)' }}>
+            <Loader2 size={22} style={{ animation: 'spin 1s linear infinite' }} />
+            <span>Loading your projects…</span>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && designs.length === 0 && (
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            padding: '80px 20px', textAlign: 'center',
+            border: '1px dashed var(--border-brand)', borderRadius: 20, background: 'var(--bg-card)',
+          }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: 16, marginBottom: 20,
+              background: 'linear-gradient(135deg, rgba(79,70,229,0.2), rgba(8,145,178,0.2))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Box size={28} color="var(--brand)" />
+            </div>
+            <h2 style={{ margin: '0 0 8px', fontFamily: 'Outfit', fontWeight: 700, fontSize: '1.2rem', color: 'var(--fg)' }}>No designs yet</h2>
+            <p style={{ margin: '0 0 24px', color: 'var(--fg-dim)', fontSize: '0.9rem', maxWidth: 320 }}>
+              Start a new project and save it to the cloud to see it here.
+            </p>
+            <button onClick={handleNewDesign} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <PlusCircle size={16} /> Create First Design
+            </button>
+          </div>
+        )}
+
+        {/* Grid */}
+        {!loading && designs.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
+            <div
+              onClick={handleNewDesign}
+              style={{
+                border: '1px dashed var(--border-brand)', borderRadius: 16, cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                minHeight: 210, gap: 10, background: 'transparent', transition: 'background 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(79,70,229,0.06)'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+            >
+              <PlusCircle size={28} color="var(--brand)" />
+              <span style={{ fontFamily: 'Outfit', fontWeight: 600, color: 'var(--brand)', fontSize: '0.9rem' }}>New Design</span>
+            </div>
+            {designs.map((design, i) => (
+              <ProjectCard
+                key={design.id}
+                design={design}
+                index={i}
+                onOpen={() => handleOpen(design)}
+                onDelete={() => handleDelete(design.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

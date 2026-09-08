@@ -1,5 +1,5 @@
 // Frontend auth client — replaces supabaseClient.ts
-// All calls go to our Cloudflare Pages Functions API
+// All calls go to our backend API
 
 export interface User {
   id: string
@@ -64,9 +64,13 @@ export async function verifyOtp(email: string, code: string) {
   return data
 }
 
-export function signInWithGoogle() {
+export function signInWithGoogle(returnTo?: string) {
   // Redirect to Google OAuth — the Pages Function handles the flow
-  window.location.href = '/api/auth/google'
+  // Pass return_to so the callback knows where to redirect after login
+  const rt = returnTo || (typeof window !== 'undefined' ? window.location.pathname : '/dashboard')
+  // Only redirect to dashboard if coming from a non-editor page
+  const destination = rt.startsWith('/editor') ? rt : '/dashboard'
+  window.location.href = `/api/auth/google?return_to=${encodeURIComponent(destination)}`
 }
 
 export async function signOut() {

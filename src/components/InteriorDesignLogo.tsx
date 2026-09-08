@@ -51,7 +51,7 @@ export function InteriorDesignLogo({ size = 34, className = "" }: { size?: numbe
         stroke="white" strokeWidth="0.75" strokeOpacity="0.2" 
       />
 
-      {/* 3D Kreatekaro Block Inside the Room */}
+      {/* 3D Krafc Block Inside the Room */}
       <g>
         {/* Block Shadow on Floor */}
         <polygon points="50,70 34.412,61 40,55 55.588,64" fill="black" fillOpacity="0.25" />

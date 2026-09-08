@@ -98,7 +98,7 @@ function EditorPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [cloudDrawerOpen, setCloudDrawerOpen] = useState(false)
   const [showSavePrompt, setShowSavePrompt] = useState(false)
-  const [projectName, setProjectName] = useState('My Exhibition Stand')
+  const [projectName, setProjectName] = useState('My Design 1')
   const [isCloudSaving, setIsCloudSaving] = useState(false)
   const [toastModal, setToastModal] = useState<{ title?: string; message: string; type?: 'info' | 'success' | 'warning' | 'error' } | null>(null)
   const [confirmModalState, setConfirmModalState] = useState<{ isOpen: boolean; title?: string; message: string; confirmText?: string; onConfirm: () => void } | null>(null)
