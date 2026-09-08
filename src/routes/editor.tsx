@@ -779,29 +779,12 @@ function EditorPage() {
 
           {sessionUser ? (
             <div className="flex items-center gap-2 border-r border-[var(--border)] pr-3 mr-2">
-              <div 
-                className="w-7 h-7 rounded-full bg-[var(--brand)] text-white flex items-center justify-center text-[10px] font-bold shadow-sm ring-2 ring-[var(--brand)]/20"
-                title={sessionUser.email}
-              >
-                {getInitials(sessionUser)}
-              </div>
               <button
                 onClick={() => setCloudDrawerOpen(true)}
                 className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
                 title="My Cloud Projects"
               >
                 <Folder className="h-4 w-4 text-[var(--brand)]" /> Projects
-              </button>
-              <button
-                onClick={async () => {
-                  await signOut()
-                  setSessionUser(null)
-                  showAlert('Logged out successfully.', 'info', 'Signed Out')
-                }}
-                className="p-2 rounded-lg text-red-400 hover:text-red-500 hover:bg-red-500/10 transition"
-                title="Log Out"
-              >
-                <LogOut className="h-4 w-4" />
               </button>
             </div>
           ) : (
