@@ -7,7 +7,7 @@ import Properties from '../components/editor/Properties'
 import Preview3D from '../components/editor/Preview3D'
 import ColorPickerPanel from '../components/editor/ColorPickerPanel'
 import RoofCanvas from '../components/editor/RoofCanvas'
-import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react'
+import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
@@ -726,9 +726,15 @@ function EditorPage() {
         <div className="flex items-center gap-4 shrink-0">
           <div className="flex items-center gap-2 pr-4 border-r border-[var(--border)]">
             <div className="h-8 w-8 rounded-lg bg-[var(--brand)] flex items-center justify-center text-white font-bold shadow-sm">D</div>
-            <span className="font-extrabold text-[var(--fg)] tracking-tight pr-4">
-              DEKODE Space Designer
-            </span>
+            <div className="flex items-center gap-2 pr-4 group">
+              <input
+                value={projectName}
+                onChange={e => setProjectName(e.target.value)}
+                className="font-extrabold text-[var(--fg)] tracking-tight bg-transparent border-none outline-none focus:ring-2 focus:ring-[var(--brand)]/50 rounded px-1.5 py-0.5 -ml-1.5 transition-all w-[180px] hover:bg-[var(--chip-bg)]"
+                title="Edit Project Name"
+              />
+              <Pencil className="w-3.5 h-3.5 text-[var(--fg-dim)] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" />
+            </div>
           </div>
           <div className="flex items-center gap-1">
             <button
