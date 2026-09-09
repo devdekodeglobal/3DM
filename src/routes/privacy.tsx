@@ -16,7 +16,7 @@ function PrivacyPolicyPage() {
         <p>
           This policy explains what information we collect, how we use it, and your choices regarding your privacy when using krafc.
         </p>
-        <p className="policy-updated">Last updated: 3 September 2026</p>
+        <p className="policy-updated">Last updated: 9 September 2026</p>
       </header>
 
       <section className="policy-section">
@@ -26,6 +26,9 @@ function PrivacyPolicyPage() {
         </p>
         <p>
           We automatically collect technical data needed to operate the service, including your IP address and standard browser request information.
+        </p>
+        <p>
+          If you accept analytics cookies, Google Analytics also collects usage information such as page location and title, referrer, approximate location, browser and device information, language, screen resolution, and session statistics.
         </p>
       </section>
 
@@ -37,6 +40,7 @@ function PrivacyPolicyPage() {
           <li>Authenticate users, verify email addresses, maintain sessions, and protect the service from misuse.</li>
           <li>Send essential account, verification, security, and support communications.</li>
           <li>Maintain, troubleshoot, and improve the reliability and security of krafc.</li>
+          <li>Measure visits and understand how the platform is used when you have consented to Google Analytics.</li>
           <li>Comply with applicable legal obligations and enforce applicable terms.</li>
         </ul>
       </section>
@@ -59,12 +63,15 @@ function PrivacyPolicyPage() {
         <p>
           For more details on optional cookies, third-party analytics, and how to manage your preferences, please see our <a href="/cookie-policy">Cookie Policy</a>.
         </p>
+        <p>
+          Google Analytics is configured for krafc, but its script, cookies, and analytics requests remain blocked until you accept analytics. You can withdraw that consent at any time through the persistent Cookie settings link in the footer.
+        </p>
       </section>
 
       <section className="policy-section">
         <h2>5. When we share information</h2>
         <p>
-          We do not sell, trade, or rent personal information. We may share information with service providers that help operate krafc, such as our secure hosting providers, Google (OAuth sign-in), and Resend (transactional emails). We may also disclose information where required by law or to protect rights and security.
+          We do not sell, trade, or rent personal information. We may share information with service providers that help operate krafc, including Cloudflare (hosting, Workers, and D1), Google (OAuth sign-in and, after consent, Google Analytics), and Resend (transactional emails). We may also disclose information where required by law or to protect rights and security.
         </p>
       </section>
 
