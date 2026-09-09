@@ -29,9 +29,9 @@ function CookiePolicyPage() {
         </div>
         <p>
           Necessary cookies support secure sign-in and remember your privacy
-          choice. Google Analytics is planned but is not currently active. If
-          it is enabled later, its script will load only after you select
-          “Accept analytics” or enable analytics in Cookie settings.
+          choice. Google Analytics is planned but is not currently active. If it
+          is enabled later, its script will load only after you select “Accept
+          analytics” or enable analytics in Cookie settings.
         </p>
         <button
           type="button"
@@ -76,15 +76,15 @@ function CookiePolicyPage() {
                   <span>Necessary</span>
                 </td>
                 <td>
-                  Contains a random session identifier—not your password—to keep
+                  Contains a random session identifier not your password to keep
                   you signed in and authorise cloud features. It is{" "}
                   <code>HttpOnly</code>, <code>Secure</code>, and{" "}
                   <code>SameSite=Lax</code>.
                 </td>
                 <td>Up to 30 days, or until you sign out</td>
                 <td>
-                  Our hosting provider processes the identifier and related requests as
-                  Krafc’s cloud backend and database provider.
+                  Our hosting provider processes the identifier and related
+                  requests as Krafc’s cloud backend and database provider.
                 </td>
               </tr>
               <tr>
@@ -155,29 +155,27 @@ function CookiePolicyPage() {
 
       <section className="policy-section">
         <h2>Similar browser technologies</h2>
-        <p>
-          Krafc also uses browser storage that is not technically a cookie:
-        </p>
+        <p>Krafc also uses browser storage that is not technically a cookie:</p>
         <ul>
           <li>
-            <strong>Theme and preview preferences</strong> — light/dark theme
+            <strong>Theme and preview preferences</strong> - light/dark theme
             and high-quality 3D preview choices remain in local storage until
             changed or cleared.
           </li>
           <li>
-            <strong>Local editor data</strong> — booth configuration, layout
+            <strong>Local editor data</strong> - booth configuration, layout
             elements, and custom-asset metadata may be stored locally so the
             editor can restore your work.
           </li>
           <li>
-            <strong>Uploaded 3D assets</strong> — custom model files may be
+            <strong>Uploaded 3D assets</strong> - custom model files may be
             stored in IndexedDB on your device. They are not sent to Krafc
             merely by being stored locally.
           </li>
           <li>
-            <strong>Cloud-saved projects</strong> — if you deliberately save a
-            project to the cloud, account and design data is sent to
-            Krafc’s secure cloud backend.
+            <strong>Cloud-saved projects</strong> - if you deliberately save a
+            project to the cloud, account and design data is sent to Krafc’s
+            secure cloud backend.
           </li>
         </ul>
       </section>
@@ -185,13 +183,13 @@ function CookiePolicyPage() {
       <section className="policy-section">
         <h2>Infrastructure, Google sign-in, and service delivery</h2>
         <p>
-          Our hosting provider processes technical request data required to deliver and
-          secure the website. This necessary infrastructure processing is
-          separate from optional analytics. If you choose Google sign-in, Google
-          may use its own cookies on Google-controlled domains during
-          authentication. Resend processes the address and content required for
-          verification and transactional emails. Those providers’ processing is
-          governed by their applicable terms and privacy notices.
+          Our hosting provider processes technical request data required to
+          deliver and secure the website. This necessary infrastructure
+          processing is separate from optional analytics. If you choose Google
+          sign-in, Google may use its own cookies on Google-controlled domains
+          during authentication. Resend processes the address and content
+          required for verification and transactional emails. Those providers’
+          processing is governed by their applicable terms and privacy notices.
         </p>
       </section>
 
@@ -200,15 +198,15 @@ function CookiePolicyPage() {
         <p>
           Use the persistent “Cookie settings” link in the footer at any time.
           Choosing “Only necessary cookies” stops future Google Analytics
-          collection and removes analytics cookies accessible to Krafc.
-          You can also clear cookies and site data in your browser; the consent
-          banner will appear again on your next visit.
+          collection and removes analytics cookies accessible to Krafc. You can
+          also clear cookies and site data in your browser; the consent banner
+          will appear again on your next visit.
         </p>
         <p>
           For privacy questions, contact{" "}
-          <a href="mailto:support@krafc.com">support@krafc.com</a>. This
-          policy should be read together with our{" "}
-          <a href="/privacy">Privacy Policy</a>.
+          <a href="mailto:support@krafc.com">support@krafc.com</a>. This policy
+          should be read together with our <a href="/privacy">Privacy Policy</a>
+          .
         </p>
       </section>
     </main>

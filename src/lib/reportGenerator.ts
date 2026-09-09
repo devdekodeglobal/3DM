@@ -1,20 +1,31 @@
-import pkg from 'file-saver';
+import pkg from "file-saver";
 const { saveAs } = pkg;
 
-export async function generateReport(boothConfig: any, elements: any[], screenshots: Record<string, string>) {
+export async function generateReport(
+  boothConfig: any,
+  elements: any[],
+  screenshots: Record<string, string>,
+) {
   const docId = `DKD-${Date.now().toString(36).toUpperCase()}`;
-  const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const dateStr = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const timeStr = new Date().toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   // Export JSON - Now handled by a dedicated Save button in editor.tsx
-  
+
   // BOM & Element Collection
-  const walls = elements.filter(el => el.type === 'wall');
-  const topLevelAssets = elements.filter(el => el.type === 'asset');
-  const topLevelLogos = elements.filter(el => el.type === '3d_logo');
-  const topLevelBanners = elements.filter(el => el.type === 'banner');
-  const topLevelWindows = elements.filter(el => el.type === 'window');
-  const topLevelLights = elements.filter(el => el.type === 'light');
+  const walls = elements.filter((el) => el.type === "wall");
+  const topLevelAssets = elements.filter((el) => el.type === "asset");
+  const topLevelLogos = elements.filter((el) => el.type === "3d_logo");
+  const topLevelBanners = elements.filter((el) => el.type === "banner");
+  const topLevelWindows = elements.filter((el) => el.type === "window");
+  const topLevelLights = elements.filter((el) => el.type === "light");
 
   // Collect ALL elements (top-level + nested in walls)
   const allBanners = [...topLevelBanners];
@@ -23,76 +34,108 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
   const allAssets = [...topLevelAssets];
   const allLights = [...topLevelLights];
 
-  walls.forEach(wall => {
+  walls.forEach((wall) => {
     if (wall.wallElements) {
       wall.wallElements.forEach((we: any) => {
-        if (we.type === 'banner') allBanners.push(we);
-        if (we.type === 'window') allWindows.push(we);
-        if (we.type === '3d_logo') allLogos.push(we);
-        if (we.type === 'asset') allAssets.push(we);
-        if (we.type === 'light') allLights.push(we);
+        if (we.type === "banner") allBanners.push(we);
+        if (we.type === "window") allWindows.push(we);
+        if (we.type === "3d_logo") allLogos.push(we);
+        if (we.type === "asset") allAssets.push(we);
+        if (we.type === "light") allLights.push(we);
       });
     }
   });
 
-  const assetCounts: Record<string, { count: number; label: string; dims: string; specs: string }> = {};
-  allAssets.forEach(a => {
+  const assetCounts: Record<
+    string,
+    { count: number; label: string; dims: string; specs: string }
+  > = {};
+  allAssets.forEach((a) => {
     const key = a.assetName || a.id;
-    if (!assetCounts[key]) assetCounts[key] = {
-      count: 0, label: a.label || a.assetName || 'Asset',
-      dims: a.realWidth ? `${a.realWidth}m × ${a.realDepth}m × ${a.realHeight}m` : `${(a.width / 100).toFixed(2)}m × ${(a.height / 100).toFixed(2)}m × 1.0m`,
-      specs: a.details || '—'
-    };
+    if (!assetCounts[key])
+      assetCounts[key] = {
+        count: 0,
+        label: a.label || a.assetName || "Asset",
+        dims: a.realWidth
+          ? `${a.realWidth}m × ${a.realDepth}m × ${a.realHeight}m`
+          : `${(a.width / 100).toFixed(2)}m × ${(a.height / 100).toFixed(2)}m × 1.0m`,
+        specs: a.details || "—",
+      };
     assetCounts[key].count++;
   });
 
   const boothArea = (boothConfig.width * boothConfig.depth).toFixed(2);
   const perimeterM = (2 * (boothConfig.width + boothConfig.depth)).toFixed(2);
 
-  const views = Object.keys(screenshots).sort((a, b) => a === 'top' ? -1 : b === 'top' ? 1 : 0);
+  const views = Object.keys(screenshots).sort((a, b) =>
+    a === "top" ? -1 : b === "top" ? 1 : 0,
+  );
 
-  const viewSections = views.map(view => {
-    const img = screenshots[view];
-    if (!img) return '';
-    let title = view.charAt(0).toUpperCase() + view.slice(1) + ' View';
-    if (view.startsWith('elevation_')) title = `Wall Elevation — ID: ${view.replace('elevation_', '').substring(0, 8).toUpperCase()}`;
-    return `
+  const viewSections = views
+    .map((view) => {
+      const img = screenshots[view];
+      if (!img) return "";
+      let title = view.charAt(0).toUpperCase() + view.slice(1) + " View";
+      if (view.startsWith("elevation_"))
+        title = `Wall Elevation — ID: ${view.replace("elevation_", "").substring(0, 8).toUpperCase()}`;
+      return `
     <div class="view-block">
       <div class="view-label"><span class="badge">VIEW</span>${title}</div>
       <div class="view-img-wrap"><img src="${img}" alt="${title}" /></div>
     </div>`;
-  }).join('');
+    })
+    .join("");
 
-  const bomRows = Object.values(assetCounts).map((item, i) => `
-    <tr class="${i % 2 === 0 ? 'even' : ''}">
+  const bomRows = Object.values(assetCounts)
+    .map(
+      (item, i) => `
+    <tr class="${i % 2 === 0 ? "even" : ""}">
       <td class="center bold accent">${item.count}</td>
       <td class="bold">${item.label}</td>
       <td><code>${item.dims}</code></td>
       <td class="soft">${item.specs}</td>
-    </tr>`).join('');
+    </tr>`,
+    )
+    .join("");
 
   const elemRows = [
-    ...allBanners.map(e => `<tr><td>Banner</td><td>${e.id}</td><td>${e.width}px × ${e.height}px</td><td>${e.shape || 'square'}</td><td>—</td></tr>`),
-    ...allWindows.map(e => `<tr><td>Window</td><td>${e.id}</td><td>${e.width}px × ${e.height}px</td><td>${e.shape || 'square'}</td><td>—</td></tr>`),
-    ...allLogos.map(e => `<tr><td>3D Logo</td><td>${e.id}</td><td>${e.width}px × ${e.height}px</td><td>—</td><td>${e.logoStyle || 'standard'}</td></tr>`),
-    ...allLights.map(e => `<tr><td>Light</td><td>${e.id}</td><td>${e.width || '—'}px × ${e.height || '—'}px</td><td>—</td><td>${e.lightType || e.color || 'standard'}</td></tr>`),
-  ].join('');
+    ...allBanners.map(
+      (e) =>
+        `<tr><td>Banner</td><td>${e.id}</td><td>${e.width}px × ${e.height}px</td><td>${e.shape || "square"}</td><td>—</td></tr>`,
+    ),
+    ...allWindows.map(
+      (e) =>
+        `<tr><td>Window</td><td>${e.id}</td><td>${e.width}px × ${e.height}px</td><td>${e.shape || "square"}</td><td>—</td></tr>`,
+    ),
+    ...allLogos.map(
+      (e) =>
+        `<tr><td>3D Logo</td><td>${e.id}</td><td>${e.width}px × ${e.height}px</td><td>—</td><td>${e.logoStyle || "standard"}</td></tr>`,
+    ),
+    ...allLights.map(
+      (e) =>
+        `<tr><td>Light</td><td>${e.id}</td><td>${e.width || "—"}px × ${e.height || "—"}px</td><td>—</td><td>${e.lightType || e.color || "standard"}</td></tr>`,
+    ),
+  ].join("");
 
-  const wallRows = walls.map(w => `
+  const wallRows = walls
+    .map(
+      (w) => `
     <tr>
       <td class="bold">${w.id}</td>
       <td>${w.isOuter ? '<span class="tag">Outer</span>' : '<span class="tag inner">Inner</span>'}</td>
       <td>${w.width}px × ${w.thickness}px</td>
-      <td>${w.material || '—'}</td>
+      <td>${w.material || "—"}</td>
       <td>${(w.wallElements || []).length} element(s)</td>
-    </tr>`).join('');
+    </tr>`,
+    )
+    .join("");
 
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Booth Design Report — ${docId}</title>
+<title>Booth Design Report - ${docId}</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -318,7 +361,9 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
   </div>
 
   <!-- WALL SCHEDULE -->
-  ${walls.length > 0 ? `
+  ${
+    walls.length > 0
+      ? `
   <div class="section">
     <div class="section-header">
       <div class="section-num">3</div>
@@ -329,26 +374,34 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
       <thead><tr><th>Wall ID</th><th>Type</th><th>Dimensions</th><th>Material</th><th>Elements</th></tr></thead>
       <tbody>${wallRows}</tbody>
     </table>
-  </div>` : ''}
+  </div>`
+      : ""
+  }
 
   <!-- BOM -->
   <div class="section">
     <div class="section-header">
-      <div class="section-num">${walls.length > 0 ? '4' : '3'}</div>
+      <div class="section-num">${walls.length > 0 ? "4" : "3"}</div>
       <h2>Bill of Materials — Furniture & Assets</h2>
     </div>
     <p class="section-desc">Consolidated procurement list for all booth assets with quantity, dimensions and specifications.</p>
-    ${bomRows ? `<table>
+    ${
+      bomRows
+        ? `<table>
       <thead><tr><th>Qty</th><th>Item</th><th>Dimensions (W×D×H)</th><th>Specifications</th></tr></thead>
       <tbody>${bomRows}</tbody>
-    </table>` : '<p style="color:var(--soft);font-style:italic;padding:16px 0;">No furniture assets placed in this design.</p>'}
+    </table>`
+        : '<p style="color:var(--soft);font-style:italic;padding:16px 0;">No furniture assets placed in this design.</p>'
+    }
   </div>
 
   <!-- WALL ELEMENTS -->
-  ${elemRows ? `
+  ${
+    elemRows
+      ? `
   <div class="section">
     <div class="section-header">
-      <div class="section-num">${walls.length > 0 ? '5' : '4'}</div>
+      <div class="section-num">${walls.length > 0 ? "5" : "4"}</div>
       <h2>Wall Elements Register</h2>
     </div>
     <p class="section-desc">All banners, windows, and 3D logos mounted on walls within the booth structure.</p>
@@ -356,7 +409,9 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
       <thead><tr><th>Type</th><th>Element ID</th><th>Size</th><th>Shape</th><th>Style</th></tr></thead>
       <tbody>${elemRows}</tbody>
     </table>
-  </div>` : ''}
+  </div>`
+      : ""
+  }
 
   <div class="divider"></div>
 
@@ -371,5 +426,5 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
 </body>
 </html>`;
 
-  saveAs(new Blob([html], { type: 'text/html' }), `booth_report_${docId}.html`);
+  saveAs(new Blob([html], { type: "text/html" }), `booth_report_${docId}.html`);
 }
