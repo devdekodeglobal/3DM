@@ -355,6 +355,31 @@ export default function RoofCanvas({ boothConfig, onSave, onClose }: RoofCanvasP
                     handleUpdateLight(l.id, { x: nx, y: ny })
                     setDragLabel(null)
                   }}
+                  onTransform={(e) => {
+                    const node = e.target
+                    setDragLabel({
+                      x: snap(node.x()),
+                      y: snap(node.y()),
+                      w: snap(l.width * node.scaleX()),
+                      h: snap(l.height * node.scaleY()),
+                    })
+                  }}
+                  onTransformEnd={(e) => {
+                    const node = e.target
+                    const scaleX = node.scaleX()
+                    const scaleY = node.scaleY()
+                    node.scaleX(1)
+                    node.scaleY(1)
+                    const newW = Math.max(10, snap(l.width * scaleX))
+                    const newH = Math.max(10, snap(l.height * scaleY))
+                    handleUpdateLight(l.id, {
+                      x: snap(node.x()),
+                      y: snap(node.y()),
+                      width: newW,
+                      height: newH,
+                    })
+                    setDragLabel(null)
+                  }}
                 >
                   {isCircular ? (
                     <Circle

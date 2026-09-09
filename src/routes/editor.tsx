@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Sidebar from '../components/editor/Sidebar'
 import Canvas from '../components/editor/Canvas'
 import WallCanvas from '../components/editor/WallCanvas'
@@ -222,6 +222,7 @@ function EditorPage() {
   const [previewerOpen, setPreviewerOpen] = useState(true)
   const [propertiesOpen, setPropertiesOpen] = useState(true)
   const [splitWidth, setSplitWidth] = useState(60)
+  const splitContainerRef = useRef<HTMLDivElement>(null)
   const [is3DGenerated, setIs3DGenerated] = useState(false)
   const [editingWallId, setEditingWallId] = useState<string | null>(null)
   const [editingRoof, setEditingRoof] = useState(false)
@@ -924,6 +925,7 @@ function EditorPage() {
             </div>
           )}
 
+
           <button
             onClick={() => setShowSavePrompt(true)}
             className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
@@ -965,7 +967,7 @@ function EditorPage() {
       </div>
 
       {/* Split Workspaces - all panels are flex siblings, canvas is flex-1 */}
-      <div className="flex flex-1 overflow-hidden">
+      <div ref={splitContainerRef} className="flex flex-1 overflow-hidden">
 
         {/* Left Sidebar */}
         {sidebarOpen && (
@@ -1015,11 +1017,13 @@ function EditorPage() {
         {/* Resizer handle */}
         {previewerOpen && (
           <div
-            className="w-1 shrink-0 bg-[var(--line)] hover:bg-[var(--lagoon)] cursor-col-resize z-30 transition-colors"
+            className="w-1.5 shrink-0 bg-[var(--line)] hover:bg-[var(--lagoon)] cursor-col-resize z-30 transition-colors"
             onMouseDown={() => {
+              const container = splitContainerRef.current
               const onMove = (e: MouseEvent) => {
                 if (e.buttons !== 1) return
-                const pct = (e.clientX / window.innerWidth) * 100
+                const rect = container ? container.getBoundingClientRect() : { left: 0, width: window.innerWidth }
+                const pct = ((e.clientX - rect.left) / rect.width) * 100
                 if (pct > 20 && pct < 85) setSplitWidth(pct)
               }
               const onUp = () => {

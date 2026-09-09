@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Camera, Maximize, Minimize } from 'lucide-react'
 import * as BABYLON from '@babylonjs/core'
 import '@babylonjs/loaders/glTF'
 import { GLTF2Export } from '@babylonjs/serializers/glTF/2.0/glTFSerializer'
@@ -19,6 +20,7 @@ interface Preview3DProps {
   backgroundColor?: string;
   setBackgroundColor?: (color: string) => void;
   autoRotate?: boolean;
+  hideControls?: boolean;
 }
 
 const PPM = 100;
@@ -33,9 +35,11 @@ export default function Preview3D({
   onUpdateElement,
   backgroundColor = '#1d1f21',
   autoRotate = false,
+  hideControls = false,
 }: Preview3DProps) {
   const [isSceneReady, setIsSceneReady] = useState(false);
-  const [cameraMode] = useState<'orbit' | 'flight'>('orbit');
+  const [cameraMode, setCameraMode] = useState<'orbit' | 'flight'>('orbit');
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<BABYLON.Engine | null>(null);
@@ -1135,6 +1139,71 @@ export default function Preview3D({
 
         if (el.type === 'wall') {
           attachDragBehavior(mesh, el.id);
+
+          // Sync decorations (shelves, lights, banners, frames) even for existing walls
+          const vScaleW = el.verticalScale || 1;
+          const wallHeightW = h * vScaleW;
+          const wValW = vW / PPM;
+          const dValW = (el.thickness || 10) / PPM;
+          const decorationsW = (el.wallElements || []).filter((wel: any) => !['door', 'window'].includes(wel.type));
+          const decorationStateW = JSON.stringify(decorationsW);
+
+          if (!mesh.metadata || mesh.metadata.decorationState !== decorationStateW) {
+            wallDecorationRegistryRef.current.get(el.id)?.forEach(m => m.dispose());
+            const newDecorations: BABYLON.AbstractMesh[] = [];
+
+            decorationsW.forEach((wel: any, index: number) => {
+              const cutW = wel.width / PPM, cutH = wel.height / PPM;
+              const localX = (wel.x / PPM) - (wValW / 2) + (cutW / 2);
+              const localY = (wallHeightW / 2) - (wel.y / PPM) - (cutH / 2);
+              let mount: BABYLON.Mesh;
+
+              if (wel.type === 'shelf') {
+                mount = BABYLON.MeshBuilder.CreateBox('shelf_' + index, { width: cutW, height: 0.03, depth: 0.3 }, scene);
+                mount.position.set(localX, localY, -dValW / 2 - 0.15);
+                const sMat = new BABYLON.StandardMaterial('sMat_' + index, scene);
+                sMat.diffuseColor = wel.color ? BABYLON.Color3.FromHexString(wel.color) : new BABYLON.Color3(0.6, 0.4, 0.2);
+                mount.material = sMat;
+              } else if (wel.type === 'light') {
+                const lColor = BABYLON.Color3.FromHexString(wel.lightColor || '#fff8e7');
+                const lIntensity = wel.intensity || 1.2;
+                const model = wel.model || 'wall_light_1';
+                if (model === 'wall_light_2') {
+                  mount = BABYLON.MeshBuilder.CreateCylinder('light_' + index, { diameter: Math.min(cutW, cutH), height: 0.05 }, scene);
+                  mount.rotation.x = Math.PI / 2;
+                } else if (model === 'wall_light_3') {
+                  mount = BABYLON.MeshBuilder.CreateBox('light_' + index, { width: cutW, height: 0.04, depth: 0.05 }, scene);
+                } else {
+                  mount = BABYLON.MeshBuilder.CreateBox('light_' + index, { width: cutW, height: cutH, depth: 0.05 }, scene);
+                }
+                const lMat = new BABYLON.PBRMaterial('lm_' + index, scene);
+                lMat.emissiveColor = lColor; lMat.emissiveIntensity = lIntensity * 2;
+                lMat.albedoColor = lColor; mount.material = lMat;
+                mount.position.set(localX, localY, -dValW / 2 - 0.025);
+                const spot = new BABYLON.SpotLight('spot_' + index, new BABYLON.Vector3(0, 0, -0.05), new BABYLON.Vector3(0, 0, -1), Math.PI / 2, 2, scene);
+                spot.diffuse = lColor; spot.intensity = lIntensity * 5; spot.parent = mount;
+              } else {
+                mount = BABYLON.MeshBuilder.CreatePlane('banner_' + index, { width: cutW, height: cutH, sideOrientation: BABYLON.Mesh.DOUBLESIDE }, scene);
+                mount.position.set(localX, localY, -dValW / 2 - (0.003 + index * 0.002));
+                const bMat = new BABYLON.PBRMaterial('bm_ex_' + index, scene);
+                bMat.zOffset = -index * 2;
+                if (wel.url) {
+                  const tex = new BABYLON.Texture(wel.url, scene);
+                  tex.hasAlpha = true; bMat.albedoTexture = tex;
+                  bMat.useAlphaFromAlbedoTexture = true; bMat.transparencyMode = 2;
+                  bMat.roughness = 0.5; bMat.metallic = 0.1;
+                } else {
+                  bMat.albedoColor = wel.type === 'frame' ? new BABYLON.Color3(0.8, 0.8, 0.8) : BABYLON.Color3.Blue();
+                }
+                mount.material = bMat;
+              }
+              mount.parent = mesh;
+              newDecorations.push(mount);
+            });
+
+            wallDecorationRegistryRef.current.set(el.id, newDecorations);
+            if (mesh.metadata) mesh.metadata.decorationState = decorationStateW;
+          }
         }
       } else {
         if (needsRecreate) {
@@ -1683,10 +1752,142 @@ export default function Preview3D({
     }
   }, [cameraMode]);
 
+  const takeScreenshot = () => {
+    const engine = engineRef.current;
+    const scene = sceneRef.current;
+    if (!engine || !scene || !scene.activeCamera) return;
+    BABYLON.Tools.CreateScreenshot(engine, scene.activeCamera, { width: 1920, height: 1080 }, (data) => {
+      const link = document.createElement('a');
+      link.href = data;
+      link.download = `3d-snapshot-${Date.now()}.png`;
+      link.click();
+    });
+  };
+
+  // Fullscreen listener
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(err => {
+        console.error('Error attempting to enable fullscreen:', err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  const setCameraAngle = (alpha: number, beta: number) => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+    const orbitCam = scene.getCameraByName('orbitCam') as BABYLON.ArcRotateCamera;
+    if (!orbitCam) return;
+    if (cameraMode !== 'orbit') setCameraMode('orbit');
+    const ease = new BABYLON.CubicEase();
+    ease.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+    BABYLON.Animation.CreateAndStartAnimation('camMoveAlpha', orbitCam, 'alpha', 60, 30, orbitCam.alpha, alpha, 2, ease);
+    BABYLON.Animation.CreateAndStartAnimation('camMoveBeta', orbitCam, 'beta', 60, 30, orbitCam.beta, beta, 2, ease);
+    const centerX = boothConfig?.width / 2 || 0;
+    const centerZ = boothConfig?.depth / 2 || 0;
+    BABYLON.Animation.CreateAndStartAnimation('camTarget', orbitCam, 'target', 60, 30, orbitCam.getTarget(), new BABYLON.Vector3(centerX, 0.5, centerZ), 2, ease);
+  };
+
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center bg-transparent">
-      <div ref={containerRef} className="w-full h-full relative overflow-hidden shadow-2xl ring-1 ring-white/10 aspect-video rounded-2xl" style={{ backgroundColor: '#0d0d0f' }}>
+    <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--bg-base)] p-4 gap-4">
+      {activeView === 'perspective' && !isFullscreen && !hideControls && (
+        <div className="w-full flex justify-between items-center max-w-[calc(100vh*16/9)]">
+          <div className="flex gap-2">
+            <div className="px-3 py-1.5 rounded-lg bg-[rgba(0,0,0,0.6)] border border-[rgba(255,255,255,0.1)] text-[10px] font-bold text-white uppercase backdrop-blur-md">
+              {cameraMode === 'orbit' ? 'Orbit Mode 🌐' : 'Flight Mode 🛸'}
+            </div>
+            <div className="px-3 py-1.5 rounded-lg bg-[rgba(0,180,255,0.2)] border border-[rgba(0,180,255,0.3)] text-[10px] font-bold text-[#bbf] uppercase backdrop-blur-md">
+              Hold Shift to Rotate Assets
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const currentHQ = localStorage.getItem('hq_3d') === 'true';
+                localStorage.setItem('hq_3d', currentHQ ? 'false' : 'true');
+                window.location.reload();
+              }}
+              className="px-4 py-2 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--brand)] border border-[rgba(255,255,255,0.1)] text-xs font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors cursor-pointer"
+            >
+              {localStorage.getItem('hq_3d') === 'true' ? 'HQ: ON' : 'HQ: OFF'}
+            </button>
+            <button
+              onClick={() => setCameraMode(prev => prev === 'orbit' ? 'flight' : 'orbit')}
+              className="px-4 py-2 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--sea-ink)] border border-[rgba(255,255,255,0.1)] text-xs font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors cursor-pointer"
+            >
+              {cameraMode === 'orbit' ? 'Flight Mode' : 'Orbit Mode'}
+            </button>
+          </div>
+        </div>
+      )}
+      <div
+        ref={containerRef}
+        className={`w-full relative overflow-hidden shadow-2xl ring-1 ring-white/10 ${
+          isFullscreen ? 'h-screen max-w-none rounded-none' : 'max-h-full aspect-video rounded-2xl'
+        }`}
+        style={{ backgroundColor: '#0d0d0f' }}
+      >
         <canvas ref={canvasRef} className="w-full h-full block outline-none touch-none" />
+
+        {/* Top-right overlay: Screenshot + Fullscreen */}
+        {!hideControls && (
+          <div className="absolute top-4 right-4 flex gap-2">
+            <button
+              onClick={takeScreenshot}
+              className="p-3 rounded-xl bg-black/40 hover:bg-black/60 border border-white/10 text-white backdrop-blur-md transition-all shadow-lg group flex items-center justify-center"
+              title="Take High-Res Snapshot"
+            >
+              <Camera className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              className="p-3 rounded-xl bg-black/40 hover:bg-black/60 border border-white/10 text-white backdrop-blur-md transition-all shadow-lg group flex items-center justify-center"
+              title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen View'}
+            >
+              {isFullscreen
+                ? <Minimize className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                : <Maximize className="w-5 h-5 group-hover:scale-110 transition-transform" />}
+            </button>
+          </div>
+        )}
+
+        {/* Fullscreen-only overlays */}
+        {isFullscreen && activeView === 'perspective' && !hideControls && (
+          <>
+            <div className="absolute top-4 left-4 flex gap-2">
+              <div className="px-3 py-1.5 rounded-lg bg-[rgba(0,0,0,0.6)] border border-[rgba(255,255,255,0.1)] text-[10px] font-bold text-white uppercase backdrop-blur-md">
+                {cameraMode === 'orbit' ? 'Orbit Mode 🌐' : 'Flight Mode 🛸'}
+              </div>
+              <button
+                onClick={() => setCameraMode(prev => prev === 'orbit' ? 'flight' : 'orbit')}
+                className="px-3 py-1.5 bg-[rgba(0,0,0,0.6)] hover:bg-[var(--sea-ink)] border border-[rgba(255,255,255,0.1)] text-[10px] font-bold text-white uppercase rounded-lg backdrop-blur-md transition-colors cursor-pointer"
+              >
+                Switch Camera
+              </button>
+            </div>
+            {/* Camera Presets */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 bg-black/60 backdrop-blur-md p-2 rounded-2xl border border-white/10 shadow-2xl">
+              <button onClick={() => setCameraAngle(-Math.PI / 2, 0.01)} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition">Top</button>
+              <button onClick={() => setCameraAngle(-Math.PI / 2, Math.PI / 3)} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition">Front</button>
+              <button onClick={() => setCameraAngle(Math.PI / 2, Math.PI / 3)} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition">Back</button>
+              <button onClick={() => setCameraAngle(Math.PI, Math.PI / 3)} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition">Left</button>
+              <button onClick={() => setCameraAngle(0, Math.PI / 3)} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition">Right</button>
+              <div className="w-px bg-white/20 mx-1" />
+              <button onClick={() => setCameraAngle(-Math.PI / 4, Math.PI / 3)} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition">Iso L</button>
+              <button onClick={() => setCameraAngle(-3 * Math.PI / 4, Math.PI / 3)} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-xs font-bold text-white transition">Iso R</button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
