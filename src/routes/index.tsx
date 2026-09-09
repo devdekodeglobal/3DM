@@ -43,11 +43,11 @@ function BoothIllustration() {
       
       {/* Left Outer Dimension */}
       <g className="stroke-sky-500 fill-sky-500 font-sans text-[10px] font-bold">
-        <line x1="18" y1="60" x2="18" y2="340" strokeWidth="1.5"/>
-        <line x1="13" y1="60" x2="23" y2="60" strokeWidth="1.5"/>
-        <line x1="13" y1="340" x2="23" y2="340" strokeWidth="1.5"/>
-        <rect x="10" y="175" width="16" height="50" rx="4" className="fill-slate-50 dark:fill-slate-900 stroke-sky-500" strokeWidth="1"/>
-        <text x="17" y="200" textAnchor="middle" transform="rotate(90, 17, 200)">5.50m</text>
+        <line x1="10" y1="60" x2="10" y2="340" strokeWidth="1.5"/>
+        <line x1="5" y1="60" x2="15" y2="60" strokeWidth="1.5"/>
+        <line x1="5" y1="340" x2="15" y2="340" strokeWidth="1.5"/>
+        <rect x="2" y="175" width="16" height="50" rx="4" className="fill-slate-50 dark:fill-slate-900 stroke-sky-500" strokeWidth="1"/>
+        <text x="10" y="200" textAnchor="middle" transform="rotate(-90, 10, 200)">5.50m</text>
       </g>
 
       {/* Door Width Dimension (Inner) */}
@@ -55,7 +55,7 @@ function BoothIllustration() {
         <line x1="295" y1="170" x2="295" y2="230" strokeWidth="1" strokeDasharray="2 2" />
         <line x1="292" y1="170" x2="298" y2="170" strokeWidth="1"/>
         <line x1="292" y1="230" x2="298" y2="230" strokeWidth="1"/>
-        <text x="303" y="200" textAnchor="middle" transform="rotate(90, 303, 200)">0.90m</text>
+        <text x="302" y="200" textAnchor="middle" transform="rotate(-90, 302, 200)">0.90m</text>
       </g>
 
       {/* Window Width Dimension (Inner) */}
@@ -63,7 +63,7 @@ function BoothIllustration() {
         <line x1="22" y1="160" x2="22" y2="220" strokeWidth="1" strokeDasharray="2 2" />
         <line x1="19" y1="160" x2="25" y2="160" strokeWidth="1"/>
         <line x1="19" y1="220" x2="25" y2="220" strokeWidth="1"/>
-        <text x="14" y="190" textAnchor="middle" transform="rotate(-90, 14, 190)">1.20m</text>
+        <text x="17" y="190" textAnchor="middle" transform="rotate(-90, 17, 190)">1.20m</text>
       </g>
 
       {/* Room Inner Dimension (Horizontal) */}
