@@ -964,7 +964,7 @@ function EditorPage() {
         </div>
       </div>
 
-      {/* Split Workspaces — all panels are flex siblings, canvas is flex-1 */}
+      {/* Split Workspaces - all panels are flex siblings, canvas is flex-1 */}
       <div className="flex flex-1 overflow-hidden">
 
         {/* Left Sidebar */}
@@ -984,7 +984,7 @@ function EditorPage() {
           </div>
         )}
 
-        {/* Center Canvas — flex-1 always fills remaining space */}
+        {/* Center Canvas - flex-1 always fills remaining space */}
         <div className="flex-1 flex h-full flex-col relative z-0 min-w-0 bg-[var(--bg-base)]">
           <Canvas
             elements={elements}
@@ -996,7 +996,7 @@ function EditorPage() {
           />
         </div>
 
-        {/* Properties Panel — in flow, not absolute */}
+        {/* Properties Panel - in flow, not absolute */}
         {propertiesOpen && (
           <div className="shrink-0 h-full border-l border-[var(--line)] z-20 shadow-[-8px_0_20px_rgba(0,0,0,0.05)]">
             <Properties

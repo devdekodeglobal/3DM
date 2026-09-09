@@ -1569,7 +1569,7 @@ export default function Preview3D({
           const regEntry = ASSET_REGISTRY.find(a => a.id === el.assetName) as any;
           const facingOffset = (regEntry?.facingOffset) ?? el.facingOffset ?? 0;
           
-          // Original git orientation: no nativeOffset applied — models load in their native .glb orientation
+          // Original git orientation: no nativeOffset applied - models load in their native .glb orientation
           pivot.rotation.y = rotY + BABYLON.Tools.ToRadians(facingOffset);
           
           pivot.metadata = { nativeLength: 0, nativeHeight: 0 };

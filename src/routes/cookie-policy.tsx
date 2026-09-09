@@ -76,7 +76,7 @@ function CookiePolicyPage() {
                   <span>Necessary</span>
                 </td>
                 <td>
-                  Contains a random session identifier—not your password—to keep
+                  Contains a random session identifier-not your password-to keep
                   you signed in and authorise cloud features. It is{" "}
                   <code>HttpOnly</code>, <code>Secure</code>, and{" "}
                   <code>SameSite=Lax</code>.
@@ -160,22 +160,22 @@ function CookiePolicyPage() {
         </p>
         <ul>
           <li>
-            <strong>Theme and preview preferences</strong> — light/dark theme
+            <strong>Theme and preview preferences</strong> - light/dark theme
             and high-quality 3D preview choices remain in local storage until
             changed or cleared.
           </li>
           <li>
-            <strong>Local editor data</strong> — booth configuration, layout
+            <strong>Local editor data</strong> - booth configuration, layout
             elements, and custom-asset metadata may be stored locally so the
             editor can restore your work.
           </li>
           <li>
-            <strong>Uploaded 3D assets</strong> — custom model files may be
+            <strong>Uploaded 3D assets</strong> - custom model files may be
             stored in IndexedDB on your device. They are not sent to Krafc
             merely by being stored locally.
           </li>
           <li>
-            <strong>Cloud-saved projects</strong> — if you deliberately save a
+            <strong>Cloud-saved projects</strong> - if you deliberately save a
             project to the cloud, account and design data is sent to
             Krafc’s secure cloud backend.
           </li>

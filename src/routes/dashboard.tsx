@@ -242,7 +242,7 @@ function DashboardPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: 80 }}>
-      {/* Page title bar — no auth controls (those live in the main site Header) */}
+      {/* Page title bar - no auth controls (those live in the main site Header) */}
       <div style={{
         borderBottom: '1px solid var(--border)', padding: '14px 0',
         background: 'var(--bg-card)', position: 'sticky', top: 'var(--header-height, 56px)', zIndex: 40,

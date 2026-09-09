@@ -32,7 +32,7 @@ export const ArchitecturalSymbol2D: React.FC<SymbolRenderProps> = ({
 }) => {
 
   // 2D generic symbols are procedurally drawn facing South (downwards).
-  // They ALL require a static 180° rotation to face North — no per-asset logic needed.
+  // They ALL require a static 180° rotation to face North - no per-asset logic needed.
   return (
     <Group x={w / 2} y={h / 2} rotation={180} offsetX={w / 2} offsetY={h / 2}>
       <ArchitecturalSymbolContent

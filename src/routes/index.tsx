@@ -217,7 +217,7 @@ const features = [
       </svg>
     ),
     title: 'Asset Library',
-    desc: 'Drag-and-drop fixtures — counters, chairs, desks, plants, signage — all to scale.',
+    desc: 'Drag-and-drop fixtures - counters, chairs, desks, plants, signage - all to scale.',
     color: '#059669',
     bg: 'rgba(5,150,105,0.08)',
   },
@@ -484,7 +484,7 @@ function LandingPage() {
               lineHeight: 1.7, margin: '0 0 36px',
             }}>
               No install needed. Open the designer and build your layout
-              in minutes — then preview it live in 3D.
+              in minutes - then preview it live in 3D.
             </p>
             <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
               {hasDraft ? (

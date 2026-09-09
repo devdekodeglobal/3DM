@@ -1,4 +1,4 @@
-// Frontend auth client — replaces supabaseClient.ts
+// Frontend auth client - replaces supabaseClient.ts
 // All calls go to our backend API
 
 export interface User {
@@ -89,7 +89,7 @@ export async function resetPassword(email: string, code: string, newPassword: st
 }
 
 export function signInWithGoogle(returnTo?: string) {
-  // Redirect to Google OAuth — the Pages Function handles the flow
+  // Redirect to Google OAuth - the Pages Function handles the flow
   // Pass return_to so the callback knows where to redirect after login
   const rt = returnTo || (typeof window !== 'undefined' ? window.location.pathname : '/dashboard')
   // Only redirect to dashboard if coming from a non-editor page

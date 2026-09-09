@@ -41,7 +41,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     if (!assetCounts[key]) assetCounts[key] = {
       count: 0, label: a.label || a.assetName || 'Asset',
       dims: a.realWidth ? `${a.realWidth}m × ${a.realDepth}m × ${a.realHeight}m` : `${(a.width / 100).toFixed(2)}m × ${(a.height / 100).toFixed(2)}m × 1.0m`,
-      specs: a.details || '—'
+      specs: a.details || '-'
     };
     assetCounts[key].count++;
   });
@@ -55,7 +55,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     const img = screenshots[view];
     if (!img) return '';
     let title = view.charAt(0).toUpperCase() + view.slice(1) + ' View';
-    if (view.startsWith('elevation_')) title = `Wall Elevation — ID: ${view.replace('elevation_', '').substring(0, 8).toUpperCase()}`;
+    if (view.startsWith('elevation_')) title = `Wall Elevation - ID: ${view.replace('elevation_', '').substring(0, 8).toUpperCase()}`;
     return `
     <div class="view-block">
       <div class="view-label"><span class="badge">VIEW</span>${title}</div>
@@ -72,10 +72,10 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     </tr>`).join('');
 
   const elemRows = [
-    ...allBanners.map(e => `<tr><td>Banner</td><td>${e.id}</td><td>${e.width}px × ${e.height}px</td><td>${e.shape || 'square'}</td><td>—</td></tr>`),
-    ...allWindows.map(e => `<tr><td>Window</td><td>${e.id}</td><td>${e.width}px × ${e.height}px</td><td>${e.shape || 'square'}</td><td>—</td></tr>`),
-    ...allLogos.map(e => `<tr><td>3D Logo</td><td>${e.id}</td><td>${e.width}px × ${e.height}px</td><td>—</td><td>${e.logoStyle || 'standard'}</td></tr>`),
-    ...allLights.map(e => `<tr><td>Light</td><td>${e.id}</td><td>${e.width || '—'}px × ${e.height || '—'}px</td><td>—</td><td>${e.lightType || e.color || 'standard'}</td></tr>`),
+    ...allBanners.map(e => `<tr><td>Banner</td><td>${e.id}</td><td>${e.width}px × ${e.height}px</td><td>${e.shape || 'square'}</td><td>-</td></tr>`),
+    ...allWindows.map(e => `<tr><td>Window</td><td>${e.id}</td><td>${e.width}px × ${e.height}px</td><td>${e.shape || 'square'}</td><td>-</td></tr>`),
+    ...allLogos.map(e => `<tr><td>3D Logo</td><td>${e.id}</td><td>${e.width}px × ${e.height}px</td><td>-</td><td>${e.logoStyle || 'standard'}</td></tr>`),
+    ...allLights.map(e => `<tr><td>Light</td><td>${e.id}</td><td>${e.width || '-'}px × ${e.height || '-'}px</td><td>-</td><td>${e.lightType || e.color || 'standard'}</td></tr>`),
   ].join('');
 
   const wallRows = walls.map(w => `
@@ -83,7 +83,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
       <td class="bold">${w.id}</td>
       <td>${w.isOuter ? '<span class="tag">Outer</span>' : '<span class="tag inner">Inner</span>'}</td>
       <td>${w.width}px × ${w.thickness}px</td>
-      <td>${w.material || '—'}</td>
+      <td>${w.material || '-'}</td>
       <td>${(w.wallElements || []).length} element(s)</td>
     </tr>`).join('');
 
@@ -92,7 +92,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Booth Design Report — ${docId}</title>
+<title>Booth Design Report - ${docId}</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -226,7 +226,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     </div>
   </div>
   <div class="cover-footer">
-    <span>CONFIDENTIAL — INTERNAL USE ONLY</span>
+    <span>CONFIDENTIAL - INTERNAL USE ONLY</span>
     <strong>DEKODE Booth Designer</strong>
     <span>Rev. 1.0</span>
   </div>
@@ -335,7 +335,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
   <div class="section">
     <div class="section-header">
       <div class="section-num">${walls.length > 0 ? '4' : '3'}</div>
-      <h2>Bill of Materials — Furniture & Assets</h2>
+      <h2>Bill of Materials - Furniture & Assets</h2>
     </div>
     <p class="section-desc">Consolidated procurement list for all booth assets with quantity, dimensions and specifications.</p>
     ${bomRows ? `<table>
