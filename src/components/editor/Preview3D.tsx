@@ -1121,7 +1121,7 @@ export default function Preview3D({
           }
         }
 
-        if (el.type === 'wall' && !el.isOuter) {
+        if (el.type === 'wall') {
           attachDragBehavior(mesh, el.id);
         }
       } else {
@@ -1356,9 +1356,7 @@ export default function Preview3D({
             wallDir: el.id.split('-')[1] 
           };
           registry.set(el.id, mesh);
-          if (!el.isOuter) {
-            attachDragBehavior(mesh, el.id);
-          }
+          attachDragBehavior(mesh, el.id);
 
         } else if (el.type === '3d_logo') {
           const depth = (el.depth || 5) / PPM;
