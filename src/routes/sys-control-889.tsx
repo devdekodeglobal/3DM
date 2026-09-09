@@ -24,7 +24,7 @@ function AdminPage() {
   const [confirmModalState, setConfirmModalState] = useState<{ isOpen: boolean; title?: string; message: string; confirmText?: string; onConfirm: () => void } | null>(null)
 
   useEffect(() => {
-    document.title = 'Admin Dashboard | Krafc'
+    document.title = 'Admin Dashboard | krafc'
   }, [])
 
   const fetchUsers = async () => {

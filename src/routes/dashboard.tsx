@@ -179,7 +179,7 @@ function DashboardPage() {
   } | null>(null)
 
   useEffect(() => {
-    document.title = 'My Projects | Krafc'
+    document.title = 'My Projects | krafc'
     ;(async () => {
       const u = await getCurrentUser()
       if (!u) { navigate({ to: '/' }); return }

@@ -237,11 +237,7 @@ const features = [
   },
 ]
 
-const steps = [
-  { id: 'step-1', num: '01', title: 'Set Your Space', desc: 'Define the dimensions and drop outer walls on the 2D canvas.' },
-  { id: 'step-2', num: '02', title: 'Place Fixtures', desc: 'Drag counters, signage, seating, and décor from the asset library.' },
-  { id: 'step-3', num: '03', title: 'Preview in 3D', desc: 'Switch to Live 3D Preview to walk through your design in real time.' },
-]
+
 
 function LandingPage() {
   const [hasDraft, setHasDraft] = useState(false)

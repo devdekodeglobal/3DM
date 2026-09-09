@@ -10,7 +10,7 @@ export const Route = createFileRoute('/about')({
 
 function OverviewPage() {
   useEffect(() => {
-    document.title = 'Overview | Krafc'
+    document.title = 'Overview | krafc'
   }, [])
 
   return (
@@ -25,7 +25,7 @@ function OverviewPage() {
           Design in 2D. <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--lagoon)] to-[var(--brand)]">Experience in 3D.</span>
         </h1>
         <p className="max-w-2xl mx-auto text-lg md:text-xl text-[var(--fg-soft)] leading-relaxed">
-          Krafc is a professional, browser-based spatial design platform. Plan your rooms and exhibition spaces in a lightning-fast 2D blueprint editor, and watch them instantly materialize into immersive, real-time 3D environments.
+          krafc is a professional, browser-based spatial design platform. Plan your rooms and exhibition spaces in a lightning-fast 2D blueprint editor, and watch them instantly materialize into immersive, real-time 3D environments.
         </p>
         <div className="pt-8 flex justify-center gap-4">
           <Link to="/editor" className="btn btn-primary" style={{ padding: '15px 36px', fontSize: '1.1rem' }}>

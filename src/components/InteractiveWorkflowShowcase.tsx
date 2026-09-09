@@ -111,7 +111,7 @@ export function InteractiveWorkflowShowcase() {
               <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
               <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
               <span className="text-[11px] font-mono text-[var(--fg-dim)] ml-2 font-semibold">
-                Krafc Workspace
+                krafc Workspace
               </span>
             </div>
 
