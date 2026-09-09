@@ -1046,7 +1046,7 @@ function EditorPage() {
                 </div>
                 <h4 className="text-white font-bold mb-1 text-sm font-[Outfit]">3D Preview Locked</h4>
                 <p className="text-gray-400 text-xs max-w-[200px] mb-4 leading-relaxed">
-                  Design in 2D freely! Sign in to unlock and interact with your 3D space.
+                  Sign in to unlock your 3D space.
                 </p>
                 <button
                   onClick={() => setAuthModalOpen(true)}
