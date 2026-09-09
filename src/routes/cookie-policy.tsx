@@ -19,7 +19,7 @@ function CookiePolicyPage() {
           used, how long it lasts, and when information is shared with another
           provider.
         </p>
-        <p className="policy-updated">Last updated: 4 September 2026</p>
+        <p className="policy-updated">Last updated: 9 September 2026</p>
       </header>
 
       <section className="policy-section">
@@ -29,9 +29,9 @@ function CookiePolicyPage() {
         </div>
         <p>
           Necessary cookies support secure sign-in and remember your privacy
-          choice. Google Analytics is planned but is not currently active. If
-          it is enabled later, its script will load only after you select
-          “Accept analytics” or enable analytics in Cookie settings.
+          choice. Google Analytics is configured, but its script loads and
+          begins collecting information only after you select “Accept all
+          cookies” or enable analytics in Cookie settings.
         </p>
         <button
           type="button"
@@ -71,20 +71,42 @@ function CookiePolicyPage() {
                   <code>session</code>
                 </td>
                 <td>
-                  krafc, delivered through our secure cloud infrastructure
+                  krafc, delivered through Cloudflare Pages, Workers, and D1
                   <br />
                   <span>Necessary</span>
                 </td>
                 <td>
-                  Contains a random session identifier-not your password-to keep
-                  you signed in and authorise cloud features. It is{" "}
+                  Contains a random session identifier, not your password, to
+                  keep you signed in and authorise cloud features. It is{" "}
                   <code>HttpOnly</code>, <code>Secure</code>, and{" "}
                   <code>SameSite=Lax</code>.
                 </td>
                 <td>Up to 30 days, or until you sign out</td>
                 <td>
-                  Our hosting provider processes the identifier and related requests as
-                  krafc’s cloud backend and database provider.
+                  Cloudflare processes the identifier and related requests as
+                  krafc’s hosting, application, and database provider.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <code>oauth_state</code>
+                </td>
+                <td>
+                  krafc, delivered through Cloudflare Workers
+                  <br />
+                  <span>Necessary</span>
+                </td>
+                <td>
+                  Stores a temporary random value during Google sign-in to
+                  validate the authentication response and protect against
+                  cross-site request forgery. It is <code>HttpOnly</code>,{" "}
+                  <code>Secure</code>, and <code>SameSite=Lax</code>.
+                </td>
+                <td>5 minutes, and cleared after the sign-in callback</td>
+                <td>
+                  Cloudflare processes it while delivering the authentication
+                  request. Google receives the corresponding state value during
+                  the sign-in flow.
                 </td>
               </tr>
               <tr>
@@ -101,63 +123,66 @@ function CookiePolicyPage() {
                   version, and the date of your choice.
                 </td>
                 <td>1 year</td>
-                <td>Not shared with third parties.</td>
+                <td>
+                  Sent to krafc with normal requests and processed by Cloudflare
+                  as our hosting provider. It is not shared with Google.
+                </td>
               </tr>
               <tr>
                 <td>
                   <code>_ga</code>
                 </td>
                 <td>
-                  Google Analytics (planned)
+                  Google Analytics (Google)
                   <br />
                   <span>Analytics</span>
                 </td>
                 <td>
-                  If activated with your consent, it will distinguish browsers
-                  so aggregate visits and usage can be measured.
+                  After consent, distinguishes browsers so visits, sessions, and
+                  usage can be measured. Google Analytics may collect page
+                  location and title, referrer, approximate location, browser,
+                  device, language, and screen information.
                 </td>
                 <td>Up to 2 years</td>
                 <td>
-                  If activated, usage, device, and request information will be
-                  shared with Google as our analytics provider and may be
-                  processed outside your country under applicable safeguards.
+                  Analytics and device information is shared with Google as our
+                  analytics provider and may be processed outside your country
+                  under applicable safeguards.
                 </td>
               </tr>
               <tr>
                 <td>
-                  <code>_ga_&lt;container-id&gt;</code>
+                  <code>_ga_B55SFQ2GER</code>
                 </td>
                 <td>
-                  Google Analytics (planned)
+                  Google Analytics (Google)
                   <br />
                   <span>Analytics</span>
                 </td>
                 <td>
-                  If activated with your consent, it will maintain session state
-                  for krafc’s configured analytics property.
+                  After consent, maintains session state for krafc’s Google
+                  Analytics property <code>G-B55SFQ2GER</code>.
                 </td>
                 <td>Up to 2 years</td>
                 <td>
-                  If activated, usage, device, and request information will be
-                  shared with Google as described above.
+                  Analytics and device information is shared with Google as
+                  described above.
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p className="policy-note">
-          Google Analytics is not currently active. If it is activated later,
-          its cookies will not be created when only necessary cookies are chosen
-          or no choice has been made. Browser settings or provider changes may
-          shorten these maximum lifetimes.
-        </p>
+        {/*  <p className="policy-note">
+          Google Analytics cookies and requests remain blocked when only
+          necessary cookies are chosen or no choice has been made. The listed
+          expiry periods are Google’s default maximums and may be renewed after
+          later visits; browser settings or provider changes may shorten them.
+        </p> */}
       </section>
 
       <section className="policy-section">
         <h2>Similar browser technologies</h2>
-        <p>
-          krafc also uses browser storage that is not technically a cookie:
-        </p>
+        <p>krafc also uses browser storage that is not technically a cookie:</p>
         <ul>
           <li>
             <strong>Theme and preview preferences</strong> - light/dark theme
@@ -166,8 +191,9 @@ function CookiePolicyPage() {
           </li>
           <li>
             <strong>Local editor data</strong> - booth configuration, layout
-            elements, and custom-asset metadata may be stored locally so the
-            editor can restore your work.
+            elements, project name and identifier, cloud auto-save preference,
+            workspace marker, and custom-asset metadata may be stored locally so
+            the editor can restore and protect your current workspace.
           </li>
           <li>
             <strong>Uploaded 3D assets</strong> - custom model files may be
@@ -176,22 +202,31 @@ function CookiePolicyPage() {
           </li>
           <li>
             <strong>Cloud-saved projects</strong> - if you deliberately save a
-            project to the cloud, account and design data is sent to
-            krafc’s secure cloud backend.
+            project to the cloud, account and design data is sent to krafc’s
+            secure cloud backend.
           </li>
         </ul>
       </section>
 
       <section className="policy-section">
-        <h2>Infrastructure, Google sign-in, and service delivery</h2>
+        <h2>Cloudflare, Google sign-in, analytics, and service delivery</h2>
         <p>
-          Our hosting provider processes technical request data required to deliver and
-          secure the website. This necessary infrastructure processing is
-          separate from optional analytics. If you choose Google sign-in, Google
-          may use its own cookies on Google-controlled domains during
-          authentication. Resend processes the address and content required for
-          verification and transactional emails. Those providers’ processing is
-          governed by their applicable terms and privacy notices.
+          Cloudflare processes technical request data required to deliver and
+          secure the website and operate krafc’s cloud features. This necessary
+          infrastructure processing is separate from optional analytics. If you
+          choose Google sign-in, Google may use its own cookies on
+          Google-controlled domains during authentication. After analytics
+          consent, Google processes the analytics information described above.
+          Resend processes the address and content required for verification and
+          transactional emails. Google’s processing is described in its{" "}
+          <a
+            href="https://policies.google.com/privacy"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Privacy Policy
+          </a>
+          .
         </p>
       </section>
 
@@ -200,15 +235,15 @@ function CookiePolicyPage() {
         <p>
           Use the persistent “Cookie settings” link in the footer at any time.
           Choosing “Only necessary cookies” stops future Google Analytics
-          collection and removes analytics cookies accessible to krafc.
-          You can also clear cookies and site data in your browser; the consent
-          banner will appear again on your next visit.
+          collection and removes analytics cookies accessible to krafc. You can
+          also clear cookies and site data in your browser; the consent banner
+          will appear again on your next visit.
         </p>
         <p>
           For privacy questions, contact{" "}
-          <a href="mailto:support@krafc.com">support@krafc.com</a>. This
-          policy should be read together with our{" "}
-          <a href="/privacy">Privacy Policy</a>.
+          <a href="mailto:support@krafc.com">support@krafc.com</a>. This policy
+          should be read together with our <a href="/privacy">Privacy Policy</a>
+          .
         </p>
       </section>
     </main>

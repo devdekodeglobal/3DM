@@ -1,5 +1,5 @@
 export const COOKIE_CONSENT_NAME = 'kk_cookie_consent'
-export const COOKIE_CONSENT_VERSION = 2
+export const COOKIE_CONSENT_VERSION = 3
 export const COOKIE_CONSENT_MAX_AGE = 60 * 60 * 24 * 365
 export const COOKIE_CONSENT_EVENT = 'krafc:cookie-consent-changed'
 export const OPEN_COOKIE_SETTINGS_EVENT = 'krafc:open-cookie-settings'

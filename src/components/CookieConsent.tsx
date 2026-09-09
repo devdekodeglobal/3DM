@@ -10,7 +10,8 @@ import {
 } from "../lib/cookieConsent";
 
 const ANALYTICS_SCRIPT_ID = "krafc-analytics";
-const measurementId = import.meta.env.VITE_GOOGLE_ANALYTICS_ID?.trim() || "G-B55SFQ2GER";
+const measurementId =
+  import.meta.env.VITE_GOOGLE_ANALYTICS_ID?.trim() || "G-B55SFQ2GER";
 
 declare global {
   interface Window {
@@ -32,8 +33,23 @@ function removeAnalyticsCookies() {
         name.startsWith("_ga_"),
     );
 
+  const hostname = location.hostname;
+  const hostnameParts = hostname.split(".");
+  const domainCandidates = new Set<string | null>([null]);
+
+  if (hostname && hostname !== "localhost") {
+    domainCandidates.add(hostname);
+    if (hostnameParts.length > 2) {
+      domainCandidates.add(hostnameParts.slice(-2).join("."));
+    }
+  }
+
+  const secure = location.protocol === "https:" ? "; Secure" : "";
   for (const name of analyticsCookieNames) {
-    document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax`;
+    for (const domain of domainCandidates) {
+      const domainAttribute = domain ? `; Domain=.${domain}` : "";
+      document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax${secure}${domainAttribute}`;
+    }
   }
 }
 
@@ -122,29 +138,31 @@ export default function CookieConsent() {
             <Cookie size={22} />
           </div>
           <div className="cookie-banner__copy">
-            <h2>Your privacy, your choice</h2>
+            <h2>We use cookies to improve your krafc experience.</h2>
             <p>
-              We use necessary cookies to keep accounts secure and remember your
-              preferences. With your permission, optional analytics may be used
-              to understand how krafc is used. Analytics stays off unless
-              you accept.{" "}
-              <Link to="/cookie-policy">Read our cookie policy</Link>.
+              krafc uses necessary cookies to keep the platform secure, remember
+              your preferences, and provide a smooth experience. With your
+              permission, we also use optional analytics cookies to understand
+              how the platform is used and improve krafc. Necessary cookies
+              remain enabled because they are required for the platform to
+              function properly. To learn more, read our{" "}
+              <Link to="/cookie-policy">Cookie Policy</Link>.
             </p>
           </div>
           <div className="cookie-banner__actions">
             <button
               type="button"
               className="cookie-action cookie-action--secondary"
-              onClick={() => chooseAnalytics(false)}
+              onClick={() => setSettingsOpen(true)}
             >
-              Only necessary cookies
+              Cookie settings
             </button>
             <button
               type="button"
               className="cookie-action cookie-action--primary"
               onClick={() => chooseAnalytics(true)}
             >
-              Accept analytics
+              Accept all cookies
             </button>
           </div>
         </section>
@@ -168,9 +186,9 @@ export default function CookieConsent() {
             <div className="cookie-modal__header">
               <div>
                 <span className="cookie-modal__eyebrow">
-                  <ShieldCheck size={15} /> Privacy controls
+                  <ShieldCheck size={15} /> Cookie settings
                 </span>
-                <h2 id="cookie-settings-title">Cookie settings</h2>
+                {/* <h2 id="cookie-settings-title">Cookie settings</h2> */}
               </div>
               <button
                 type="button"
@@ -182,30 +200,30 @@ export default function CookieConsent() {
               </button>
             </div>
 
-            <p className="cookie-modal__intro">
-              Choose whether krafc may use optional analytics. Necessary
-              cookies cannot be switched off because they provide secure sign-in
-              and remember this choice.
-            </p>
+            {/*    <p className="cookie-modal__intro">
+              Choose whether krafc may use Google Analytics. Necessary cookies
+              are always allowed because they support core site functions,
+              security, and your saved cookie choice.
+            </p> */}
 
             <div className="cookie-preference">
               <div>
                 <h3>Necessary cookies</h3>
                 <p>
-                  Used only when required for secure sign-in and to remember
-                  your cookie choice. If you are not signed in, the session
-                  cookie is not set.
+                  Required for core site functions, security, and remembering
+                  your cookie choice. Sign-in/session cookies are used only when
+                  needed, such as after you sign in.
                 </p>
               </div>
-              <span className="cookie-always-on">Required when needed</span>
+              <span className="cookie-always-on">Always active</span>
             </div>
 
             <label className="cookie-preference cookie-preference--clickable">
               <div>
                 <h3>Analytics cookies</h3>
                 <p>
-                  Help us measure visits and improve the experience. Off by
-                  default.
+                  Google Analytics helps us measure visits and improve the
+                  experience. Off by default until you consent.
                 </p>
               </div>
               <span className="cookie-switch">
