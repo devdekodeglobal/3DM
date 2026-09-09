@@ -7,7 +7,7 @@ export default function Footer() {
     <footer className="site-footer">
       <div className="page-wrap flex flex-col sm:flex-row items-center justify-between gap-3">
         <Link to="/" className="flex items-center gap-2 no-underline" id="footer-logo">
-          <img src="/krafclogo.png" alt="krafc Logo" className="h-6" />
+          <img src="/originals/original.png" alt="krafc Logo" className="h-8 dark:brightness-0 dark:invert" />
         </Link>
 
         <div className="footer-meta">
