@@ -68,17 +68,11 @@ export default function Header() {
 
             {sessionUser ? (
               <div className="flex items-center gap-1.5 sm:gap-2 p-1 bg-[var(--color-bg-card)] rounded-full border border-[var(--color-border)] shadow-sm">
-                {sessionUser.avatar_url ? (
-                  <Link to="/dashboard" title="My Projects" className="transition hover:opacity-80 flex-shrink-0">
-                    <img src={sessionUser.avatar_url} alt="" className="w-7 h-7 rounded-full" style={{ objectFit: 'cover' }} />
-                  </Link>
-                ) : (
-                  <Link to="/dashboard" title="My Projects" className="transition hover:opacity-80 flex-shrink-0">
-                    <div className="w-7 h-7 rounded-full bg-[var(--brand)] text-white flex items-center justify-center text-[10px] font-bold" title={sessionUser.email}>
-                      {getInitials(sessionUser)}
-                    </div>
-                  </Link>
-                )}
+                <Link to="/dashboard" title="My Projects" className="transition hover:opacity-80 flex-shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--lagoon)] to-[var(--brand)] text-white flex items-center justify-center text-[10px] font-bold shadow-inner" title={sessionUser.name || sessionUser.email}>
+                    {getInitials(sessionUser)}
+                  </div>
+                </Link>
                 <div className="w-[1px] h-4 bg-[var(--color-border)] mx-0.5"></div>
                 <button
                   onClick={async () => { await signOut(); setSessionUser(null) }}
