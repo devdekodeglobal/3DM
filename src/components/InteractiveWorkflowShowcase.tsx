@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ArchitecturalSymbolSVG } from './editor/ArchitecturalSymbolSVG'
+import { BoothIllustration } from './editor/BoothIllustration'
 import Preview3D from './editor/Preview3D'
 import { Check, Cloud } from 'lucide-react'
 
@@ -150,27 +150,9 @@ export function InteractiveWorkflowShowcase() {
 
             {/* Step 1: Place Fixtures Animation */}
             {activeStep === 1 && (
-              <div className="w-full max-w-[280px] h-[220px] relative border-2 border-[var(--brand)] rounded-xl bg-[var(--bg-card)] p-4 shadow-xl animate-fade-in overflow-hidden">
-                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 3px 3px, currentColor 1px, transparent 0)', backgroundSize: '16px 16px' }} />
-                
-                <div className="w-full h-full border border-slate-300 dark:border-slate-700 rounded relative flex items-center justify-center">
-                  {/* Table symbol */}
-                  <div className="w-24 h-14 border-2 border-slate-700 dark:border-slate-200 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-slate-800 shadow-md transform animate-bounce-short">
-                    <ArchitecturalSymbolSVG category="table" assetName="table" className="w-full h-full p-1 text-slate-800 dark:text-slate-200" />
-                  </div>
-
-                  {/* Chairs around table */}
-                  <div className="absolute top-2 w-8 h-8">
-                    <ArchitecturalSymbolSVG category="chairs" assetName="catifa" className="w-full h-full text-slate-800 dark:text-slate-200" />
-                  </div>
-                  <div className="absolute bottom-2 w-8 h-8">
-                    <ArchitecturalSymbolSVG category="chairs" assetName="catifa" className="w-full h-full text-slate-800 dark:text-slate-200" />
-                  </div>
-
-                  {/* Floating drag-and-drop badge */}
-                  <div className="absolute -top-2 right-2 bg-[var(--cta)] text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow animate-pulse">
-                    + Dropped Table
-                  </div>
+              <div className="w-full max-w-[440px] h-[260px] rounded-xl overflow-hidden border border-[var(--brand)]/30 shadow-2xl relative animate-fade-in bg-[var(--bg-card)] flex items-center justify-center">
+                <div className="transform scale-[0.6] sm:scale-75 w-full h-full flex items-center justify-center">
+                  <BoothIllustration />
                 </div>
               </div>
             )}
