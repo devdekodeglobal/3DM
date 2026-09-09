@@ -10,7 +10,7 @@ import {
 } from "../lib/cookieConsent";
 
 const ANALYTICS_SCRIPT_ID = "krafc-analytics";
-const measurementId = import.meta.env.VITE_GOOGLE_ANALYTICS_ID?.trim();
+const measurementId = import.meta.env.VITE_GOOGLE_ANALYTICS_ID?.trim() || "G-B55SFQ2GER";
 
 declare global {
   interface Window {
