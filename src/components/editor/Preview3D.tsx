@@ -18,6 +18,7 @@ interface Preview3DProps {
   onUpdateElement?: (id: string, newProps: any) => void;
   backgroundColor?: string;
   setBackgroundColor?: (color: string) => void;
+  autoRotate?: boolean;
 }
 
 const PPM = 100;
@@ -31,6 +32,7 @@ export default function Preview3D({
   onSelectElement,
   onUpdateElement,
   backgroundColor = '#1d1f21',
+  autoRotate = false,
 }: Preview3DProps) {
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [cameraMode] = useState<'orbit' | 'flight'>('orbit');
@@ -136,6 +138,16 @@ export default function Preview3D({
     orbitCam.minZ = 0.1;
     orbitCam.maxZ = 200.0;
     orbitCam.panningSensibility = 50;
+    
+    if (autoRotate) {
+      orbitCam.useAutoRotationBehavior = true;
+      if (orbitCam.autoRotationBehavior) {
+        orbitCam.autoRotationBehavior.idleRotationSpeed = 0.2;
+        orbitCam.autoRotationBehavior.idleRotationWaitTime = 100;
+        orbitCam.autoRotationBehavior.idleRotationSpinupTime = 500;
+        orbitCam.autoRotationBehavior.zoomStopsAnimation = false;
+      }
+    }
 
     // Camera 2: Flight Camera
     const flightCam = new BABYLON.UniversalCamera("flightCam", new BABYLON.Vector3(0, 3, -10), scene);
