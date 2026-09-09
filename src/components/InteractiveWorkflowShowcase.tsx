@@ -150,10 +150,8 @@ export function InteractiveWorkflowShowcase() {
 
             {/* Step 1: Place Fixtures Animation */}
             {activeStep === 1 && (
-              <div className="w-full max-w-[440px] h-[260px] rounded-xl overflow-hidden border border-[var(--brand)]/30 shadow-2xl relative animate-fade-in bg-[var(--bg-card)] flex items-center justify-center">
-                <div className="transform scale-[0.6] sm:scale-75 w-full h-full flex items-center justify-center">
-                  <BoothIllustration />
-                </div>
+              <div className="w-full max-w-[440px] h-[260px] rounded-xl overflow-hidden border border-[var(--brand)]/30 shadow-2xl relative animate-fade-in bg-[var(--bg-card)] flex items-center justify-center p-4">
+                <BoothIllustration />
               </div>
             )}
 

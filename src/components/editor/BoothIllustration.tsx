@@ -7,7 +7,7 @@ export function BoothIllustration() {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
-      style={{ width: '100%', maxWidth: 420, display: 'block', margin: '0 auto' }}
+      style={{ width: '100%', height: '100%', display: 'block', margin: '0 auto' }}
       className="text-slate-800 dark:text-slate-200"
     >
       <defs>
