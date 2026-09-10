@@ -44,7 +44,7 @@ export function InteractiveWorkflowShowcase() {
   ];
 
   return (
-    <div className="w-full max-w-5xl mx-auto mt-12 bg-[var(--bg-card)] border border-[var(--border-brand)] rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+    <div className="w-full max-w-5xl mx-auto bg-[var(--bg-card)] border border-[var(--border-brand)] rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
       {/* Background glow orbs */}
       <div className="absolute -top-24 -left-24 w-64 h-64 bg-[var(--brand)]/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-[var(--accent)]/10 rounded-full blur-3xl pointer-events-none" />
