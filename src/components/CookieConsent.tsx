@@ -165,7 +165,7 @@ export default function CookieConsent() {
               className="cookie-action cookie-action--secondary"
               onClick={() => chooseAnalytics(false)}
             >
-              Reject Optional
+              Decline Optional
             </button>
             <button
               type="button"
