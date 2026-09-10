@@ -16,7 +16,7 @@ function PrivacyPolicyPage() {
         <p>
           This policy explains what information we collect, how we use it, and your choices regarding your privacy when using krafc.
         </p>
-        <p className="policy-updated">Last updated: 9 September 2026</p>
+        <p className="policy-updated">Last updated: 10 September 2026</p>
       </header>
 
       <section className="policy-section">

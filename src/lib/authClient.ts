@@ -110,6 +110,9 @@ export async function signOut() {
         localStorage.removeItem('stall-config')
         localStorage.removeItem('stall-elements')
         localStorage.removeItem('user-custom-assets')
+        localStorage.removeItem('current-design-id')
+        localStorage.removeItem('current-design-name')
+        localStorage.removeItem('auto-save-cloud')
       } catch (e) {
         console.warn('Failed to clear local design cache on sign out:', e)
       }

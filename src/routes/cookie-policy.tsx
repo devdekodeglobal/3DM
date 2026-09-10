@@ -19,7 +19,7 @@ function CookiePolicyPage() {
           used, how long it lasts, and when information is shared with another
           provider.
         </p>
-        <p className="policy-updated">Last updated: 9 September 2026</p>
+        <p className="policy-updated">Last updated: 10 September 2026</p>
       </header>
 
       <section className="policy-section">
@@ -193,7 +193,8 @@ function CookiePolicyPage() {
             <strong>Local editor data</strong> - booth configuration, layout
             elements, project name and identifier, cloud auto-save preference,
             workspace marker, and custom-asset metadata may be stored locally so
-            the editor can restore and protect your current workspace.
+            the editor can restore and protect your current workspace. These
+            items are cleared when you sign out.
           </li>
           <li>
             <strong>Uploaded 3D assets</strong> - custom model files may be
@@ -217,6 +218,8 @@ function CookiePolicyPage() {
           choose Google sign-in, Google may use its own cookies on
           Google-controlled domains during authentication. After analytics
           consent, Google processes the analytics information described above.
+          krafc configures Google Analytics with IP anonymisation enabled, which
+          means IP addresses are anonymised before being sent to Google.
           Resend processes the address and content required for verification and
           transactional emails. Google’s processing is described in its{" "}
           <a
