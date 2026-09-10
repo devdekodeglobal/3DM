@@ -257,13 +257,13 @@ export default function CookieConsent() {
             </p>
 
             <div className="cookie-modal__actions">
-              <button
+              {/*  <button
                 type="button"
                 className="cookie-action cookie-action--secondary"
                 onClick={() => chooseAnalytics(false)}
               >
                 Reject cookies
-              </button>
+              </button> */}
               <button
                 type="button"
                 className="cookie-action cookie-action--primary"

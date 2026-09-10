@@ -35,7 +35,7 @@ function CookiePolicyPage() {
 
       <section className="policy-section">
         <div className="policy-section__heading">
-          <ShieldCheck size={22} />
+          {/* <ShieldCheck size={22} /> */}
           <h2>1. Your privacy, your choice</h2>
         </div>
         <p>
@@ -50,9 +50,9 @@ function CookiePolicyPage() {
         </p>
         <p>Optional analytics are not activated until you give your consent.</p>
         <p>
-          If you choose "Decline Optional" or "Only necessary cookies", krafc
-          will continue to use only technologies required for the operation,
-          security and basic functionality of the platform.
+          If you choose "Decline Optional", krafc will continue to use only
+          technologies required for the operation, security and basic
+          functionality of the platform.
         </p>
         <p>
           You can change or withdraw your optional cookie consent at any time
@@ -388,11 +388,11 @@ function CookiePolicyPage() {
           Analytics.
         </p>
 
-        <h3>Babylon.js CDN</h3>
+        {/*  <h3>Babylon.js CDN</h3>
         <p>
           The 3D preview may request Draco decoder files from the Babylon.js
           preview CDN when they are needed.
-        </p>
+        </p> */}
 
         <h3>Resend</h3>
         <p>

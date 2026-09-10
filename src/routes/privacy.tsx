@@ -218,21 +218,21 @@ function PrivacyPolicyPage() {
         <p>Depending on the circumstances, these may include:</p>
         <ul>
           <li>
-            <strong>Performance of a contract</strong> — where processing is
+            <strong>Performance of a contract</strong> - where processing is
             necessary to provide the krafc services you request;
           </li>
           <li>
-            <strong>Legitimate interests</strong> — where processing is
+            <strong>Legitimate interests</strong> - where processing is
             necessary for purposes such as security, fraud prevention, service
             reliability and improvement, provided those interests are not
             overridden by applicable rights;
           </li>
           <li>
-            <strong>Consent</strong> — where we rely on your consent, including
+            <strong>Consent</strong> - where we rely on your consent, including
             for optional analytics where consent is required;
           </li>
           <li>
-            <strong>Legal obligations</strong> — where processing is necessary
+            <strong>Legal obligations</strong> - where processing is necessary
             to comply with applicable law; and
           </li>
           <li>Other lawful grounds recognised under applicable local law.</li>
@@ -339,11 +339,11 @@ function PrivacyPolicyPage() {
           content required to deliver those communications.
         </p>
 
-        <h3>Babylon.js CDN</h3>
+        {/*     <h3>Babylon.js CDN</h3>
         <p>
           The 3D preview may request Draco decoder files from the Babylon.js
           preview CDN when they are needed.
-        </p>
+        </p> */}
 
         <h3>Legal and safety disclosures</h3>
         <p>We may disclose information where reasonably necessary to:</p>

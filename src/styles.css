@@ -439,6 +439,7 @@ a {
 .cookie-action {
   min-height: 43px;
   padding: 10px 14px;
+
   border-radius: 999px;
   font-family: "Inter", sans-serif;
   font-size: 0.84rem;
@@ -472,7 +473,7 @@ a {
   border-color: var(--brand);
 }
 .cookie-manage {
-  grid-column: 1 / -1;
+  grid-column: 1;
   justify-self: center;
   color: var(--fg-soft);
   background: none;
@@ -614,9 +615,12 @@ a {
 }
 .cookie-modal__actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1fr;
+  justify-items: center;
   margin-top: 22px;
+}
+.cookie-modal__actions .cookie-action--primary {
+  min-width: 260px;
 }
 
 /* Cookie policy */
@@ -637,6 +641,43 @@ a {
   color: var(--fg-soft);
   font-size: 1.1rem;
   line-height: 1.7;
+}
+.policy-hero > h1 + .policy-updated {
+  margin-bottom: 28px;
+}
+.policy-section h3 {
+  margin: 34px 0 10px;
+  color: var(--fg);
+  font:
+    700 1.08rem/1.35 "Outfit",
+    sans-serif;
+}
+.policy-section p strong,
+.policy-section li strong {
+  color: var(--fg);
+  font-weight: 700;
+}
+.policy-section p a,
+.policy-section li a {
+  text-decoration: underline;
+  text-decoration-color: var(--border-brand);
+  text-underline-offset: 3px;
+}
+.policy-section p a:hover,
+.policy-section li a:hover {
+  text-decoration-color: currentColor;
+}
+.policy-section ul {
+  margin: 0 0 20px;
+  padding-left: 24px;
+  color: var(--fg-soft);
+}
+.policy-section ul li {
+  padding-left: 6px;
+  line-height: 1.7;
+}
+.policy-section ul li + li {
+  margin-top: 8px;
 }
 .policy-updated {
   margin-top: 16px;
@@ -734,13 +775,6 @@ a {
 .policy-note {
   font-size: 0.82rem;
 }
-.policy-section ul {
-  padding-left: 20px;
-}
-.policy-section li + li {
-  margin-top: 10px;
-}
-
 @media (max-width: 800px) {
   .cookie-banner {
     grid-template-columns: auto 1fr;
@@ -880,8 +914,9 @@ a {
 .scroll-reveal {
   opacity: 0;
   will-change: opacity, transform;
-  transition: opacity 1100ms cubic-bezier(0.22, 1, 0.36, 1),
-              transform 1100ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    opacity 1100ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 1100ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .reveal-fade-up {
@@ -1056,7 +1091,8 @@ pre code {
 }
 
 @keyframes filter-animation {
-  0%, 100% {
+  0%,
+  100% {
     filter: hue-rotate(0deg);
   }
   50% {
@@ -1092,7 +1128,8 @@ pre code {
 }
 
 @keyframes text-glow {
-  0%, 100% {
+  0%,
+  100% {
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
   }
   50% {
@@ -1102,80 +1139,82 @@ pre code {
 
 /* Base styles for 3d animation */
 .hero-section {
-    position: relative;
-    width: 100%;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: #000;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
 }
 .hero-section .content {
-    position: relative;
-    transform-origin: top left;
+  position: relative;
+  transform-origin: top left;
 }
 .hero-section .container-full {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    perspective: 1200px;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  perspective: 1200px;
 }
-.hero-section .backgroundImage, .hero-section .boyImage {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.hero-section .backgroundImage,
+.hero-section .boyImage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .hero-section .boyImage {
-    z-index: 10;
+  z-index: 10;
 }
-.hero-section .container, .hero-section .container-reflect {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    transform-style: preserve-3d;
+.hero-section .container,
+.hero-section .container-reflect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
 }
 .hero-section .container {
-    z-index: 5;
+  z-index: 5;
 }
 .hero-section .container-reflect {
-    z-index: 15;
-    transform: scaleY(-1) translateY(100%);
-    opacity: 0.3;
-    pointer-events: none;
+  z-index: 15;
+  transform: scaleY(-1) translateY(100%);
+  opacity: 0.3;
+  pointer-events: none;
 }
 .hero-section .cube {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    transform-style: preserve-3d;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
 }
 .hero-section .face {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    backface-visibility: hidden;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
 }
 .hero-section .face.left {
-    transform: rotateY(-90deg) translateZ(500px);
+  transform: rotateY(-90deg) translateZ(500px);
 }
 .hero-section .face.right {
-    transform: rotateY(90deg) translateZ(500px);
+  transform: rotateY(90deg) translateZ(500px);
 }
 .hero-section .face.back {
-    transform: rotateY(180deg) translateZ(500px);
+  transform: rotateY(180deg) translateZ(500px);
 }
 .hero-section .face.text {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    color: white;
-    text-align: center;
-    padding: 40px;
-    animation: text-glow 3s infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: white;
+  text-align: center;
+  padding: 40px;
+  animation: text-glow 3s infinite;
 }
