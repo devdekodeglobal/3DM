@@ -27,7 +27,7 @@
 
 ### Consent-controlled analytics on Cloudflare Pages
 
-Google Analytics is configured with the embedded measurement ID `G-B55SFQ2GER`. `VITE_GOOGLE_ANALYTICS_ID` can be set as a Cloudflare Pages build-time environment variable to override that ID. The application blocks the analytics script and all analytics requests until the visitor explicitly accepts all cookies or enables analytics in Cookie settings.
+Google Analytics is configured with the embedded measurement ID `G-B55SFQ2GER`. `VITE_GOOGLE_ANALYTICS_ID` can be set as a Cloudflare Pages build-time environment variable to override that ID. The application blocks the analytics script and all analytics requests until the visitor selects Accept All on the banner or enables analytics in Cookie settings.
 
 Keep Cloudflare Web Analytics automatic injection disabled in the Cloudflare dashboard. Dashboard injection bypasses the application consent gate. If Cloudflare Web Analytics is introduced later, load its beacon through the consent manager and update the Cookie Policy first.
 
