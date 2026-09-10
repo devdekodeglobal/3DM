@@ -1036,3 +1036,146 @@ pre code {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+@keyframes left {
+  100% {
+    margin-left: -54000px;
+  }
+}
+
+@keyframes back {
+  100% {
+    margin-left: -54870px;
+  }
+}
+
+@keyframes right {
+  100% {
+    margin-left: -55740px;
+  }
+}
+
+@keyframes filter-animation {
+  0%, 100% {
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    filter: hue-rotate(100deg);
+  }
+}
+
+@keyframes zoom-in {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(2.5);
+  }
+}
+
+@keyframes blur {
+  0% {
+    filter: blur(0px);
+  }
+  100% {
+    filter: blur(3px);
+  }
+}
+
+@keyframes brightness {
+  0% {
+    filter: brightness(1) contrast(1);
+  }
+  100% {
+    filter: brightness(0.8) contrast(1.3);
+  }
+}
+
+@keyframes text-glow {
+  0%, 100% {
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+  }
+}
+
+/* Base styles for 3d animation */
+.hero-section {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #000;
+}
+.hero-section .content {
+    position: relative;
+    transform-origin: top left;
+}
+.hero-section .container-full {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    perspective: 1200px;
+}
+.hero-section .backgroundImage, .hero-section .boyImage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.hero-section .boyImage {
+    z-index: 10;
+}
+.hero-section .container, .hero-section .container-reflect {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+}
+.hero-section .container {
+    z-index: 5;
+}
+.hero-section .container-reflect {
+    z-index: 15;
+    transform: scaleY(-1) translateY(100%);
+    opacity: 0.3;
+    pointer-events: none;
+}
+.hero-section .cube {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+}
+.hero-section .face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+}
+.hero-section .face.left {
+    transform: rotateY(-90deg) translateZ(500px);
+}
+.hero-section .face.right {
+    transform: rotateY(90deg) translateZ(500px);
+}
+.hero-section .face.back {
+    transform: rotateY(180deg) translateZ(500px);
+}
+.hero-section .face.text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    text-align: center;
+    padding: 40px;
+    animation: text-glow 3s infinite;
+}
