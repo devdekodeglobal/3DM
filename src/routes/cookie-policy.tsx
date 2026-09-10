@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Cookie, Database, Settings2, ShieldCheck } from "lucide-react";
+import { Database, Settings2 } from "lucide-react";
 import { openCookieSettings } from "../lib/cookieConsent";
 
 export const Route = createFileRoute("/cookie-policy")({
@@ -10,9 +10,6 @@ function CookiePolicyPage() {
   return (
     <main className="policy-page page-wrap">
       <header className="policy-hero">
-        <span className="badge">
-          <Cookie size={15} /> Privacy
-        </span>
         <h1 className="display">Cookie policy</h1>
         <p className="policy-updated">Last updated: 10 September 2026</p>
         <p>
@@ -35,7 +32,6 @@ function CookiePolicyPage() {
 
       <section className="policy-section">
         <div className="policy-section__heading">
-          {/* <ShieldCheck size={22} /> */}
           <h2>1. Your privacy, your choice</h2>
         </div>
         <p>

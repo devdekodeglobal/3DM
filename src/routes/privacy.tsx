@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/privacy")({
   component: PrivacyPolicyPage,
@@ -9,9 +8,6 @@ function PrivacyPolicyPage() {
   return (
     <main className="policy-page page-wrap">
       <header className="policy-hero">
-        <span className="badge">
-          <ShieldCheck size={15} /> Legal
-        </span>
         <h1 className="display">Privacy Policy</h1>
         <p className="policy-updated">Last updated: 10 September 2026</p>
         <p>
