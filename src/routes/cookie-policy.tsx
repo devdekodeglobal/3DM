@@ -30,8 +30,9 @@ function CookiePolicyPage() {
         <p>
           Necessary cookies support secure sign-in and remember your privacy
           choice. Google Analytics is configured, but its script loads and
-          begins collecting information only after you select “Accept all
-          cookies” or enable analytics in Cookie settings.
+          begins collecting information only after you select “Accept All” or
+          enable analytics in Cookie Settings. You can refuse all optional
+          analytics directly from the banner by selecting “Reject Optional”.
         </p>
         <button
           type="button"
@@ -152,7 +153,7 @@ function CookiePolicyPage() {
               </tr>
               <tr>
                 <td>
-                  <code>_ga_B55SFQ2GER</code>
+                  <code>_ga_&lt;property-id&gt;</code>
                 </td>
                 <td>
                   Google Analytics (Google)
@@ -161,7 +162,8 @@ function CookiePolicyPage() {
                 </td>
                 <td>
                   After consent, maintains session state for krafc’s Google
-                  Analytics property <code>G-B55SFQ2GER</code>.
+                  Analytics property. With the currently embedded measurement
+                  ID, the cookie is <code>_ga_B55SFQ2GER</code>.
                 </td>
                 <td>Up to 2 years</td>
                 <td>
@@ -172,12 +174,12 @@ function CookiePolicyPage() {
             </tbody>
           </table>
         </div>
-        {/*  <p className="policy-note">
+        <p className="policy-note">
           Google Analytics cookies and requests remain blocked when only
           necessary cookies are chosen or no choice has been made. The listed
           expiry periods are Google’s default maximums and may be renewed after
           later visits; browser settings or provider changes may shorten them.
-        </p> */}
+        </p>
       </section>
 
       <section className="policy-section">
@@ -210,7 +212,7 @@ function CookiePolicyPage() {
       </section>
 
       <section className="policy-section">
-        <h2>Cloudflare, Google sign-in, analytics, and service delivery</h2>
+        <h2>External service providers</h2>
         <p>
           Cloudflare processes technical request data required to deliver and
           secure the website and operate krafc’s cloud features. This necessary
@@ -218,10 +220,21 @@ function CookiePolicyPage() {
           choose Google sign-in, Google may use its own cookies on
           Google-controlled domains during authentication. After analytics
           consent, Google processes the analytics information described above.
-          krafc configures Google Analytics with IP anonymisation enabled, which
-          means IP addresses are anonymised before being sent to Google.
-          Resend processes the address and content required for verification and
-          transactional emails. Google’s processing is described in its{" "}
+          Google states that Google Analytics 4 uses IP addresses at collection
+          to derive location information and discards them before the data is
+          logged. krafc disables Google signals and advertising-personalisation
+          signals in its analytics tag. Resend processes the address and content
+          required for verification and transactional emails.
+        </p>
+        <p>
+          The website also requests font files from Google Fonts, and its
+          standalone model-preview page loads Google’s model-viewer library
+          from Google Hosted Libraries. The 3D preview may request Draco decoder
+          files from the Babylon.js preview CDN when they are needed. Those
+          providers receive the technical request data required to return the
+          files, such as the requesting IP address and browser request
+          information. These resource requests do not enable Google Analytics.
+          Google’s processing is described in its{" "}
           <a
             href="https://policies.google.com/privacy"
             target="_blank"
@@ -237,10 +250,11 @@ function CookiePolicyPage() {
         <h2>Changing or withdrawing consent</h2>
         <p>
           Use the persistent “Cookie settings” link in the footer at any time.
-          Choosing “Only necessary cookies” stops future Google Analytics
-          collection and removes analytics cookies accessible to krafc. You can
-          also clear cookies and site data in your browser; the consent banner
-          will appear again on your next visit.
+          Choosing “Reject Optional” on the banner, or “Reject optional
+          cookies” in Cookie settings, stops future Google Analytics collection
+          and removes analytics cookies accessible to krafc. You can also clear
+          cookies and site data in your browser; the consent banner will appear
+          again on your next visit.
         </p>
         <p>
           For privacy questions, contact{" "}

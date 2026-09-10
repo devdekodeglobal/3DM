@@ -22,7 +22,7 @@ function PrivacyPolicyPage() {
       <section className="policy-section">
         <h2>1. Information we collect</h2>
         <p>
-          We collect account information (such as your email address and an optional display name) when you register or sign in using a provider like Google. We also collect the content of your 3D designs and uploaded custom assets, depending on whether you save them locally or to the cloud.
+          We collect account information (such as your email address and an optional display name) when you register or sign in using a provider like Google. We collect the content of a 3D design when you choose to save that design to the cloud. Imported custom-asset files are stored in your browser and are not uploaded merely because you import them into the editor.
         </p>
         <p>
           We automatically collect technical data needed to operate the service, including your IP address and standard browser request information.
@@ -51,7 +51,7 @@ function PrivacyPolicyPage() {
           krafc uses a mix of local browser storage and cloud services. The difference matters: local storage is kept in your browser; cloud-saved data is sent to krafc services so it can be available when you sign in.
         </p>
         <p>
-          Your editor drafts, settings, and uploaded custom 3D asset files may be stored in local storage or IndexedDB under the krafc browser database. Cloud-saved design/project data, account records, and session records are stored in our secure cloud database.
+          Your editor drafts, settings, and imported custom 3D asset files may be stored in local storage or IndexedDB under the krafc browser database. Cloud-saved design/project data, account records, and session records are stored in Cloudflare D1.
         </p>
       </section>
 
@@ -64,14 +64,14 @@ function PrivacyPolicyPage() {
           For more details on optional cookies, third-party analytics, and how to manage your preferences, please see our <a href="/cookie-policy">Cookie Policy</a>.
         </p>
         <p>
-          Google Analytics is configured for krafc, but its script, cookies, and analytics requests remain blocked until you accept analytics. You can withdraw that consent at any time through the persistent Cookie settings link in the footer.
+          Google Analytics is configured for krafc, but its script, cookies, and analytics requests remain blocked until you select Accept All. You can select Reject Optional directly on the consent banner and withdraw consent at any time through the persistent Cookie settings link in the footer.
         </p>
       </section>
 
       <section className="policy-section">
         <h2>5. When we share information</h2>
         <p>
-          We do not sell, trade, or rent personal information. We may share information with service providers that help operate krafc, including Cloudflare (hosting, Workers, and D1), Google (OAuth sign-in and, after consent, Google Analytics), and Resend (transactional emails). We may also disclose information where required by law or to protect rights and security.
+          We do not sell, trade, or rent personal information. We may share information with service providers that help operate krafc, including Cloudflare (hosting, Workers, and D1), Google (web fonts, a model-preview library, OAuth sign-in and, after consent, Google Analytics), Resend (transactional emails), and the Babylon.js preview CDN (3D decoder files when required). These providers receive the information needed to supply their service, including technical request data when the browser connects to them. We may also disclose information where required by law or to protect rights and security.
         </p>
       </section>
 
