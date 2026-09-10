@@ -78,103 +78,80 @@ function LandingPage() {
 
   return (
     <>
-      {/* ── HERO ── */}
-      <section style={{ paddingTop: 72, paddingBottom: 40, overflow: 'hidden' }}>
-        <div className="page-wrap">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 56, alignItems: 'center', textAlign: 'center' }}
+      <section style={{ paddingTop: 32, paddingBottom: 40, overflow: 'hidden', position: 'relative' }}>
+        <div className="page-wrap" style={{ position: 'relative' }}>
+          
+          {/* Action Buttons moved to Top Right */}
+          <div className="fade-up d-100" style={{ 
+            position: 'absolute', 
+            top: 0, 
+            right: 0, 
+            display: 'flex', 
+            gap: 10, 
+            zIndex: 30 
+          }}>
+            {hasDraft ? (
+              <>
+                <Link to="/editor" id="hero-resume-design" className="btn btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+                  Resume
+                </Link>
+                <Link
+                  to="/editor"
+                  id="hero-start-new"
+                  onClick={() => {
+                    localStorage.removeItem('stall-config')
+                    localStorage.removeItem('stall-elements')
+                  }}
+                  className="btn btn-outline"
+                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                >
+                  New
+                </Link>
+              </>
+            ) : (
+              <Link
+                to="/editor"
+                id="hero-start-designing"
+                className="btn btn-primary"
+                style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+              >
+                <svg viewBox="0 0 16 16" fill="none" width="15" height="15" style={{ display: 'inline-block', marginRight: 4 }}>
+                  <path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.7"/>
+                </svg>
+                Start Designing
+              </Link>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24, alignItems: 'center', textAlign: 'center' }}
             className="hero-grid">
 
-            {/* Top copy */}
-            <div className="fade-up" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div className="badge d-100 fade-up" style={{ marginBottom: 24 }}>
-                <span style={{
-                  width: 7, height: 7, borderRadius: '50%',
-                  background: 'var(--brand)', display: 'inline-block', marginRight: 8,
-                  animation: 'pulse-dot 1.6s ease-in-out infinite'
-                }}/>
-                v1.0 • Live 3D Sync
-              </div>
+            {/* 1. Title */}
+            <h1 className="display fade-up d-100" style={{
+              fontSize: 'clamp(1.8rem, 4.5vw, 2.8rem)',
+              color: 'var(--fg)',
+              margin: '0',
+            }}>
+              Design 3D <span style={{ color: 'var(--brand)' }}>Spaces</span><br/> with Precision
+            </h1>
 
-              <h1 className="display fade-up d-100" style={{
-                fontSize: 'clamp(2.2rem, 6vw, 4rem)',
-                color: 'var(--fg)',
-                margin: '0 0 20px',
-              }}>
-                Design 3D <span style={{ color: 'var(--brand)' }}>Spaces</span><br/> with Precision
-              </h1>
-
-              <p className="fade-up d-200" style={{
-                fontSize: '1.15rem',
-                color: 'var(--fg-soft)',
-                lineHeight: 1.7,
-                margin: '0 0 36px',
-                maxWidth: 600,
-              }}>
-                Professional 2D floor planning with snap-to-grid mechanics and
-                a real-time 3D preview, all in your browser.
-              </p>
-
-              <div className="fade-up d-300" style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
-                {hasDraft ? (
-                  <>
-                    <Link to="/editor" id="hero-resume-design" className="btn btn-primary">
-                      <svg viewBox="0 0 16 16" fill="none" width="15" height="15">
-                        <path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.7"/>
-                      </svg>
-                      Resume Design
-                    </Link>
-                    <Link
-                      to="/editor"
-                      id="hero-start-new"
-                      onClick={() => {
-                        localStorage.removeItem('stall-config')
-                        localStorage.removeItem('stall-elements')
-                      }}
-                      className="btn btn-outline"
-                    >
-                      Start New Design
-                    </Link>
-                  </>
-                ) : (
-                  <Link
-                    to="/editor"
-                    id="hero-start-designing"
-                    className="btn btn-primary"
-                  >
-                    <svg viewBox="0 0 16 16" fill="none" width="15" height="15">
-                      <path d="M8 1v14M1 8h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.7"/>
-                    </svg>
-                    Start Designing
-                  </Link>
-                )}
-              </div>
-
-              {/* Stats row */}
-              <div className="fade-up d-400" style={{
-                display: 'flex', gap: 36, marginTop: 40,
-                paddingTop: 28, borderTop: '1px solid var(--border)',
-                justifyContent: 'center', width: '100%', maxWidth: 600
-              }}>
-                {[
-                  { val: '2D + 3D', label: 'Dual View' },
-                  { val: '50+', label: 'Assets' },
-                  { val: 'Live', label: 'Sync' },
-                ].map(s => (
-                  <div key={s.label}>
-                    <div style={{
-                      fontFamily: 'Outfit, sans-serif', fontWeight: 800,
-                      fontSize: '1.35rem', color: 'var(--brand)',
-                    }}>{s.val}</div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--fg-dim)', fontWeight: 500 }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Bottom illustration */}
+            {/* 2. Interactive Showcase */}
             <div className="fade-up d-200 w-full" style={{ position: 'relative', zIndex: 20 }}>
               <InteractiveWorkflowShowcase />
             </div>
+
+            {/* 3. Description */}
+            <p className="fade-up d-300" style={{
+              fontSize: '1.15rem',
+              color: 'var(--fg-soft)',
+              lineHeight: 1.7,
+              margin: '0',
+              maxWidth: 600,
+            }}>
+              Professional 2D floor planning with snap-to-grid mechanics and
+              a real-time 3D preview, all in your browser.
+            </p>
+
           </div>
         </div>
       </section>
