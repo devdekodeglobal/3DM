@@ -24,6 +24,7 @@ export default defineConfig({
         headers: {
           'x-forwarded-host': 'localhost:5173',
           'x-forwarded-proto': 'http',
+          'Origin': 'http://localhost:8788'
         }
       }
     }

@@ -17,14 +17,15 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const isEditor = useRouterState({ select: (s) => s.location.pathname.startsWith('/editor') })
+  const isDashboard = useRouterState({ select: (s) => s.location.pathname.startsWith('/dashboard') })
 
   return (
     <>
-      <Header />
+      {!isDashboard && <Header />}
       <main>
         <Outlet />
       </main>
-      {!isEditor && <Footer />}
+      {!(isEditor || isDashboard) && <Footer />}
       <CookieConsent />
     </>
   )

@@ -18,7 +18,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   if (!user) return jsonError('Unauthorized', 401)
 
   const { results } = await env.DB.prepare(
-    'SELECT id, name, config, elements, created_at, updated_at FROM designs WHERE user_id = ? ORDER BY updated_at DESC'
+    'SELECT id, project_id, name, config, elements, created_at, updated_at FROM designs WHERE user_id = ? ORDER BY updated_at DESC'
   ).bind(user.id).all()
 
   return json({ designs: results })
@@ -41,14 +41,18 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return jsonError('Payload exceeds maximum allowed size of 2MB', 413)
   }
 
-  let parsed: { name?: string; config?: unknown; elements?: unknown }
+  let parsed: { project_id?: string; name?: string; config?: unknown; elements?: unknown }
   try {
     parsed = JSON.parse(rawBody)
   } catch {
     return jsonError('Invalid JSON body', 400)
   }
 
-  const { name, config, elements } = parsed
+  const { project_id, name, config, elements } = parsed
+
+  if (!project_id || typeof project_id !== 'string') {
+    return jsonError('project_id is required')
+  }
 
   if (!name || typeof name !== 'string' || name.trim().length === 0) {
     return jsonError('Design name is required')
@@ -58,17 +62,17 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return jsonError('Design name must not exceed 100 characters')
   }
 
-  // Limit to 3 designs per user
+  // Limit to 2 designs per project
   const { results: existing } = await env.DB.prepare(
-    'SELECT COUNT(*) as count FROM designs WHERE user_id = ?'
-  ).bind(user.id).all<{ count: number }>()
+    'SELECT COUNT(*) as count FROM designs WHERE project_id = ?'
+  ).bind(project_id).all<{ count: number }>()
 
   const count = existing[0]?.count ?? 0
-  if (count >= 3) return jsonError('Max capacity reached: Limit of 3 designs per user. Please delete an old design to save a new one.', 403)
+  if (count >= 2) return jsonError('Max capacity reached: Limit of 2 designs per project.', 403)
 
   const { results } = await env.DB.prepare(
-    'INSERT INTO designs (user_id, name, config, elements) VALUES (?, ?, ?, ?) RETURNING id, name, created_at'
-  ).bind(user.id, name.trim(), JSON.stringify(config || {}), JSON.stringify(elements || [])).all()
+    'INSERT INTO designs (user_id, project_id, name, config, elements) VALUES (?, ?, ?, ?, ?) RETURNING id, project_id, name, created_at'
+  ).bind(user.id, project_id, name.trim(), JSON.stringify(config || {}), JSON.stringify(elements || [])).all()
 
   return json({ design: results[0] }, 201)
 }

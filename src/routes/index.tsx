@@ -81,15 +81,8 @@ function LandingPage() {
       <section style={{ paddingTop: 32, paddingBottom: 40, overflow: 'hidden', position: 'relative' }}>
         <div className="page-wrap" style={{ position: 'relative' }}>
           
-          {/* Action Buttons moved to Top Right */}
-          <div className="fade-up d-100" style={{ 
-            position: 'absolute', 
-            top: 0, 
-            right: 0, 
-            display: 'flex', 
-            gap: 10, 
-            zIndex: 30 
-          }}>
+          {/* Action Buttons moved to Top Right on desktop, centered on mobile */}
+          <div className="fade-up d-100 flex justify-center sm:absolute sm:top-0 sm:right-0 gap-3 z-30 mb-8 sm:mb-0 w-full sm:w-auto">
             {hasDraft ? (
               <>
                 <Link to="/editor" id="hero-resume-design" className="btn btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
