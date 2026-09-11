@@ -38,7 +38,7 @@ function getInitialData() {
   const savedElements = window.localStorage.getItem('stall-elements');
   const savedId = window.localStorage.getItem('current-design-id');
   const savedName = window.localStorage.getItem('current-design-name');
-  if (!savedStall) return { config: null, elements: null, id: null, name: savedName };
+  if (!savedStall) return { config: null, elements: null, id: savedId, name: savedName };
 
   const config = JSON.parse(savedStall);
   let parsedElements = savedElements ? JSON.parse(savedElements) : [];
