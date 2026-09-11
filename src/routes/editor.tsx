@@ -7,7 +7,7 @@ import Properties from '../components/editor/Properties'
 import Preview3D from '../components/editor/Preview3D'
 import ColorPickerPanel from '../components/editor/ColorPickerPanel'
 import RoofCanvas from '../components/editor/RoofCanvas'
-import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil } from 'lucide-react'
+import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil, LayoutGrid, Sliders } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
@@ -304,9 +304,19 @@ function EditorPage() {
   }, [currentDesignId, projectName])
 
   // Layout States
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [previewerOpen, setPreviewerOpen] = useState(true)
-  const [propertiesOpen, setPropertiesOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') return window.innerWidth >= 768
+    return true
+  })
+  const [previewerOpen, setPreviewerOpen] = useState(() => {
+    if (typeof window !== 'undefined') return window.innerWidth >= 768
+    return true
+  })
+  const [propertiesOpen, setPropertiesOpen] = useState(() => {
+    if (typeof window !== 'undefined') return window.innerWidth >= 768
+    return true
+  })
+  const [mobileTab, setMobileTab] = useState<'canvas' | 'assets' | 'properties' | '3d'>('canvas')
   const [splitWidth, setSplitWidth] = useState(60)
   const splitContainerRef = useRef<HTMLDivElement>(null)
   const [is3DGenerated, setIs3DGenerated] = useState(false)
@@ -342,6 +352,16 @@ function EditorPage() {
 
   useEffect(() => {
     setIsMounted(true)
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        // On mobile, panels are controlled via mobileTab drawers
+      } else {
+        // On desktop, keep sidebars open by default if they were collapsed by mobile
+        setSidebarOpen(prev => prev)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   const handleCloudSave = async () => {
@@ -929,8 +949,8 @@ function EditorPage() {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          {/* View Toggles */}
-          <div className="flex items-center gap-1 bg-[var(--sand)] p-1 rounded-xl border border-[var(--line)] mr-2">
+          {/* View Toggles - desktop only */}
+          <div className="hidden md:flex items-center gap-1 bg-[var(--sand)] p-1 rounded-xl border border-[var(--line)] mr-2">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className={`p-1.5 rounded-lg transition ${sidebarOpen ? 'bg-[var(--brand)] text-white' : 'text-[var(--fg-soft)] hover:bg-[var(--bg-subtle)]'}`}
@@ -1060,58 +1080,101 @@ function EditorPage() {
         </div>
       </div>
 
-      {/* Split Workspaces - all panels are flex siblings, canvas is flex-1 */}
-      <div ref={splitContainerRef} className="flex flex-1 overflow-hidden">
+      {/* Split Workspaces - on mobile tabs control view/drawers; on desktop flex layout with resizer */}
+      <div ref={splitContainerRef} className="flex flex-1 overflow-hidden relative">
 
-        {/* Left Sidebar */}
-        {sidebarOpen && (
-          <div className="flex h-full shrink-0 z-10 shadow-xl border-r border-[var(--line)]">
-            <Sidebar
-              addElement={addElement}
-              activeView={blueprintView}
-              onViewChange={setBlueprintView}
-              backgroundColor={backgroundColor}
-              setBackgroundColor={setBackgroundColor}
-              customAssets={customAssets}
-              onUploadCustomAsset={handleUploadCustomAsset}
-              onDeleteCustomAsset={handleDeleteCustomAsset}
-              showAlert={showAlert}
-            />
-          </div>
+        {/* Left Sidebar: on mobile, fixed overlay bottom/side sheet when mobileTab === 'assets'; on desktop, inline flex item */}
+        {(sidebarOpen || mobileTab === 'assets') && (
+          <>
+            {/* Mobile backdrop */}
+            {mobileTab === 'assets' && (
+              <div 
+                className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 md:hidden animate-in fade-in duration-150"
+                onClick={() => setMobileTab('canvas')}
+              />
+            )}
+            <div className={`
+              ${mobileTab === 'assets' ? 'fixed inset-x-0 bottom-0 top-14 z-45 flex flex-col md:static md:inset-auto md:z-10' : 'hidden md:flex'}
+              h-full shrink-0 shadow-xl border-r border-[var(--line)] bg-[var(--surface-strong)]
+            `}>
+              <Sidebar
+                addElement={(el) => {
+                  addElement(el)
+                  // On mobile, close assets tab so user sees the newly placed element
+                  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                    setMobileTab('canvas')
+                  }
+                }}
+                activeView={blueprintView}
+                onViewChange={setBlueprintView}
+                backgroundColor={backgroundColor}
+                setBackgroundColor={setBackgroundColor}
+                customAssets={customAssets}
+                onUploadCustomAsset={handleUploadCustomAsset}
+                onDeleteCustomAsset={handleDeleteCustomAsset}
+                showAlert={showAlert}
+                onClose={() => setMobileTab('canvas')}
+              />
+            </div>
+          </>
         )}
 
-        {/* Center Canvas - flex-1 always fills remaining space */}
-        <div className="flex-1 flex h-full flex-col relative z-0 min-w-0 bg-[var(--bg-base)]">
+        {/* Center Canvas: on mobile shown when mobileTab === 'canvas' or with overlays; hidden when mobileTab === '3d' */}
+        <div className={`
+          ${mobileTab === '3d' ? 'hidden md:flex' : 'flex'}
+          flex-1 h-full flex-col relative z-0 min-w-0 bg-[var(--bg-base)]
+        `}>
           <Canvas
             elements={elements}
             setElements={setElements}
             selectedId={selectedId}
-            onSelect={handleSelect}
+            onSelect={(id) => {
+              handleSelect(id)
+              // On mobile, if element is selected, optionally remain on canvas or view properties
+            }}
             boothConfig={boothConfig}
             gridVisible={gridVisible}
           />
         </div>
 
-        {/* Properties Panel - in flow, not absolute */}
-        {propertiesOpen && (
-          <div className="shrink-0 h-full border-l border-[var(--line)] z-20 shadow-[-8px_0_20px_rgba(0,0,0,0.05)]">
-            <Properties
-              selectedElement={selectedElement}
-              onUpdate={handleUpdateElement}
-              onDelete={() => handleDeleteElement(selectedId!)}
-              onEditElevation={() => setEditingWallId(selectedId)}
-              onViewElevation={() => setBlueprintView(`elevation_${selectedId}` as any)}
-              boothConfig={boothConfig}
-              onBoothConfigUpdate={(updates: any) => setBoothConfig((prev: any) => ({ ...prev, ...updates }))}
-              onEditRoof={() => setEditingRoof(true)}
-            />
-          </div>
+        {/* Properties Panel: on mobile, fixed overlay sheet when mobileTab === 'properties'; on desktop inline flex item */}
+        {(propertiesOpen || mobileTab === 'properties') && (
+          <>
+            {/* Mobile backdrop */}
+            {mobileTab === 'properties' && (
+              <div 
+                className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 md:hidden animate-in fade-in duration-150"
+                onClick={() => setMobileTab('canvas')}
+              />
+            )}
+            <div className={`
+              ${mobileTab === 'properties' ? 'fixed inset-x-0 bottom-0 top-14 z-45 flex flex-col md:static md:inset-auto md:z-20' : 'hidden md:flex'}
+              shrink-0 h-full border-l border-[var(--line)] shadow-[-8px_0_20px_rgba(0,0,0,0.05)] bg-[var(--surface-strong)]
+            `}>
+              <Properties
+                selectedElement={selectedElement}
+                onUpdate={handleUpdateElement}
+                onDelete={() => {
+                  handleDeleteElement(selectedId!)
+                  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                    setMobileTab('canvas')
+                  }
+                }}
+                onEditElevation={() => setEditingWallId(selectedId)}
+                onViewElevation={() => setBlueprintView(`elevation_${selectedId}` as any)}
+                boothConfig={boothConfig}
+                onBoothConfigUpdate={(updates: any) => setBoothConfig((prev: any) => ({ ...prev, ...updates }))}
+                onEditRoof={() => setEditingRoof(true)}
+                onClose={() => setMobileTab('canvas')}
+              />
+            </div>
+          </>
         )}
 
-        {/* Resizer handle */}
+        {/* Resizer handle (desktop only) */}
         {previewerOpen && (
           <div
-            className="w-1.5 shrink-0 bg-[var(--line)] hover:bg-[var(--lagoon)] cursor-col-resize z-30 transition-colors"
+            className="hidden md:block w-1.5 shrink-0 bg-[var(--line)] hover:bg-[var(--lagoon)] cursor-col-resize z-30 transition-colors"
             onMouseDown={() => {
               const container = splitContainerRef.current
               const onMove = (e: MouseEvent) => {
@@ -1130,11 +1193,14 @@ function EditorPage() {
           />
         )}
 
-        {/* Right Panel (3D Previewer) */}
-        {previewerOpen && (
+        {/* Right Panel (3D Previewer): on mobile shown full width when mobileTab === '3d'; on desktop split panel */}
+        {(previewerOpen || mobileTab === '3d') && (
           <div
-            style={{ width: `${100 - splitWidth}%` }}
-            className="shrink-0 min-w-[180px] border-l border-[#2a2d30] bg-[#121415] flex flex-col shadow-2xl z-20 relative"
+            style={{ width: typeof window !== 'undefined' && window.innerWidth >= 768 ? `${100 - splitWidth}%` : '100%' }}
+            className={`
+              ${mobileTab === '3d' ? 'flex flex-1' : 'hidden md:flex'}
+              shrink-0 md:min-w-[180px] border-l border-[#2a2d30] bg-[#121415] flex-col shadow-2xl z-20 relative h-full
+            `}
           >
 
             {!sessionUser ? (
@@ -1172,7 +1238,13 @@ function EditorPage() {
               <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-900 to-[#121415]">
                 <Box className="w-14 h-14 text-gray-800 mb-4 opacity-50" />
                 <h4 className="text-gray-300 font-bold mb-1 text-sm">3D Engine Offline</h4>
-                <p className="text-gray-500 text-[10px] max-w-[180px]">Place objects in the 2D layout and click "Generate 3D".</p>
+                <p className="text-gray-500 text-[10px] max-w-[180px] mb-3">Place objects in the 2D layout and generate 3D.</p>
+                <button
+                  onClick={() => setIs3DGenerated(true)}
+                  className="px-4 py-1.5 rounded-full bg-[var(--lagoon-deep)] text-white font-bold text-xs hover:bg-[var(--palm)] transition"
+                >
+                  Start 3D Engine
+                </button>
               </div>
             )}
           </div>
@@ -1180,8 +1252,8 @@ function EditorPage() {
 
       </div>
 
-      {/* Footer Status Bar */}
-      <div className="h-6 border-t border-[var(--line)] bg-[var(--surface-strong)] flex items-center justify-between px-4 text-[10px] uppercase tracking-tighter font-bold text-[var(--sea-ink-soft)] select-none shrink-0">
+      {/* Footer Status Bar (Desktop only) */}
+      <div className="hidden md:flex h-6 border-t border-[var(--line)] bg-[var(--surface-strong)] items-center justify-between px-4 text-[10px] uppercase tracking-tighter font-bold text-[var(--sea-ink-soft)] select-none shrink-0">
         <div className="flex items-center gap-4">
           <button
             onClick={() => setGridVisible(!gridVisible)}
@@ -1198,6 +1270,76 @@ function EditorPage() {
           </span>
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation Bar (Option 2) */}
+      <nav className="md:hidden h-14 border-t border-[var(--line)] bg-[var(--surface-strong)]/95 backdrop-blur-md flex items-center justify-around px-2 z-30 shrink-0 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+        {/* Assets Button */}
+        <button
+          onClick={() => setMobileTab(prev => prev === 'assets' ? 'canvas' : 'assets')}
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-xl transition-all ${
+            mobileTab === 'assets'
+              ? 'text-[var(--brand)] font-extrabold scale-105'
+              : 'text-[var(--sea-ink-soft)] hover:text-[var(--fg)] font-medium'
+          }`}
+        >
+          <Box className={`w-5 h-5 transition-transform ${mobileTab === 'assets' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+          <span className="text-[10px] mt-0.5 tracking-tight">Assets</span>
+        </button>
+
+        {/* 2D Canvas View Button */}
+        <button
+          onClick={() => setMobileTab('canvas')}
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-xl transition-all ${
+            mobileTab === 'canvas'
+              ? 'text-[var(--brand)] font-extrabold scale-105'
+              : 'text-[var(--sea-ink-soft)] hover:text-[var(--fg)] font-medium'
+          }`}
+        >
+          <LayoutGrid className={`w-5 h-5 transition-transform ${mobileTab === 'canvas' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+          <span className="text-[10px] mt-0.5 tracking-tight">2D Canvas</span>
+        </button>
+
+        {/* 3D Preview View Button */}
+        <button
+          onClick={() => {
+            if (!is3DGenerated && sessionUser) {
+              setIs3DGenerated(true)
+            }
+            setMobileTab('3d')
+          }}
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-xl transition-all relative ${
+            mobileTab === '3d'
+              ? 'text-[var(--brand)] font-extrabold scale-105'
+              : 'text-[var(--sea-ink-soft)] hover:text-[var(--fg)] font-medium'
+          }`}
+        >
+          <div className="relative">
+            <RotateCw className={`w-5 h-5 transition-transform ${mobileTab === '3d' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+            {is3DGenerated && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-[var(--surface-strong)]" />
+            )}
+          </div>
+          <span className="text-[10px] mt-0.5 tracking-tight">3D View</span>
+        </button>
+
+        {/* Properties Button */}
+        <button
+          onClick={() => setMobileTab(prev => prev === 'properties' ? 'canvas' : 'properties')}
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-xl transition-all relative ${
+            mobileTab === 'properties'
+              ? 'text-[var(--brand)] font-extrabold scale-105'
+              : 'text-[var(--sea-ink-soft)] hover:text-[var(--fg)] font-medium'
+          }`}
+        >
+          <div className="relative">
+            <Sliders className={`w-5 h-5 transition-transform ${mobileTab === 'properties' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+            {selectedElement && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[var(--brand)] ring-2 ring-[var(--surface-strong)]" />
+            )}
+          </div>
+          <span className="text-[10px] mt-0.5 tracking-tight">Properties</span>
+        </button>
+      </nav>
       {/* Wall Elevation Modal Overlay */}
       {editingWallId && editingWall && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-8 animate-in fade-in duration-200">

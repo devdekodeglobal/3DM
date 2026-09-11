@@ -11,6 +11,7 @@ interface PropertiesProps {
   boothConfig?: any
   onBoothConfigUpdate?: (updates: any) => void
   onEditRoof?: () => void
+  onClose?: () => void
 }
 
 const FLOOR_MATERIALS = [
@@ -31,7 +32,7 @@ const WALL_MATERIALS_LIST = [
 
 export default function Properties({
   selectedElement, onUpdate, onDelete, onEditElevation, onViewElevation,
-  boothConfig, onBoothConfigUpdate, onEditRoof
+  boothConfig, onBoothConfigUpdate, onEditRoof, onClose
 }: PropertiesProps) {
 
   const handleMaterialChange = (material: string) => {
@@ -42,21 +43,32 @@ export default function Properties({
   const floorType = boothConfig?.floorType || 'hardwood'
 
   return (
-    <aside className="w-72 h-full border-l border-[var(--line)] bg-[var(--surface-strong)] flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-[var(--line)] flex justify-between items-center bg-[var(--header-bg)]">
+    <aside className="w-full md:w-72 h-full border-l border-[var(--line)] bg-[var(--surface-strong)] flex flex-col overflow-hidden">
+      <div className="p-4 border-b border-[var(--line)] flex justify-between items-center bg-[var(--header-bg)] shrink-0">
         <h3 className="font-bold text-[var(--sea-ink)] flex items-center gap-2">
           <Settings className="h-5 w-5 text-[var(--lagoon-deep)]" />
           Properties
         </h3>
-        {selectedElement && (
-          <button
-            onClick={onDelete}
-            className="text-red-500 hover:text-white hover:bg-red-500 p-1.5 rounded-lg transition"
-            title="Delete (Backspace)"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {selectedElement && (
+            <button
+              onClick={onDelete}
+              className="text-red-500 hover:text-white hover:bg-red-500 p-1.5 rounded-lg transition"
+              title="Delete (Backspace)"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="md:hidden p-1.5 rounded-lg text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--chip-bg)] transition text-xs font-bold px-2 py-1 bg-[var(--sand)]"
+              title="Close Properties"
+            >
+              Done
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-32">
