@@ -403,22 +403,42 @@ export default function Properties({
                     {selectedElement.wallElements && selectedElement.wallElements.length > 0 ? (
                       <div className="space-y-1.5 mb-3">
                         {selectedElement.wallElements.map((wel: any) => (
-                          <div key={wel.id} className="flex items-center justify-between bg-[var(--sand)] px-2.5 py-1.5 rounded-lg border border-[var(--line)] text-xs">
-                            <span className="flex items-center gap-1.5 font-semibold text-[var(--sea-ink)]">
-                              <span>{wel.type === 'door' ? '🚪' : wel.type === 'window' ? '🪟' : '📦'}</span>
-                              <span className="capitalize">{wel.type}</span>
-                              <span className="text-[10px] font-mono text-[var(--sea-ink-soft)]">({(wel.width / 100).toFixed(1)}m)</span>
-                            </span>
-                            <button
-                              onClick={() => {
-                                const remaining = (selectedElement.wallElements || []).filter((w: any) => w.id !== wel.id)
-                                onUpdate(selectedElement.id, { wallElements: remaining })
-                              }}
-                              className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded transition"
-                              title="Remove Opening (Restore Full Wall)"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                          <div key={wel.id} className="bg-[var(--sand)] p-2 rounded-lg border border-[var(--line)] text-xs space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="flex items-center gap-1.5 font-semibold text-[var(--sea-ink)]">
+                                <span>{wel.type === 'door' ? '🚪' : wel.type === 'window' ? '🪟' : '📦'}</span>
+                                <span className="capitalize">{wel.type}</span>
+                                <span className="text-[10px] font-mono text-[var(--sea-ink-soft)]">({(wel.width / 100).toFixed(1)}m)</span>
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                {(wel.type === 'door' || wel.type === 'window') && (
+                                  <label className="flex items-center gap-1 cursor-pointer" title="Change Color">
+                                    <span className="w-3.5 h-3.5 rounded-full border border-black/20 inline-block" style={{ backgroundColor: wel.color || (wel.type === 'door' ? '#8b643c' : '#00BFFF') }} />
+                                    <input
+                                      type="color"
+                                      className="sr-only"
+                                      value={wel.color || (wel.type === 'door' ? '#8b643c' : '#00BFFF')}
+                                      onChange={(e) => {
+                                        const updated = (selectedElement.wallElements || []).map((w: any) => 
+                                          w.id === wel.id ? { ...w, color: e.target.value } : w
+                                        )
+                                        onUpdate(selectedElement.id, { wallElements: updated })
+                                      }}
+                                    />
+                                  </label>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    const remaining = (selectedElement.wallElements || []).filter((w: any) => w.id !== wel.id)
+                                    onUpdate(selectedElement.id, { wallElements: remaining })
+                                  }}
+                                  className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded transition"
+                                  title="Remove Opening (Restore Full Wall)"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
