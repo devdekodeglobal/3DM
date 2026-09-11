@@ -557,9 +557,8 @@ function DashboardPage() {
       confirmText: 'Start Designing',
       onConfirm: async (name: string) => {
         try {
-          const defaultBoothConfig = { width: 6, depth: 5, wallThickness: 0.1, walls: { north: true, south: true, east: true, west: true }, floorType: 'hardwood', floorColor: '#eee' }
-          const newDesign = await saveDesign(activeProject.id, name, defaultBoothConfig, [])
-          localStorage.setItem('stall-config', JSON.stringify(defaultBoothConfig))
+          const newDesign = await saveDesign(activeProject.id, name, null, [])
+          localStorage.removeItem('stall-config')
           localStorage.setItem('stall-elements', '[]')
           localStorage.setItem('current-design-id', newDesign.id)
           localStorage.setItem('current-design-name', name)
