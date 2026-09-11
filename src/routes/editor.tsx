@@ -354,13 +354,14 @@ function EditorPage() {
   useEffect(() => {
     setIsMounted(true)
     const handleResize = () => {
-      if (window.innerWidth < 768) {
-        // On mobile, panels are controlled via mobileTab drawers
-      } else {
-        // On desktop, keep sidebars open by default if they were collapsed by mobile
-        setSidebarOpen(prev => prev)
+      if (window.innerWidth >= 768) {
+        // When transitioning to desktop screen, ensure sidebars and previewer are open
+        setSidebarOpen(true)
+        setPropertiesOpen(true)
+        setPreviewerOpen(true)
       }
     }
+    handleResize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
@@ -1101,46 +1102,28 @@ function EditorPage() {
         </div>
       </div>
 
-      {/* Split Workspaces - on mobile tabs control view/drawers; on desktop flex layout with resizer */}
+      {/* Split Workspaces - clean separation between desktop layout and mobile drawer/view mode */}
       <div ref={splitContainerRef} className="flex flex-1 overflow-hidden relative">
 
-        {/* Left Sidebar: on mobile, fixed overlay bottom/side sheet when mobileTab === 'assets'; on desktop, inline flex item */}
-        {(sidebarOpen || mobileTab === 'assets') && (
-          <>
-            {/* Mobile backdrop */}
-            {mobileTab === 'assets' && (
-              <div 
-                className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 md:hidden animate-in fade-in duration-150"
-                onClick={() => setMobileTab('canvas')}
-              />
-            )}
-            <div className={`
-              ${mobileTab === 'assets' ? 'fixed inset-x-0 bottom-14 top-0 pt-16 z-40 flex flex-col md:static md:inset-auto md:z-10 md:pt-0' : 'hidden md:flex'}
-              h-full shrink-0 shadow-xl border-r border-[var(--line)] bg-[var(--surface-strong)]
-            `}>
-              <Sidebar
-                addElement={(el) => {
-                  addElement(el)
-                  // On mobile, close assets tab so user sees the newly placed element
-                  if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                    setMobileTab('canvas')
-                  }
-                }}
-                activeView={blueprintView}
-                onViewChange={setBlueprintView}
-                backgroundColor={backgroundColor}
-                setBackgroundColor={setBackgroundColor}
-                customAssets={customAssets}
-                onUploadCustomAsset={handleUploadCustomAsset}
-                onDeleteCustomAsset={handleDeleteCustomAsset}
-                showAlert={showAlert}
-                onClose={() => setMobileTab('canvas')}
-              />
-            </div>
-          </>
+        {/* --- DESKTOP PANELS (md and up) --- */}
+        {/* Left Sidebar (Desktop) */}
+        {sidebarOpen && (
+          <div className="hidden md:flex h-full shrink-0 shadow-xl border-r border-[var(--line)] bg-[var(--surface-strong)]">
+            <Sidebar
+              addElement={addElement}
+              activeView={blueprintView}
+              onViewChange={setBlueprintView}
+              backgroundColor={backgroundColor}
+              setBackgroundColor={setBackgroundColor}
+              customAssets={customAssets}
+              onUploadCustomAsset={handleUploadCustomAsset}
+              onDeleteCustomAsset={handleDeleteCustomAsset}
+              showAlert={showAlert}
+            />
+          </div>
         )}
 
-        {/* Center Canvas: on mobile shown when mobileTab === 'canvas' or with overlays; hidden when mobileTab === '3d' */}
+        {/* Center Canvas (Desktop & Mobile when not in 3D tab) */}
         <div className={`
           ${mobileTab === '3d' ? 'hidden md:flex' : 'flex'}
           flex-1 h-full flex-col relative z-0 min-w-0 bg-[var(--bg-base)]
@@ -1149,50 +1132,29 @@ function EditorPage() {
             elements={elements}
             setElements={setElements}
             selectedId={selectedId}
-            onSelect={(id) => {
-              handleSelect(id)
-              // On mobile, if element is selected, optionally remain on canvas or view properties
-            }}
+            onSelect={handleSelect}
             boothConfig={boothConfig}
             gridVisible={gridVisible}
           />
         </div>
 
-        {/* Properties Panel: on mobile, fixed overlay sheet when mobileTab === 'properties'; on desktop inline flex item */}
-        {(propertiesOpen || mobileTab === 'properties') && (
-          <>
-            {/* Mobile backdrop */}
-            {mobileTab === 'properties' && (
-              <div 
-                className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 md:hidden animate-in fade-in duration-150"
-                onClick={() => setMobileTab('canvas')}
-              />
-            )}
-            <div className={`
-              ${mobileTab === 'properties' ? 'fixed inset-x-0 bottom-14 top-0 pt-16 z-40 flex flex-col md:static md:inset-auto md:z-20 md:pt-0' : 'hidden md:flex'}
-              shrink-0 h-full border-l border-[var(--line)] shadow-[-8px_0_20px_rgba(0,0,0,0.05)] bg-[var(--surface-strong)]
-            `}>
-              <Properties
-                selectedElement={selectedElement}
-                onUpdate={handleUpdateElement}
-                onDelete={() => {
-                  handleDeleteElement(selectedId!)
-                  if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                    setMobileTab('canvas')
-                  }
-                }}
-                onEditElevation={() => setEditingWallId(selectedId)}
-                onViewElevation={() => setBlueprintView(`elevation_${selectedId}` as any)}
-                boothConfig={boothConfig}
-                onBoothConfigUpdate={(updates: any) => setBoothConfig((prev: any) => ({ ...prev, ...updates }))}
-                onEditRoof={() => setEditingRoof(true)}
-                onClose={() => setMobileTab('canvas')}
-              />
-            </div>
-          </>
+        {/* Properties Panel (Desktop) */}
+        {propertiesOpen && (
+          <div className="hidden md:flex shrink-0 h-full border-l border-[var(--line)] shadow-[-8px_0_20px_rgba(0,0,0,0.05)] bg-[var(--surface-strong)]">
+            <Properties
+              selectedElement={selectedElement}
+              onUpdate={handleUpdateElement}
+              onDelete={() => handleDeleteElement(selectedId!)}
+              onEditElevation={() => setEditingWallId(selectedId)}
+              onViewElevation={() => setBlueprintView(`elevation_${selectedId}` as any)}
+              boothConfig={boothConfig}
+              onBoothConfigUpdate={(updates: any) => setBoothConfig((prev: any) => ({ ...prev, ...updates }))}
+              onEditRoof={() => setEditingRoof(true)}
+            />
+          </div>
         )}
 
-        {/* Resizer handle (desktop only) */}
+        {/* Resizer handle (Desktop only) */}
         {previewerOpen && (
           <div
             className="hidden md:block w-1.5 shrink-0 bg-[var(--line)] hover:bg-[var(--lagoon)] cursor-col-resize z-30 transition-colors"
@@ -1214,16 +1176,116 @@ function EditorPage() {
           />
         )}
 
-        {/* Right Panel (3D Previewer): on mobile shown full width when mobileTab === '3d'; on desktop split panel */}
-        {(previewerOpen || mobileTab === '3d') && (
+        {/* 3D Previewer Panel (Desktop split panel) */}
+        {previewerOpen && (
           <div
-            style={{ width: typeof window !== 'undefined' && window.innerWidth >= 768 ? `${100 - splitWidth}%` : '100%' }}
-            className={`
-              ${mobileTab === '3d' ? 'flex flex-1' : 'hidden md:flex'}
-              shrink-0 md:min-w-[180px] border-l border-[#2a2d30] bg-[#121415] flex-col shadow-2xl z-20 relative h-full
-            `}
+            style={{ width: `${100 - splitWidth}%` }}
+            className="hidden md:flex shrink-0 min-w-[180px] border-l border-[#2a2d30] bg-[#121415] flex-col shadow-2xl z-20 relative h-full"
           >
+            {!sessionUser ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-[#181a1d] to-[#121415] relative overflow-hidden">
+                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 text-[var(--brand)] shadow-lg">
+                  <Lock className="w-7 h-7" />
+                </div>
+                <h4 className="text-white font-bold mb-1 text-sm font-[Outfit]">3D Preview Locked</h4>
+                <p className="text-gray-400 text-xs max-w-[200px] mb-4 leading-relaxed">
+                  Sign in to unlock your 3D space.
+                </p>
+                <button
+                  onClick={() => setAuthModalOpen(true)}
+                  className="px-4 py-2 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  Sign In to Unlock 3D
+                </button>
+              </div>
+            ) : is3DGenerated ? (
+              <div className="flex-1 w-full relative">
+                <Preview3D
+                  boothConfig={boothConfig}
+                  elements={elements}
+                  activeView={blueprintView}
+                  onExportComplete={onExportComplete}
+                  onUpdateElement={handleUpdateElement}
+                  onSelectElement={handleSelect}
+                  selectedId={selectedId}
+                  backgroundColor={backgroundColor}
+                  setBackgroundColor={setBackgroundColor}
+                />
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-900 to-[#121415]">
+                <Box className="w-14 h-14 text-gray-800 mb-4 opacity-50" />
+                <h4 className="text-gray-300 font-bold mb-1 text-sm">3D Engine Offline</h4>
+                <p className="text-gray-500 text-[10px] max-w-[180px] mb-3">Place objects in the 2D layout and generate 3D.</p>
+                <button
+                  onClick={() => setIs3DGenerated(true)}
+                  className="px-4 py-1.5 rounded-full bg-[var(--lagoon-deep)] text-white font-bold text-xs hover:bg-[var(--palm)] transition"
+                >
+                  Start 3D Engine
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
+        {/* --- MOBILE-ONLY OVERLAYS & VIEWS (< 768px) --- */}
+        {/* Mobile Asset Library Drawer */}
+        {mobileTab === 'assets' && (
+          <div className="md:hidden">
+            <div 
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 animate-in fade-in duration-150"
+              onClick={() => setMobileTab('canvas')}
+            />
+            <div className="fixed inset-x-0 bottom-14 top-0 pt-16 z-40 flex flex-col shadow-xl border-r border-[var(--line)] bg-[var(--surface-strong)]">
+              <Sidebar
+                addElement={(el) => {
+                  addElement(el)
+                  setMobileTab('canvas')
+                }}
+                activeView={blueprintView}
+                onViewChange={setBlueprintView}
+                backgroundColor={backgroundColor}
+                setBackgroundColor={setBackgroundColor}
+                customAssets={customAssets}
+                onUploadCustomAsset={handleUploadCustomAsset}
+                onDeleteCustomAsset={handleDeleteCustomAsset}
+                showAlert={showAlert}
+                onClose={() => setMobileTab('canvas')}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Properties Drawer */}
+        {mobileTab === 'properties' && (
+          <div className="md:hidden">
+            <div 
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 animate-in fade-in duration-150"
+              onClick={() => setMobileTab('canvas')}
+            />
+            <div className="fixed inset-x-0 bottom-14 top-0 pt-16 z-40 flex flex-col border-l border-[var(--line)] shadow-[-8px_0_20px_rgba(0,0,0,0.05)] bg-[var(--surface-strong)]">
+              <Properties
+                selectedElement={selectedElement}
+                onUpdate={handleUpdateElement}
+                onDelete={() => {
+                  handleDeleteElement(selectedId!)
+                  setMobileTab('canvas')
+                }}
+                onEditElevation={() => setEditingWallId(selectedId)}
+                onViewElevation={() => setBlueprintView(`elevation_${selectedId}` as any)}
+                boothConfig={boothConfig}
+                onBoothConfigUpdate={(updates: any) => setBoothConfig((prev: any) => ({ ...prev, ...updates }))}
+                onEditRoof={() => setEditingRoof(true)}
+                onClose={() => setMobileTab('canvas')}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Fullscreen 3D View (Mobile only when 3D tab active) */}
+        {mobileTab === '3d' && (
+          <div className="md:hidden flex flex-1 w-full border-l border-[#2a2d30] bg-[#121415] flex-col shadow-2xl z-20 relative h-full">
             {!sessionUser ? (
               <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-[#181a1d] to-[#121415] relative overflow-hidden">
                 <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 text-[var(--brand)] shadow-lg">
