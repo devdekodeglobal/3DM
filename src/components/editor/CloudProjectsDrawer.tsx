@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { listDesigns, deleteDesign, updateDesign } from '../../lib/authClient'
-import type { Design } from '../../lib/authClient'
+import { listDesigns, listProjects, deleteDesign, updateDesign } from '../../lib/authClient'
+import type { Design, Project } from '../../lib/authClient'
 import { X, FolderOpen, Calendar, Trash2, Loader2, AlertCircle, RefreshCw, Pencil, Check } from 'lucide-react'
 import { ConfirmModal } from './ConfirmModal'
 
@@ -30,6 +30,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
   userId
 }) => {
   const [designs, setDesigns] = useState<Design[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -43,8 +44,10 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
     setLoading(true)
     setErrorMsg(null)
     try {
-      const data = await listDesigns()
-      setDesigns(data || [])
+      const pData = await listProjects()
+      const dData = await listDesigns()
+      setProjects(pData || [])
+      setDesigns(dData || [])
     } catch (err: any) {
       console.error('Fetch error:', err)
       setErrorMsg(err.message || 'Failed to fetch saved designs.')
@@ -164,96 +167,71 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
               </p>
             </div>
           ) : (
-            designs.map((design) => (
-              <div
-                key={design.id}
-                onClick={() => {
-                  try {
-                    // D1 returns JSON as string, so we need to parse it
-                    const config = typeof design.config === 'string' ? JSON.parse(design.config) : design.config
-                    const elements = typeof design.elements === 'string' ? JSON.parse(design.elements) : design.elements
-                    onLoadProject(config, elements, design.id, design.name)
-                    onClose()
-                  } catch (e) {
-                    console.error('Failed to parse design data', e)
-                    alert('Error loading design data')
-                  }
-                }}
-                className="group relative p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-[var(--brand)] transition cursor-pointer flex flex-col gap-2"
-              >
-                {/* Title & Actions */}
-                <div className="flex items-start justify-between gap-4">
-                  {editingId === design.id ? (
-                    <div className="flex flex-1 items-center gap-2" onClick={e => e.stopPropagation()}>
-                      <input 
-                        autoFocus
-                        value={editName}
-                        onChange={e => setEditName(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') handleRename(design.id, editName)
-                          if (e.key === 'Escape') setEditingId(null)
-                        }}
-                        disabled={updatingId === design.id}
-                        className="flex-1 bg-black/40 border border-[var(--brand)] text-white text-xs px-2 py-1 rounded outline-none w-full"
-                      />
-                      <button
-                        onClick={() => handleRename(design.id, editName)}
-                        disabled={updatingId === design.id}
-                        className="p-1 rounded text-[var(--brand)] hover:bg-white/10"
-                        title="Save name"
-                      >
-                        {updatingId === design.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                      </button>
-                      <button
-                        onClick={() => setEditingId(null)}
-                        disabled={updatingId === design.id}
-                        className="p-1 rounded text-white/50 hover:bg-white/10"
-                        title="Cancel"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <span className="font-bold text-xs text-white font-[Outfit] group-hover:text-[var(--brand)] transition break-words flex-1">
-                        {design.name}
-                      </span>
-                      
-                      {/* Actions */}
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setEditingId(design.id); setEditName(design.name); }}
-                          className="p-1 rounded text-[var(--brand)] hover:text-sky-400 hover:bg-white/10"
-                          title="Edit name"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          disabled={deletingId === design.id}
-                          onClick={(e) => handleDelete(design.id, e)}
-                          className="p-1 rounded text-red-400 hover:text-red-500 hover:bg-red-500/10 disabled:opacity-50"
-                          title="Delete design"
-                        >
-                          {deletingId === design.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
+            projects.map(project => {
+              const projectDesigns = designs.filter(d => d.project_id === project.id)
+              if (projectDesigns.length === 0) return null
 
-                {/* Timestamp footer */}
-                <div className="flex items-center gap-1.5 text-[10px] text-white/40 font-medium">
-                  <Calendar className="w-3 h-3 shrink-0" />
-                  <span>
-                    {timeAgo(design.updated_at)}
-                  </span>
+              return (
+                <div key={project.id} className="mb-6 last:mb-0">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FolderOpen className="w-4 h-4 text-white/50" />
+                    <h3 className="text-xs font-bold text-white/50 tracking-wider uppercase">{project.name}</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {projectDesigns.map((design) => (
+                      <div
+                        key={design.id}
+                        onClick={() => {
+                          try {
+                            const config = typeof design.config === 'string' ? JSON.parse(design.config) : design.config
+                            const elements = typeof design.elements === 'string' ? JSON.parse(design.elements) : design.elements
+                            onLoadProject(config, elements, design.id, design.name)
+                            onClose()
+                          } catch (e) {
+                            console.error('Failed to parse design data', e)
+                            alert('Error loading design data')
+                          }
+                        }}
+                        className="group relative p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-[var(--brand)] transition cursor-pointer flex flex-col gap-2"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          {editingId === design.id ? (
+                            <div className="flex flex-1 items-center gap-2" onClick={e => e.stopPropagation()}>
+                              <input 
+                                autoFocus value={editName} onChange={e => setEditName(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') handleRename(design.id, editName); if (e.key === 'Escape') setEditingId(null) }}
+                                disabled={updatingId === design.id}
+                                className="flex-1 bg-black/40 border border-[var(--brand)] text-white text-xs px-2 py-1 rounded outline-none w-full"
+                              />
+                              <button onClick={() => handleRename(design.id, editName)} disabled={updatingId === design.id} className="p-1 rounded text-[var(--brand)] hover:bg-white/10">
+                                {updatingId === design.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                              </button>
+                              <button onClick={() => setEditingId(null)} disabled={updatingId === design.id} className="p-1 rounded text-white/50 hover:bg-white/10">
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="font-bold text-xs text-white font-[Outfit] group-hover:text-[var(--brand)] transition break-words flex-1">{design.name}</span>
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition">
+                                <button onClick={(e) => { e.stopPropagation(); setEditingId(design.id); setEditName(design.name); }} className="p-1 rounded text-[var(--brand)] hover:text-sky-400 hover:bg-white/10"><Pencil className="w-3.5 h-3.5" /></button>
+                                <button disabled={deletingId === design.id} onClick={(e) => handleDelete(design.id, e)} className="p-1 rounded text-red-400 hover:text-red-500 hover:bg-red-500/10 disabled:opacity-50">
+                                  {deletingId === design.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] text-white/40 font-medium">
+                          <Calendar className="w-3 h-3 shrink-0" />
+                          <span>{timeAgo(design.updated_at)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
 

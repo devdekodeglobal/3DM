@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Sidebar from '../components/editor/Sidebar'
 import Canvas from '../components/editor/Canvas'
 import WallCanvas from '../components/editor/WallCanvas'
@@ -11,7 +11,7 @@ import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Bo
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
-import { getCurrentUser, saveDesign, updateDesign } from '../lib/authClient'
+import { getCurrentUser, saveDesign, updateDesign, listProjects } from '../lib/authClient'
 import { AuthModal } from '../components/editor/AuthModal'
 import { CloudProjectsDrawer } from '../components/editor/CloudProjectsDrawer'
 import { saveAssetBlob, getAssetBlob, deleteAssetBlob } from '../lib/customAssetDB'
@@ -38,7 +38,7 @@ function getInitialData() {
   const savedElements = window.localStorage.getItem('stall-elements');
   const savedId = window.localStorage.getItem('current-design-id');
   const savedName = window.localStorage.getItem('current-design-name');
-  if (!savedStall) return { config: null, elements: null, id: null, name: null };
+  if (!savedStall) return { config: null, elements: null, id: null, name: savedName };
 
   const config = JSON.parse(savedStall);
   let parsedElements = savedElements ? JSON.parse(savedElements) : [];
@@ -79,6 +79,9 @@ function EditorPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [cloudDrawerOpen, setCloudDrawerOpen] = useState(false)
   const [showSavePrompt, setShowSavePrompt] = useState(false)
+  const [saveAsMode, setSaveAsMode] = useState(false)
+  const [userProjects, setUserProjects] = useState<any[]>([])
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('')
   const [projectName, setProjectName] = useState(initialData.name || 'My Design 1')
   const [isCloudSaving, setIsCloudSaving] = useState(false)
   const [toastModal, setToastModal] = useState<{ title?: string; message: string; type?: 'info' | 'success' | 'warning' | 'error' } | null>(null)
@@ -90,6 +93,26 @@ function EditorPage() {
 
   // Custom 3D Assets state (limit 5 per user)
   const [customAssets, setCustomAssets] = useState<any[]>([]);
+
+  // Fetch user session & initialize UI
+  useEffect(() => {
+    getCurrentUser().then(user => setSessionUser(user)).catch(console.error)
+  }, [])
+
+  // Fetch projects when save prompt opens
+  useEffect(() => {
+    if (showSavePrompt && sessionUser) {
+      listProjects().then(res => {
+        setUserProjects(res || [])
+        const current = localStorage.getItem('current-project-id')
+        if (current && res?.some(p => p.id === current)) {
+          setSelectedProjectId(current)
+        } else if (res && res.length > 0) {
+          setSelectedProjectId(res[0].id)
+        }
+      }).catch(console.error)
+    }
+  }, [showSavePrompt, sessionUser])
 
   // Hydrate custom assets from IndexedDB on mount
   useEffect(() => {
@@ -222,6 +245,7 @@ function EditorPage() {
   const [previewerOpen, setPreviewerOpen] = useState(true)
   const [propertiesOpen, setPropertiesOpen] = useState(true)
   const [splitWidth, setSplitWidth] = useState(60)
+  const splitContainerRef = useRef<HTMLDivElement>(null)
   const [is3DGenerated, setIs3DGenerated] = useState(false)
   const [editingWallId, setEditingWallId] = useState<string | null>(null)
   const [editingRoof, setEditingRoof] = useState(false)
@@ -263,9 +287,17 @@ function EditorPage() {
       return
     }
 
+    const projectId = selectedProjectId || localStorage.getItem('current-project-id')
+    if (!projectId && !currentDesignId) {
+      showAlert('No active project selected. Return to dashboard or select one below.', 'error', 'Save Failed')
+      return
+    }
+
     setIsCloudSaving(true)
     try {
       if (currentDesignId) {
+        // If updating an existing design, it should technically stay in its current project
+        // unless we want to support moving it. For now, updateDesign doesn't change project_id.
         await updateDesign(currentDesignId, {
           name: projectName || 'Untitled Design',
           config: boothConfig,
@@ -273,8 +305,9 @@ function EditorPage() {
         })
         showAlert('Design successfully updated!', 'success', 'Design Updated')
       } else {
-        const newDesign = await saveDesign(projectName || 'Untitled Design', boothConfig, elements)
+        const newDesign = await saveDesign(projectId!, projectName || 'Untitled Design', boothConfig, elements)
         setCurrentDesignId(newDesign.id)
+        localStorage.setItem('current-project-id', projectId!)
         showAlert('Design successfully saved to the cloud!', 'success', 'Design Saved')
       }
       setShowSavePrompt(false)
@@ -292,10 +325,17 @@ function EditorPage() {
       return
     }
 
+    const projectId = selectedProjectId || localStorage.getItem('current-project-id')
+    if (!projectId) {
+      showAlert('No active project selected.', 'error', 'Save Failed')
+      return
+    }
+
     setIsCloudSaving(true)
     try {
-      const newDesign = await saveDesign(projectName || 'Untitled Design', boothConfig, elements)
+      const newDesign = await saveDesign(projectId, projectName || 'Untitled Design', boothConfig, elements)
       setCurrentDesignId(newDesign.id)
+      localStorage.setItem('current-project-id', projectId)
       showAlert('Saved as a new design!', 'success', 'Design Saved')
       setShowSavePrompt(false)
     } catch (err: any) {
@@ -924,8 +964,12 @@ function EditorPage() {
             </div>
           )}
 
+
           <button
-            onClick={() => setShowSavePrompt(true)}
+            onClick={() => {
+              setSaveAsMode(false);
+              setShowSavePrompt(true);
+            }}
             className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
           >
             <Cloud className="h-4 w-4" /> Save Project
@@ -965,7 +1009,7 @@ function EditorPage() {
       </div>
 
       {/* Split Workspaces - all panels are flex siblings, canvas is flex-1 */}
-      <div className="flex flex-1 overflow-hidden">
+      <div ref={splitContainerRef} className="flex flex-1 overflow-hidden">
 
         {/* Left Sidebar */}
         {sidebarOpen && (
@@ -1015,11 +1059,13 @@ function EditorPage() {
         {/* Resizer handle */}
         {previewerOpen && (
           <div
-            className="w-1 shrink-0 bg-[var(--line)] hover:bg-[var(--lagoon)] cursor-col-resize z-30 transition-colors"
+            className="w-1.5 shrink-0 bg-[var(--line)] hover:bg-[var(--lagoon)] cursor-col-resize z-30 transition-colors"
             onMouseDown={() => {
+              const container = splitContainerRef.current
               const onMove = (e: MouseEvent) => {
                 if (e.buttons !== 1) return
-                const pct = (e.clientX / window.innerWidth) * 100
+                const rect = container ? container.getBoundingClientRect() : { left: 0, width: window.innerWidth }
+                const pct = ((e.clientX - rect.left) / rect.width) * 100
                 if (pct > 20 && pct < 85) setSplitWidth(pct)
               }
               const onUp = () => {
@@ -1155,39 +1201,81 @@ function EditorPage() {
             </button>
             <h3 className="text-lg font-bold font-[Outfit] text-white mb-4">Save Your Design</h3>
 
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black tracking-wider uppercase text-white/70 block">
-                  Project Name
-                </label>
-                <input
-                  type="text"
-                  value={projectName}
-                  onChange={(e) => setProjectName(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] transition"
-                  placeholder="E.g., Tech Summit 2026 Stand"
-                />
-              </div>
-
-              <div className="space-y-3 pt-2">
+            {currentDesignId && !saveAsMode ? (
+              <div className="space-y-3">
                 <button
                   onClick={handleCloudSave}
                   disabled={isCloudSaving}
                   className="w-full bg-[var(--lagoon-deep)] hover:bg-[var(--palm)] text-white text-xs font-bold py-3.5 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
                 >
                   <Cloud className="w-5 h-5" />
-                  {isCloudSaving ? 'Saving...' : sessionUser ? (currentDesignId ? 'Update Design' : 'Save to Cloud') : 'Login to Cloud Save'}
+                  {isCloudSaving ? 'Saving...' : 'Update Current Design'}
                 </button>
-                {currentDesignId && sessionUser && (
-                  <button
-                    onClick={handleCloudSaveAs}
-                    disabled={isCloudSaving}
-                    className="w-full bg-white/5 hover:bg-white/10 text-white text-xs font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer border border-white/10 disabled:opacity-50"
+                <button
+                  onClick={() => setSaveAsMode(true)}
+                  disabled={isCloudSaving}
+                  className="w-full bg-white/5 hover:bg-white/10 text-white text-xs font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer border border-white/10 disabled:opacity-50"
+                >
+                  Save as New Design
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black tracking-wider uppercase text-white/70 block">
+                    Project Name
+                  </label>
+                  <select
+                    value={selectedProjectId}
+                    onChange={(e) => setSelectedProjectId(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] transition appearance-none cursor-pointer"
+                    disabled={userProjects.length === 0}
                   >
-                    Save as New Design
-                  </button>
-                )}
+                    {userProjects.length === 0 ? (
+                      <option value="" disabled>Loading projects...</option>
+                    ) : (
+                      userProjects.map(p => (
+                        <option key={p.id} value={p.id} className="bg-black/90 text-white">{p.name}</option>
+                      ))
+                    )}
+                  </select>
+                </div>
 
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black tracking-wider uppercase text-white/70 block">
+                    Design Name
+                  </label>
+                  <input
+                    type="text"
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] transition"
+                    placeholder="E.g., Tech Summit 2026 Stand"
+                  />
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <button
+                    onClick={currentDesignId ? handleCloudSaveAs : handleCloudSave}
+                    disabled={isCloudSaving}
+                    className="w-full bg-[var(--lagoon-deep)] hover:bg-[var(--palm)] text-white text-xs font-bold py-3.5 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
+                  >
+                    <Cloud className="w-5 h-5" />
+                    {isCloudSaving ? 'Saving...' : sessionUser ? (currentDesignId ? 'Save as New Design' : 'Save to Cloud') : 'Login to Cloud Save'}
+                  </button>
+                  
+                  {currentDesignId && (
+                    <button
+                      onClick={() => setSaveAsMode(false)}
+                      disabled={isCloudSaving}
+                      className="w-full bg-transparent text-white/50 hover:text-white text-[10px] font-bold py-2 px-4 transition uppercase tracking-wider"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
                 {/* 
                 <div className="text-[10px] font-black tracking-wider uppercase text-white/50 pt-3 block border-t border-white/10">
                   Export 3D Model Formats
@@ -1255,8 +1343,6 @@ function EditorPage() {
                   </button>
                 </div>
                 */}
-              </div>
-            </div>
           </div>
         </div>
       )}

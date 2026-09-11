@@ -139,7 +139,7 @@ export async function createSession(db: D1Database, userId: string): Promise<str
 export async function getSessionUser(db: D1Database, sessionId: string) {
   if (!sessionId) return null
   const result = await db.prepare(`
-    SELECT u.id, u.email, u.name, u.avatar_url, u.email_verified
+    SELECT u.id, u.email, u.name, u.avatar_url, u.email_verified, u.google_id
     FROM sessions s
     JOIN users u ON s.user_id = u.id
     WHERE s.id = ? AND s.expires_at > datetime('now')

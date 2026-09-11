@@ -7,10 +7,20 @@ export interface User {
   name: string | null
   avatar_url: string | null
   email_verified: number
+  google_id: string | null
+}
+
+export interface Project {
+  id: string
+  name: string
+  description: string | null
+  created_at: string
+  updated_at: string
 }
 
 export interface Design {
   id: string
+  project_id: string
   name: string
   config: string
   elements: string
@@ -88,6 +98,28 @@ export async function resetPassword(email: string, code: string, newPassword: st
   return data
 }
 
+export async function changePassword(oldPassword?: string, newPassword?: string) {
+  const res = await fetch('/api/auth/change-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ oldPassword, newPassword }),
+  })
+  const data = (await res.json()) as { message?: string; error?: string }
+  if (!res.ok) throw new Error(data.error || 'Failed to change password')
+  return data
+}
+
+export async function deleteAccount() {
+  const res = await fetch('/api/auth/delete-account', {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+  const data = (await res.json()) as { message?: string; error?: string }
+  if (!res.ok) throw new Error(data.error || 'Failed to delete account')
+  return data
+}
+
 export function signInWithGoogle(returnTo?: string) {
   // Redirect to Google OAuth - the Pages Function handles the flow
   // Pass return_to so the callback knows where to redirect after login
@@ -110,6 +142,9 @@ export async function signOut() {
         localStorage.removeItem('stall-config')
         localStorage.removeItem('stall-elements')
         localStorage.removeItem('user-custom-assets')
+        localStorage.removeItem('current-design-id')
+        localStorage.removeItem('current-design-name')
+        localStorage.removeItem('auto-save-cloud')
       } catch (e) {
         console.warn('Failed to clear local design cache on sign out:', e)
       }
@@ -124,6 +159,46 @@ export async function signOut() {
   }
 }
 
+// ─── Projects ─────────────────────────────────────────────────────────────────
+
+export async function listProjects(): Promise<Project[]> {
+  const res = await fetch('/api/projects', { credentials: 'include' })
+  if (!res.ok) return []
+  const data = (await res.json()) as { projects: Project[] }
+  return data.projects || []
+}
+
+export async function createProject(name: string, description?: string): Promise<Project> {
+  const res = await fetch('/api/projects', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ name, description }),
+  })
+  const data = (await res.json()) as { project?: Project; error?: string }
+  if (!res.ok) throw new Error(data.error || 'Failed to create project')
+  return data.project!
+}
+
+export async function updateProject(id: string, name: string, description?: string): Promise<Project> {
+  const res = await fetch(`/api/projects/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ name, description }),
+  })
+  const data = (await res.json()) as { project?: Project; error?: string }
+  if (!res.ok) throw new Error(data.error || 'Failed to update project')
+  return data.project!
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  await fetch(`/api/projects/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+}
+
 // ─── Designs ──────────────────────────────────────────────────────────────────
 
 export async function listDesigns(): Promise<Design[]> {
@@ -133,19 +208,19 @@ export async function listDesigns(): Promise<Design[]> {
   return data.designs || []
 }
 
-export async function saveDesign(name: string, config: unknown, elements: unknown): Promise<Design> {
+export async function saveDesign(projectId: string, name: string, config: unknown, elements: unknown): Promise<Design> {
   const res = await fetch('/api/designs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ name, config, elements }),
+    body: JSON.stringify({ project_id: projectId, name, config, elements }),
   })
   const data = (await res.json()) as { design?: Design; error?: string }
   if (!res.ok) throw new Error(data.error || 'Failed to save design')
   return data.design!
 }
 
-export async function updateDesign(id: string, updates: { name?: string; config?: unknown; elements?: unknown }): Promise<Design> {
+export async function updateDesign(id: string, updates: { project_id?: string; name?: string; config?: unknown; elements?: unknown }): Promise<Design> {
   const res = await fetch(`/api/designs/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

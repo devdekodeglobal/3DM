@@ -12,6 +12,16 @@ export default function ColorPickerPanel({ initialColor, onChange }: ColorPicker
   const [ralCode, setRalCode] = useState(() => findClosestRAL(initialColor || '#ffffff'));
   const [hexInput, setHexInput] = useState(initialColor || '#ffffff');
 
+  // Reset picker state when the element being edited changes (e.g. new door selected)
+  useEffect(() => {
+    const clean = initialColor || '#ffffff';
+    setBaseColor(clean);
+    setDarkness(1);
+    setRalCode(findClosestRAL(clean));
+    setHexInput(clean);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialColor]);
+
   // When baseColor or darkness changes, calculate final color and call onChange
   useEffect(() => {
     const finalHex = applyDarknessToHex(baseColor, darkness);

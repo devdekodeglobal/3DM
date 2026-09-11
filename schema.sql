@@ -31,9 +31,20 @@ CREATE TABLE IF NOT EXISTS otp_codes (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Projects table
+CREATE TABLE IF NOT EXISTS projects (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL DEFAULT 'Untitled Project',
+  description TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
 -- Designs table (replaces Supabase public.designs)
 CREATE TABLE IF NOT EXISTS designs (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL DEFAULT 'Untitled Design',
   config TEXT NOT NULL DEFAULT '{}',
@@ -50,6 +61,8 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
 CREATE INDEX IF NOT EXISTS idx_designs_user_id ON designs(user_id);
+CREATE INDEX IF NOT EXISTS idx_designs_project_id ON designs(project_id);
 CREATE INDEX IF NOT EXISTS idx_otp_email ON otp_codes(email, type);
 CREATE INDEX IF NOT EXISTS idx_rate_limits_reset_at ON rate_limits(reset_at);

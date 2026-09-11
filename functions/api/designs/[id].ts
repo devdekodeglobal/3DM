@@ -19,7 +19,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env, params })
 
   const id = params.id as string
   const design = await env.DB.prepare(
-    'SELECT * FROM designs WHERE id = ? AND user_id = ?'
+    'SELECT id, project_id, name, config, elements, created_at, updated_at FROM designs WHERE id = ? AND user_id = ?'
   ).bind(id, user.id).first()
 
   if (!design) return jsonError('Design not found', 404)
@@ -43,7 +43,7 @@ export const onRequestPut: PagesFunction<Env> = async ({ request, env, params })
     return jsonError('Payload exceeds maximum allowed size of 2MB', 413)
   }
 
-  let parsed: { name?: string; config?: unknown; elements?: unknown }
+  let parsed: { project_id?: string; name?: string; config?: unknown; elements?: unknown }
   try {
     parsed = JSON.parse(rawBody)
   } catch {
@@ -51,7 +51,7 @@ export const onRequestPut: PagesFunction<Env> = async ({ request, env, params })
   }
 
   const id = params.id as string
-  const { name, config, elements } = parsed
+  const { project_id, name, config, elements } = parsed
 
   if (name !== undefined) {
     if (typeof name !== 'string' || name.trim().length === 0) {
@@ -62,21 +62,31 @@ export const onRequestPut: PagesFunction<Env> = async ({ request, env, params })
     }
   }
 
-  const { results } = await env.DB.prepare(`
-    UPDATE designs
-    SET name = COALESCE(?, name),
-        config = COALESCE(?, config),
-        elements = COALESCE(?, elements),
-        updated_at = datetime('now')
-    WHERE id = ? AND user_id = ?
-    RETURNING id, name, updated_at
-  `).bind(
-    name !== undefined ? name.trim() : null,
-    config ? JSON.stringify(config) : null,
-    elements ? JSON.stringify(elements) : null,
-    id,
-    user.id
-  ).all()
+  let updateParts = ['updated_at = datetime("now")']
+  let bindings: any[] = []
+
+  if (project_id !== undefined) {
+    updateParts.push('project_id = ?')
+    bindings.push(project_id)
+  }
+  if (name !== undefined) {
+    updateParts.push('name = ?')
+    bindings.push(name.trim())
+  }
+  if (config !== undefined) {
+    updateParts.push('config = ?')
+    bindings.push(JSON.stringify(config))
+  }
+  if (elements !== undefined) {
+    updateParts.push('elements = ?')
+    bindings.push(JSON.stringify(elements))
+  }
+
+  bindings.push(id, user.id)
+
+  const { results } = await env.DB.prepare(
+    `UPDATE designs SET ${updateParts.join(', ')} WHERE id = ? AND user_id = ? RETURNING id, project_id, name, updated_at`
+  ).bind(...bindings).all()
 
   if (!results.length) return jsonError('Design not found', 404)
   return json({ design: results[0] })

@@ -1129,7 +1129,7 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
                   x={boothW / 2 - 28}
                   y={-31}
                   width={56}
-                  text={`${boothConfig.width.toFixed(2)}m`}
+                  text={`${(boothConfig.width || 6).toFixed(2)}m`}
                   fontSize={11}
                   fontFamily="monospace"
                   fontStyle="bold"
@@ -1159,7 +1159,7 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
                   x={boothW / 2 - 28}
                   y={boothD + 19}
                   width={56}
-                  text={`${boothConfig.width.toFixed(2)}m`}
+                  text={`${(boothConfig.width || 6).toFixed(2)}m`}
                   fontSize={11}
                   fontFamily="monospace"
                   fontStyle="bold"
@@ -1188,7 +1188,7 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
                 <Text
                   x={-21}
                   y={boothD / 2 - 14}
-                  text={`${boothConfig.depth.toFixed(2)}m`}
+                  text={`${(boothConfig?.depth || 5).toFixed(2)}m`}
                   fontSize={11}
                   fontFamily="monospace"
                   fontStyle="bold"
@@ -1219,7 +1219,7 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
                 <Text
                   x={boothW + 27}
                   y={boothD / 2 - 14}
-                  text={`${boothConfig.depth.toFixed(2)}m`}
+                  text={`${(boothConfig?.depth || 5).toFixed(2)}m`}
                   fontSize={11}
                   fontFamily="monospace"
                   fontStyle="bold"

@@ -68,7 +68,10 @@ function enableAnalytics() {
     window.dataLayer?.push(args);
   };
   window.gtag("js", new Date());
-  window.gtag("config", measurementId, { anonymize_ip: true });
+  window.gtag("config", measurementId, {
+    allow_google_signals: false,
+    allow_ad_personalization_signals: false,
+  });
 
   const script = document.createElement("script");
   script.id = ANALYTICS_SCRIPT_ID;
@@ -142,10 +145,10 @@ export default function CookieConsent() {
             <p>
               krafc uses necessary cookies to keep the platform secure, remember
               your preferences, and provide a smooth experience. With your
-              permission, we also use optional analytics cookies to understand
-              how the platform is used and improve krafc. Necessary cookies
-              remain enabled because they are required for the platform to
-              function properly. To learn more, read our{" "}
+              permission, we also use optional Google Analytics cookies to
+              understand how the platform is used and improve krafc. Necessary
+              cookies remain enabled because they are required for the platform
+              to function properly. To learn more, read our{" "}
               <Link to="/cookie-policy">Cookie Policy</Link>.
             </p>
           </div>
@@ -153,16 +156,23 @@ export default function CookieConsent() {
             <button
               type="button"
               className="cookie-action cookie-action--secondary"
-              onClick={() => setSettingsOpen(true)}
+              onClick={() => chooseAnalytics(true)}
             >
-              Cookie settings
+              Accept All
             </button>
             <button
               type="button"
-              className="cookie-action cookie-action--primary"
-              onClick={() => chooseAnalytics(true)}
+              className="cookie-action cookie-action--secondary"
+              onClick={() => chooseAnalytics(false)}
             >
-              Accept all cookies
+              Decline Optional
+            </button>
+            <button
+              type="button"
+              className="cookie-manage"
+              onClick={() => setSettingsOpen(true)}
+            >
+              Cookie Settings
             </button>
           </div>
         </section>
@@ -181,7 +191,7 @@ export default function CookieConsent() {
             className="cookie-modal"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="cookie-settings-title"
+            aria-label="Cookie settings"
           >
             <div className="cookie-modal__header">
               <div>
@@ -247,13 +257,13 @@ export default function CookieConsent() {
             </p>
 
             <div className="cookie-modal__actions">
-              <button
+              {/*  <button
                 type="button"
                 className="cookie-action cookie-action--secondary"
                 onClick={() => chooseAnalytics(false)}
               >
-                Only necessary cookies
-              </button>
+                Reject cookies
+              </button> */}
               <button
                 type="button"
                 className="cookie-action cookie-action--primary"
