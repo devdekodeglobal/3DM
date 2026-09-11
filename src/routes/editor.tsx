@@ -1115,7 +1115,7 @@ function EditorPage() {
               />
             )}
             <div className={`
-              ${mobileTab === 'assets' ? 'fixed inset-x-0 bottom-0 top-14 z-45 flex flex-col md:static md:inset-auto md:z-10' : 'hidden md:flex'}
+              ${mobileTab === 'assets' ? 'fixed inset-x-0 bottom-14 top-14 z-45 flex flex-col md:static md:inset-auto md:z-10' : 'hidden md:flex'}
               h-full shrink-0 shadow-xl border-r border-[var(--line)] bg-[var(--surface-strong)]
             `}>
               <Sidebar
@@ -1169,7 +1169,7 @@ function EditorPage() {
               />
             )}
             <div className={`
-              ${mobileTab === 'properties' ? 'fixed inset-x-0 bottom-0 top-14 z-45 flex flex-col md:static md:inset-auto md:z-20' : 'hidden md:flex'}
+              ${mobileTab === 'properties' ? 'fixed inset-x-0 bottom-14 top-14 z-45 flex flex-col md:static md:inset-auto md:z-20' : 'hidden md:flex'}
               shrink-0 h-full border-l border-[var(--line)] shadow-[-8px_0_20px_rgba(0,0,0,0.05)] bg-[var(--surface-strong)]
             `}>
               <Properties
@@ -1293,7 +1293,7 @@ function EditorPage() {
       </div>
 
       {/* Mobile Bottom Navigation Bar (Option 2) */}
-      <nav className="md:hidden h-14 border-t border-[var(--line)] bg-[var(--surface-strong)]/95 backdrop-blur-md flex items-center justify-around px-2 z-30 shrink-0 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+      <nav className="md:hidden h-14 border-t border-[var(--line)] bg-[var(--surface-strong)]/95 backdrop-blur-md flex items-center justify-around px-2 z-50 shrink-0 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
         {/* Assets Button */}
         <button
           onClick={() => setMobileTab(prev => prev === 'assets' ? 'canvas' : 'assets')}
