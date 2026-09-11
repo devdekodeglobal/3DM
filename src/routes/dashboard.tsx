@@ -389,7 +389,7 @@ function SettingsTab({ user }: { user: User }) {
       {/* Danger Zone */}
       <div style={{ border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 16, padding: 24, background: 'rgba(239, 68, 68, 0.05)' }}>
         <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', color: '#ef4444', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ShieldAlert size={18} /> Danger Zone
+          <ShieldAlert size={18} /> Delete Account
         </h3>
         <p style={{ color: 'var(--fg-soft)', fontSize: '0.9rem', marginBottom: 20, lineHeight: 1.5 }}>
           Permanently delete your krafc account and all associated designs. This action cannot be undone.
@@ -639,7 +639,7 @@ function DashboardPage() {
                 transition: 'background 0.2s, color 0.2s', textAlign: 'left', fontSize: '0.95rem'
               }}
             >
-              <LayoutGrid size={18} /> My Projects
+              <LayoutGrid size={18} /> Projects
             </button>
             
             <button 
@@ -719,7 +719,7 @@ function DashboardPage() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 40, flexWrap: 'wrap', gap: 16 }}>
                     <div>
                       <h1 style={{ margin: '0 0 8px', fontFamily: 'Outfit, sans-serif', fontSize: '2rem', fontWeight: 800, color: 'var(--fg)' }}>
-                        My Projects
+                        Projects
                       </h1>
                       <p style={{ margin: 0, color: 'var(--fg-dim)', fontSize: '0.95rem' }}>
                         Manage your overarching event projects (Max 2 projects).
