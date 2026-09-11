@@ -1115,7 +1115,7 @@ function EditorPage() {
               />
             )}
             <div className={`
-              ${mobileTab === 'assets' ? 'fixed inset-x-0 bottom-14 top-14 z-45 flex flex-col md:static md:inset-auto md:z-10' : 'hidden md:flex'}
+              ${mobileTab === 'assets' ? 'fixed inset-x-0 bottom-14 top-0 pt-16 z-40 flex flex-col md:static md:inset-auto md:z-10 md:pt-0' : 'hidden md:flex'}
               h-full shrink-0 shadow-xl border-r border-[var(--line)] bg-[var(--surface-strong)]
             `}>
               <Sidebar
@@ -1169,7 +1169,7 @@ function EditorPage() {
               />
             )}
             <div className={`
-              ${mobileTab === 'properties' ? 'fixed inset-x-0 bottom-14 top-14 z-45 flex flex-col md:static md:inset-auto md:z-20' : 'hidden md:flex'}
+              ${mobileTab === 'properties' ? 'fixed inset-x-0 bottom-14 top-0 pt-16 z-40 flex flex-col md:static md:inset-auto md:z-20 md:pt-0' : 'hidden md:flex'}
               shrink-0 h-full border-l border-[var(--line)] shadow-[-8px_0_20px_rgba(0,0,0,0.05)] bg-[var(--surface-strong)]
             `}>
               <Properties
