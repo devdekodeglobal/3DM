@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import Sidebar from '../components/editor/Sidebar'
 import Canvas from '../components/editor/Canvas'
 import WallCanvas from '../components/editor/WallCanvas'
@@ -64,6 +64,55 @@ function getInitialData() {
 
   return { config, elements: parsedElements, id: savedId, name: savedName };
 }
+
+// Inline component to edit booth dimensions without resetting the design
+function EditSpaceDimensions({ boothConfig, setBoothConfig }: { boothConfig: BoothConfig | null, setBoothConfig: (c: any) => void }) {
+  const [open, setOpen] = React.useState(false)
+  const [w, setW] = React.useState(boothConfig?.width ?? 6)
+  const [d, setD] = React.useState(boothConfig?.depth ?? 5)
+
+  if (!boothConfig) return null
+
+  const handleOpen = () => {
+    setW(boothConfig.width)
+    setD(boothConfig.depth)
+    setOpen(true)
+  }
+
+  const handleApply = () => {
+    setBoothConfig({ ...boothConfig, width: w, depth: d })
+    setOpen(false)
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={handleOpen}
+        className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--sand)] text-[var(--sea-ink)] text-xs font-bold transition hover:bg-[var(--lagoon)] hover:text-white"
+      >
+        Edit Space
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-2 z-50 bg-[var(--bg-base)] border border-[var(--line)] rounded-xl shadow-xl p-4 flex flex-col gap-3 w-56 animate-in fade-in slide-in-from-top-2 duration-150">
+          <p className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider">Space Dimensions</p>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-[var(--fg-dim)] font-semibold">Width: <span className="text-[var(--brand)]">{w}m</span></label>
+            <input type="range" min={2} max={20} step={0.5} value={w} onChange={e => setW(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-[var(--fg-dim)] font-semibold">Depth: <span className="text-[var(--brand)]">{d}m</span></label>
+            <input type="range" min={2} max={20} step={0.5} value={d} onChange={e => setD(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
+          </div>
+          <div className="flex gap-2 mt-1">
+            <button onClick={() => setOpen(false)} className="flex-1 rounded-lg py-1.5 text-xs font-bold bg-[var(--sand)] text-[var(--sea-ink)] hover:bg-gray-200 transition">Cancel</button>
+            <button onClick={handleApply} className="flex-1 rounded-lg py-1.5 text-xs font-bold bg-[var(--brand)] text-white hover:bg-[var(--brand-h)] transition">Apply</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 
 function EditorPage() {
   const [initialData] = useState(getInitialData)
@@ -850,24 +899,7 @@ function EditorPage() {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <button
-              onClick={() => {
-                setConfirmModalState({
-                  isOpen: true,
-                  title: 'Return to Setup Wizard',
-                  message: 'Current space dimensions will be reset. Are you sure?',
-                  confirmText: 'Reset',
-                  onConfirm: () => {
-                    setBoothConfig(null)
-                    setWizardStep(1)
-                    setConfirmModalState(null)
-                  }
-                })
-              }}
-              className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--sand)] text-[var(--sea-ink)] text-xs font-bold transition hover:bg-[var(--lagoon)] hover:text-white"
-            >
-              Edit Space Setup
-            </button>
+            <EditSpaceDimensions boothConfig={boothConfig} setBoothConfig={setBoothConfig} />
             <div className="w-px h-6 bg-[var(--line)] mx-2" />
             <button onClick={undo} disabled={historyStep <= 0} className="p-2 rounded-lg hover:bg-[var(--chip-bg)] text-[var(--sea-ink-soft)] disabled:opacity-30 transition" title="Undo (Ctrl+Z)">
               <RotateCcw className="h-4 w-4" />
