@@ -396,9 +396,15 @@ function EditorPage() {
         setTimeout(() => {
           setCloudSyncStatus(prev => prev === 'saved' ? 'idle' : prev);
         }, 3000);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Auto-save to cloud failed:', err);
         setCloudSyncStatus('error');
+        if (err.message === 'Design not found' || err.message.includes('404')) {
+          setAutoSaveToCloud(false)
+          setCurrentDesignId(null)
+          localStorage.removeItem('current-design-id')
+          showAlert('This design was deleted or no longer exists. Auto-save disabled. Please Save as New Design.', 'error', 'Design Missing')
+        }
       }
     }, 2500);
 

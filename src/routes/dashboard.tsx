@@ -470,6 +470,12 @@ function DashboardPage() {
         try {
           await deleteDesign(id)
           setDesigns(prev => prev.filter(d => d.id !== id))
+          if (localStorage.getItem('current-design-id') === id) {
+            localStorage.removeItem('current-design-id')
+            localStorage.removeItem('current-design-name')
+            localStorage.removeItem('stall-config')
+            localStorage.removeItem('stall-elements')
+          }
         } catch (err) {
           console.error("Failed to delete", err)
         } finally {
@@ -513,6 +519,13 @@ function DashboardPage() {
         try {
           await deleteProject(id)
           setProjects(prev => prev.filter(p => p.id !== id))
+          if (localStorage.getItem('current-project-id') === id) {
+            localStorage.removeItem('current-project-id')
+            localStorage.removeItem('current-design-id')
+            localStorage.removeItem('current-design-name')
+            localStorage.removeItem('stall-config')
+            localStorage.removeItem('stall-elements')
+          }
         } catch (err) {
           console.error("Failed to delete project", err)
         } finally {
