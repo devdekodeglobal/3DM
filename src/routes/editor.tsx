@@ -70,12 +70,18 @@ function EditSpaceDimensions({ boothConfig, setBoothConfig }: { boothConfig: Boo
   const [open, setOpen] = React.useState(false)
   const [w, setW] = React.useState(boothConfig?.width ?? 6)
   const [d, setD] = React.useState(boothConfig?.depth ?? 5)
+  const [pos, setPos] = React.useState({ top: 0, left: 0 })
+  const btnRef = React.useRef<HTMLButtonElement>(null)
 
   if (!boothConfig) return null
 
   const handleOpen = () => {
     setW(boothConfig.width)
     setD(boothConfig.depth)
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      setPos({ top: rect.bottom + 6, left: rect.left })
+    }
     setOpen(true)
   }
 
@@ -85,31 +91,39 @@ function EditSpaceDimensions({ boothConfig, setBoothConfig }: { boothConfig: Boo
   }
 
   return (
-    <div className="relative">
+    <>
       <button
+        ref={btnRef}
         onClick={handleOpen}
         className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--sand)] text-[var(--sea-ink)] text-xs font-bold transition hover:bg-[var(--lagoon)] hover:text-white"
       >
         Edit Space
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-2 z-50 bg-[var(--bg-base)] border border-[var(--line)] rounded-xl shadow-xl p-4 flex flex-col gap-3 w-56 animate-in fade-in slide-in-from-top-2 duration-150">
-          <p className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider">Space Dimensions</p>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-[var(--fg-dim)] font-semibold">Width: <span className="text-[var(--brand)]">{w}m</span></label>
-            <input type="range" min={2} max={20} step={0.5} value={w} onChange={e => setW(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
+        <>
+          {/* Backdrop to close on outside click */}
+          <div className="fixed inset-0 z-[98]" onClick={() => setOpen(false)} />
+          <div
+            style={{ top: pos.top, left: pos.left }}
+            className="fixed z-[99] bg-[var(--bg-base)] border border-[var(--line)] rounded-xl shadow-2xl p-4 flex flex-col gap-3 w-56 animate-in fade-in slide-in-from-top-2 duration-150"
+          >
+            <p className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider">Space Dimensions</p>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-[var(--fg-dim)] font-semibold">Width: <span className="text-[var(--brand)]">{w}m</span></label>
+              <input type="range" min={2} max={20} step={0.5} value={w} onChange={e => setW(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-[var(--fg-dim)] font-semibold">Depth: <span className="text-[var(--brand)]">{d}m</span></label>
+              <input type="range" min={2} max={20} step={0.5} value={d} onChange={e => setD(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
+            </div>
+            <div className="flex gap-2 mt-1">
+              <button onClick={() => setOpen(false)} className="flex-1 rounded-lg py-1.5 text-xs font-bold bg-[var(--sand)] text-[var(--sea-ink)] hover:bg-gray-200 transition">Cancel</button>
+              <button onClick={handleApply} className="flex-1 rounded-lg py-1.5 text-xs font-bold bg-[var(--brand)] text-white hover:bg-[var(--brand-h)] transition">Apply</button>
+            </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-[var(--fg-dim)] font-semibold">Depth: <span className="text-[var(--brand)]">{d}m</span></label>
-            <input type="range" min={2} max={20} step={0.5} value={d} onChange={e => setD(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
-          </div>
-          <div className="flex gap-2 mt-1">
-            <button onClick={() => setOpen(false)} className="flex-1 rounded-lg py-1.5 text-xs font-bold bg-[var(--sand)] text-[var(--sea-ink)] hover:bg-gray-200 transition">Cancel</button>
-            <button onClick={handleApply} className="flex-1 rounded-lg py-1.5 text-xs font-bold bg-[var(--brand)] text-white hover:bg-[var(--brand-h)] transition">Apply</button>
-          </div>
-        </div>
+        </>
       )}
-    </div>
+    </>
   )
 }
 
