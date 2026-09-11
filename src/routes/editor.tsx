@@ -7,7 +7,7 @@ import Properties from '../components/editor/Properties'
 import Preview3D from '../components/editor/Preview3D'
 import ColorPickerPanel from '../components/editor/ColorPickerPanel'
 import RoofCanvas from '../components/editor/RoofCanvas'
-import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil, LayoutGrid, Sliders } from 'lucide-react'
+import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil, LayoutGrid, Sliders, Monitor } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
@@ -317,6 +317,7 @@ function EditorPage() {
     return true
   })
   const [mobileTab, setMobileTab] = useState<'canvas' | 'assets' | 'properties' | '3d'>('canvas')
+  const [mobileScreenBannerDismissed, setMobileScreenBannerDismissed] = useState(false)
   const [splitWidth, setSplitWidth] = useState(60)
   const splitContainerRef = useRef<HTMLDivElement>(null)
   const [is3DGenerated, setIs3DGenerated] = useState(false)
@@ -917,6 +918,26 @@ function EditorPage() {
   // Editor layout using split panels
   return (
     <div key="editor-workspace" className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-[var(--bg-base)]">
+      {/* Mobile Experience Notice Banner */}
+      {!mobileScreenBannerDismissed && (
+        <div className="md:hidden bg-gradient-to-r from-amber-500/15 via-brand/10 to-amber-500/15 border-b border-amber-500/30 px-3 py-2 flex items-center justify-between gap-2 shrink-0 animate-in slide-in-from-top-1 duration-200">
+          <div className="flex items-center gap-2 min-w-0">
+            <Monitor className="w-4 h-4 text-amber-500 shrink-0" />
+            <p className="text-[11px] text-[var(--sea-ink)] leading-tight">
+              <span className="font-bold text-amber-600 dark:text-amber-400">Notice: </span>
+              For the best experience with 3D editing and canvas tools, please use a larger screen (desktop or tablet).
+            </p>
+          </div>
+          <button
+            onClick={() => setMobileScreenBannerDismissed(true)}
+            className="p-1 rounded-md text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--chip-bg)] transition shrink-0"
+            title="Dismiss notice"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Top Bar */}
       <div className="h-14 border-b border-[var(--line)] bg-[var(--surface-strong)] flex items-center justify-between px-4 z-20 shadow-sm transition-all shrink-0 overflow-x-auto whitespace-nowrap scrollbar-hide">
         <div className="flex items-center gap-4 shrink-0">
