@@ -14,7 +14,7 @@
 - **🛸 Dual Camera Modes**: Switch between an intuitive **Orbit Camera** for 360° overview and a **Flight Walkthrough Camera** (WASD) for first-person perspective.
 - **📱 Fully Responsive Mobile Workspace**: Dedicated bottom tab bar (`2D Canvas`, `3D View`, `Assets`, `Properties`) and clean slide-over drawers optimized for mobile and tablet screens.
 - **☁️ Cloudflare Pages & D1 Database**: Seamless project saving, cloud persistence, and account authentication.
-- **🔒 Secure Authentication**: Email/password authentication, transactional email verification (Resend API), and Google OAuth 2.0 single sign-on.
+- **🔒 Secure Authentication**: Email/password authentication, transactional email verification (Resend API), password change/reset, account deletion, and Google OAuth 2.0 single sign-on.
 
 ---
 

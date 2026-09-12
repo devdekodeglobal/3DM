@@ -3,8 +3,9 @@ export const onRequest = secure<{ DB: D1Database }>(async (context) => {
   const { request, env } = context
   const path = new URL(request.url).pathname
   const allowed = path === '/api/auth/me' ? ['GET','DELETE']
+    : path === '/api/auth/delete-account' ? ['DELETE']
     : path === '/api/auth/google' ? ['GET']
-    : ['/api/auth/register','/api/auth/login','/api/auth/verify-otp','/api/auth/reset-password','/api/auth/forgot-password'].includes(path) ? ['POST']
+    : ['/api/auth/register','/api/auth/login','/api/auth/verify-otp','/api/auth/reset-password','/api/auth/forgot-password','/api/auth/change-password'].includes(path) ? ['POST']
     : ['/api/designs', '/api/projects'].includes(path) ? ['GET','POST']
     : /^\/api\/(designs|projects)\/[a-f0-9-]+$/.test(path) ? ['GET','PUT','DELETE'] 
     : path === '/api/admin/users' ? ['GET']

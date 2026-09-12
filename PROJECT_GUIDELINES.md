@@ -56,8 +56,9 @@ The central coordinator of the design workspace:
   - Space setup & booth footprint dimension modifications without resetting design contents.
 
 ### 6. Cloudflare Pages Backend (`functions/`)
-- `functions/api/auth/*`: Session authentication, login, registration, email verification, password reset, and Google OAuth flow.
+- `functions/api/auth/*`: Session authentication, login, registration, email verification, password reset, password change, account deletion, and Google OAuth flow.
 - `functions/api/projects/*`: D1 database CRUD operations for saved user projects.
+- `functions/api/_middleware.ts`: Security middleware enforcing origin verification, route allowlists, method checks, and IP rate limiting.
 - `functions/_auth-utils.ts`: Password hashing, token generation, D1 session cookie management, and transactional email sender.
 
 ---
