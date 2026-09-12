@@ -2,7 +2,7 @@ import { secure, rateLimit, clientIp, HttpError } from '../_security'
 export const onRequest = secure<{ DB: D1Database }>(async (context) => {
   const { request, env } = context
   const path = new URL(request.url).pathname
-  const allowed = path === '/api/auth/me' ? ['GET','DELETE']
+  const allowed = path === '/api/auth/me' ? ['GET','PUT','DELETE']
     : path === '/api/auth/delete-account' ? ['DELETE']
     : (path === '/api/auth/google' || path === '/api/auth/verify-otp') ? ['GET']
     : ['/api/auth/register','/api/auth/login','/api/auth/reset-password','/api/auth/forgot-password','/api/auth/change-password'].includes(path) ? ['POST']

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { getCurrentUser, listDesigns, listProjects, createProject, updateProject, deleteProject, deleteDesign, updateDesign, signOut, changePassword, deleteAccount, saveDesign, type User, type Design, type Project } from '../lib/authClient'
+import { getCurrentUser, listDesigns, listProjects, createProject, updateProject, deleteProject, deleteDesign, updateDesign, signOut, changePassword, deleteAccount, saveDesign, updateProfile, getDisplayName, type User, type Design, type Project } from '../lib/authClient'
 import { PlusCircle, Trash2, Calendar, LayoutGrid, Loader2, Box, Pencil, Check, X, Settings, LogOut, ShieldAlert, Key, Menu, ChevronLeft, ChevronRight } from 'lucide-react'
 import { ConfirmModal } from '../components/editor/ConfirmModal'
 import { PromptModal } from '../components/editor/PromptModal'
@@ -263,8 +263,12 @@ function getInitials(user: User | null) {
   return 'U'
 }
 
-function SettingsTab({ user }: { user: User }) {
+function SettingsTab({ user, onUserUpdate }: { user: User; onUserUpdate: (u: User) => void }) {
   const navigate = useNavigate()
+  const [displayName, setDisplayName] = useState(user.name || '')
+  const [nameLoading, setNameLoading] = useState(false)
+  const [nameMsg, setNameMsg] = useState<{ text: string, type: 'error' | 'success' } | null>(null)
+
   const [oldPassword, setOldPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -273,6 +277,21 @@ function SettingsTab({ user }: { user: User }) {
   const [confirmModalState, setConfirmModalState] = useState<{
     isOpen: boolean; title?: string; message: string; confirmText?: string; onConfirm: () => void
   } | null>(null)
+
+  const handleNameSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setNameMsg(null)
+    setNameLoading(true)
+    try {
+      const updatedUser = await updateProfile(displayName.trim())
+      onUserUpdate(updatedUser)
+      setNameMsg({ text: 'Display name updated successfully!', type: 'success' })
+    } catch (err: any) {
+      setNameMsg({ text: err.message || 'Failed to update display name', type: 'error' })
+    } finally {
+      setNameLoading(false)
+    }
+  }
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -321,20 +340,50 @@ function SettingsTab({ user }: { user: User }) {
       {/* Profile Details */}
       <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, marginBottom: 32 }}>
         <h3 style={{ margin: '0 0 20px', fontSize: '1.1rem', color: 'var(--fg)', fontWeight: 600 }}>Personal Details</h3>
-        <div style={{ display: 'grid', gap: 16 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--fg-dim)', marginBottom: 6 }}>Full Name</label>
-            <div style={{ background: 'var(--bg)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '0.95rem' }}>
-              {user.name || 'Not provided'}
+        
+        <form onSubmit={handleNameSave} style={{ marginBottom: 20 }}>
+          {nameMsg && (
+            <div style={{ padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: '0.9rem', 
+              background: nameMsg.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
+              color: nameMsg.type === 'error' ? '#ef4444' : '#22c55e',
+              border: `1px solid ${nameMsg.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`
+            }}>
+              {nameMsg.text}
+            </div>
+          )}
+          <div style={{ display: 'grid', gap: 16 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--fg-dim)', marginBottom: 6 }}>Display Name</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input 
+                  type="text" 
+                  value={displayName} 
+                  onChange={e => setDisplayName(e.target.value)}
+                  placeholder={getDisplayName(user)}
+                  maxLength={100}
+                  style={{ flex: 1, background: 'var(--bg)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '0.95rem', outline: 'none' }} 
+                />
+                <button 
+                  type="submit" 
+                  disabled={nameLoading || displayName.trim() === (user.name || '')}
+                  className="btn btn-primary"
+                  style={{ padding: '10px 18px', fontSize: '0.9rem', opacity: (nameLoading || displayName.trim() === (user.name || '')) ? 0.6 : 1 }}
+                >
+                  {nameLoading ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--fg-dim)', marginTop: 4, display: 'block' }}>
+                Your name as it appears in the app and sidebar.
+              </span>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--fg-dim)', marginBottom: 6 }}>Email Address</label>
+              <div style={{ background: 'var(--bg)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', color: 'var(--fg-soft)', fontSize: '0.95rem' }}>
+                {user.email}
+              </div>
             </div>
           </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--fg-dim)', marginBottom: 6 }}>Email Address</label>
-            <div style={{ background: 'var(--bg)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '0.95rem' }}>
-              {user.email}
-            </div>
-          </div>
-        </div>
+        </form>
       </div>
 
       {/* Security */}
@@ -666,7 +715,7 @@ function DashboardPage() {
               </div>
               <div style={{ flex: 1, overflow: 'hidden' }}>
                 <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--fg)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {user.name || 'User'}
+                  {getDisplayName(user)}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--fg-dim)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {user.email}
@@ -845,7 +894,7 @@ function DashboardPage() {
 
           {activeTab === 'settings' && (
             <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-              <SettingsTab user={user} />
+              <SettingsTab user={user} onUserUpdate={setUser} />
             </div>
           )}
 
