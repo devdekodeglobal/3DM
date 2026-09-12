@@ -18,7 +18,11 @@ const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo'
 
 function getRedirectUri(request: Request): string {
   const url = new URL(request.url)
-  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || url.host
+  let host = request.headers.get('x-forwarded-host') || request.headers.get('host') || url.host
+  // Canonicalize www.krafc.com to krafc.com to avoid redirect_uri_mismatch
+  if (host === 'www.krafc.com') {
+    host = 'krafc.com'
+  }
   const proto = request.headers.get('x-forwarded-proto') || url.protocol.replace(':', '')
   return `${proto}://${host}/api/auth/google`
 }
