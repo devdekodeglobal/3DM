@@ -176,7 +176,7 @@ function CookiePolicyPage() {
                 <td>
                   Google Analytics
                   <br />
-                  <span>Analytics — optional</span>
+                  <span>Analytics - optional</span>
                 </td>
                 <td>
                   Used, after consent, to distinguish browsers and help measure
@@ -196,7 +196,7 @@ function CookiePolicyPage() {
                 <td>
                   Google Analytics
                   <br />
-                  <span>Analytics — optional</span>
+                  <span>Analytics - optional</span>
                 </td>
                 <td>
                   Used, after consent, to maintain session and measurement
@@ -361,7 +361,7 @@ function CookiePolicyPage() {
 
         <h3>Cloudflare</h3>
         <p>
-          Cloudflare &mdash; krafc uses Cloudflare infrastructure, including
+          Cloudflare - krafc uses Cloudflare infrastructure, including
           services supporting website delivery, application processing,
           security and cloud functionality. Cloudflare may process technical
           information and request data as necessary to provide these services.
@@ -369,14 +369,14 @@ function CookiePolicyPage() {
 
         <h3>Google</h3>
         <p>
-          Google &mdash; krafc may use Google for account authentication and,
+          Google - krafc may use Google for account authentication and,
           where you provide analytics consent, Google Analytics for platform
           measurement.
         </p>
 
         <h3>Resend</h3>
         <p>
-          Resend &mdash; krafc may use Resend to deliver verification and
+          Resend - krafc may use Resend to deliver verification and
           transactional emails. Information necessary to send those emails, such
           as your email address and relevant email content, may be processed by
           Resend.
