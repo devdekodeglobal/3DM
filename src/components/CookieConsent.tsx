@@ -127,6 +127,23 @@ export default function CookieConsent() {
     setSettingsOpen(false);
   };
 
+  const closeSettings = () => {
+    // Revert uncommitted toggle selection back to existing consent
+    setAnalyticsSelected(consent?.analytics ?? false);
+    setSettingsOpen(false);
+  };
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeSettings();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [settingsOpen, consent]);
+
   if (!hasCheckedConsent) return null;
 
   return (
@@ -170,7 +187,10 @@ export default function CookieConsent() {
             <button
               type="button"
               className="cookie-manage"
-              onClick={() => setSettingsOpen(true)}
+              onClick={() => {
+                setAnalyticsSelected(false);
+                setSettingsOpen(true);
+              }}
             >
               Cookie Settings
             </button>
@@ -183,8 +203,9 @@ export default function CookieConsent() {
           className="cookie-modal-backdrop"
           role="presentation"
           onMouseDown={(event) => {
-            if (event.currentTarget === event.target && consent)
-              setSettingsOpen(false);
+            if (event.currentTarget === event.target) {
+              closeSettings();
+            }
           }}
         >
           <section
@@ -203,7 +224,7 @@ export default function CookieConsent() {
               <button
                 type="button"
                 className="cookie-modal__close"
-                onClick={() => setSettingsOpen(false)}
+                onClick={closeSettings}
                 aria-label="Close cookie settings"
               >
                 <X size={20} />
@@ -250,8 +271,8 @@ export default function CookieConsent() {
 
             <p className="cookie-modal__policy">
               See providers, expiry periods, and data sharing in our{" "}
-              <Link to="/cookie-policy" onClick={() => setSettingsOpen(false)}>
-                cookie policy
+              <Link to="/cookie-policy" onClick={closeSettings}>
+                Cookie Policy
               </Link>
               .
             </p>
