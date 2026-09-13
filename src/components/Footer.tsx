@@ -25,7 +25,7 @@ export default function Footer() {
           <span aria-hidden="true">·</span>
           <Link to="/terms">Terms</Link>
           <span aria-hidden="true">·</span>
-          <Link to="/cookie-policy">Cookie policy</Link>
+          <Link to="/cookie-policy">Cookie Policy</Link>
           <span aria-hidden="true">·</span>
           <button type="button" onClick={openCookieSettings}>
             Cookie settings

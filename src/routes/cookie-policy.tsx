@@ -10,7 +10,7 @@ function CookiePolicyPage() {
   return (
     <main className="policy-page page-wrap">
       <header className="policy-hero">
-        <h1 className="display">Cookie policy</h1>
+        <h1 className="display">Cookie Policy</h1>
         <p className="policy-updated">Last updated: 10 September 2026</p>
         <p>
           This Cookie Policy explains how DEKODE GLOBAL LLP, the operator of
@@ -46,8 +46,8 @@ function CookiePolicyPage() {
         </p>
         <p>Optional analytics are not activated until you give your consent.</p>
         <p>
-          If you choose "Decline Optional", krafc will continue to use only
-          technologies required for the operation, security and basic
+          If you choose "Only necessary cookies", krafc will continue to use
+          only technologies required for the operation, security and basic
           functionality of the platform.
         </p>
         <p>
@@ -297,8 +297,7 @@ function CookiePolicyPage() {
             rel="noreferrer"
           >
             Privacy Policy
-          </a>
-          .
+          </a>.
         </p>
       </section>
 
@@ -334,7 +333,6 @@ function CookiePolicyPage() {
           <li>workspace markers; and</li>
           <li>custom-asset metadata.</li>
         </ul>
-        <p>These items are cleared when you sign out.</p>
 
         <h3>Uploaded 3D assets</h3>
         <p>
@@ -357,44 +355,31 @@ function CookiePolicyPage() {
         <h2>8. Service providers</h2>
         <p>
           krafc uses technology and service providers to operate, secure and
-          provide the platform. These may include:
+          provide the platform.
         </p>
+        <p>These may include:</p>
 
         <h3>Cloudflare</h3>
         <p>
-          krafc uses Cloudflare infrastructure, including services supporting
-          website delivery, application processing, security and cloud
-          functionality. Cloudflare may process technical information and
-          request data as necessary to provide these services.
+          Cloudflare &mdash; krafc uses Cloudflare infrastructure, including
+          services supporting website delivery, application processing,
+          security and cloud functionality. Cloudflare may process technical
+          information and request data as necessary to provide these services.
         </p>
 
         <h3>Google</h3>
         <p>
-          krafc may use Google for account authentication and, where you provide
-          analytics consent, Google Analytics for platform measurement. Google
-          states that Google Analytics 4 uses IP addresses at collection to
-          derive location information and discards them before the data is
-          logged. krafc disables Google signals and advertising-personalisation
-          signals in its analytics tag.
+          Google &mdash; krafc may use Google for account authentication and,
+          where you provide analytics consent, Google Analytics for platform
+          measurement.
         </p>
-        <p>
-          The website also requests font files from Google Fonts, and its
-          standalone model-preview page loads Google’s model-viewer library from
-          Google Hosted Libraries. These resource requests do not enable Google
-          Analytics.
-        </p>
-
-        {/*  <h3>Babylon.js CDN</h3>
-        <p>
-          The 3D preview may request Draco decoder files from the Babylon.js
-          preview CDN when they are needed.
-        </p> */}
 
         <h3>Resend</h3>
         <p>
-          krafc may use Resend to deliver verification and transactional emails.
-          Information necessary to send those emails, such as your email address
-          and relevant email content, may be processed by Resend.
+          Resend &mdash; krafc may use Resend to deliver verification and
+          transactional emails. Information necessary to send those emails, such
+          as your email address and relevant email content, may be processed by
+          Resend.
         </p>
 
         <p>
