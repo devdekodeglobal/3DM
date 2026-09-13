@@ -473,8 +473,11 @@ a {
   border-color: var(--brand);
 }
 .cookie-manage {
-  grid-column: 1;
-  justify-self: center;
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+  position: relative;
+  top: 30px;
   color: var(--fg-soft);
   background: none;
   border: 0;
@@ -889,7 +892,9 @@ a {
     grid-template-columns: 1fr;
   }
   .cookie-manage {
-    grid-column: auto;
+    grid-column: 1;
+    grid-row: 3;
+    justify-self: end;
   }
   .cookie-modal {
     padding: 20px;

@@ -554,11 +554,9 @@ function TermsOfServicePage() {
           <strong>Operator of krafc</strong>
           <br />
           Email:{" "}
-          <strong>
-            <a href="mailto:contactus@dekodeglobal.com">
-              contactus@dekodeglobal.com
-            </a>
-          </strong>
+          <a href="mailto:contactus@dekodeglobal.com">
+            contactus@dekodeglobal.com
+          </a>
         </p>
       </section>
     </main>

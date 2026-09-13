@@ -290,7 +290,7 @@ function PrivacyPolicyPage() {
         <p>
           For details of individual cookies, similar technologies, their
           purposes, providers, retention periods and your choices, please see
-          the <a href="/cookie-policy">krafc Cookie Policy</a>.
+          the krafc <a href="/cookie-policy">Cookie Policy</a>.
         </p>
       </section>
 
