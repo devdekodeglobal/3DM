@@ -120,6 +120,38 @@ export async function deleteAccount() {
   return data
 }
 
+export async function updateProfile(name: string): Promise<User> {
+  const res = await fetch('/api/auth/me', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ name }),
+  })
+  const data = (await res.json()) as { user?: User; message?: string; error?: string }
+  if (!res.ok) throw new Error(data.error || 'Failed to update profile')
+  return data.user!
+}
+
+export function getDisplayName(user: User | null): string {
+  if (!user) return 'User'
+  if (user.name && user.name.trim()) return user.name.trim()
+  if (user.email) {
+    const localPart = user.email.split('@')[0]
+    // Clean up dots, underscores, hyphens and trailing numbers if appropriate
+    const cleaned = localPart
+      .replace(/[._-]+/g, ' ')
+      .replace(/(\d+)$/, '')
+      .trim()
+    const target = cleaned || localPart
+    return target
+      .split(' ')
+      .filter(Boolean)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ')
+  }
+  return 'User'
+}
+
 export function signInWithGoogle(returnTo?: string) {
   // Redirect to Google OAuth - the Pages Function handles the flow
   // Pass return_to so the callback knows where to redirect after login

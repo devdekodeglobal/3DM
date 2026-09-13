@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import Sidebar from '../components/editor/Sidebar'
 import Canvas from '../components/editor/Canvas'
 import WallCanvas from '../components/editor/WallCanvas'
@@ -7,7 +7,7 @@ import Properties from '../components/editor/Properties'
 import Preview3D from '../components/editor/Preview3D'
 import ColorPickerPanel from '../components/editor/ColorPickerPanel'
 import RoofCanvas from '../components/editor/RoofCanvas'
-import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil } from 'lucide-react'
+import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil, LayoutGrid, Sliders, Monitor } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
@@ -38,7 +38,7 @@ function getInitialData() {
   const savedElements = window.localStorage.getItem('stall-elements');
   const savedId = window.localStorage.getItem('current-design-id');
   const savedName = window.localStorage.getItem('current-design-name');
-  if (!savedStall) return { config: null, elements: null, id: null, name: savedName };
+  if (!savedStall) return { config: null, elements: null, id: savedId, name: savedName };
 
   const config = JSON.parse(savedStall);
   let parsedElements = savedElements ? JSON.parse(savedElements) : [];
@@ -64,6 +64,69 @@ function getInitialData() {
 
   return { config, elements: parsedElements, id: savedId, name: savedName };
 }
+
+// Inline component to edit booth dimensions without resetting the design
+function EditSpaceDimensions({ boothConfig, setBoothConfig }: { boothConfig: BoothConfig | null, setBoothConfig: (c: any) => void }) {
+  const [open, setOpen] = React.useState(false)
+  const [w, setW] = React.useState(boothConfig?.width ?? 6)
+  const [d, setD] = React.useState(boothConfig?.depth ?? 5)
+  const [pos, setPos] = React.useState({ top: 0, left: 0 })
+  const btnRef = React.useRef<HTMLButtonElement>(null)
+
+  if (!boothConfig) return null
+
+  const handleOpen = () => {
+    setW(boothConfig.width)
+    setD(boothConfig.depth)
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      setPos({ top: rect.bottom + 6, left: rect.left })
+    }
+    setOpen(true)
+  }
+
+  const handleApply = () => {
+    setBoothConfig({ ...boothConfig, width: w, depth: d })
+    setOpen(false)
+  }
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        onClick={handleOpen}
+        className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--sand)] text-[var(--sea-ink)] text-xs font-bold transition hover:bg-[var(--lagoon)] hover:text-white"
+      >
+        Edit Space
+      </button>
+      {open && (
+        <>
+          {/* Backdrop to close on outside click */}
+          <div className="fixed inset-0 z-[98]" onClick={() => setOpen(false)} />
+          <div
+            style={{ top: pos.top, left: pos.left }}
+            className="fixed z-[99] bg-[var(--bg-base)] border border-[var(--line)] rounded-xl shadow-2xl p-4 flex flex-col gap-3 w-56 animate-in fade-in slide-in-from-top-2 duration-150"
+          >
+            <p className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider">Space Dimensions</p>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-[var(--fg-dim)] font-semibold">Width: <span className="text-[var(--brand)]">{w}m</span></label>
+              <input type="range" min={2} max={20} step={0.5} value={w} onChange={e => setW(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-[var(--fg-dim)] font-semibold">Depth: <span className="text-[var(--brand)]">{d}m</span></label>
+              <input type="range" min={2} max={20} step={0.5} value={d} onChange={e => setD(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
+            </div>
+            <div className="flex gap-2 mt-1">
+              <button onClick={() => setOpen(false)} className="flex-1 rounded-lg py-1.5 text-xs font-bold bg-[var(--sand)] text-[var(--sea-ink)] hover:bg-gray-200 transition">Cancel</button>
+              <button onClick={handleApply} className="flex-1 rounded-lg py-1.5 text-xs font-bold bg-[var(--brand)] text-white hover:bg-[var(--brand-h)] transition">Apply</button>
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  )
+}
+
 
 function EditorPage() {
   const [initialData] = useState(getInitialData)
@@ -241,9 +304,20 @@ function EditorPage() {
   }, [currentDesignId, projectName])
 
   // Layout States
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [previewerOpen, setPreviewerOpen] = useState(true)
-  const [propertiesOpen, setPropertiesOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') return window.innerWidth >= 768
+    return true
+  })
+  const [previewerOpen, setPreviewerOpen] = useState(() => {
+    if (typeof window !== 'undefined') return window.innerWidth >= 768
+    return true
+  })
+  const [propertiesOpen, setPropertiesOpen] = useState(() => {
+    if (typeof window !== 'undefined') return window.innerWidth >= 768
+    return true
+  })
+  const [mobileTab, setMobileTab] = useState<'canvas' | 'assets' | 'properties' | '3d'>('canvas')
+  const [mobileScreenBannerDismissed, setMobileScreenBannerDismissed] = useState(false)
   const [splitWidth, setSplitWidth] = useState(60)
   const splitContainerRef = useRef<HTMLDivElement>(null)
   const [is3DGenerated, setIs3DGenerated] = useState(false)
@@ -279,6 +353,17 @@ function EditorPage() {
 
   useEffect(() => {
     setIsMounted(true)
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        // When transitioning to desktop screen, ensure sidebars and previewer are open
+        setSidebarOpen(true)
+        setPropertiesOpen(true)
+        setPreviewerOpen(true)
+      }
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   const handleCloudSave = async () => {
@@ -396,9 +481,15 @@ function EditorPage() {
         setTimeout(() => {
           setCloudSyncStatus(prev => prev === 'saved' ? 'idle' : prev);
         }, 3000);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Auto-save to cloud failed:', err);
         setCloudSyncStatus('error');
+        if (err.message === 'Design not found' || err.message.includes('404')) {
+          setAutoSaveToCloud(false)
+          setCurrentDesignId(null)
+          localStorage.removeItem('current-design-id')
+          showAlert('This design was deleted or no longer exists. Auto-save disabled. Please Save as New Design.', 'error', 'Design Missing')
+        }
       }
     }, 2500);
 
@@ -828,6 +919,26 @@ function EditorPage() {
   // Editor layout using split panels
   return (
     <div key="editor-workspace" className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-[var(--bg-base)]">
+      {/* Mobile Experience Notice Banner */}
+      {!mobileScreenBannerDismissed && (
+        <div className="md:hidden bg-gradient-to-r from-amber-500/15 via-brand/10 to-amber-500/15 border-b border-amber-500/30 px-3 py-2 flex items-center justify-between gap-2 shrink-0 animate-in slide-in-from-top-1 duration-200">
+          <div className="flex items-center gap-2 min-w-0">
+            <Monitor className="w-4 h-4 text-amber-500 shrink-0" />
+            <p className="text-[11px] text-[var(--sea-ink)] leading-tight">
+              <span className="font-bold text-amber-600 dark:text-amber-400">Notice: </span>
+              For the best experience with 3D editing and canvas tools, please use a larger screen (desktop or tablet).
+            </p>
+          </div>
+          <button
+            onClick={() => setMobileScreenBannerDismissed(true)}
+            className="p-1 rounded-md text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--chip-bg)] transition shrink-0"
+            title="Dismiss notice"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Top Bar */}
       <div className="h-14 border-b border-[var(--line)] bg-[var(--surface-strong)] flex items-center justify-between px-4 z-20 shadow-sm transition-all shrink-0 overflow-x-auto whitespace-nowrap scrollbar-hide">
         <div className="flex items-center gap-4 shrink-0">
@@ -844,24 +955,7 @@ function EditorPage() {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <button
-              onClick={() => {
-                setConfirmModalState({
-                  isOpen: true,
-                  title: 'Return to Setup Wizard',
-                  message: 'Current space dimensions will be reset. Are you sure?',
-                  confirmText: 'Reset',
-                  onConfirm: () => {
-                    setBoothConfig(null)
-                    setWizardStep(1)
-                    setConfirmModalState(null)
-                  }
-                })
-              }}
-              className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--sand)] text-[var(--sea-ink)] text-xs font-bold transition hover:bg-[var(--lagoon)] hover:text-white"
-            >
-              Edit Space Setup
-            </button>
+            <EditSpaceDimensions boothConfig={boothConfig} setBoothConfig={setBoothConfig} />
             <div className="w-px h-6 bg-[var(--line)] mx-2" />
             <button onClick={undo} disabled={historyStep <= 0} className="p-2 rounded-lg hover:bg-[var(--chip-bg)] text-[var(--sea-ink-soft)] disabled:opacity-30 transition" title="Undo (Ctrl+Z)">
               <RotateCcw className="h-4 w-4" />
@@ -877,8 +971,8 @@ function EditorPage() {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          {/* View Toggles */}
-          <div className="flex items-center gap-1 bg-[var(--sand)] p-1 rounded-xl border border-[var(--line)] mr-2">
+          {/* View Toggles - desktop only */}
+          <div className="hidden md:flex items-center gap-1 bg-[var(--sand)] p-1 rounded-xl border border-[var(--line)] mr-2">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className={`p-1.5 rounded-lg transition ${sidebarOpen ? 'bg-[var(--brand)] text-white' : 'text-[var(--fg-soft)] hover:bg-[var(--bg-subtle)]'}`}
@@ -1008,12 +1102,13 @@ function EditorPage() {
         </div>
       </div>
 
-      {/* Split Workspaces - all panels are flex siblings, canvas is flex-1 */}
-      <div ref={splitContainerRef} className="flex flex-1 overflow-hidden">
+      {/* Split Workspaces - clean separation between desktop layout and mobile drawer/view mode */}
+      <div ref={splitContainerRef} className="flex flex-1 overflow-hidden relative">
 
-        {/* Left Sidebar */}
+        {/* --- DESKTOP PANELS (md and up) --- */}
+        {/* Left Sidebar (Desktop) */}
         {sidebarOpen && (
-          <div className="flex h-full shrink-0 z-10 shadow-xl border-r border-[var(--line)]">
+          <div className="hidden md:flex h-full shrink-0 shadow-xl border-r border-[var(--line)] bg-[var(--surface-strong)]">
             <Sidebar
               addElement={addElement}
               activeView={blueprintView}
@@ -1028,8 +1123,11 @@ function EditorPage() {
           </div>
         )}
 
-        {/* Center Canvas - flex-1 always fills remaining space */}
-        <div className="flex-1 flex h-full flex-col relative z-0 min-w-0 bg-[var(--bg-base)]">
+        {/* Center Canvas (Desktop & Mobile when not in 3D tab) */}
+        <div className={`
+          ${mobileTab === '3d' ? 'hidden md:flex' : 'flex'}
+          flex-1 h-full flex-col relative z-0 min-w-0 bg-[var(--bg-base)]
+        `}>
           <Canvas
             elements={elements}
             setElements={setElements}
@@ -1040,9 +1138,9 @@ function EditorPage() {
           />
         </div>
 
-        {/* Properties Panel - in flow, not absolute */}
+        {/* Properties Panel (Desktop) */}
         {propertiesOpen && (
-          <div className="shrink-0 h-full border-l border-[var(--line)] z-20 shadow-[-8px_0_20px_rgba(0,0,0,0.05)]">
+          <div className="hidden md:flex shrink-0 h-full border-l border-[var(--line)] shadow-[-8px_0_20px_rgba(0,0,0,0.05)] bg-[var(--surface-strong)]">
             <Properties
               selectedElement={selectedElement}
               onUpdate={handleUpdateElement}
@@ -1056,10 +1154,10 @@ function EditorPage() {
           </div>
         )}
 
-        {/* Resizer handle */}
+        {/* Resizer handle (Desktop only) */}
         {previewerOpen && (
           <div
-            className="w-1.5 shrink-0 bg-[var(--line)] hover:bg-[var(--lagoon)] cursor-col-resize z-30 transition-colors"
+            className="hidden md:block w-1.5 shrink-0 bg-[var(--line)] hover:bg-[var(--lagoon)] cursor-col-resize z-30 transition-colors"
             onMouseDown={() => {
               const container = splitContainerRef.current
               const onMove = (e: MouseEvent) => {
@@ -1078,13 +1176,12 @@ function EditorPage() {
           />
         )}
 
-        {/* Right Panel (3D Previewer) */}
+        {/* 3D Previewer Panel (Desktop split panel) */}
         {previewerOpen && (
           <div
             style={{ width: `${100 - splitWidth}%` }}
-            className="shrink-0 min-w-[180px] border-l border-[#2a2d30] bg-[#121415] flex flex-col shadow-2xl z-20 relative"
+            className="hidden md:flex shrink-0 min-w-[180px] border-l border-[#2a2d30] bg-[#121415] flex-col shadow-2xl z-20 relative h-full"
           >
-
             {!sessionUser ? (
               <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-[#181a1d] to-[#121415] relative overflow-hidden">
                 <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 text-[var(--brand)] shadow-lg">
@@ -1120,7 +1217,117 @@ function EditorPage() {
               <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-900 to-[#121415]">
                 <Box className="w-14 h-14 text-gray-800 mb-4 opacity-50" />
                 <h4 className="text-gray-300 font-bold mb-1 text-sm">3D Engine Offline</h4>
-                <p className="text-gray-500 text-[10px] max-w-[180px]">Place objects in the 2D layout and click "Generate 3D".</p>
+                <p className="text-gray-500 text-[10px] max-w-[180px] mb-3">Place objects in the 2D layout and generate 3D.</p>
+                <button
+                  onClick={() => setIs3DGenerated(true)}
+                  className="px-4 py-1.5 rounded-full bg-[var(--lagoon-deep)] text-white font-bold text-xs hover:bg-[var(--palm)] transition"
+                >
+                  Start 3D Engine
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* --- MOBILE-ONLY OVERLAYS & VIEWS (< 768px) --- */}
+        {/* Mobile Asset Library Drawer */}
+        {mobileTab === 'assets' && (
+          <div className="md:hidden">
+            <div 
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 animate-in fade-in duration-150"
+              onClick={() => setMobileTab('canvas')}
+            />
+            <div className="fixed inset-x-0 bottom-14 top-0 pt-16 z-40 flex flex-col shadow-xl border-r border-[var(--line)] bg-[var(--surface-strong)]">
+              <Sidebar
+                addElement={(el) => {
+                  addElement(el)
+                  setMobileTab('canvas')
+                }}
+                activeView={blueprintView}
+                onViewChange={setBlueprintView}
+                backgroundColor={backgroundColor}
+                setBackgroundColor={setBackgroundColor}
+                customAssets={customAssets}
+                onUploadCustomAsset={handleUploadCustomAsset}
+                onDeleteCustomAsset={handleDeleteCustomAsset}
+                showAlert={showAlert}
+                onClose={() => setMobileTab('canvas')}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Properties Drawer */}
+        {mobileTab === 'properties' && (
+          <div className="md:hidden">
+            <div 
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 animate-in fade-in duration-150"
+              onClick={() => setMobileTab('canvas')}
+            />
+            <div className="fixed inset-x-0 bottom-14 top-0 pt-16 z-40 flex flex-col border-l border-[var(--line)] shadow-[-8px_0_20px_rgba(0,0,0,0.05)] bg-[var(--surface-strong)]">
+              <Properties
+                selectedElement={selectedElement}
+                onUpdate={handleUpdateElement}
+                onDelete={() => {
+                  handleDeleteElement(selectedId!)
+                  setMobileTab('canvas')
+                }}
+                onEditElevation={() => setEditingWallId(selectedId)}
+                onViewElevation={() => setBlueprintView(`elevation_${selectedId}` as any)}
+                boothConfig={boothConfig}
+                onBoothConfigUpdate={(updates: any) => setBoothConfig((prev: any) => ({ ...prev, ...updates }))}
+                onEditRoof={() => setEditingRoof(true)}
+                onClose={() => setMobileTab('canvas')}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Fullscreen 3D View (Mobile only when 3D tab active) */}
+        {mobileTab === '3d' && (
+          <div className="md:hidden flex flex-1 w-full border-l border-[#2a2d30] bg-[#121415] flex-col shadow-2xl z-20 relative h-full">
+            {!sessionUser ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-[#181a1d] to-[#121415] relative overflow-hidden">
+                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 text-[var(--brand)] shadow-lg">
+                  <Lock className="w-7 h-7" />
+                </div>
+                <h4 className="text-white font-bold mb-1 text-sm font-[Outfit]">3D Preview Locked</h4>
+                <p className="text-gray-400 text-xs max-w-[200px] mb-4 leading-relaxed">
+                  Sign in to unlock your 3D space.
+                </p>
+                <button
+                  onClick={() => setAuthModalOpen(true)}
+                  className="px-4 py-2 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  Sign In to Unlock 3D
+                </button>
+              </div>
+            ) : is3DGenerated ? (
+              <div className="flex-1 w-full relative">
+                <Preview3D
+                  boothConfig={boothConfig}
+                  elements={elements}
+                  activeView={blueprintView}
+                  onExportComplete={onExportComplete}
+                  onUpdateElement={handleUpdateElement}
+                  onSelectElement={handleSelect}
+                  selectedId={selectedId}
+                  backgroundColor={backgroundColor}
+                  setBackgroundColor={setBackgroundColor}
+                />
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-900 to-[#121415]">
+                <Box className="w-14 h-14 text-gray-800 mb-4 opacity-50" />
+                <h4 className="text-gray-300 font-bold mb-1 text-sm">3D Engine Offline</h4>
+                <p className="text-gray-500 text-[10px] max-w-[180px] mb-3">Place objects in the 2D layout and generate 3D.</p>
+                <button
+                  onClick={() => setIs3DGenerated(true)}
+                  className="px-4 py-1.5 rounded-full bg-[var(--lagoon-deep)] text-white font-bold text-xs hover:bg-[var(--palm)] transition"
+                >
+                  Start 3D Engine
+                </button>
               </div>
             )}
           </div>
@@ -1128,8 +1335,8 @@ function EditorPage() {
 
       </div>
 
-      {/* Footer Status Bar */}
-      <div className="h-6 border-t border-[var(--line)] bg-[var(--surface-strong)] flex items-center justify-between px-4 text-[10px] uppercase tracking-tighter font-bold text-[var(--sea-ink-soft)] select-none shrink-0">
+      {/* Footer Status Bar (Desktop only) */}
+      <div className="hidden md:flex h-6 border-t border-[var(--line)] bg-[var(--surface-strong)] items-center justify-between px-4 text-[10px] uppercase tracking-tighter font-bold text-[var(--sea-ink-soft)] select-none shrink-0">
         <div className="flex items-center gap-4">
           <button
             onClick={() => setGridVisible(!gridVisible)}
@@ -1146,6 +1353,76 @@ function EditorPage() {
           </span>
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation Bar (Option 2) */}
+      <nav className="md:hidden h-14 border-t border-[var(--line)] bg-[var(--surface-strong)]/95 backdrop-blur-md flex items-center justify-around px-2 z-50 shrink-0 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+        {/* Assets Button */}
+        <button
+          onClick={() => setMobileTab(prev => prev === 'assets' ? 'canvas' : 'assets')}
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-xl transition-all ${
+            mobileTab === 'assets'
+              ? 'text-[var(--brand)] font-extrabold scale-105'
+              : 'text-[var(--sea-ink-soft)] hover:text-[var(--fg)] font-medium'
+          }`}
+        >
+          <Box className={`w-5 h-5 transition-transform ${mobileTab === 'assets' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+          <span className="text-[10px] mt-0.5 tracking-tight">Assets</span>
+        </button>
+
+        {/* 2D Canvas View Button */}
+        <button
+          onClick={() => setMobileTab('canvas')}
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-xl transition-all ${
+            mobileTab === 'canvas'
+              ? 'text-[var(--brand)] font-extrabold scale-105'
+              : 'text-[var(--sea-ink-soft)] hover:text-[var(--fg)] font-medium'
+          }`}
+        >
+          <LayoutGrid className={`w-5 h-5 transition-transform ${mobileTab === 'canvas' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+          <span className="text-[10px] mt-0.5 tracking-tight">2D Canvas</span>
+        </button>
+
+        {/* 3D Preview View Button */}
+        <button
+          onClick={() => {
+            if (!is3DGenerated && sessionUser) {
+              setIs3DGenerated(true)
+            }
+            setMobileTab('3d')
+          }}
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-xl transition-all relative ${
+            mobileTab === '3d'
+              ? 'text-[var(--brand)] font-extrabold scale-105'
+              : 'text-[var(--sea-ink-soft)] hover:text-[var(--fg)] font-medium'
+          }`}
+        >
+          <div className="relative">
+            <RotateCw className={`w-5 h-5 transition-transform ${mobileTab === '3d' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+            {is3DGenerated && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-[var(--surface-strong)]" />
+            )}
+          </div>
+          <span className="text-[10px] mt-0.5 tracking-tight">3D View</span>
+        </button>
+
+        {/* Properties Button */}
+        <button
+          onClick={() => setMobileTab(prev => prev === 'properties' ? 'canvas' : 'properties')}
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-xl transition-all relative ${
+            mobileTab === 'properties'
+              ? 'text-[var(--brand)] font-extrabold scale-105'
+              : 'text-[var(--sea-ink-soft)] hover:text-[var(--fg)] font-medium'
+          }`}
+        >
+          <div className="relative">
+            <Sliders className={`w-5 h-5 transition-transform ${mobileTab === 'properties' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+            {selectedElement && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[var(--brand)] ring-2 ring-[var(--surface-strong)]" />
+            )}
+          </div>
+          <span className="text-[10px] mt-0.5 tracking-tight">Properties</span>
+        </button>
+      </nav>
       {/* Wall Elevation Modal Overlay */}
       {editingWallId && editingWall && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-8 animate-in fade-in duration-200">

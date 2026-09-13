@@ -11,6 +11,7 @@ interface PropertiesProps {
   boothConfig?: any
   onBoothConfigUpdate?: (updates: any) => void
   onEditRoof?: () => void
+  onClose?: () => void
 }
 
 const FLOOR_MATERIALS = [
@@ -31,7 +32,7 @@ const WALL_MATERIALS_LIST = [
 
 export default function Properties({
   selectedElement, onUpdate, onDelete, onEditElevation, onViewElevation,
-  boothConfig, onBoothConfigUpdate, onEditRoof
+  boothConfig, onBoothConfigUpdate, onEditRoof, onClose
 }: PropertiesProps) {
 
   const handleMaterialChange = (material: string) => {
@@ -42,21 +43,32 @@ export default function Properties({
   const floorType = boothConfig?.floorType || 'hardwood'
 
   return (
-    <aside className="w-72 h-full border-l border-[var(--line)] bg-[var(--surface-strong)] flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-[var(--line)] flex justify-between items-center bg-[var(--header-bg)]">
+    <aside className="w-full md:w-72 h-full border-l border-[var(--line)] bg-[var(--surface-strong)] flex flex-col overflow-hidden">
+      <div className="p-4 border-b border-[var(--line)] flex justify-between items-center bg-[var(--header-bg)] shrink-0">
         <h3 className="font-bold text-[var(--sea-ink)] flex items-center gap-2">
           <Settings className="h-5 w-5 text-[var(--lagoon-deep)]" />
           Properties
         </h3>
-        {selectedElement && (
-          <button
-            onClick={onDelete}
-            className="text-red-500 hover:text-white hover:bg-red-500 p-1.5 rounded-lg transition"
-            title="Delete (Backspace)"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {selectedElement && (
+            <button
+              onClick={onDelete}
+              className="text-red-500 hover:text-white hover:bg-red-500 p-1.5 rounded-lg transition"
+              title="Delete (Backspace)"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="md:hidden p-1.5 rounded-lg text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--chip-bg)] transition text-xs font-bold px-2 py-1 bg-[var(--sand)]"
+              title="Close Properties"
+            >
+              Done
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-32">
@@ -391,22 +403,42 @@ export default function Properties({
                     {selectedElement.wallElements && selectedElement.wallElements.length > 0 ? (
                       <div className="space-y-1.5 mb-3">
                         {selectedElement.wallElements.map((wel: any) => (
-                          <div key={wel.id} className="flex items-center justify-between bg-[var(--sand)] px-2.5 py-1.5 rounded-lg border border-[var(--line)] text-xs">
-                            <span className="flex items-center gap-1.5 font-semibold text-[var(--sea-ink)]">
-                              <span>{wel.type === 'door' ? '🚪' : wel.type === 'window' ? '🪟' : '📦'}</span>
-                              <span className="capitalize">{wel.type}</span>
-                              <span className="text-[10px] font-mono text-[var(--sea-ink-soft)]">({(wel.width / 100).toFixed(1)}m)</span>
-                            </span>
-                            <button
-                              onClick={() => {
-                                const remaining = (selectedElement.wallElements || []).filter((w: any) => w.id !== wel.id)
-                                onUpdate(selectedElement.id, { wallElements: remaining })
-                              }}
-                              className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded transition"
-                              title="Remove Opening (Restore Full Wall)"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                          <div key={wel.id} className="bg-[var(--sand)] p-2 rounded-lg border border-[var(--line)] text-xs space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="flex items-center gap-1.5 font-semibold text-[var(--sea-ink)]">
+                                <span>{wel.type === 'door' ? '🚪' : wel.type === 'window' ? '🪟' : '📦'}</span>
+                                <span className="capitalize">{wel.type}</span>
+                                <span className="text-[10px] font-mono text-[var(--sea-ink-soft)]">({(wel.width / 100).toFixed(1)}m)</span>
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                {(wel.type === 'door' || wel.type === 'window') && (
+                                  <label className="flex items-center gap-1 cursor-pointer" title="Change Color">
+                                    <span className="w-3.5 h-3.5 rounded-full border border-black/20 inline-block" style={{ backgroundColor: wel.color || (wel.type === 'door' ? '#8b643c' : '#00BFFF') }} />
+                                    <input
+                                      type="color"
+                                      className="sr-only"
+                                      value={wel.color || (wel.type === 'door' ? '#8b643c' : '#00BFFF')}
+                                      onChange={(e) => {
+                                        const updated = (selectedElement.wallElements || []).map((w: any) => 
+                                          w.id === wel.id ? { ...w, color: e.target.value } : w
+                                        )
+                                        onUpdate(selectedElement.id, { wallElements: updated })
+                                      }}
+                                    />
+                                  </label>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    const remaining = (selectedElement.wallElements || []).filter((w: any) => w.id !== wel.id)
+                                    onUpdate(selectedElement.id, { wallElements: remaining })
+                                  }}
+                                  className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded transition"
+                                  title="Remove Opening (Restore Full Wall)"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>

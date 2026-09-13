@@ -1030,6 +1030,53 @@ export default function Preview3D({
     }
     // --- END SMART BUTT JOINT CALCULATION ---
 
+    const applyWallMaterial = (mesh: BABYLON.AbstractMesh, el: any, wVal: number, hVal: number) => {
+      const mat = (mesh.material as BABYLON.PBRMaterial) || new BABYLON.PBRMaterial(el.id + "_mat", scene);
+      mat.roughness = 0.4; 
+      mat.metallic = 0.05;
+      const vScale = el.verticalScale || 1;
+
+      if (el.material === 'Glass Wall') { 
+        mat.albedoColor = new BABYLON.Color3(0.5, 0.8, 1); 
+        mat.alpha = 0.4; 
+        mat.transparencyMode = 2; 
+        mat.albedoTexture = null; 
+      } else {
+        mat.alpha = 1.0;
+        mat.transparencyMode = 0;
+        mat.albedoColor = BABYLON.Color3.White();
+        let texName = '';
+        if (el.material === 'Wood') texName = 'hardwood';
+        else if (el.material === 'Brick') texName = 'brick';
+        else if (el.material === 'Marble') { texName = 'marble'; mat.roughness = 0.1; mat.metallic = 0.2; }
+        else if (el.material === 'Concrete') texName = 'concrete';
+        
+        if (el.material === 'custom_color' || el.color) {
+          mat.albedoColor = BABYLON.Color3.FromHexString(el.color || '#f0f0f0'); 
+          mat.albedoTexture = null;
+        } else if (texName) {
+          const texUrl = `/assets/textures/${texName}.png`;
+          if (!mat.albedoTexture || (mat.albedoTexture as BABYLON.Texture).url !== texUrl) {
+            let cachedTex = textureCacheRef.current.get(texUrl);
+            if (!cachedTex) {
+              cachedTex = new BABYLON.Texture(texUrl, scene);
+              textureCacheRef.current.set(texUrl, cachedTex);
+            }
+            mat.albedoTexture = cachedTex.clone();
+          }
+          const currentTex = mat.albedoTexture as BABYLON.Texture;
+          if (currentTex) {
+            currentTex.uScale = wVal / 2; 
+            currentTex.vScale = (hVal * vScale) / 2;
+          }
+        } else {
+          mat.albedoColor = new BABYLON.Color3(0.92, 0.92, 0.92); 
+          mat.albedoTexture = null;
+        }
+      }
+      mesh.material = mat;
+    };
+
     elements.forEach(el => {
       let vX = el.x, vY = el.y, vW = el.width;
       let delta1 = 0, delta2 = 0;
@@ -1062,7 +1109,16 @@ export default function Preview3D({
             w: vW,
             t: el.thickness || 10,
             v: el.verticalScale || 1,
-            c: cutouts.map((c: any) => ({ t: c.type, x: c.x + delta1, y: c.y, w: c.width, h: c.height }))
+            c: cutouts.map((c: any) => ({ 
+              t: c.type, 
+              x: c.x + delta1, 
+              y: c.y, 
+              w: c.width, 
+              h: c.height,
+              color: c.color,
+              swingSide: c.swingSide,
+              swingDirection: c.swingDirection
+            }))
           });
 
           if (!mesh.metadata || mesh.metadata.geometryState !== geometryState) {
@@ -1204,6 +1260,12 @@ export default function Preview3D({
             wallDecorationRegistryRef.current.set(el.id, newDecorations);
             if (mesh.metadata) mesh.metadata.decorationState = decorationStateW;
           }
+
+          if (!hasWallElements && mesh.metadata && mesh.metadata.baseWidth) {
+            mesh.scaling.x = wValW / mesh.metadata.baseWidth;
+          }
+
+          applyWallMaterial(mesh, el, wValW, h);
         }
       } else {
         if (needsRecreate) {
@@ -1223,7 +1285,16 @@ export default function Preview3D({
             w: vW,
             t: el.thickness || 10,
             v: vScale,
-            c: cutouts.map((c: any) => ({ t: c.type, x: c.x + delta1, y: c.y, w: c.width, h: c.height }))
+            c: cutouts.map((c: any) => ({ 
+              t: c.type, 
+              x: c.x + delta1, 
+              y: c.y, 
+              w: c.width, 
+              h: c.height,
+              color: c.color,
+              swingSide: c.swingSide,
+              swingDirection: c.swingDirection
+            }))
           });
 
           let mesh: BABYLON.Mesh;
@@ -1393,42 +1464,7 @@ export default function Preview3D({
             mesh.scaling.x = wVal / mesh.metadata.baseWidth;
           }
 
-          const mat = (mesh.material as BABYLON.PBRMaterial) || new BABYLON.PBRMaterial(el.id + "_mat", scene);
-          mat.roughness = 0.4; mat.metallic = 0.05;
-          if (el.material === 'Glass Wall') { mat.albedoColor = new BABYLON.Color3(0.5, 0.8, 1); mat.alpha = 0.4; mat.transparencyMode = 2; mat.albedoTexture = null; }
-          else {
-            mat.alpha = 1.0;
-            mat.transparencyMode = 0;
-            mat.albedoColor = BABYLON.Color3.White();
-            let texName = '';
-            if (el.material === 'Wood') texName = 'hardwood';
-            else if (el.material === 'Brick') texName = 'brick';
-            else if (el.material === 'Marble') { texName = 'marble'; mat.roughness = 0.1; mat.metallic = 0.2; }
-            else if (el.material === 'Concrete') texName = 'concrete';
-            
-            if (el.material === 'custom_color') {
-              mat.albedoColor = BABYLON.Color3.FromHexString(el.color || '#f0f0f0'); 
-              mat.albedoTexture = null;
-            } else if (texName) {
-              const texUrl = `/assets/textures/${texName}.png`;
-              if (!mat.albedoTexture || (mat.albedoTexture as BABYLON.Texture).url !== texUrl) {
-                let cachedTex = textureCacheRef.current.get(texUrl);
-                if (!cachedTex) {
-                  cachedTex = new BABYLON.Texture(texUrl, scene);
-                  textureCacheRef.current.set(texUrl, cachedTex);
-                }
-                mat.albedoTexture = cachedTex.clone();
-              }
-              const currentTex = mat.albedoTexture as BABYLON.Texture;
-              if (currentTex) {
-                currentTex.uScale = wVal / 2; 
-                currentTex.vScale = (h * vScale) / 2;
-              }
-            } else {
-              mat.albedoColor = new BABYLON.Color3(0.92, 0.92, 0.92); mat.albedoTexture = null;
-            }
-          }
-          mesh.material = mat;
+          applyWallMaterial(mesh, el, wVal, h);
           mesh.metadata = { 
             geometryState, 
             decorationState, 

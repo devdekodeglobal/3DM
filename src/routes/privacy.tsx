@@ -259,8 +259,8 @@ function PrivacyPolicyPage() {
         <p>
           When you choose to save a project or asset to the krafc cloud,
           relevant account, project and design information is transmitted to
-          krafc services (such as Cloudflare D1) and stored so that you can
-          access it through your account.
+          krafc services and stored so that you can access it through your
+          account.
         </p>
         <p>
           Cloud-saved projects generally remain available until you delete them,
@@ -317,9 +317,7 @@ function PrivacyPolicyPage() {
         <h3>Google</h3>
         <p>
           Google may process information when you choose Google as your sign-in
-          provider. The website also requests font files from Google Fonts, and
-          its standalone model-preview page loads Google’s model-viewer library
-          from Google Hosted Libraries.
+          provider.
         </p>
         <p>
           If you consent to Google Analytics, Google also processes analytics
@@ -334,12 +332,6 @@ function PrivacyPolicyPage() {
           Resend may process information such as your email address and the
           content required to deliver those communications.
         </p>
-
-        {/*     <h3>Babylon.js CDN</h3>
-        <p>
-          The 3D preview may request Draco decoder files from the Babylon.js
-          preview CDN when they are needed.
-        </p> */}
 
         <h3>Legal and safety disclosures</h3>
         <p>We may disclose information where reasonably necessary to:</p>
@@ -465,8 +457,7 @@ function PrivacyPolicyPage() {
           To exercise a privacy right or make a privacy request, contact us at{" "}
           <a href="mailto:contactus@dekodeglobal.com">
             contactus@dekodeglobal.com
-          </a>
-          .
+          </a>.
         </p>
         <p>
           We may need to verify your request before completing it, where

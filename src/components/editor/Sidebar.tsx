@@ -15,6 +15,7 @@ export default function Sidebar({
   // onUploadCustomAsset,
   onDeleteCustomAsset,
   // showAlert
+  onClose,
 }: {
   addElement: (el: any) => void;
   activeView?: string;
@@ -25,6 +26,7 @@ export default function Sidebar({
   onUploadCustomAsset?: (file: File) => void;
   onDeleteCustomAsset?: (id: string) => void;
   showAlert?: (message: string, type?: 'info' | 'success' | 'warning' | 'error', title?: string) => void;
+  onClose?: () => void;
 }) {
   const [isCoreOpen, setIsCoreOpen] = useState(false)
   // const [isUploadsOpen, setIsUploadsOpen] = useState(true)
@@ -268,12 +270,22 @@ export default function Sidebar({
   }, [selectedCategory, searchQuery])
 
   return (
-    <aside className="w-64 h-full border-r border-[var(--line)] bg-[var(--surface-strong)] flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-[var(--line)] shrink-0">
+    <aside className="w-full md:w-64 h-full border-r border-[var(--line)] bg-[var(--surface-strong)] flex flex-col overflow-hidden">
+      <div className="p-4 border-b border-[var(--line)] flex justify-between items-center shrink-0">
         <h3 className="font-bold text-[var(--sea-ink)] flex items-center gap-2">
           <Box className="h-5 w-5 text-[var(--lagoon-deep)]" />
           Asset Library
         </h3>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="md:hidden p-1.5 rounded-lg text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--chip-bg)] transition"
+            title="Close Asset Library"
+          >
+            <Trash2 className="hidden" /> {/* keep imports if needed */}
+            <span className="text-xs font-bold px-2 py-0.5 rounded bg-[var(--sand)]">Done</span>
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto flex flex-col custom-scrollbar">

@@ -153,7 +153,7 @@ function TermsOfServicePage() {
           royalty-free licence to host, store, reproduce, process, transmit,
           display and otherwise use that User Content only as reasonably
           necessary to provide, operate, maintain, secure and improve the krafc
-          services you request .
+          services you request.
         </p>
         <p>
           This licence exists only for the purposes described above and does not
@@ -437,7 +437,7 @@ function TermsOfServicePage() {
           To the maximum extent permitted by applicable law, the aggregate
           liability of DEKODE arising out of or relating to krafc or these Terms
           will be limited to the amount you paid to DEKODE for krafc during the
-          12 months immediately preceding the event giving rise to the claim .
+          12 months immediately preceding the event giving rise to the claim.
         </p>
         <p>
           If you have not paid any amount for krafc during that period, DEKODE's
@@ -483,9 +483,9 @@ function TermsOfServicePage() {
         </p>
         <p>
           Subject to any mandatory rights or remedies available to you under the
-          laws of your country of residence, courts located in [Gurugram,
-          Haryana, India] will have exclusive jurisdiction over disputes arising
-          out of or relating to these Terms or your use of krafc.
+          laws of your country of residence, courts located in New Delhi, India
+          will have exclusive jurisdiction over disputes arising out of or
+          relating to these Terms or your use of krafc.
         </p>
         <p>
           Nothing in this section prevents either party from seeking urgent or
