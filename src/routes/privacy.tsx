@@ -290,7 +290,7 @@ function PrivacyPolicyPage() {
         <p>
           For details of individual cookies, similar technologies, their
           purposes, providers, retention periods and your choices, please see
-          the <a href="/cookie-policy">krafc Cookie Policy</a>.
+          the krafc <a href="/cookie-policy">Cookie Policy</a>.
         </p>
       </section>
 
@@ -457,7 +457,8 @@ function PrivacyPolicyPage() {
           To exercise a privacy right or make a privacy request, contact us at{" "}
           <a href="mailto:contactus@dekodeglobal.com">
             contactus@dekodeglobal.com
-          </a>.
+          </a>
+          .
         </p>
         <p>
           We may need to verify your request before completing it, where
