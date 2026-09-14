@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Box, PlusSquare, ChevronDown, ChevronRight, LayoutGrid, Search, Trash2 } from 'lucide-react'
+import { useState, useMemo, useRef, useEffect } from 'react'
+import { Box, PlusSquare, ChevronDown, ChevronRight, LayoutGrid, Search, Trash2, Palette, Plus, Save, Folder, FileText, DoorClosed, AppWindow } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import { ASSET_DIMENSIONS, ASSET_CATEGORIES, ASSET_REGISTRY } from '../../lib/assetRegistry'
 import ColorPickerPanel from './ColorPickerPanel'
@@ -11,29 +11,57 @@ export default function Sidebar({
   addElement,
   backgroundColor,
   setBackgroundColor,
+  boothConfig,
+  setBoothConfig,
   customAssets = [],
   // onUploadCustomAsset,
   onDeleteCustomAsset,
   // showAlert
   onClose,
+  onNewProject,
+  onSaveProject,
+  onSaveAsProject,
+  onOpenProjects,
+  onGenerateReport,
+  isCapturingReport = false,
 }: {
   addElement: (el: any) => void;
   activeView?: string;
   onViewChange?: (view: any) => void;
   backgroundColor?: string;
   setBackgroundColor?: (color: string) => void;
+  boothConfig?: any;
+  setBoothConfig?: (config: any) => void;
   customAssets?: any[];
   onUploadCustomAsset?: (file: File) => void;
   onDeleteCustomAsset?: (id: string) => void;
   showAlert?: (message: string, type?: 'info' | 'success' | 'warning' | 'error', title?: string) => void;
   onClose?: () => void;
+  onNewProject?: () => void;
+  onSaveProject?: () => void;
+  onSaveAsProject?: () => void;
+  onOpenProjects?: () => void;
+  onGenerateReport?: () => void;
+  isCapturingReport?: boolean;
 }) {
+  const [isSpaceOpen, setIsSpaceOpen] = useState(false)
   const [isCoreOpen, setIsCoreOpen] = useState(false)
   // const [isUploadsOpen, setIsUploadsOpen] = useState(true)
-  const [isModelsOpen, setIsModelsOpen] = useState(true)
-  const [isBgOpen, setIsBgOpen] = useState(false)
+  const [isModelsOpen, setIsModelsOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>(ASSET_CATEGORIES[0].id)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isSaveMenuOpen, setIsSaveMenuOpen] = useState(false)
+  const saveMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (saveMenuRef.current && !saveMenuRef.current.contains(e.target as Node)) {
+        setIsSaveMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const addCustomAsset = (asset: any) => {
     addElement({
@@ -270,67 +298,263 @@ export default function Sidebar({
   }, [selectedCategory, searchQuery])
 
   return (
-    <aside className="w-full md:w-64 h-full border-r border-[var(--line)] bg-[var(--surface-strong)] flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-[var(--line)] flex justify-between items-center shrink-0">
-        <h3 className="font-bold text-[var(--sea-ink)] flex items-center gap-2">
-          <Box className="h-5 w-5 text-[var(--lagoon-deep)]" />
-          Asset Library
-        </h3>
-        {onClose && (
+    <aside className="w-full md:w-56 h-full border-r border-[var(--line)] bg-[var(--surface-strong)] flex flex-col overflow-hidden">
+      {/* Sidebar Header with Close (Mobile) */}
+      {onClose && (
+        <div className="p-2 border-b border-[var(--line)] flex justify-end items-center md:hidden shrink-0">
           <button
             onClick={onClose}
-            className="md:hidden p-1.5 rounded-lg text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--chip-bg)] transition"
-            title="Close Asset Library"
+            className="p-1 rounded-lg text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--chip-bg)] transition text-xs font-bold px-2.5 py-1 bg-[var(--sand)]"
+            title="Close Sidebar"
           >
-            <Trash2 className="hidden" /> {/* keep imports if needed */}
-            <span className="text-xs font-bold px-2 py-0.5 rounded bg-[var(--sand)]">Done</span>
+            Done
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto flex flex-col custom-scrollbar">
-        {/* Core Structures Accordion */}
+        {/* Project Actions as clean list options */}
+        {(onNewProject || onSaveProject || onOpenProjects || onGenerateReport) && (
+          <div className="p-2 border-b border-[var(--line)] flex flex-col gap-0.5 shrink-0 bg-[var(--surface-light)]/20">
+            {onNewProject && (
+              <button
+                onClick={onNewProject}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-xs font-semibold text-[var(--sea-ink)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition cursor-pointer group"
+              >
+                <div className="w-6 h-6 rounded-md bg-[var(--surface-light)] border border-[var(--line)] flex items-center justify-center shrink-0 group-hover:border-[var(--brand)] transition-colors">
+                  <Plus className="w-3.5 h-3.5 text-[var(--sea-ink-soft)] group-hover:text-[var(--brand)] transition-colors" />
+                </div>
+                <span>New</span>
+              </button>
+            )}
+            {onSaveProject && (
+              <div 
+                ref={saveMenuRef}
+                className="flex flex-col"
+              >
+                <button
+                  onClick={() => setIsSaveMenuOpen(prev => !prev)}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs font-semibold transition cursor-pointer group ${
+                    isSaveMenuOpen 
+                      ? 'bg-[var(--sand)] text-[var(--brand)] font-bold' 
+                      : 'text-[var(--sea-ink)] hover:bg-[var(--sand)] hover:text-[var(--brand)]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-6 h-6 rounded-md bg-[var(--surface-light)] border border-[var(--line)] flex items-center justify-center shrink-0 group-hover:border-[var(--brand)] transition-colors">
+                      <Save className="w-3.5 h-3.5 text-[var(--sea-ink-soft)] group-hover:text-[var(--brand)] transition-colors" />
+                    </div>
+                    <span>Save</span>
+                  </div>
+                  {onSaveAsProject && (
+                    <ChevronDown className={`w-3.5 h-3.5 text-[var(--sea-ink-soft)] transition-transform duration-200 ${isSaveMenuOpen ? 'rotate-180 text-[var(--brand)]' : ''}`} />
+                  )}
+                </button>
+
+                {/* Canva-style expanded drawer options directly within the panel */}
+                {onSaveAsProject && isSaveMenuOpen && (
+                  <div className="ml-5 pl-3 border-l-2 border-[var(--brand)]/30 my-1 flex flex-col gap-1 py-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <button
+                      onClick={() => {
+                        setIsSaveMenuOpen(false)
+                        onSaveProject()
+                      }}
+                      className="flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-medium text-[var(--sea-ink)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition text-left cursor-pointer group/btn"
+                    >
+                      <span>Save</span>
+                      <span className="text-[10px] text-[var(--sea-ink-soft)] group-hover/btn:text-[var(--brand)] font-normal">Quick save</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsSaveMenuOpen(false)
+                        onSaveAsProject()
+                      }}
+                      className="flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-medium text-[var(--sea-ink)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition text-left cursor-pointer group/btn"
+                    >
+                      <span>Save as...</span>
+                      <span className="text-[10px] text-[var(--sea-ink-soft)] group-hover/btn:text-[var(--brand)] font-normal">New copy</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            {onOpenProjects && (
+              <button
+                onClick={onOpenProjects}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-xs font-semibold text-[var(--sea-ink)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition cursor-pointer group"
+              >
+                <div className="w-6 h-6 rounded-md bg-[var(--surface-light)] border border-[var(--line)] flex items-center justify-center shrink-0 group-hover:border-[var(--brand)] transition-colors">
+                  <Folder className="w-3.5 h-3.5 text-[var(--sea-ink-soft)] group-hover:text-[var(--brand)] transition-colors" />
+                </div>
+                <span>Projects</span>
+              </button>
+            )}
+            {onGenerateReport && (
+              <button
+                onClick={onGenerateReport}
+                disabled={isCapturingReport}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-xs font-semibold text-[var(--sea-ink)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition cursor-pointer group disabled:opacity-50"
+              >
+                <div className="w-6 h-6 rounded-md bg-[var(--surface-light)] border border-[var(--line)] flex items-center justify-center shrink-0 group-hover:border-[var(--brand)] transition-colors">
+                  <FileText className="w-3.5 h-3.5 text-[var(--sea-ink-soft)] group-hover:text-[var(--brand)] transition-colors" />
+                </div>
+                <span>{isCapturingReport ? 'Generating...' : 'Generate Report'}</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Space & Environment Collapsible Section */}
+        <div className="border-b border-[var(--line)] shrink-0">
+          <button
+            onClick={() => setIsSpaceOpen(!isSpaceOpen)}
+            className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-light)] transition-colors"
+          >
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--sea-ink)]">
+              Space & Environment
+            </p>
+            {isSpaceOpen ? <ChevronDown className="h-4 w-4 text-[var(--sea-ink-soft)]" /> : <ChevronRight className="h-4 w-4 text-[var(--sea-ink-soft)]" />}
+          </button>
+
+          {isSpaceOpen && (
+            <div className="px-4 pb-4 flex flex-col gap-4 animate-in fade-in duration-150">
+              {boothConfig ? (
+                <>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs text-[var(--sea-ink)] font-semibold">Width</label>
+                      <span className="text-xs font-bold font-mono px-2 py-0.5 rounded bg-[var(--sand)] text-[var(--brand)] border border-[var(--line)]">
+                        {boothConfig.width}m
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={2}
+                      max={20}
+                      step={0.5}
+                      value={boothConfig.width}
+                      onChange={e => setBoothConfig?.({ ...boothConfig, width: parseFloat(e.target.value) })}
+                      className="w-full accent-[var(--brand)] cursor-pointer"
+                    />
+                    <div className="flex justify-between text-[9px] text-[var(--fg-dim)] font-mono">
+                      <span>2m</span>
+                      <span>10m</span>
+                      <span>20m</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs text-[var(--sea-ink)] font-semibold">Depth</label>
+                      <span className="text-xs font-bold font-mono px-2 py-0.5 rounded bg-[var(--sand)] text-[var(--brand)] border border-[var(--line)]">
+                        {boothConfig.depth}m
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={2}
+                      max={20}
+                      step={0.5}
+                      value={boothConfig.depth}
+                      onChange={e => setBoothConfig?.({ ...boothConfig, depth: parseFloat(e.target.value) })}
+                      className="w-full accent-[var(--brand)] cursor-pointer"
+                    />
+                    <div className="flex justify-between text-[9px] text-[var(--fg-dim)] font-mono">
+                      <span>2m</span>
+                      <span>10m</span>
+                      <span>20m</span>
+                    </div>
+                  </div>
+
+                  {/* Quick Presets */}
+                  <div className="flex flex-col gap-1.5 pt-2 border-t border-[var(--line)]">
+                    <span className="text-[10px] font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider">Quick Presets</span>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        { label: '3x3m', w: 3, d: 3 },
+                        { label: '4x3m', w: 4, d: 3 },
+                        { label: '6x4m', w: 6, d: 4 },
+                        { label: '6x5m', w: 6, d: 5 },
+                        { label: '8x6m', w: 8, d: 6 },
+                        { label: '10x8m', w: 10, d: 8 },
+                      ].map(preset => (
+                        <button
+                          key={preset.label}
+                          onClick={() => setBoothConfig?.({ ...boothConfig, width: preset.w, depth: preset.d })}
+                          className={`py-1 px-1.5 rounded-md text-[10px] font-bold border transition cursor-pointer ${
+                            boothConfig.width === preset.w && boothConfig.depth === preset.d
+                              ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
+                              : 'bg-[var(--sand)] text-[var(--sea-ink-soft)] border-[var(--line)] hover:border-[var(--brand)]'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-[var(--fg-dim)]">No space configuration available.</p>
+              )}
+
+              {/* Background Color within Space & Environment */}
+              <div className="pt-2 border-t border-[var(--line)] flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <Palette className="w-3.5 h-3.5 text-[var(--brand)]" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink-soft)]">
+                    Background Color
+                  </span>
+                </div>
+                {setBackgroundColor && backgroundColor && (
+                  <ColorPickerPanel initialColor={backgroundColor} onChange={setBackgroundColor} />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Core Structures Collapsible Section */}
         <div className="border-b border-[var(--line)] shrink-0">
           <button
             onClick={() => setIsCoreOpen(!isCoreOpen)}
             className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-light)] transition-colors"
           >
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink-soft)]">
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--sea-ink)]">
               Core Structures
             </p>
             {isCoreOpen ? <ChevronDown className="h-4 w-4 text-[var(--sea-ink-soft)]" /> : <ChevronRight className="h-4 w-4 text-[var(--sea-ink-soft)]" />}
           </button>
           {isCoreOpen && (
             <div className="px-4 pb-4 grid grid-cols-2 gap-2 animate-in fade-in duration-200">
-              <button onClick={addWall} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
+              <button onClick={addWall} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group cursor-pointer">
                 <Box className="h-4 w-4 mb-0.5 opacity-70 group-hover:opacity-100 transition-opacity" />
                 <span className="text-[10px] font-bold tracking-wide text-center">Wall</span>
               </button>
-              <button onClick={addPillar} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
+              <button onClick={addPillar} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group cursor-pointer">
                 <Box className="h-4 w-4 mb-0.5 opacity-70 group-hover:opacity-100 transition-opacity" />
                 <span className="text-[10px] font-bold tracking-wide text-center">Pillar</span>
               </button>
-              <button onClick={addCagedWall} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
+              <button onClick={addCagedWall} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group cursor-pointer">
                 <LayoutGrid className="h-4 w-4 mb-0.5 opacity-70 group-hover:opacity-100 transition-opacity" />
                 <span className="text-[10px] font-bold tracking-wide text-center">Caged Wall</span>
               </button>
-              <button onClick={addModularPanel} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
+              <button onClick={addModularPanel} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group cursor-pointer">
                 <LayoutGrid className="h-4 w-4 mb-0.5 opacity-70 group-hover:opacity-100 transition-opacity" />
                 <span className="text-[10px] font-bold tracking-wide text-center">Panel</span>
               </button>
-              <button onClick={addCagedPanel} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
+              <button onClick={addCagedPanel} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group cursor-pointer">
                 <LayoutGrid className="h-4 w-4 mb-0.5 opacity-70 group-hover:opacity-100 transition-opacity" />
                 <span className="text-[10px] font-bold tracking-wide text-center">Caged Roof</span>
               </button>
-              <button onClick={addWallWithDoor} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
-                <span className="text-base leading-none">🚪</span>
+              <button onClick={addWallWithDoor} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group cursor-pointer">
+                <DoorClosed className="h-4 w-4 mb-0.5 opacity-70 group-hover:opacity-100 transition-opacity" />
                 <span className="text-[10px] font-bold tracking-wide text-center">Door Wall</span>
               </button>
-              <button onClick={addWallWithWindow} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
-                <span className="text-base leading-none">🪟</span>
+              <button onClick={addWallWithWindow} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group cursor-pointer">
+                <AppWindow className="h-4 w-4 mb-0.5 opacity-70 group-hover:opacity-100 transition-opacity" />
                 <span className="text-[10px] font-bold tracking-wide text-center">Window Wall</span>
               </button>
-              <button onClick={add3DLogo} className="col-span-2 flex items-center justify-center gap-2 p-2.5 mt-1 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group">
+              <button onClick={add3DLogo} className="col-span-2 flex items-center justify-center gap-2 p-2.5 mt-1 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group cursor-pointer">
                 <PlusSquare className="h-4 w-4 opacity-70 group-hover:opacity-100 transition-opacity" />
                 <span className="text-[10px] font-bold tracking-wide">3D Logo</span>
               </button>
@@ -338,101 +562,13 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* My Custom Uploads Accordion 
-        <div className="border-b border-[var(--line)] shrink-0">
-          <button
-            onClick={() => setIsUploadsOpen(!isUploadsOpen)}
-            className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-light)] transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <Upload className="h-4 w-4 text-[var(--brand)]" />
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink)]">
-                My Custom Uploads
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono text-[var(--brand)] font-bold bg-[var(--sand)] px-1.5 py-0.5 rounded border border-[var(--line)]">
-                {customAssets.length}/5
-              </span>
-              {isUploadsOpen ? <ChevronDown className="h-4 w-4 text-[var(--sea-ink-soft)]" /> : <ChevronRight className="h-4 w-4 text-[var(--sea-ink-soft)]" />}
-            </div>
-          </button>
-
-          {isUploadsOpen && (
-            <div className="px-4 pb-4 flex flex-col gap-3 animate-in fade-in duration-200">
-              <label className="w-full py-2.5 px-3 bg-[var(--sand)] hover:bg-[var(--chip-bg)] border border-dashed border-[var(--brand)] rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-[var(--sea-ink)] cursor-pointer transition shadow-sm">
-                <Upload className="w-4 h-4 text-[var(--brand)]" />
-                <span>Upload 3D Asset (.glb)</span>
-                <input
-                  type="file"
-                  accept=".glb,.gltf"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      if (customAssets.length >= 5) {
-                        showAlert?.('You have reached the maximum limit of 5 custom 3D assets. Please delete an asset from "My Custom Uploads" to upload a new one.', 'warning', 'Upload Limit Reached');
-                        e.target.value = '';
-                        return;
-                      }
-                      onUploadCustomAsset?.(file);
-                      e.target.value = '';
-                    }
-                  }}
-                />
-              </label>
-
-              {customAssets.length === 0 ? (
-                <div className="text-xs text-center text-gray-400 py-4 px-2 border border-dashed border-[var(--line)] rounded-xl bg-black/5">
-                  <p className="font-bold text-[var(--sea-ink-soft)] text-[11px] mb-1">No custom models uploaded</p>
-                  <p className="text-[9px] text-gray-400">Upload up to 5 custom .glb files to place inside your booth.</p>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-                  {customAssets.map(asset => (
-                    <div
-                      key={asset.id}
-                      className="w-full p-2.5 rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-white hover:border-[var(--brand)] transition group flex items-center justify-between gap-2"
-                    >
-                      <button
-                        onClick={() => addCustomAsset(asset)}
-                        className="flex-1 flex items-center gap-2.5 min-w-0 text-left cursor-pointer"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-[var(--surface-strong)] border border-[var(--line)] flex items-center justify-center text-[10px] font-black text-[var(--brand)] shrink-0">
-                          3D
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-[var(--sea-ink)] truncate group-hover:text-[var(--brand)]">
-                            {asset.label}
-                          </p>
-                          <p className="text-[9px] text-gray-400 truncate mt-0.5 uppercase tracking-wider">
-                            Custom Model
-                          </p>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => onDeleteCustomAsset?.(asset.id)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer"
-                        title="Delete Custom Asset"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        */}
-
-        {/* 3D Models Accordion */}
+        {/* 3D Models Collapsible Section */}
         <div className={`border-b border-[var(--line)] flex flex-col ${isModelsOpen ? 'flex-1 min-h-[200px]' : 'shrink-0'}`}>
           <button
             onClick={() => setIsModelsOpen(!isModelsOpen)}
             className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-light)] transition-colors shrink-0"
           >
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink-soft)]">
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--sea-ink)]">
               3D Models
             </p>
             {isModelsOpen ? <ChevronDown className="h-4 w-4 text-[var(--sea-ink-soft)]" /> : <ChevronRight className="h-4 w-4 text-[var(--sea-ink-soft)]" />}
@@ -446,7 +582,9 @@ export default function Sidebar({
                 className="w-full p-2 bg-[var(--surface-strong)] border border-[var(--line)] rounded-lg text-xs font-bold text-[var(--sea-ink)] outline-none focus:border-[var(--lagoon)] shrink-0"
               >
                 <option value="all">All Categories</option>
-                {/* <option value="custom-uploads">⭐ My Uploads ({customAssets.length}/5)</option> */}
+                {customAssets && customAssets.length > 0 && (
+                  <option value="custom-uploads">My Uploads ({customAssets.length}/5)</option>
+                )}
                 {ASSET_CATEGORIES.map(c => (
                   <option key={c.id} value={c.id}>{c.label}</option>
                 ))}
@@ -466,10 +604,7 @@ export default function Sidebar({
               <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar min-h-0">
                 {selectedCategory === 'custom-uploads' ? (
                   customAssets.length === 0 ? (
-                    <div className="text-xs text-center text-gray-400 py-6 px-2 border border-dashed border-[var(--line)] rounded-xl">
-                      <p className="font-bold text-[var(--sea-ink-soft)] mb-1">No custom models yet</p>
-                      <p className="text-[10px] text-gray-400">Click "Upload 3D Asset" above to add up to 5 custom .glb files.</p>
-                    </div>
+                    <div className="text-xs text-center text-gray-400 py-4">No custom models uploaded</div>
                   ) : (
                     customAssets.map(asset => (
                       <div
@@ -484,7 +619,7 @@ export default function Sidebar({
                             3D
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-[var(--sea-ink)] truncate group-hover:text-[var(--lagoon-deep)]">
+                            <p className="text-xs font-bold text-[var(--sea-ink)] truncate group-hover:text-[var(--brand)]">
                               {asset.label}
                             </p>
                             <p className="text-[9px] text-gray-400 truncate mt-0.5 uppercase tracking-wider">
@@ -492,13 +627,15 @@ export default function Sidebar({
                             </p>
                           </div>
                         </button>
-                        <button
-                          onClick={() => onDeleteCustomAsset?.(asset.id)}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer"
-                          title="Delete Custom Asset"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {onDeleteCustomAsset && (
+                          <button
+                            onClick={() => onDeleteCustomAsset(asset.id)}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer"
+                            title="Delete Custom Asset"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     ))
                   )
@@ -509,7 +646,7 @@ export default function Sidebar({
                     <button
                       key={asset.id}
                       onClick={() => addAsset((asset as any).categoryFolder || asset.category, asset.id)}
-                      className="w-full text-left p-2.5 rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-white hover:border-[var(--lagoon)] transition group flex items-center gap-3"
+                      className="w-full text-left p-2.5 rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-white hover:border-[var(--lagoon)] transition group flex items-center gap-3 cursor-pointer"
                     >
                       <div className="w-8 h-8 rounded-lg bg-[var(--surface-strong)] border border-[var(--line)] flex items-center justify-center shrink-0 p-1 text-[var(--sea-ink)] group-hover:border-[var(--lagoon)] transition-colors">
                         <ArchitecturalSymbolSVG
@@ -530,27 +667,6 @@ export default function Sidebar({
                   ))
                 )}
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* Background Color Accordion */}
-        <div className="shrink-0">
-          <button
-            onClick={() => setIsBgOpen(!isBgOpen)}
-            className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-light)] transition-colors"
-          >
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink-soft)]">
-              Background Color
-            </p>
-            {isBgOpen ? <ChevronDown className="h-4 w-4 text-[var(--sea-ink-soft)]" /> : <ChevronRight className="h-4 w-4 text-[var(--sea-ink-soft)]" />}
-          </button>
-
-          {isBgOpen && (
-            <div className="px-4 pb-4 animate-in fade-in duration-200">
-              {setBackgroundColor && backgroundColor && (
-                <ColorPickerPanel initialColor={backgroundColor} onChange={setBackgroundColor} />
-              )}
             </div>
           )}
         </div>

@@ -21,7 +21,7 @@ function RootComponent() {
 
   return (
     <>
-      {!isDashboard && <Header />}
+      {!(isEditor || isDashboard) && <Header />}
       <main>
         <Outlet />
       </main>

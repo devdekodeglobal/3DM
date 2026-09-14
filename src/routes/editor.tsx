@@ -1,5 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Sidebar from '../components/editor/Sidebar'
 import Canvas from '../components/editor/Canvas'
 import WallCanvas from '../components/editor/WallCanvas'
@@ -7,7 +7,8 @@ import Properties from '../components/editor/Properties'
 import Preview3D from '../components/editor/Preview3D'
 import ColorPickerPanel from '../components/editor/ColorPickerPanel'
 import RoofCanvas from '../components/editor/RoofCanvas'
-import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil, LayoutGrid, Sliders, Monitor } from 'lucide-react'
+import UserMenuDropdown from '../components/UserMenuDropdown'
+import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Save, LogIn, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil, LayoutGrid, Sliders, Monitor } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
@@ -65,67 +66,6 @@ function getInitialData() {
   return { config, elements: parsedElements, id: savedId, name: savedName };
 }
 
-// Inline component to edit booth dimensions without resetting the design
-function EditSpaceDimensions({ boothConfig, setBoothConfig }: { boothConfig: BoothConfig | null, setBoothConfig: (c: any) => void }) {
-  const [open, setOpen] = React.useState(false)
-  const [w, setW] = React.useState(boothConfig?.width ?? 6)
-  const [d, setD] = React.useState(boothConfig?.depth ?? 5)
-  const [pos, setPos] = React.useState({ top: 0, left: 0 })
-  const btnRef = React.useRef<HTMLButtonElement>(null)
-
-  if (!boothConfig) return null
-
-  const handleOpen = () => {
-    setW(boothConfig.width)
-    setD(boothConfig.depth)
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect()
-      setPos({ top: rect.bottom + 6, left: rect.left })
-    }
-    setOpen(true)
-  }
-
-  const handleApply = () => {
-    setBoothConfig({ ...boothConfig, width: w, depth: d })
-    setOpen(false)
-  }
-
-  return (
-    <>
-      <button
-        ref={btnRef}
-        onClick={handleOpen}
-        className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--sand)] text-[var(--sea-ink)] text-xs font-bold transition hover:bg-[var(--lagoon)] hover:text-white"
-      >
-        Edit Space
-      </button>
-      {open && (
-        <>
-          {/* Backdrop to close on outside click */}
-          <div className="fixed inset-0 z-[98]" onClick={() => setOpen(false)} />
-          <div
-            style={{ top: pos.top, left: pos.left }}
-            className="fixed z-[99] bg-[var(--bg-base)] border border-[var(--line)] rounded-xl shadow-2xl p-4 flex flex-col gap-3 w-56 animate-in fade-in slide-in-from-top-2 duration-150"
-          >
-            <p className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider">Space Dimensions</p>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-[var(--fg-dim)] font-semibold">Width: <span className="text-[var(--brand)]">{w}m</span></label>
-              <input type="range" min={2} max={20} step={0.5} value={w} onChange={e => setW(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-[var(--fg-dim)] font-semibold">Depth: <span className="text-[var(--brand)]">{d}m</span></label>
-              <input type="range" min={2} max={20} step={0.5} value={d} onChange={e => setD(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
-            </div>
-            <div className="flex gap-2 mt-1">
-              <button onClick={() => setOpen(false)} className="flex-1 rounded-lg py-1.5 text-xs font-bold bg-[var(--sand)] text-[var(--sea-ink)] hover:bg-gray-200 transition">Cancel</button>
-              <button onClick={handleApply} className="flex-1 rounded-lg py-1.5 text-xs font-bold bg-[var(--brand)] text-white hover:bg-[var(--brand-h)] transition">Apply</button>
-            </div>
-          </div>
-        </>
-      )}
-    </>
-  )
-}
 
 
 function EditorPage() {
@@ -170,8 +110,6 @@ function EditorPage() {
         const current = localStorage.getItem('current-project-id')
         if (current && res?.some(p => p.id === current)) {
           setSelectedProjectId(current)
-        } else if (res && res.length > 0) {
-          setSelectedProjectId(res[0].id)
         }
       }).catch(console.error)
     }
@@ -289,11 +227,6 @@ function EditorPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [gridVisible, setGridVisible] = useState(true)
   const [currentDesignId, setCurrentDesignId] = useState<string | null>(initialData.id || null)
-  const [autoSaveToCloud, setAutoSaveToCloud] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem('auto-save-cloud') === 'true';
-  })
-  const [cloudSyncStatus, setCloudSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   // Sync id and name to localStorage
   useEffect(() => {
@@ -320,7 +253,7 @@ function EditorPage() {
   const [mobileScreenBannerDismissed, setMobileScreenBannerDismissed] = useState(false)
   const [splitWidth, setSplitWidth] = useState(60)
   const splitContainerRef = useRef<HTMLDivElement>(null)
-  const [is3DGenerated, setIs3DGenerated] = useState(false)
+  const [is3DGenerated, setIs3DGenerated] = useState(true)
   const [editingWallId, setEditingWallId] = useState<string | null>(null)
   const [editingRoof, setEditingRoof] = useState(false)
   const [blueprintView, setBlueprintView] = useState<'perspective' | 'top' | 'north' | 'south' | 'east' | 'west'>('perspective')
@@ -372,28 +305,34 @@ function EditorPage() {
       return
     }
 
-    const projectId = selectedProjectId || localStorage.getItem('current-project-id')
-    if (!projectId && !currentDesignId) {
-      showAlert('No active project selected. Return to dashboard or select one below.', 'error', 'Save Failed')
-      return
-    }
-
     setIsCloudSaving(true)
     try {
       if (currentDesignId) {
-        // If updating an existing design, it should technically stay in its current project
-        // unless we want to support moving it. For now, updateDesign doesn't change project_id.
-        await updateDesign(currentDesignId, {
+        // Only move design to a different project if the user explicitly selected one in the dropdown.
+        // If the dropdown is still "None" (empty string), don't touch project_id — the design stays where it is.
+        const updatePayload: { name?: string; config?: unknown; elements?: unknown; project_id?: string | null } = {
           name: projectName || 'Untitled Design',
           config: boothConfig,
-          elements: elements
-        })
-        showAlert('Design successfully updated!', 'success', 'Design Updated')
+          elements: elements,
+        }
+        if (selectedProjectId) {
+          // User explicitly picked a project folder — move design there
+          updatePayload.project_id = selectedProjectId
+          localStorage.setItem('current-project-id', selectedProjectId)
+        }
+        await updateDesign(currentDesignId, updatePayload)
+        showAlert('Design saved', 'success', 'Saved')
       } else {
-        const newDesign = await saveDesign(projectId!, projectName || 'Untitled Design', boothConfig, elements)
+        // No current design — create a new one
+        const projectId = selectedProjectId ? selectedProjectId : null
+        const newDesign = await saveDesign(projectId, projectName || 'Untitled Design', boothConfig, elements)
         setCurrentDesignId(newDesign.id)
-        localStorage.setItem('current-project-id', projectId!)
-        showAlert('Design successfully saved to the cloud!', 'success', 'Design Saved')
+        if (projectId) {
+          localStorage.setItem('current-project-id', projectId)
+        } else {
+          localStorage.removeItem('current-project-id')
+        }
+        showAlert('Design saved', 'success', 'Saved')
       }
       setShowSavePrompt(false)
     } catch (err: any) {
@@ -410,18 +349,18 @@ function EditorPage() {
       return
     }
 
-    const projectId = selectedProjectId || localStorage.getItem('current-project-id')
-    if (!projectId) {
-      showAlert('No active project selected.', 'error', 'Save Failed')
-      return
-    }
+    const projectId = selectedProjectId ? selectedProjectId : null
 
     setIsCloudSaving(true)
     try {
       const newDesign = await saveDesign(projectId, projectName || 'Untitled Design', boothConfig, elements)
       setCurrentDesignId(newDesign.id)
-      localStorage.setItem('current-project-id', projectId)
-      showAlert('Saved as a new design!', 'success', 'Design Saved')
+      if (projectId) {
+        localStorage.setItem('current-project-id', projectId)
+      } else {
+        localStorage.removeItem('current-project-id')
+      }
+      showAlert('Design saved', 'success', 'Saved')
       setShowSavePrompt(false)
     } catch (err: any) {
       console.error('Cloud save failed:', err)
@@ -433,8 +372,12 @@ function EditorPage() {
 
   const loadCloudDesign = (loadedConfig: any, loadedElements: any[], designId?: string, designName?: string) => {
     setBoothConfig(loadedConfig)
-    setElements(loadedElements)
-    setHistory([loadedElements])
+    if (!loadedConfig) {
+      setWizardStep(1)
+      localStorage.removeItem('stall-config')
+    }
+    setElements(loadedElements || [])
+    setHistory([loadedElements || []])
     setHistoryStep(0)
     if (designId) setCurrentDesignId(designId)
     if (designName) setProjectName(designName)
@@ -464,11 +407,9 @@ function EditorPage() {
     }
   }, [boothConfig, elements])
 
-  // Auto-save to cloud
+  // Auto-save to cloud (automatically syncs for all existing designs)
   useEffect(() => {
-    if (!autoSaveToCloud || !currentDesignId || !sessionUser) return;
-    
-    setCloudSyncStatus('saving');
+    if (!currentDesignId || !sessionUser) return;
     
     const handler = setTimeout(async () => {
       try {
@@ -477,15 +418,9 @@ function EditorPage() {
           config: boothConfig,
           elements: elements
         });
-        setCloudSyncStatus('saved');
-        setTimeout(() => {
-          setCloudSyncStatus(prev => prev === 'saved' ? 'idle' : prev);
-        }, 3000);
       } catch (err: any) {
         console.error('Auto-save to cloud failed:', err);
-        setCloudSyncStatus('error');
         if (err.message === 'Design not found' || err.message.includes('404')) {
-          setAutoSaveToCloud(false)
           setCurrentDesignId(null)
           localStorage.removeItem('current-design-id')
           showAlert('This design was deleted or no longer exists. Auto-save disabled. Please Save as New Design.', 'error', 'Design Missing')
@@ -494,7 +429,7 @@ function EditorPage() {
     }, 2500);
 
     return () => clearTimeout(handler);
-  }, [boothConfig, elements, projectName, autoSaveToCloud, currentDesignId, sessionUser]);
+  }, [boothConfig, elements, projectName, currentDesignId, sessionUser]);
 
   const saveToHistory = useCallback((newElements: any[]) => {
     setHistory(prev => {
@@ -566,7 +501,6 @@ function EditorPage() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedId, historyStep, history, editingWallId])
 
-  /*
   const submitExport = () => {
     setIsCapturingReport(true)
     setReportScreenshots({})
@@ -580,7 +514,6 @@ function EditorPage() {
 
     setCaptureQueue(queue)
   }
-  */
 
   useEffect(() => {
     if (!isCapturingReport) return;
@@ -615,6 +548,28 @@ function EditorPage() {
     }
   }, [isCapturingReport])
 
+  const handleNewProject = () => {
+    setConfirmModalState({
+      isOpen: true,
+      title: 'Create New Design',
+      message: 'Create a new design? Any unsaved changes in this session will be cleared.',
+      confirmText: 'New Design',
+      onConfirm: () => {
+        setBoothConfig(null)
+        setWizardStep(1)
+        setElements([])
+        saveToHistory([])
+        setCurrentDesignId(null)
+        setProjectName('My Design 1')
+        localStorage.removeItem('stall-config')
+        localStorage.removeItem('stall-elements')
+        localStorage.removeItem('current-design-id')
+        localStorage.removeItem('current-design-name')
+        setConfirmModalState(null)
+      }
+    })
+  }
+
   const clearAll = () => {
     setConfirmModalState({
       isOpen: true,
@@ -643,7 +598,7 @@ function EditorPage() {
 
   if (!boothConfig) {
     return (
-      <div key="setup-screen" suppressHydrationWarning className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] bg-[var(--bg-base)] p-4">
+      <div key="setup-screen" suppressHydrationWarning className="flex flex-col items-center justify-center min-h-screen bg-[var(--bg-base)] p-4">
         <div className="island-shell p-8 rounded-2xl w-full max-w-[500px] flex flex-col gap-6 text-center rise-in">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-2xl font-bold text-[var(--sea-ink)] display-title">Space Setup Wizard</h2>
@@ -655,13 +610,19 @@ function EditorPage() {
                 const T = 0.1 * 100
                 const wallProps = { material: 'White Paint' }
                 
-                setBoothConfig({ width: 6, depth: 5, wallThickness: 0.1, walls: { north: true, south: true, east: true, west: true }, floorType: 'hardwood', floorColor: '#eee' })
-                setElements([
+                const newConfig = { width: 6, depth: 5, wallThickness: 0.1, walls: { north: true, south: true, east: true, west: true }, floorType: 'hardwood', floorColor: '#eee' }
+                const initialWalls = [
                   { id: 'outer-north', type: 'wall', isOuter: true, x: W / 2, y: 0, width: W, thickness: T, rotation: 0, wallElements: [], ...wallProps },
                   { id: 'outer-south', type: 'wall', isOuter: true, x: W / 2, y: D, width: W, thickness: T, rotation: 0, wallElements: [], ...wallProps },
                   { id: 'outer-west', type: 'wall', isOuter: true, x: 0, y: D / 2, width: D, thickness: T, rotation: 90, wallElements: [], ...wallProps },
                   { id: 'outer-east', type: 'wall', isOuter: true, x: W, y: D / 2, width: D, thickness: T, rotation: 90, wallElements: [], ...wallProps }
-                ])
+                ]
+                setBoothConfig(newConfig)
+                setElements(initialWalls)
+                saveToHistory(initialWalls)
+                if (currentDesignId && sessionUser) {
+                  updateDesign(currentDesignId, { config: newConfig, elements: initialWalls }).catch(console.error)
+                }
               }}
               className="text-xs font-bold text-[var(--sea-ink-soft)] hover:text-[var(--brand)] transition px-3 py-1.5 rounded-full bg-[var(--sand)] hover:bg-gray-200"
             >
@@ -899,9 +860,13 @@ function EditorPage() {
                       }
                     });
 
-                    setBoothConfig({ width: setupWidth, depth: setupDepth, wallThickness: setupWallThickness, walls: setupWalls, floorType: setupFloorType, floorColor: setupFloorColor })
+                    const newConfig = { width: setupWidth, depth: setupDepth, wallThickness: setupWallThickness, walls: setupWalls, floorType: setupFloorType, floorColor: setupFloorColor }
+                    setBoothConfig(newConfig)
                     setElements(initialElements)
                     saveToHistory(initialElements)
+                    if (currentDesignId && sessionUser) {
+                      updateDesign(currentDesignId, { config: newConfig, elements: initialElements }).catch(console.error)
+                    }
                   }}
                   className="rounded-full bg-[var(--lagoon-deep)] flex-1 text-white font-bold py-3 hover:bg-[var(--palm)] transition flex items-center justify-center gap-2"
                 >
@@ -918,7 +883,7 @@ function EditorPage() {
 
   // Editor layout using split panels
   return (
-    <div key="editor-workspace" className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-[var(--bg-base)]">
+    <div key="editor-workspace" className="flex flex-col h-screen overflow-hidden bg-[var(--bg-base)]">
       {/* Mobile Experience Notice Banner */}
       {!mobileScreenBannerDismissed && (
         <div className="md:hidden bg-gradient-to-r from-amber-500/15 via-brand/10 to-amber-500/15 border-b border-amber-500/30 px-3 py-2 flex items-center justify-between gap-2 shrink-0 animate-in slide-in-from-top-1 duration-200">
@@ -940,165 +905,94 @@ function EditorPage() {
       )}
 
       {/* Top Bar */}
-      <div className="h-14 border-b border-[var(--line)] bg-[var(--surface-strong)] flex items-center justify-between px-4 z-20 shadow-sm transition-all shrink-0 overflow-x-auto whitespace-nowrap scrollbar-hide">
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="flex items-center gap-2 pr-4 border-r border-[var(--border)]">
-            <div className="px-2.5 py-1 rounded-md bg-[var(--brand)]/10 text-[var(--brand)] text-[10px] font-bold uppercase tracking-wider">Project</div>
-            <div className="flex items-center gap-2 pr-4 group">
-              <input
-                value={projectName}
-                onChange={e => setProjectName(e.target.value)}
-                className="font-extrabold text-[var(--fg)] tracking-tight bg-transparent border-none outline-none focus:ring-2 focus:ring-[var(--brand)]/50 rounded px-1.5 py-0.5 -ml-1.5 transition-all w-[180px] hover:bg-[var(--chip-bg)]"
-                title="Edit Project Name"
-              />
-              <Pencil className="w-3.5 h-3.5 text-[var(--fg-dim)] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" />
-            </div>
+      <div className="h-14 border-b border-[var(--line)] bg-[var(--surface-strong)] flex items-center justify-between px-4 z-30 shadow-sm transition-all shrink-0 whitespace-nowrap gap-3 relative">
+        {/* Left Section: Logo, Undo/Redo/Clear, View Toggles */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Link 
+            to={sessionUser ? "/dashboard" : "/"} 
+            className="flex items-center gap-1.5 hover:opacity-80 transition py-1 pr-2.5 border-r border-[var(--border)]" 
+            title={sessionUser ? "Back to Dashboard" : "Back to Home"}
+          >
+            <img src="/krafcfavicon.png" alt="krafc Logo" className="h-6 w-auto" />
+          </Link>
+
+          {/* Undo / Redo / Clear */}
+          <div className="flex items-center gap-0.5">
+            <button onClick={undo} disabled={historyStep <= 0} className="p-1.5 rounded-lg hover:bg-[var(--chip-bg)] text-[var(--sea-ink-soft)] disabled:opacity-30 transition cursor-pointer" title="Undo (Ctrl+Z)">
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+            <button onClick={redo} disabled={historyStep >= history.length - 1} className="p-1.5 rounded-lg hover:bg-[var(--chip-bg)] text-[var(--sea-ink-soft)] disabled:opacity-30 transition cursor-pointer" title="Redo (Ctrl+Shift+Z)">
+              <RotateCw className="h-3.5 w-3.5" />
+            </button>
+            <button onClick={clearAll} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-colors cursor-pointer" title="Clear Workspace">
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
           </div>
-          <div className="flex items-center gap-1">
-            <EditSpaceDimensions boothConfig={boothConfig} setBoothConfig={setBoothConfig} />
-            <div className="w-px h-6 bg-[var(--line)] mx-2" />
-            <button onClick={undo} disabled={historyStep <= 0} className="p-2 rounded-lg hover:bg-[var(--chip-bg)] text-[var(--sea-ink-soft)] disabled:opacity-30 transition" title="Undo (Ctrl+Z)">
-              <RotateCcw className="h-4 w-4" />
+
+          <div className="w-px h-5 bg-[var(--line)] mx-1" />
+
+          {/* View Toggles - desktop only */}
+          <div className="hidden md:flex items-center gap-1 bg-[var(--sand)] p-0.5 rounded-lg border border-[var(--line)]">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className={`p-1.5 rounded-md transition cursor-pointer ${sidebarOpen ? 'bg-[var(--brand)] text-white' : 'text-[var(--fg-soft)] hover:bg-[var(--bg-subtle)]'}`}
+              title="Toggle Sidebar"
+            >
+              <PanelLeftClose className="w-3.5 h-3.5" />
             </button>
-            <button onClick={redo} disabled={historyStep >= history.length - 1} className="p-2 rounded-lg hover:bg-[var(--chip-bg)] text-[var(--sea-ink-soft)] disabled:opacity-30 transition" title="Redo (Ctrl+Shift+Z)">
-              <RotateCw className="h-4 w-4" />
+            <button
+              onClick={() => setPropertiesOpen(!propertiesOpen)}
+              className={`p-1.5 rounded-md transition cursor-pointer ${propertiesOpen ? 'bg-[var(--brand)] text-white' : 'text-[var(--fg-soft)] hover:bg-[var(--bg-subtle)]'}`}
+              title="Toggle Properties"
+            >
+              <Settings className="w-3.5 h-3.5" />
             </button>
-            <div className="w-px h-6 bg-[var(--line)] mx-1" />
-            <button onClick={clearAll} className="p-2 rounded-lg hover:bg-red-50 text-red-500 transition-colors" title="Clear Workspace">
-              <Trash2 className="h-4 w-4" />
+            <button
+              onClick={() => setPreviewerOpen(!previewerOpen)}
+              className={`p-1.5 rounded-md transition cursor-pointer ${previewerOpen ? 'bg-[var(--brand)] text-white' : 'text-[var(--fg-soft)] hover:bg-[var(--bg-subtle)]'}`}
+              title="Toggle 3D Preview"
+            >
+              <PanelRightClose className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          {/* View Toggles - desktop only */}
-          <div className="hidden md:flex items-center gap-1 bg-[var(--sand)] p-1 rounded-xl border border-[var(--line)] mr-2">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className={`p-1.5 rounded-lg transition ${sidebarOpen ? 'bg-[var(--brand)] text-white' : 'text-[var(--fg-soft)] hover:bg-[var(--bg-subtle)]'}`}
-              title="Toggle Sidebar"
-            >
-              <PanelLeftClose className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setPropertiesOpen(!propertiesOpen)}
-              className={`p-1.5 rounded-lg transition ${propertiesOpen ? 'bg-[var(--brand)] text-white' : 'text-[var(--fg-soft)] hover:bg-[var(--bg-subtle)]'}`}
-              title="Toggle Properties"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setPreviewerOpen(!previewerOpen)}
-              className={`p-1.5 rounded-lg transition ${previewerOpen ? 'bg-[var(--brand)] text-white' : 'text-[var(--fg-soft)] hover:bg-[var(--bg-subtle)]'}`}
-              title="Toggle 3D Preview"
-            >
-              <PanelRightClose className="w-4 h-4" />
-            </button>
+        {/* Center Section: Centralized Design / Project Name */}
+        <div className="flex-1 flex justify-center items-center px-2 min-w-0">
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[var(--sand)]/80 border border-[var(--line)] group shadow-xs max-w-sm w-full justify-center">
+            <input
+              value={projectName}
+              onChange={e => setProjectName(e.target.value)}
+              className="font-bold text-xs text-[var(--fg)] tracking-tight bg-transparent border-none outline-none focus:ring-1 focus:ring-[var(--brand)]/50 rounded px-1.5 py-0.5 text-center transition-all flex-1 min-w-0 hover:bg-black/5 dark:hover:bg-white/5 truncate"
+              title="Click to rename design"
+              placeholder="Design Name"
+            />
+            <Pencil className="w-3 h-3 text-[var(--fg-dim)] opacity-40 group-hover:opacity-100 transition-opacity shrink-0 pointer-events-none" />
           </div>
+        </div>
 
-          {sessionUser ? (
-            <div className="flex items-center gap-2 border-r border-[var(--border)] pr-3 mr-2">
-              <button
-                onClick={() => setCloudDrawerOpen(true)}
-                className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
-                title="My Cloud Projects"
-              >
-                <Folder className="h-4 w-4 text-[var(--brand)]" /> Projects
-              </button>
-            </div>
-          ) : (
+        {/* Right Section: User & Auth */}
+        <div className="flex items-center gap-2 shrink-0">
+
+          {!sessionUser ? (
             <button
               onClick={() => setAuthModalOpen(true)}
-              className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1 mr-1"
+              className="px-3 py-1.5 rounded-lg bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer ml-1"
             >
-              <LogIn className="h-4 w-4 text-[var(--brand)]" /> Login
+              <LogIn className="h-3.5 w-3.5" />
+              <span>Login</span>
             </button>
-          )}
-
-          {sessionUser && currentDesignId && (
-            <div className="flex items-center gap-2 mr-2">
-              <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-[var(--fg-dim)] hover:text-[var(--fg-soft)] transition uppercase tracking-wider">
-                <input
-                  type="checkbox"
-                  checked={autoSaveToCloud}
-                  onChange={(e) => {
-                    setAutoSaveToCloud(e.target.checked)
-                    localStorage.setItem('auto-save-cloud', e.target.checked ? 'true' : 'false')
-                  }}
-                  className="w-3.5 h-3.5 rounded text-[var(--brand)] focus:ring-[var(--brand)] cursor-pointer"
-                />
-                Auto-Sync
-              </label>
-              {autoSaveToCloud && (
-                <span
-                  title={
-                    cloudSyncStatus === 'saving'
-                      ? 'Syncing changes to cloud...'
-                      : cloudSyncStatus === 'saved'
-                      ? 'All changes saved to cloud'
-                      : cloudSyncStatus === 'error'
-                      ? 'Sync error'
-                      : 'Auto-sync active'
-                  }
-                  className="inline-flex items-center justify-center w-4 h-4"
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                      cloudSyncStatus === 'saving'
-                        ? 'bg-amber-400 animate-ping'
-                        : cloudSyncStatus === 'saved'
-                        ? 'bg-emerald-500 scale-110'
-                        : cloudSyncStatus === 'error'
-                        ? 'bg-red-500'
-                        : 'bg-emerald-500/40'
-                    }`}
-                  />
-                </span>
-              )}
+          ) : (
+            <div className="flex items-center pl-1">
+              <UserMenuDropdown
+                user={sessionUser}
+                onSignedOut={() => {
+                  setSessionUser(null)
+                  setCurrentDesignId(null)
+                }}
+              />
             </div>
           )}
-
-
-          <button
-            onClick={() => {
-              setSaveAsMode(false);
-              setShowSavePrompt(true);
-            }}
-            className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
-          >
-            <Cloud className="h-4 w-4" /> Save Project
-          </button>
-          {/* <button
-            onClick={submitExport}
-            className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
-          >
-            <FileText className="h-4 w-4" /> Report
-          </button> */}
-          <button
-            onClick={() => {
-              if (!sessionUser) {
-                setAuthModalOpen(true)
-                return
-              }
-              setIs3DGenerated(true)
-            }}
-            className={`px-5 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition shadow-md ${
-              !sessionUser
-                ? 'bg-gray-700/80 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-600/50'
-                : 'bg-[var(--lagoon-deep)] text-white hover:bg-[var(--palm)]'
-            }`}
-            title={!sessionUser ? 'Login to generate and view 3D' : ''}
-          >
-            {!sessionUser ? (
-              <>
-                <Lock className="h-4 w-4 text-amber-400" /> Generate 3D
-              </>
-            ) : (
-              <>
-                <Box className="h-4 w-4" /> {is3DGenerated ? 'Live 3D Syncing' : 'Generate 3D'}
-              </>
-            )}
-          </button>
         </div>
       </div>
 
@@ -1115,10 +1009,51 @@ function EditorPage() {
               onViewChange={setBlueprintView}
               backgroundColor={backgroundColor}
               setBackgroundColor={setBackgroundColor}
+              boothConfig={boothConfig}
+              setBoothConfig={setBoothConfig}
               customAssets={customAssets}
               onUploadCustomAsset={handleUploadCustomAsset}
               onDeleteCustomAsset={handleDeleteCustomAsset}
               showAlert={showAlert}
+              onNewProject={handleNewProject}
+              onSaveProject={() => {
+                if (!sessionUser) {
+                  setAuthModalOpen(true)
+                  return
+                }
+                if (currentDesignId) {
+                  // Direct save current design
+                  handleCloudSave()
+                } else {
+                  // Unsaved design: prompt for name
+                  setSaveAsMode(false)
+                  const currentProj = localStorage.getItem('current-project-id')
+                  setSelectedProjectId(currentProj || '')
+                  setShowSavePrompt(true)
+                }
+              }}
+              onSaveAsProject={() => {
+                if (!sessionUser) {
+                  setAuthModalOpen(true)
+                  return
+                }
+                setSaveAsMode(true)
+                const currentProj = localStorage.getItem('current-project-id')
+                setSelectedProjectId(currentProj || '')
+                setShowSavePrompt(true)
+              }}
+              onOpenProjects={() => {
+                if (sessionUser) setCloudDrawerOpen(true)
+                else setAuthModalOpen(true)
+              }}
+              onGenerateReport={() => {
+                if (!sessionUser) {
+                  setAuthModalOpen(true)
+                  return
+                }
+                submitExport()
+              }}
+              isCapturingReport={isCapturingReport}
             />
           </div>
         )}
@@ -1237,7 +1172,7 @@ function EditorPage() {
               className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 animate-in fade-in duration-150"
               onClick={() => setMobileTab('canvas')}
             />
-            <div className="fixed inset-x-0 bottom-14 top-0 pt-16 z-40 flex flex-col shadow-xl border-r border-[var(--line)] bg-[var(--surface-strong)]">
+            <div className="fixed inset-x-0 bottom-14 top-0 z-40 flex flex-col shadow-xl border-r border-[var(--line)] bg-[var(--surface-strong)]">
               <Sidebar
                 addElement={(el) => {
                   addElement(el)
@@ -1247,11 +1182,50 @@ function EditorPage() {
                 onViewChange={setBlueprintView}
                 backgroundColor={backgroundColor}
                 setBackgroundColor={setBackgroundColor}
+                boothConfig={boothConfig}
+                setBoothConfig={setBoothConfig}
                 customAssets={customAssets}
                 onUploadCustomAsset={handleUploadCustomAsset}
                 onDeleteCustomAsset={handleDeleteCustomAsset}
                 showAlert={showAlert}
                 onClose={() => setMobileTab('canvas')}
+                onNewProject={handleNewProject}
+                onSaveProject={() => {
+                  if (!sessionUser) {
+                    setAuthModalOpen(true)
+                    return
+                  }
+                  if (currentDesignId) {
+                    handleCloudSave()
+                  } else {
+                    setSaveAsMode(false)
+                    const currentProj = localStorage.getItem('current-project-id')
+                    setSelectedProjectId(currentProj || '')
+                    setShowSavePrompt(true)
+                  }
+                }}
+                onSaveAsProject={() => {
+                  if (!sessionUser) {
+                    setAuthModalOpen(true)
+                    return
+                  }
+                  setSaveAsMode(true)
+                  const currentProj = localStorage.getItem('current-project-id')
+                  setSelectedProjectId(currentProj || '')
+                  setShowSavePrompt(true)
+                }}
+                onOpenProjects={() => {
+                  if (sessionUser) setCloudDrawerOpen(true)
+                  else setAuthModalOpen(true)
+                }}
+                onGenerateReport={() => {
+                  if (!sessionUser) {
+                    setAuthModalOpen(true)
+                    return
+                  }
+                  submitExport()
+                }}
+                isCapturingReport={isCapturingReport}
               />
             </div>
           </div>
@@ -1264,7 +1238,7 @@ function EditorPage() {
               className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 animate-in fade-in duration-150"
               onClick={() => setMobileTab('canvas')}
             />
-            <div className="fixed inset-x-0 bottom-14 top-0 pt-16 z-40 flex flex-col border-l border-[var(--line)] shadow-[-8px_0_20px_rgba(0,0,0,0.05)] bg-[var(--surface-strong)]">
+            <div className="fixed inset-x-0 bottom-14 top-0 z-40 flex flex-col border-l border-[var(--line)] shadow-[-8px_0_20px_rgba(0,0,0,0.05)] bg-[var(--surface-strong)]">
               <Properties
                 selectedElement={selectedElement}
                 onUpdate={handleUpdateElement}
@@ -1469,90 +1443,66 @@ function EditorPage() {
       {/* Sleek Save Project Dialog */}
       {showSavePrompt && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl p-6 shadow-2xl transition-all">
+          <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-[var(--border)] dark:border-white/10 bg-[var(--bg-card)] dark:bg-black/60 backdrop-blur-xl p-6 shadow-2xl transition-all text-[var(--fg)] dark:text-white">
             <button
               onClick={() => setShowSavePrompt(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition"
+              className="absolute top-4 right-4 p-1.5 rounded-full text-[var(--fg-dim)] dark:text-white/50 hover:text-[var(--fg)] dark:hover:text-white hover:bg-[var(--bg-subtle)] dark:hover:bg-white/10 transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-lg font-bold font-[Outfit] text-white mb-4">Save Your Design</h3>
+            <h3 className="text-lg font-bold font-[Outfit] text-[var(--fg)] dark:text-white mb-4">
+              {saveAsMode ? 'Save As New Design' : 'Save Design'}
+            </h3>
 
-            {currentDesignId && !saveAsMode ? (
-              <div className="space-y-3">
-                <button
-                  onClick={handleCloudSave}
-                  disabled={isCloudSaving}
-                  className="w-full bg-[var(--lagoon-deep)] hover:bg-[var(--palm)] text-white text-xs font-bold py-3.5 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black tracking-wider uppercase text-[var(--fg-dim)] dark:text-white/70 block">
+                  Project
+                </label>
+                <select
+                  value={selectedProjectId}
+                  onChange={(e) => setSelectedProjectId(e.target.value)}
+                  className="w-full bg-[var(--surface-light)] dark:bg-white/5 border border-[var(--border)] dark:border-white/10 text-[var(--fg)] dark:text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] transition appearance-none cursor-pointer"
                 >
-                  <Cloud className="w-5 h-5" />
-                  {isCloudSaving ? 'Saving...' : 'Update Current Design'}
+                  <option value="" className="bg-[var(--bg-card)] dark:bg-black text-[var(--fg)] dark:text-white">None</option>
+                  {userProjects.map(p => (
+                    <option key={p.id} value={p.id} className="bg-[var(--bg-card)] dark:bg-black text-[var(--fg)] dark:text-white">{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black tracking-wider uppercase text-[var(--fg-dim)] dark:text-white/70 block">
+                  Design Name
+                </label>
+                <input
+                  type="text"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  className="w-full bg-[var(--surface-light)] dark:bg-white/5 border border-[var(--border)] dark:border-white/10 text-[var(--fg)] dark:text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] transition"
+                  placeholder="E.g., Tech Summit 2026 Stand"
+                />
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <button
+                  onClick={saveAsMode ? handleCloudSaveAs : handleCloudSave}
+                  disabled={isCloudSaving}
+                  className="w-full bg-[#4f46e5] hover:bg-[#4338ca] active:bg-[#3730a3] text-white text-xs font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4 text-white" />
+                  <span className="text-white">{isCloudSaving ? 'Saving...' : sessionUser ? (saveAsMode ? 'Save As' : 'Save') : 'Login to Save'}</span>
                 </button>
+                
                 <button
-                  onClick={() => setSaveAsMode(true)}
+                  onClick={() => setShowSavePrompt(false)}
                   disabled={isCloudSaving}
-                  className="w-full bg-white/5 hover:bg-white/10 text-white text-xs font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer border border-white/10 disabled:opacity-50"
+                  className="w-full bg-transparent text-[var(--fg-dim)] dark:text-white/50 hover:text-[var(--fg)] dark:hover:text-white text-[11px] font-semibold py-2 px-4 transition cursor-pointer"
                 >
-                  Save as New Design
+                  Cancel
                 </button>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black tracking-wider uppercase text-white/70 block">
-                    Project Name
-                  </label>
-                  <select
-                    value={selectedProjectId}
-                    onChange={(e) => setSelectedProjectId(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] transition appearance-none cursor-pointer"
-                    disabled={userProjects.length === 0}
-                  >
-                    {userProjects.length === 0 ? (
-                      <option value="" disabled>Loading projects...</option>
-                    ) : (
-                      userProjects.map(p => (
-                        <option key={p.id} value={p.id} className="bg-black/90 text-white">{p.name}</option>
-                      ))
-                    )}
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black tracking-wider uppercase text-white/70 block">
-                    Design Name
-                  </label>
-                  <input
-                    type="text"
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] transition"
-                    placeholder="E.g., Tech Summit 2026 Stand"
-                  />
-                </div>
-
-                <div className="space-y-3 pt-2">
-                  <button
-                    onClick={currentDesignId ? handleCloudSaveAs : handleCloudSave}
-                    disabled={isCloudSaving}
-                    className="w-full bg-[var(--lagoon-deep)] hover:bg-[var(--palm)] text-white text-xs font-bold py-3.5 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
-                  >
-                    <Cloud className="w-5 h-5" />
-                    {isCloudSaving ? 'Saving...' : sessionUser ? (currentDesignId ? 'Save as New Design' : 'Save to Cloud') : 'Login to Cloud Save'}
-                  </button>
-                  
-                  {currentDesignId && (
-                    <button
-                      onClick={() => setSaveAsMode(false)}
-                      disabled={isCloudSaving}
-                      className="w-full bg-transparent text-white/50 hover:text-white text-[10px] font-bold py-2 px-4 transition uppercase tracking-wider"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
+            </div>
                 {/* 
                 <div className="text-[10px] font-black tracking-wider uppercase text-white/50 pt-3 block border-t border-white/10">
                   Export 3D Model Formats
@@ -1571,7 +1521,7 @@ function EditorPage() {
                         const url = URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
-                        link.download = `${projectName.replace(/\\s+/g, '_')}_booth.glb`;
+                        link.download = `${projectName.replace(/\\s+/g, '_')}_space.glb`;
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
@@ -1601,7 +1551,7 @@ function EditorPage() {
                         const url = URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
-                        link.download = `${projectName.replace(/\\s+/g, '_')}_booth.obj`;
+                        link.download = `${projectName.replace(/\\s+/g, '_')}_space.obj`;
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
@@ -1625,15 +1575,19 @@ function EditorPage() {
       )}
       {/* Custom Alert/Notification Modal */}
       {toastModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div 
+          className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={() => setToastModal(null)}
+        >
           <div 
-            className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-[#181a1d]/95 backdrop-blur-xl p-6 shadow-2xl transition-all text-center flex flex-col items-center"
-            style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.5)' }}
+            className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-[var(--border)] dark:border-white/10 bg-[var(--bg-card)] dark:bg-[#181a1d]/95 backdrop-blur-xl p-6 shadow-2xl transition-all text-center flex flex-col items-center text-[var(--fg)] dark:text-white"
+            style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.35)' }}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3 shadow-lg ${
-              toastModal.type === 'error' ? 'bg-red-500/10 border border-red-500/20 text-red-400' :
-              toastModal.type === 'success' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' :
-              toastModal.type === 'warning' ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400' :
+              toastModal.type === 'error' ? 'bg-red-500/10 border border-red-500/20 text-red-500 dark:text-red-400' :
+              toastModal.type === 'success' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400' :
+              toastModal.type === 'warning' ? 'bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400' :
               'bg-[var(--brand)]/10 border border-[var(--brand)]/20 text-[var(--brand)]'
             }`}>
               {toastModal.type === 'error' ? <AlertCircle className="w-6 h-6" /> :
@@ -1642,19 +1596,19 @@ function EditorPage() {
                <Info className="w-6 h-6" />}
             </div>
 
-            <h3 className="text-base font-bold font-[Outfit] text-white mb-1">
+            <h3 className="text-base font-bold font-[Outfit] text-[var(--fg)] dark:text-white mb-1">
               {toastModal.title || (toastModal.type === 'error' ? 'Error' : toastModal.type === 'success' ? 'Success' : toastModal.type === 'warning' ? 'Notice' : 'Information')}
             </h3>
 
-            <p className="text-xs text-gray-300 mb-5 leading-relaxed">
+            <p className="text-xs text-[var(--fg-dim)] dark:text-gray-300 mb-5 leading-relaxed">
               {toastModal.message}
             </p>
 
             <button
               onClick={() => setToastModal(null)}
-              className="w-full py-2.5 px-4 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
+              className="w-full py-2.5 px-4 bg-[#4f46e5] hover:bg-[#4338ca] active:bg-[#3730a3] text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
             >
-              Got it
+              <span className="text-white font-bold">Got it</span>
             </button>
           </div>
         </div>

@@ -259,7 +259,7 @@ export default function RoofCanvas({ boothConfig, onSave, onClose }: RoofCanvasP
             <Text
               x={10}
               y={10}
-              text="BOOTH WALL BOUNDS"
+              text="SPACE WALL BOUNDS"
               fontSize={11}
               fontFamily="Outfit, Inter, sans-serif"
               fontStyle="bold"

@@ -1,27 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
-import { Menu, X, LogOut } from 'lucide-react'
-import ThemeToggle from './ThemeToggle'
+import { Menu, X } from 'lucide-react'
+import UserMenuDropdown from './UserMenuDropdown'
 import { getCurrentUser, signOut } from '../lib/authClient'
 import type { User } from '../lib/authClient'
 import { AuthModal } from './editor/AuthModal'
 import { AnimatedHeaderLogo } from './AnimatedHeaderLogo'
 
-function getInitials(user: User | null) {
-  if (!user) return '?'
-  const name = user.name
-  if (name) {
-    const parts = name.split(' ').filter(Boolean)
-    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    return name.substring(0, 2).toUpperCase()
-  }
-  if (user.email) {
-    const parts = user.email.split('@')[0].split(/[._-]/)
-    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    return user.email.substring(0, 2).toUpperCase()
-  }
-  return 'U'
-}
 
 export default function Header() {
   const [sessionUser, setSessionUser] = useState<User | null>(null)
@@ -57,35 +42,16 @@ export default function Header() {
             <Link to="/" className="nav-link" activeProps={{ className: 'nav-link is-active' }} activeOptions={{ exact: true }}>Home</Link>
             <Link to="/about" className="nav-link" activeProps={{ className: 'nav-link is-active' }}>Overview</Link>
             <Link to="/editor" className="nav-link" activeProps={{ className: 'nav-link is-active' }}>Editor</Link>
-            {sessionUser && (
-              <Link to="/dashboard" className="nav-link" activeProps={{ className: 'nav-link is-active' }}>Dashboard</Link>
-            )}
           </div>
 
           {/* Right side */}
           <div className="ml-auto flex items-center gap-3 sm:gap-4">
-            <ThemeToggle />
-
             {sessionUser ? (
-              <div className="flex items-center gap-1.5 sm:gap-2 p-1 bg-[var(--color-bg-card)] rounded-full border border-[var(--color-border)] shadow-sm">
-                <Link to="/dashboard" title="My Projects" className="transition hover:opacity-80 flex-shrink-0">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--lagoon)] to-[var(--brand)] text-white flex items-center justify-center text-[10px] font-bold shadow-inner" title={sessionUser.name || sessionUser.email}>
-                    {getInitials(sessionUser)}
-                  </div>
-                </Link>
-                <div className="w-[1px] h-4 bg-[var(--color-border)] mx-0.5"></div>
-                <button
-                  onClick={async () => { await signOut(); setSessionUser(null) }}
-                  className="p-1.5 text-[var(--fg-soft)] hover:text-red-500 hover:bg-red-500/10 rounded-full transition"
-                  title="Log Out"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
+              <UserMenuDropdown user={sessionUser} onSignedOut={() => setSessionUser(null)} />
             ) : (
               <button
                 onClick={() => setAuthModalOpen(true)}
-                className="text-xs font-bold text-[var(--fg-soft)] hover:text-[var(--brand)] transition whitespace-nowrap"
+                className="text-xs font-bold text-[var(--fg-soft)] hover:text-[var(--brand)] transition whitespace-nowrap cursor-pointer"
               >
                 Sign In
               </button>
@@ -109,7 +75,6 @@ export default function Header() {
               <Link to="/editor" className="text-[var(--fg)] font-bold text-lg py-2 border-b border-[var(--color-border)]" activeProps={{ className: 'text-[var(--brand)]' }}>Editor</Link>
               {sessionUser && (
                 <>
-                  <Link to="/dashboard" className="text-[var(--fg)] font-bold text-lg py-2 border-b border-[var(--color-border)]" activeProps={{ className: 'text-[var(--brand)]' }}>Dashboard</Link>
                   <button onClick={async () => { await signOut(); setSessionUser(null); setMobileMenuOpen(false) }} className="text-left font-bold text-lg py-2 text-red-500">Log Out</button>
                 </>
               )}

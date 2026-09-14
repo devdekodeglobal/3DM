@@ -20,7 +20,7 @@ export interface Project {
 
 export interface Design {
   id: string
-  project_id: string
+  project_id: string | null
   name: string
   config: string
   elements: string
@@ -240,7 +240,7 @@ export async function listDesigns(): Promise<Design[]> {
   return data.designs || []
 }
 
-export async function saveDesign(projectId: string, name: string, config: unknown, elements: unknown): Promise<Design> {
+export async function saveDesign(projectId: string | null, name: string, config: unknown, elements: unknown): Promise<Design> {
   const res = await fetch('/api/designs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -252,7 +252,7 @@ export async function saveDesign(projectId: string, name: string, config: unknow
   return data.design!
 }
 
-export async function updateDesign(id: string, updates: { project_id?: string; name?: string; config?: unknown; elements?: unknown }): Promise<Design> {
+export async function updateDesign(id: string, updates: { project_id?: string | null; name?: string; config?: unknown; elements?: unknown }): Promise<Design> {
   const res = await fetch(`/api/designs/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

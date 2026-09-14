@@ -142,6 +142,7 @@
   /* --- Legacy Variable Aliases (for code compatibility) --- */
   --brand: var(--color-brand);
   --brand-h: var(--color-brand-h);
+  --brand-hover: var(--color-brand-h);
   --brand-bg: var(--color-brand-bg);
   --accent: var(--color-accent);
   --accent-bg: var(--color-accent-bg);

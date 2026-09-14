@@ -1,13 +1,48 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
-import { getCurrentUser, listDesigns, listProjects, createProject, updateProject, deleteProject, deleteDesign, updateDesign, signOut, changePassword, deleteAccount, saveDesign, updateProfile, getDisplayName, type User, type Design, type Project } from '../lib/authClient'
-import { PlusCircle, Trash2, Calendar, LayoutGrid, Loader2, Box, Pencil, Check, X, Settings, LogOut, ShieldAlert, Key, Menu, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react'
+import { getCurrentUser, listDesigns, listProjects, createProject, updateProject, deleteProject, deleteDesign, updateDesign, changePassword, deleteAccount, saveDesign, updateProfile, getDisplayName, type User, type Design, type Project } from '../lib/authClient'
+import { 
+  Plus, 
+  FolderPlus, 
+  Folder, 
+  FileText, 
+  Trash2, 
+  LayoutGrid, 
+  Loader2, 
+  Box, 
+  Pencil, 
+  Check, 
+  X, 
+  Settings, 
+  ShieldAlert, 
+  Key, 
+  Menu, 
+  ChevronLeft, 
+  ChevronRight,
+  MoreVertical,
+  ExternalLink,
+  Search,
+  Sparkles,
+  Clock
+} from 'lucide-react'
 import { ConfirmModal } from '../components/editor/ConfirmModal'
 import { PromptModal } from '../components/editor/PromptModal'
 import { AnimatedHeaderLogo } from '../components/AnimatedHeaderLogo'
 import ThemeToggle from '../components/ThemeToggle'
+import UserMenuDropdown from '../components/UserMenuDropdown'
 
-export const Route = createFileRoute('/dashboard')({ component: DashboardPage })
+interface DashboardSearch {
+  tab?: 'projects' | 'settings'
+}
+
+export const Route = createFileRoute('/dashboard')({
+  validateSearch: (search: Record<string, unknown>): DashboardSearch => {
+    return {
+      tab: (search.tab as 'projects' | 'settings') || 'projects',
+    }
+  },
+  component: DashboardPage,
+})
 
 function timeAgo(dateStr: string): string {
   const normalized = dateStr.endsWith('Z') ? dateStr : dateStr.replace(' ', 'T') + 'Z'
@@ -22,12 +57,12 @@ function timeAgo(dateStr: string): string {
 }
 
 const CARD_GRADIENTS = [
-  'linear-gradient(135deg, #4f46e5 0%, #0891b2 100%)',
-  'linear-gradient(135deg, #7c3aed 0%, #db2777 100%)',
-  'linear-gradient(135deg, #0891b2 0%, #059669 100%)',
-  'linear-gradient(135deg, #d97706 0%, #dc2626 100%)',
-  'linear-gradient(135deg, #059669 0%, #0891b2 100%)',
-  'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+  'linear-gradient(135deg, #3730a3 0%, #1e1b4b 50%, #0f172a 100%)',
+  'linear-gradient(135deg, #1e3a8a 0%, #0f766e 100%)',
+  'linear-gradient(135deg, #4c1d95 0%, #1e1b4b 100%)',
+  'linear-gradient(135deg, #065f46 0%, #064e3b 100%)',
+  'linear-gradient(135deg, #831843 0%, #4c0519 100%)',
+  'linear-gradient(135deg, #1f2937 0%, #111827 100%)',
 ]
 
 function BoothMiniSVG({ config }: { config: any }) {
@@ -35,25 +70,63 @@ function BoothMiniSVG({ config }: { config: any }) {
   const d = config?.depth || 3
   const walls = config?.walls || {}
   const ratio = Math.max(w, d)
-  const sw = (w / ratio) * 80
-  const sh = (d / ratio) * 80
+  const sw = Math.min((w / ratio) * 72, 74)
+  const sh = Math.min((d / ratio) * 72, 74)
   const ox = (100 - sw) / 2
   const oy = (100 - sh) / 2
   return (
-    <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ opacity: 0.8 }}>
-      <rect width="100" height="100" fill="none" />
-      <rect x={ox} y={oy} width={sw} height={sh} fill="rgba(255,255,255,0.1)" rx="2" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-      {walls.north && <line x1={ox} y1={oy} x2={ox + sw} y2={oy} stroke="rgba(255,255,255,0.8)" strokeWidth="2.5" strokeLinecap="round" />}
-      {walls.south && <line x1={ox} y1={oy + sh} x2={ox + sw} y2={oy + sh} stroke="rgba(255,255,255,0.8)" strokeWidth="2.5" strokeLinecap="round" />}
-      {walls.east && <line x1={ox + sw} y1={oy} x2={ox + sw} y2={oy + sh} stroke="rgba(255,255,255,0.8)" strokeWidth="2.5" strokeLinecap="round" />}
-      {walls.west && <line x1={ox} y1={oy} x2={ox} y2={oy + sh} stroke="rgba(255,255,255,0.8)" strokeWidth="2.5" strokeLinecap="round" />}
-      <text x="50" y="96" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="6" fontFamily="Inter, sans-serif">{w}m x {d}m</text>
+    <svg viewBox="0 0 100 100" width="100%" height="100%" className="w-full h-full">
+      <defs>
+        <pattern id="grid-dots" width="10" height="10" patternUnits="userSpaceOnUse">
+          <circle cx="2" cy="2" r="0.8" fill="rgba(255,255,255,0.15)" />
+        </pattern>
+      </defs>
+      <rect width="100" height="100" fill="url(#grid-dots)" />
+      
+      {/* Space Floor */}
+      <rect 
+        x={ox} 
+        y={oy} 
+        width={sw} 
+        height={sh} 
+        fill="rgba(255,255,255,0.06)" 
+        rx="3" 
+        stroke="rgba(255,255,255,0.25)" 
+        strokeWidth="0.8" 
+        strokeDasharray="2,2" 
+      />
+      
+      {/* Walls */}
+      {walls.north && <line x1={ox} y1={oy} x2={ox + sw} y2={oy} stroke="#818cf8" strokeWidth="2.5" strokeLinecap="round" />}
+      {walls.south && <line x1={ox} y1={oy + sh} x2={ox + sw} y2={oy + sh} stroke="#818cf8" strokeWidth="2.5" strokeLinecap="round" />}
+      {walls.east && <line x1={ox + sw} y1={oy} x2={ox + sw} y2={oy + sh} stroke="#818cf8" strokeWidth="2.5" strokeLinecap="round" />}
+      {walls.west && <line x1={ox} y1={oy} x2={ox} y2={oy + sh} stroke="#818cf8" strokeWidth="2.5" strokeLinecap="round" />}
+      
+      {/* Space Badge */}
+      <rect x={50 - 18} y={oy + sh / 2 - 5} width={36} height={10} rx="5" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
+      <text x="50" y={oy + sh / 2 + 2.2} textAnchor="middle" fill="#fff" fontSize="4.5" fontWeight="600" fontFamily="Outfit, Inter, sans-serif">
+        {w}m × {d}m
+      </text>
     </svg>
   )
 }
 
-function DesignCard({ design, index, onOpen, onDeleteRequest, onRenameRequest }: {
-  design: Design; index: number; onOpen: () => void; onDeleteRequest: (id: string, name: string) => void; onRenameRequest: (id: string, name: string) => void
+function DesignCard({ 
+  design, 
+  index, 
+  onOpen, 
+  onDeleteRequest, 
+  onRenameRequest,
+  isMenuOpen,
+  onToggleMenu
+}: {
+  design: Design
+  index: number
+  onOpen: () => void
+  onDeleteRequest: (id: string, name: string) => void
+  onRenameRequest: (id: string, name: string) => void
+  isMenuOpen: boolean
+  onToggleMenu: () => void
 }) {
   const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length]
   const [isEditing, setIsEditing] = useState(false)
@@ -66,105 +139,154 @@ function DesignCard({ design, index, onOpen, onDeleteRequest, onRenameRequest }:
     onDeleteRequest(design.id, design.name)
   }
 
+  const handleStartRename = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsEditing(true)
+    setEditName(design.name)
+    onToggleMenu()
+  }
+
   return (
     <div
       onClick={onOpen}
-      className="group"
+      className={`group relative flex flex-col rounded-2xl cursor-pointer transition-all duration-300 border bg-[var(--bg-card)] hover:-translate-y-1.5 hover:shadow-xl hover:border-[#6366f1] ${
+        isMenuOpen ? 'z-40 ring-2 ring-[#6366f1]/30' : 'z-10'
+      }`}
       style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 16,
-        overflow: 'hidden',
-        cursor: 'pointer',
-        transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
-      }}
-      onMouseEnter={e => {
-        const el = e.currentTarget as HTMLElement
-        el.style.transform = 'translateY(-4px)'
-        el.style.boxShadow = '0 20px 40px rgba(0,0,0,0.3)'
-        el.style.borderColor = 'var(--border-brand)'
-      }}
-      onMouseLeave={e => {
-        const el = e.currentTarget as HTMLElement
-        el.style.transform = 'translateY(0)'
-        el.style.boxShadow = 'none'
-        el.style.borderColor = 'var(--border)'
+        borderColor: 'var(--border)',
       }}
     >
-      <div style={{ height: 140, background: gradient, position: 'relative', padding: 16 }}>
+      {/* Blueprint Visual Header */}
+      <div 
+        className="h-36 relative rounded-t-2xl p-3 flex items-center justify-center"
+        style={{ background: gradient }}
+      >
         <BoothMiniSVG config={config} />
-        <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', gap: 6 }} className="group-hover:opacity-100 opacity-0 transition-opacity">
+
+        {/* 3-Dot Dropdown Action */}
+        <div className="absolute top-2.5 right-2.5 z-50">
           <button
-            onClick={(e) => { e.stopPropagation(); setIsEditing(true); setEditName(design.name); }}
-            style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)',
-              color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', transition: 'background 0.2s',
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleMenu()
             }}
-            title="Edit name"
+            className="w-8 h-8 rounded-lg bg-black/40 hover:bg-black/70 backdrop-blur-md border border-white/15 text-white flex items-center justify-center transition-colors shadow-sm"
+            title="More actions"
           >
-            <Pencil size={14} />
+            <MoreVertical size={16} />
           </button>
-          <button
-            onClick={handleDelete}
-            style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)',
-              color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', transition: 'background 0.2s',
-            }}
-            title="Delete design"
-          >
-            <Trash2 size={14} />
-          </button>
+
+          {isMenuOpen && (
+            <div 
+              onClick={e => e.stopPropagation()}
+              className="absolute right-0 top-10 w-48 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl py-1.5 z-50 text-left animate-in fade-in zoom-in-95 duration-150"
+              style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.35)' }}
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onToggleMenu()
+                  onOpen()
+                }}
+                className="w-full px-3.5 py-2.5 text-xs font-semibold text-[var(--fg)] hover:bg-[var(--bg-subtle)] hover:text-[#6366f1] flex items-center gap-2.5 transition-colors"
+              >
+                <ExternalLink size={14} /> Open in Editor
+              </button>
+              <button
+                onClick={handleStartRename}
+                className="w-full px-3.5 py-2.5 text-xs font-semibold text-[var(--fg)] hover:bg-[var(--bg-subtle)] hover:text-[#6366f1] flex items-center gap-2.5 transition-colors"
+              >
+                <Pencil size={14} /> Rename
+              </button>
+              <div className="my-1 border-t border-[var(--border)]" />
+              <button
+                onClick={(e) => {
+                  onToggleMenu()
+                  handleDelete(e)
+                }}
+                className="w-full px-3.5 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-500/10 flex items-center gap-2.5 transition-colors"
+              >
+                <Trash2 size={14} /> Delete Design
+              </button>
+            </div>
+          )}
         </div>
       </div>
-      <div style={{ padding: '14px 16px' }}>
-        {isEditing ? (
-          <div style={{ display: 'flex', gap: 6, marginBottom: 6 }} onClick={e => e.stopPropagation()}>
-            <input 
-              autoFocus
-              value={editName}
-              onChange={e => setEditName(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  if (editName.trim()) { onRenameRequest(design.id, editName.trim()); }
-                  setIsEditing(false)
-                }
-                if (e.key === 'Escape') {
-                  setIsEditing(false)
-                }
-              }}
-              style={{
-                flex: 1, background: 'var(--surface-strong)', border: '1px solid var(--brand)',
-                color: 'white', fontSize: '0.9rem', borderRadius: 4, padding: '2px 6px',
-                outline: 'none', width: '100%'
-              }}
-            />
-            <button onClick={() => { if (editName.trim()) onRenameRequest(design.id, editName.trim()); setIsEditing(false) }} style={{ color: 'var(--brand)' }}>
-              <Check size={16} />
-            </button>
-            <button onClick={() => setIsEditing(false)} style={{ color: 'var(--fg-dim)' }}>
-              <X size={16} />
-            </button>
+
+      {/* Card Content Footer */}
+      <div className="p-4 flex flex-col flex-1 justify-between">
+        <div>
+          {isEditing ? (
+            <div className="flex items-center gap-1.5 mb-2" onClick={e => e.stopPropagation()}>
+              <input 
+                autoFocus
+                value={editName}
+                onChange={e => setEditName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    if (editName.trim()) { onRenameRequest(design.id, editName.trim()) }
+                    setIsEditing(false)
+                  }
+                  if (e.key === 'Escape') {
+                    setIsEditing(false)
+                  }
+                }}
+                className="flex-1 bg-[var(--bg)] border border-[#6366f1] text-[var(--fg)] text-sm rounded-lg px-2.5 py-1 outline-none"
+              />
+              <button 
+                onClick={() => { 
+                  if (editName.trim()) onRenameRequest(design.id, editName.trim())
+                  setIsEditing(false) 
+                }} 
+                className="p-1 text-[#6366f1] hover:bg-[#6366f1]/10 rounded"
+              >
+                <Check size={16} />
+              </button>
+              <button onClick={() => setIsEditing(false)} className="p-1 text-[var(--fg-dim)] hover:bg-[var(--bg-subtle)] rounded">
+                <X size={16} />
+              </button>
+            </div>
+          ) : (
+            <h3 className="font-semibold text-sm font-sans text-[var(--fg)] group-hover:text-[#6366f1] transition-colors line-clamp-1 mb-1">
+              {design.name}
+            </h3>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-[var(--fg-dim)] pt-2 border-t border-[var(--border)]/60">
+          <div className="flex items-center gap-1.5">
+            <Clock size={12} />
+            <span>{timeAgo(design.updated_at || design.created_at)}</span>
           </div>
-        ) : (
-          <h3 style={{ margin: '0 0 6px', fontSize: '0.95rem', fontWeight: 700, fontFamily: 'Outfit, sans-serif', color: 'var(--fg)' }}>
-            {design.name}
-          </h3>
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--fg-dim)', fontSize: '0.75rem' }}>
-          <Calendar size={11} />
-          <span>{timeAgo(design.updated_at || design.created_at)}</span>
+          <span className="text-[11px] font-medium text-[var(--fg-dim)] bg-[var(--bg-subtle)] px-2 py-0.5 rounded-md">
+            {config?.width && config?.depth ? `${config.width}x${config.depth}m` : '3D'}
+          </span>
         </div>
       </div>
     </div>
   )
 }
 
-function ProjectFolderCard({ project, onOpen, onDeleteRequest, onRenameRequest }: { project: Project; onOpen: () => void; onDeleteRequest: (id: string, name: string) => void; onRenameRequest: (id: string, name: string) => void }) {
+function ProjectFolderCard({ 
+  project, 
+  designCount,
+  onOpen, 
+  onDeleteRequest, 
+  onRenameRequest,
+  onNewDesignInProject,
+  isMenuOpen,
+  onToggleMenu
+}: { 
+  project: Project
+  designCount: number
+  onOpen: () => void
+  onDeleteRequest: (id: string, name: string) => void
+  onRenameRequest: (id: string, name: string) => void
+  onNewDesignInProject: () => void
+  isMenuOpen: boolean
+  onToggleMenu: () => void
+}) {
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(project.name)
 
@@ -173,75 +295,127 @@ function ProjectFolderCard({ project, onOpen, onDeleteRequest, onRenameRequest }
     onDeleteRequest(project.id, project.name)
   }
 
+  const handleStartRename = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsEditing(true)
+    setEditName(project.name)
+    onToggleMenu()
+  }
+
   return (
     <div
       onClick={onOpen}
-      className="group relative"
+      className={`group relative flex flex-col p-5 rounded-2xl cursor-pointer transition-all duration-300 border bg-[var(--bg-card)] hover:-translate-y-1.5 hover:shadow-xl hover:border-[#6366f1] ${
+        isMenuOpen ? 'z-40 ring-2 ring-[#6366f1]/30' : 'z-10'
+      }`}
       style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 16,
-        padding: 24,
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16
-      }}
-      onMouseEnter={e => {
-        const el = e.currentTarget as HTMLElement
-        el.style.transform = 'translateY(-4px)'
-        el.style.boxShadow = '0 10px 20px rgba(0,0,0,0.2)'
-        el.style.borderColor = 'var(--border-brand)'
-      }}
-      onMouseLeave={e => {
-        const el = e.currentTarget as HTMLElement
-        el.style.transform = 'translateY(0)'
-        el.style.boxShadow = 'none'
-        el.style.borderColor = 'var(--border)'
+        borderColor: 'var(--border)',
       }}
     >
-      <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 6 }} className="group-hover:opacity-100 opacity-0 transition-opacity">
+      {/* 3-Dot Menu */}
+      <div className="absolute top-4 right-4 z-50">
         <button
-          onClick={(e) => { e.stopPropagation(); setIsEditing(true); setEditName(project.name); }}
-          style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--fg-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          title="Edit project name"
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleMenu()
+          }}
+          className="w-8 h-8 rounded-lg bg-[var(--bg-subtle)] hover:bg-[var(--border)] text-[var(--fg-soft)] hover:text-[var(--fg)] flex items-center justify-center transition-colors"
+          title="More actions"
         >
-          <Pencil size={12} />
+          <MoreVertical size={16} />
         </button>
-        <button
-          onClick={handleDelete}
-          style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--fg-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          title="Delete project"
-        >
-          <Trash2 size={12} />
-        </button>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <LayoutGrid size={24} color="var(--brand)" />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {isEditing ? (
-            <div style={{ display: 'flex', gap: 6, marginBottom: 4 }} onClick={e => e.stopPropagation()}>
-              <input 
-                autoFocus value={editName} onChange={e => setEditName(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') { e.preventDefault(); if (editName.trim()) { onRenameRequest(project.id, editName.trim()); } setIsEditing(false); }
-                  if (e.key === 'Escape') setIsEditing(false);
+
+        {isMenuOpen && (
+          <div 
+            onClick={e => e.stopPropagation()}
+            className="absolute right-0 top-10 w-48 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl py-1.5 z-50 text-left animate-in fade-in zoom-in-95 duration-150"
+            style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.35)' }}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleMenu()
+                onOpen()
+              }}
+              className="w-full px-3.5 py-2.5 text-xs font-semibold text-[var(--fg)] hover:bg-[var(--bg-subtle)] hover:text-[#6366f1] flex items-center gap-2.5 transition-colors"
+            >
+              <ExternalLink size={14} /> Open Folder
+            </button>
+            {designCount < 2 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onToggleMenu()
+                  onNewDesignInProject()
                 }}
-                style={{ flex: 1, background: 'var(--surface-strong)', border: '1px solid var(--brand)', color: 'white', fontSize: '0.9rem', borderRadius: 4, padding: '2px 6px', outline: 'none', width: '100%' }}
+                className="w-full px-3.5 py-2.5 text-xs font-semibold text-[var(--fg)] hover:bg-[var(--bg-subtle)] hover:text-[#6366f1] flex items-center gap-2.5 transition-colors"
+              >
+                <Plus size={14} /> New Design
+              </button>
+            )}
+            <button
+              onClick={handleStartRename}
+              className="w-full px-3.5 py-2.5 text-xs font-semibold text-[var(--fg)] hover:bg-[var(--bg-subtle)] hover:text-[#6366f1] flex items-center gap-2.5 transition-colors"
+            >
+              <Pencil size={14} /> Rename
+            </button>
+            <div className="my-1 border-t border-[var(--border)]" />
+            <button
+              onClick={(e) => {
+                onToggleMenu()
+                handleDelete(e)
+              }}
+              className="w-full px-3.5 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-500/10 flex items-center gap-2.5 transition-colors"
+            >
+              <Trash2 size={14} /> Delete Folder
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-start gap-4 mb-4">
+        <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center flex-shrink-0 text-[#6366f1] group-hover:scale-110 transition-transform">
+          <Folder size={24} />
+        </div>
+        <div className="flex-1 min-w-0 pr-8">
+          {isEditing ? (
+            <div className="flex items-center gap-1.5 mb-1" onClick={e => e.stopPropagation()}>
+              <input 
+                autoFocus 
+                value={editName} 
+                onChange={e => setEditName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { 
+                    e.preventDefault()
+                    if (editName.trim()) { onRenameRequest(project.id, editName.trim()) }
+                    setIsEditing(false)
+                  }
+                  if (e.key === 'Escape') setIsEditing(false)
+                }}
+                className="flex-1 bg-[var(--bg)] border border-[#6366f1] text-[var(--fg)] text-sm rounded-lg px-2.5 py-1 outline-none"
               />
-              <button onClick={() => { if (editName.trim()) onRenameRequest(project.id, editName.trim()); setIsEditing(false) }} style={{ color: 'var(--brand)' }}><Check size={16} /></button>
-              <button onClick={() => setIsEditing(false)} style={{ color: 'var(--fg-dim)' }}><X size={16} /></button>
+              <button onClick={() => { if (editName.trim()) onRenameRequest(project.id, editName.trim()); setIsEditing(false) }} className="p-1 text-[#6366f1] hover:bg-[#6366f1]/10 rounded"><Check size={16} /></button>
+              <button onClick={() => setIsEditing(false)} className="p-1 text-[var(--fg-dim)] hover:bg-[var(--bg-subtle)] rounded"><X size={16} /></button>
             </div>
           ) : (
-            <h3 style={{ margin: 0, fontSize: '1.2rem', fontFamily: 'Outfit, sans-serif', color: 'var(--fg)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{project.name}</h3>
+            <h3 className="font-bold text-base font-sans text-[var(--fg)] group-hover:text-[#6366f1] transition-colors truncate">
+              {project.name}
+            </h3>
           )}
-          <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--fg-dim)' }}>
+          <p className="text-xs text-[var(--fg-dim)] mt-0.5">
             Created {timeAgo(project.created_at)}
           </p>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]/60 text-xs">
+        <span className="inline-flex items-center gap-1.5 font-medium text-[var(--fg-soft)] bg-[var(--bg-subtle)] px-2.5 py-1 rounded-lg">
+          <Box size={13} className="text-[#6366f1]" />
+          {designCount} / 2 Designs
+        </span>
+        <span className="text-[11px] text-[#6366f1] font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+          Explore folder &rarr;
+        </span>
       </div>
     </div>
   )
@@ -469,13 +643,33 @@ function SettingsTab({ user, onUserUpdate }: { user: User; onUserUpdate: (u: Use
 
 function DashboardPage() {
   const navigate = useNavigate()
+  const search = Route.useSearch()
   const [user, setUser] = useState<User | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [activeProject, setActiveProject] = useState<Project | null>(null)
   const [designs, setDesigns] = useState<Design[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'projects' | 'settings'>('projects')
-  const [sidebarOpen, setSidebarOpen] = useState(typeof window !== 'undefined' ? window.innerWidth > 768 : true)
+  const [activeTab, setActiveTab] = useState<'projects' | 'settings'>(search.tab || 'projects')
+
+  useEffect(() => {
+    if (search.tab && search.tab !== activeTab) {
+      setActiveTab(search.tab)
+    }
+  }, [search.tab])
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window === 'undefined') return true
+    const saved = localStorage.getItem('dashboard-sidebar-open')
+    if (saved !== null) return saved === 'true'
+    return true // Always open by default
+  })
+
+  const toggleSidebar = () => {
+    setSidebarOpen(prev => {
+      const next = !prev
+      localStorage.setItem('dashboard-sidebar-open', String(next))
+      return next
+    })
+  }
 
   const [confirmModalState, setConfirmModalState] = useState<{
     isOpen: boolean; title?: string; message: string; confirmText?: string; onConfirm: () => void
@@ -588,12 +782,12 @@ function DashboardPage() {
     setPromptModalState({
       isOpen: true,
       title: 'Name Project',
-      placeholder: 'e.g. CES 2027 Booth',
+      placeholder: 'e.g. CES 2027 Space',
       initialValue: `Project ${projects.length + 1}`,
       confirmText: 'Create Project',
       onConfirm: async (name: string) => {
         try {
-          const newProject = await createProject(name, 'Event Booth Designs')
+          const newProject = await createProject(name, 'Event Space Designs')
           setProjects(prev => [...prev, newProject])
           setActiveProject(newProject)
         } catch (err) {
@@ -604,27 +798,58 @@ function DashboardPage() {
     })
   }
 
-  const handleNewDesign = () => {
-    if (!activeProject) return
-    if (designs.filter(d => d.project_id === activeProject.id).length >= 2) {
-      alert("You have reached the maximum of 2 designs for this project.")
-      return
+  const [createMenuOpen, setCreateMenuOpen] = useState(false)
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const createMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (createMenuRef.current && !createMenuRef.current.contains(e.target as Node)) {
+        setCreateMenuOpen(false)
+      }
+      setActiveMenuId(null)
     }
-    
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [])
+
+  const handleCreateNewDesign = (targetProjectId?: string | null) => {
+    setCreateMenuOpen(false)
+    if (targetProjectId) {
+      const projDesigns = designs.filter(d => d.project_id === targetProjectId)
+      if (projDesigns.length >= 2) {
+        alert("This project folder already has the maximum of 2 designs.")
+        return
+      }
+    } else {
+      const standaloneCount = designs.filter(d => !d.project_id).length
+      if (standaloneCount >= 2) {
+        alert("You have reached the maximum of 2 standalone designs.")
+        return
+      }
+    }
+
     setPromptModalState({
       isOpen: true,
-      title: 'Name Design',
-      placeholder: 'e.g. 10x10 Island with Demo area',
-      initialValue: `Design ${designs.filter(d => d.project_id === activeProject.id).length + 1}`,
-      confirmText: 'Start Designing',
+      title: 'Name Your Design',
+      placeholder: 'e.g. Modern Space with LED Wall',
+      initialValue: `New Space Design`,
+      confirmText: 'Start Space Setup',
       onConfirm: async (name: string) => {
         try {
-          const newDesign = await saveDesign(activeProject.id, name, null, [])
+          // Pass null config and [] elements so editor triggers the Space Setup Wizard
+          const newDesign = await saveDesign(targetProjectId || null, name, null, [])
           localStorage.removeItem('stall-config')
           localStorage.setItem('stall-elements', '[]')
           localStorage.setItem('current-design-id', newDesign.id)
           localStorage.setItem('current-design-name', name)
-          localStorage.setItem('current-project-id', activeProject.id)
+          if (targetProjectId) {
+            localStorage.setItem('current-project-id', targetProjectId)
+          } else {
+            localStorage.removeItem('current-project-id')
+          }
           navigate({ to: '/editor' })
         } catch (err) {
           console.error("Failed to create blank design", err)
@@ -634,6 +859,11 @@ function DashboardPage() {
     })
   }
 
+  const handleNewDesign = () => {
+    if (!activeProject) return
+    handleCreateNewDesign(activeProject.id)
+  }
+
   if (loading || !user) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg)' }}>
@@ -641,6 +871,18 @@ function DashboardPage() {
       </div>
     )
   }
+
+  const filteredStandaloneDesigns = designs
+    .filter(d => !d.project_id)
+    .filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()))
+
+  const filteredProjects = projects.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+
+  const filteredActiveProjectDesigns = activeProject
+    ? designs
+        .filter(d => d.project_id === activeProject.id)
+        .filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : []
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
@@ -662,8 +904,8 @@ function DashboardPage() {
       >
         {/* Desktop Toggle Button */}
         <button 
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className={`hidden md:flex absolute -right-4 top-6 w-8 h-8 bg-[var(--bg-card)] border border-[var(--border)] rounded-full items-center justify-center text-[var(--fg-soft)] hover:text-[var(--brand)] hover:border-[var(--brand)] transition-all z-50 shadow-sm ${
+          onClick={toggleSidebar}
+          className={`hidden md:flex absolute -right-4 top-6 w-8 h-8 bg-[var(--bg-card)] border border-[var(--border)] rounded-full items-center justify-center text-[var(--fg-soft)] hover:text-[#4f46e5] hover:border-[#4f46e5] transition-all z-50 shadow-sm ${
             !sidebarOpen ? 'translate-x-4' : ''
           }`}
           title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
@@ -673,19 +915,111 @@ function DashboardPage() {
 
         {/* Inner Content Wrapper */}
         <div className="w-[260px] h-full flex flex-col overflow-hidden transition-opacity duration-300" style={{ opacity: sidebarOpen ? 1 : 0, pointerEvents: sidebarOpen ? 'auto' : 'none', padding: '24px 0' }}>
-          <div style={{ padding: '0 24px', marginBottom: 40 }}>
+          <div style={{ padding: '0 24px', marginBottom: 24 }}>
             <AnimatedHeaderLogo />
           </div>
 
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 16px' }}>
+          {/* "+ Create new" Button in Left Nav Bar */}
+          <div ref={createMenuRef} className="relative px-4 mb-6">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setCreateMenuOpen(prev => !prev)
+              }}
+              className="w-full h-11 rounded-xl bg-gradient-to-r from-[#4f46e5] to-[#6366f1] hover:from-[#4338ca] hover:to-[#4f46e5] text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              style={{
+                boxShadow: '0 4px 14px 0 rgba(79, 70, 229, 0.35)'
+              }}
+            >
+              <Plus size={18} strokeWidth={2.5} />
+              <span>Create new</span>
+            </button>
+
+            {/* Create New Dropdown */}
+            {createMenuOpen && (
+              <div 
+                onClick={e => e.stopPropagation()}
+                className="absolute left-4 right-4 top-13 mt-2 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150"
+              >
+                <div className="px-3 py-1.5 text-[10px] font-bold text-[var(--fg-dim)] uppercase tracking-wider">
+                  New Design
+                </div>
+                <button
+                  disabled={designs.filter(d => !d.project_id).length >= 2}
+                  onClick={() => handleCreateNewDesign(null)}
+                  className={`w-full px-3 py-2 text-left rounded-lg group flex items-start gap-2.5 transition-colors ${
+                    designs.filter(d => !d.project_id).length >= 2 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[var(--bg-subtle)]'
+                  }`}
+                >
+                  <FileText size={16} className="text-[#6366f1] mt-0.5 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs font-semibold text-[var(--fg)] group-hover:text-[#4f46e5]">Standalone Design</div>
+                      <span className="text-[10px] text-[var(--fg-dim)]">{designs.filter(d => !d.project_id).length}/2</span>
+                    </div>
+                    <div className="text-[10px] text-[var(--fg-dim)] leading-tight">Launches space setup wizard</div>
+                  </div>
+                </button>
+
+                {projects.length > 0 && (
+                  <>
+                    <div className="my-1 border-t border-[var(--border)]" />
+                    <div className="px-3 py-1 text-[10px] font-bold text-[var(--fg-dim)] uppercase tracking-wider">
+                      Add into Project Folder
+                    </div>
+                    {projects.map(proj => {
+                      const count = designs.filter(d => d.project_id === proj.id).length
+                      const isFull = count >= 2
+                      return (
+                        <button
+                          key={proj.id}
+                          disabled={isFull}
+                          onClick={() => handleCreateNewDesign(proj.id)}
+                          className={`w-full px-3 py-1.5 text-left rounded-lg flex items-center justify-between group transition-colors ${
+                            isFull ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[var(--bg-subtle)]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0 pr-2">
+                            <Folder size={14} className="text-[#6366f1] flex-shrink-0" />
+                            <span className="text-xs font-medium text-[var(--fg)] truncate">{proj.name}</span>
+                          </div>
+                          <span className="text-[10px] text-[var(--fg-dim)] flex-shrink-0">{count}/2</span>
+                        </button>
+                      )
+                    })}
+                  </>
+                )}
+
+                <div className="my-1 border-t border-[var(--border)]" />
+                <button
+                  disabled={projects.length >= 2}
+                  onClick={() => {
+                    setCreateMenuOpen(false)
+                    handleCreateProject()
+                  }}
+                  className={`w-full px-3 py-2 text-left rounded-lg flex items-center gap-2.5 group transition-colors ${
+                    projects.length >= 2 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[var(--bg-subtle)]'
+                  }`}
+                >
+                  <FolderPlus size={16} className="text-[#6366f1] flex-shrink-0 group-hover:scale-110 transition-transform" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-semibold text-[var(--fg)] group-hover:text-[#4f46e5]">New Project Folder</div>
+                    <div className="text-[10px] text-[var(--fg-dim)]">{projects.length}/2 folders used</div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '0 16px' }}>
             <button 
               onClick={() => { setActiveTab('projects'); if (window.innerWidth <= 768) setSidebarOpen(false) }}
               style={{ 
-                display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 10,
+                display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 10,
                 background: activeTab === 'projects' ? 'var(--bg-subtle)' : 'transparent',
                 color: activeTab === 'projects' ? 'var(--brand)' : 'var(--fg-soft)',
                 fontWeight: activeTab === 'projects' ? 600 : 500, border: 'none', cursor: 'pointer',
-                transition: 'background 0.2s, color 0.2s', textAlign: 'left', fontSize: '0.95rem'
+                transition: 'background 0.2s, color 0.2s', textAlign: 'left', fontSize: '0.92rem'
               }}
             >
               <LayoutGrid size={18} /> Projects
@@ -694,11 +1028,11 @@ function DashboardPage() {
             <button 
               onClick={() => { setActiveTab('settings'); if (window.innerWidth <= 768) setSidebarOpen(false) }}
               style={{ 
-                display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 10,
+                display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 10,
                 background: activeTab === 'settings' ? 'var(--bg-subtle)' : 'transparent',
                 color: activeTab === 'settings' ? 'var(--brand)' : 'var(--fg-soft)',
                 fontWeight: activeTab === 'settings' ? 600 : 500, border: 'none', cursor: 'pointer',
-                transition: 'background 0.2s, color 0.2s', textAlign: 'left', fontSize: '0.95rem'
+                transition: 'background 0.2s, color 0.2s', textAlign: 'left', fontSize: '0.92rem'
               }}
             >
               <Settings size={18} /> Profile Settings
@@ -729,153 +1063,238 @@ function DashboardPage() {
       {/* Main Content */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         
-        {/* Topbar */}
-        <header className="h-[72px] border-b border-[var(--border)] flex items-center justify-between md:justify-end px-6 md:px-8 bg-[var(--bg-card)] flex-shrink-0">
-          <button 
-            className="md:hidden p-2 text-[var(--fg)] hover:text-[var(--brand)] transition-colors"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu size={26} />
-          </button>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <div className="flex items-center gap-1.5 sm:gap-2 p-1 bg-[var(--bg-card)] rounded-full border border-[var(--border)] shadow-sm">
-              <button onClick={() => { setActiveTab('settings'); if (window.innerWidth <= 768) setSidebarOpen(false); }} className="transition hover:opacity-80 flex-shrink-0" title="Profile Settings">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--lagoon)] to-[var(--brand)] text-white flex items-center justify-center text-xs font-bold shadow-inner">
-                  {getInitials(user)}
-                </div>
-              </button>
-              <div className="w-[1px] h-4 bg-[var(--border)] mx-0.5"></div>
-              <button
-                onClick={async () => { await signOut(); window.location.href = '/' }}
-                className="p-1.5 mr-1 text-[var(--fg-soft)] hover:text-red-500 hover:bg-red-500/10 rounded-full transition"
-                title="Sign Out"
-              >
-                <LogOut size={18} />
-              </button>
+        {/* Topbar with Search & Actions */}
+        <header className="h-[72px] border-b border-[var(--border)] flex items-center justify-between px-6 md:px-8 bg-[var(--bg-card)] flex-shrink-0 gap-4">
+          <div className="flex items-center gap-3">
+            <button 
+              className="md:hidden p-2 text-[var(--fg)] hover:text-[#4f46e5] transition-colors"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu size={24} />
+            </button>
+
+            {/* Quick Search */}
+            <div className="relative hidden sm:block w-64 md:w-80">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--fg-dim)]" />
+              <input
+                type="text"
+                placeholder="Search projects & designs..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-xl pl-9 pr-8 py-2 text-xs text-[var(--fg)] placeholder-[var(--fg-dim)] focus:outline-none focus:border-[#4f46e5] transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--fg-dim)] hover:text-[var(--fg)]"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <UserMenuDropdown user={user} onSignedOut={() => { window.location.href = '/' }} />
           </div>
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-12">
+        <div className="flex-1 overflow-y-auto p-6 md:p-10">
           
           {activeTab === 'projects' && (
             <div style={{ maxWidth: 1200, margin: '0 auto' }}>
               
               {!activeProject ? (
                 <>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 40, flexWrap: 'wrap', gap: 16 }}>
+                  {/* Hero / Header Section */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div>
-                      <h1 style={{ margin: '0 0 8px', fontFamily: 'Outfit, sans-serif', fontSize: '2rem', fontWeight: 800, color: 'var(--fg)' }}>
-                        Projects
+                      <h1 className="font-sans font-extrabold text-2xl md:text-3xl text-[var(--fg)] tracking-tight">
+                        Projects & Designs
                       </h1>
-                      <p style={{ margin: 0, color: 'var(--fg-dim)', fontSize: '0.95rem' }}>
-                        Manage your overarching event projects (Max 2 projects).
+                      <p className="text-sm text-[var(--fg-dim)] mt-1">
+                        Organize 3D space variants across project folders or manage standalone space setups.
                       </p>
                     </div>
-                    {projects.length < 2 && (
-                      <button onClick={handleCreateProject} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <PlusCircle size={16} /> Create Project
+
+                    <div className="flex items-center gap-2.5">
+                      <button 
+                        onClick={() => handleCreateNewDesign(null)}
+                        disabled={designs.filter(d => !d.project_id).length >= 2}
+                        className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Plus size={15} /> New Design
                       </button>
-                    )}
+                      {projects.length < 2 && (
+                        <button 
+                          onClick={handleCreateProject} 
+                          className="px-3.5 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-subtle)] text-[var(--fg)] text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-all"
+                        >
+                          <FolderPlus size={15} /> New Folder
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  {projects.length === 0 ? (
-                    <div style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                      padding: '80px 20px', textAlign: 'center',
-                      border: '1px dashed var(--border-brand)', borderRadius: 20, background: 'var(--bg-card)',
-                    }}>
-                      <div style={{
-                        width: 64, height: 64, borderRadius: 16, marginBottom: 20,
-                        background: 'linear-gradient(135deg, rgba(79,70,229,0.2), rgba(8,145,178,0.2))',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <LayoutGrid size={28} color="var(--brand)" />
+                  {/* Standalone Designs section if any exist */}
+                  {filteredStandaloneDesigns.length > 0 && (
+                    <div className="mb-10">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <h2 className="font-sans font-bold text-base text-[var(--fg)]">
+                            Standalone Designs
+                          </h2>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--bg-subtle)] text-[var(--fg-dim)] font-medium">
+                            {designs.filter(d => !d.project_id).length} / 2
+                          </span>
+                        </div>
+                        <span className="text-xs text-[var(--fg-dim)]">Direct spaces (Max 2)</span>
                       </div>
-                      <h2 style={{ margin: '0 0 8px', fontFamily: 'Outfit', fontWeight: 700, fontSize: '1.2rem', color: 'var(--fg)' }}>No projects yet</h2>
-                      <p style={{ margin: '0 0 24px', color: 'var(--fg-dim)', fontSize: '0.9rem', maxWidth: 320 }}>
-                        Create a project to start organizing your booth design variants.
-                      </p>
-                      <button onClick={handleCreateProject} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <PlusCircle size={16} /> Create First Project
-                      </button>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
-                      {projects.map((project) => (
-                        <ProjectFolderCard
-                          key={project.id}
-                          project={project}
-                          onOpen={() => setActiveProject(project)}
-                          onDeleteRequest={handleDeleteProjectRequest}
-                          onRenameRequest={handleRenameProjectRequest}
-                        />
-                      ))}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                        {filteredStandaloneDesigns.map((design, i) => (
+                          <DesignCard
+                            key={design.id}
+                            design={design}
+                            index={i}
+                            onOpen={() => handleOpen(design)}
+                            onDeleteRequest={handleDeleteRequest}
+                            onRenameRequest={handleRenameRequest}
+                            isMenuOpen={activeMenuId === design.id}
+                            onToggleMenu={() => setActiveMenuId(activeMenuId === design.id ? null : design.id)}
+                          />
+                        ))}
+                      </div>
                     </div>
                   )}
+
+                  {/* Project Folders */}
+                  {projects.length === 0 && designs.filter(d => !d.project_id).length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-12 md:p-16 text-center border-2 border-dashed border-[var(--border)] rounded-2xl bg-[var(--bg-card)] mt-6">
+                      <div className="w-16 h-16 rounded-2xl mb-4 bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-[#6366f1]">
+                        <Sparkles size={30} />
+                      </div>
+                      <h2 className="font-sans font-bold text-lg text-[var(--fg)] mb-1">Welcome to your 3D Space Studio</h2>
+                      <p className="text-xs text-[var(--fg-dim)] max-w-sm mb-6">
+                        Create your first standalone design or create a project folder to organize 3D space variants.
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => handleCreateNewDesign(null)} 
+                          className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md flex items-center gap-2"
+                        >
+                          <Plus size={16} /> Create First Design
+                        </button>
+                        <button 
+                          onClick={handleCreateProject} 
+                          className="px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-subtle)] text-[var(--fg)] text-xs font-semibold flex items-center gap-2"
+                        >
+                          <FolderPlus size={16} /> Create Folder
+                        </button>
+                      </div>
+                    </div>
+                  ) : filteredProjects.length > 0 ? (
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <h2 className="font-sans font-bold text-base text-[var(--fg)]">
+                            Project Folders
+                          </h2>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--bg-subtle)] text-[var(--fg-dim)] font-medium">
+                            {projects.length} / 2
+                          </span>
+                        </div>
+                        <span className="text-xs text-[var(--fg-dim)]">Max 2 project folders per account</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                        {filteredProjects.map((project) => (
+                          <ProjectFolderCard
+                            key={project.id}
+                            project={project}
+                            designCount={designs.filter(d => d.project_id === project.id).length}
+                            onOpen={() => setActiveProject(project)}
+                            onDeleteRequest={handleDeleteProjectRequest}
+                            onRenameRequest={handleRenameProjectRequest}
+                            onNewDesignInProject={() => handleCreateNewDesign(project.id)}
+                            isMenuOpen={activeMenuId === project.id}
+                            onToggleMenu={() => setActiveMenuId(activeMenuId === project.id ? null : project.id)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </>
               ) : (
+                /* Inside Active Project Folder */
                 <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
-                    <button 
-                      onClick={() => setActiveProject(null)} 
-                      style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, padding: 8, color: 'var(--fg-soft)', cursor: 'pointer' }}
-                    >
-                      <ChevronLeft size={20} />
-                    </button>
-                    <div>
-                      <h1 style={{ margin: '0 0 4px', fontFamily: 'Outfit, sans-serif', fontSize: '1.8rem', fontWeight: 800, color: 'var(--fg)' }}>
-                        {activeProject.name}
-                      </h1>
-                      <p style={{ margin: 0, color: 'var(--fg-dim)', fontSize: '0.9rem' }}>
-                        {designs.filter(d => d.project_id === activeProject.id).length} / 2 Designs
-                      </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                    <div className="flex items-center gap-3.5">
+                      <button 
+                        onClick={() => setActiveProject(null)} 
+                        className="p-2 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-subtle)] text-[var(--fg-soft)] transition-colors"
+                        title="Back to all projects"
+                      >
+                        <ChevronLeft size={20} />
+                      </button>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h1 className="font-sans font-extrabold text-2xl text-[var(--fg)] tracking-tight">
+                            {activeProject.name}
+                          </h1>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 font-semibold border border-indigo-500/20">
+                            Folder
+                          </span>
+                        </div>
+                        <p className="text-xs text-[var(--fg-dim)] mt-0.5">
+                          {designs.filter(d => d.project_id === activeProject.id).length} / 2 variants designed
+                        </p>
+                      </div>
                     </div>
-                    <div style={{ marginLeft: 'auto' }}>
-                      <button onClick={handleNewDesign} disabled={designs.filter(d => d.project_id === activeProject.id).length >= 2} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: designs.filter(d => d.project_id === activeProject.id).length >= 2 ? 0.5 : 1 }}>
-                        <PlusCircle size={16} /> New Design
+
+                    <div>
+                      <button 
+                        onClick={handleNewDesign} 
+                        disabled={designs.filter(d => d.project_id === activeProject.id).length >= 2} 
+                        className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm flex items-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Plus size={16} /> New Design
                       </button>
                     </div>
                   </div>
 
-                  {designs.filter(d => d.project_id === activeProject.id).length === 0 ? (
-                    <div style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                      padding: '80px 20px', textAlign: 'center',
-                      border: '1px dashed var(--border-brand)', borderRadius: 20, background: 'var(--bg-card)',
-                    }}>
-                      <div style={{
-                        width: 64, height: 64, borderRadius: 16, marginBottom: 20,
-                        background: 'linear-gradient(135deg, rgba(79,70,229,0.2), rgba(8,145,178,0.2))',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <Box size={28} color="var(--brand)" />
+                  {filteredActiveProjectDesigns.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-12 md:p-16 text-center border-2 border-dashed border-[var(--border)] rounded-2xl bg-[var(--bg-card)]">
+                      <div className="w-16 h-16 rounded-2xl mb-4 bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-[#6366f1]">
+                        <Box size={28} />
                       </div>
-                      <h2 style={{ margin: '0 0 8px', fontFamily: 'Outfit', fontWeight: 700, fontSize: '1.2rem', color: 'var(--fg)' }}>No designs in this project</h2>
-                      <p style={{ margin: '0 0 24px', color: 'var(--fg-dim)', fontSize: '0.9rem', maxWidth: 320 }}>
-                        Start designing your booth variants. You can create up to 2 variants.
+                      <h2 className="font-sans font-bold text-base text-[var(--fg)] mb-1">No designs in this folder yet</h2>
+                      <p className="text-xs text-[var(--fg-dim)] max-w-sm mb-6">
+                        Launch the space wizard to design your first 3D variant in this folder.
                       </p>
-                      <button onClick={handleNewDesign} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <PlusCircle size={16} /> Create Design
+                      <button 
+                        onClick={handleNewDesign} 
+                        className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md flex items-center gap-2"
+                      >
+                        <Plus size={16} /> Create Design
                       </button>
                     </div>
                   ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 24 }}>
-                      <div
-                        onClick={handleNewDesign}
-                        style={{
-                          border: '1px dashed var(--border-brand)', borderRadius: 16, cursor: designs.filter(d => d.project_id === activeProject.id).length >= 2 ? 'not-allowed' : 'pointer',
-                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                          minHeight: 220, gap: 12, background: 'transparent', transition: 'background 0.2s',
-                          opacity: designs.filter(d => d.project_id === activeProject.id).length >= 2 ? 0.5 : 1
-                        }}
-                      >
-                        <PlusCircle size={32} color="var(--brand)" />
-                        <span style={{ fontFamily: 'Outfit', fontWeight: 600, color: 'var(--brand)', fontSize: '1rem' }}>New Design</span>
-                      </div>
-                      {designs.filter(d => d.project_id === activeProject.id).map((design, i) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                      {designs.filter(d => d.project_id === activeProject.id).length < 2 && (
+                        <div
+                          onClick={handleNewDesign}
+                          className="flex flex-col items-center justify-center min-h-[220px] rounded-2xl border-2 border-dashed border-[var(--border)] hover:border-[#6366f1] bg-[var(--bg-card)] hover:bg-[var(--bg-subtle)] cursor-pointer transition-all gap-3 group"
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Plus size={22} />
+                          </div>
+                          <span className="font-semibold text-xs text-[var(--fg)] group-hover:text-[#6366f1] transition-colors">
+                            Add Another Design (Variant)
+                          </span>
+                        </div>
+                      )}
+                      {filteredActiveProjectDesigns.map((design, i) => (
                         <DesignCard
                           key={design.id}
                           design={design}
@@ -883,6 +1302,8 @@ function DashboardPage() {
                           onOpen={() => handleOpen(design)}
                           onDeleteRequest={handleDeleteRequest}
                           onRenameRequest={handleRenameRequest}
+                          isMenuOpen={activeMenuId === design.id}
+                          onToggleMenu={() => setActiveMenuId(activeMenuId === design.id ? null : design.id)}
                         />
                       ))}
                     </div>

@@ -326,7 +326,7 @@ function CookiePolicyPage() {
         </p>
         <p>This may include:</p>
         <ul>
-          <li>booth or space configuration;</li>
+          <li>space configuration;</li>
           <li>layout elements;</li>
           <li>project name and identifier;</li>
           <li>cloud auto-save preference;</li>

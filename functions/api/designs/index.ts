@@ -50,9 +50,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
   const { project_id, name, config, elements } = parsed
 
-  if (!project_id || typeof project_id !== 'string') {
-    return jsonError('project_id is required')
+  if (project_id !== undefined && project_id !== null && typeof project_id !== 'string') {
+    return jsonError('project_id must be a string if provided')
   }
+
+  const assignedProjectId = (typeof project_id === 'string' && project_id.trim().length > 0) ? project_id.trim() : null
 
   if (!name || typeof name !== 'string' || name.trim().length === 0) {
     return jsonError('Design name is required')
@@ -62,17 +64,27 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return jsonError('Design name must not exceed 100 characters')
   }
 
-  // Limit to 2 designs per project
-  const { results: existing } = await env.DB.prepare(
-    'SELECT COUNT(*) as count FROM designs WHERE project_id = ?'
-  ).bind(project_id).all<{ count: number }>()
+  // If assigned to a project, limit to 2 designs per project
+  if (assignedProjectId) {
+    const { results: existing } = await env.DB.prepare(
+      'SELECT COUNT(*) as count FROM designs WHERE project_id = ?'
+    ).bind(assignedProjectId).all<{ count: number }>()
 
-  const count = existing[0]?.count ?? 0
-  if (count >= 2) return jsonError('Max capacity reached: Limit of 2 designs per project.', 403)
+    const count = existing[0]?.count ?? 0
+    if (count >= 2) return jsonError('Max capacity reached: Limit of 2 designs per project.', 403)
+  } else {
+    // Standalone designs (project_id IS NULL), limit to 2 designs per user
+    const { results: existing } = await env.DB.prepare(
+      'SELECT COUNT(*) as count FROM designs WHERE user_id = ? AND project_id IS NULL'
+    ).bind(user.id).all<{ count: number }>()
+
+    const count = existing[0]?.count ?? 0
+    if (count >= 2) return jsonError('Max capacity reached: Limit of 2 standalone designs.', 403)
+  }
 
   const { results } = await env.DB.prepare(
     'INSERT INTO designs (user_id, project_id, name, config, elements) VALUES (?, ?, ?, ?, ?) RETURNING id, project_id, name, created_at'
-  ).bind(user.id, project_id, name.trim(), JSON.stringify(config || {}), JSON.stringify(elements || [])).all()
+  ).bind(user.id, assignedProjectId, name.trim(), JSON.stringify(config || {}), JSON.stringify(elements || [])).all()
 
   return json({ design: results[0] }, 201)
 }

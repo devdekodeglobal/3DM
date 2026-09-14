@@ -78,12 +78,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           return
         }
         await verifyOtp(email, otpCode)
-        setSuccessMsg('Email verified! You can now log in.')
+        setSuccessMsg('Email verified! Signing you in…')
+        // Auto-login: backend sets session cookie on OTP verify, so close modal and mark success
         setTimeout(() => {
-          setIsOtpStep(false)
-          setIsSignUp(false)
-          resetAllStates()
-        }, 2000)
+          onSuccess?.()
+          onClose()
+        }, 1200)
       } else if (isSignUp) {
         if (!email || !password) {
           setErrorMsg('Please fill in all fields.')
@@ -171,7 +171,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 ? `Enter the 6-digit code sent to ${email}`
                 : isSignUp
                   ? 'Register to save your 3D designs to the cloud'
-                  : 'Log in to sync and load your custom booths'}
+                  : 'Log in to sync and load your custom spaces'}
           </p>
         </div>
 
