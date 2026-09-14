@@ -8,11 +8,11 @@ import Preview3D from '../components/editor/Preview3D'
 import ColorPickerPanel from '../components/editor/ColorPickerPanel'
 import RoofCanvas from '../components/editor/RoofCanvas'
 import UserMenuDropdown from '../components/UserMenuDropdown'
-import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Save, LogIn, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil, LayoutGrid, Sliders, Monitor } from 'lucide-react'
+import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Save, LogIn, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil, LayoutGrid, Sliders, Monitor, Folder } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
-import { getCurrentUser, saveDesign, updateDesign, listProjects } from '../lib/authClient'
+import { getCurrentUser, saveDesign, updateDesign, listProjects, listDesigns } from '../lib/authClient'
 import { AuthModal } from '../components/editor/AuthModal'
 import { CloudProjectsDrawer } from '../components/editor/CloudProjectsDrawer'
 import { saveAssetBlob, getAssetBlob, deleteAssetBlob } from '../lib/customAssetDB'
@@ -83,8 +83,14 @@ function EditorPage() {
   const [cloudDrawerOpen, setCloudDrawerOpen] = useState(false)
   const [showSavePrompt, setShowSavePrompt] = useState(false)
   const [saveAsMode, setSaveAsMode] = useState(false)
+  const [pendingSaveTrigger, setPendingSaveTrigger] = useState<boolean>(false)
   const [userProjects, setUserProjects] = useState<any[]>([])
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('')
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('current-project-id') || ''
+    }
+    return ''
+  })
   const [projectName, setProjectName] = useState(initialData.name || 'My Design 1')
   const [isCloudSaving, setIsCloudSaving] = useState(false)
   const [toastModal, setToastModal] = useState<{ title?: string; message: string; type?: 'info' | 'success' | 'warning' | 'error' } | null>(null)
@@ -94,6 +100,8 @@ function EditorPage() {
     setToastModal({ message, type, title })
   }
 
+  const activeProjectObj = selectedProjectId ? userProjects.find(p => p.id === selectedProjectId) : null
+
   // Custom 3D Assets state (limit 5 per user)
   const [customAssets, setCustomAssets] = useState<any[]>([]);
 
@@ -102,9 +110,9 @@ function EditorPage() {
     getCurrentUser().then(user => setSessionUser(user)).catch(console.error)
   }, [])
 
-  // Fetch projects when save prompt opens
+  // Fetch projects whenever user session is active
   useEffect(() => {
-    if (showSavePrompt && sessionUser) {
+    if (sessionUser) {
       listProjects().then(res => {
         setUserProjects(res || [])
         const current = localStorage.getItem('current-project-id')
@@ -112,8 +120,11 @@ function EditorPage() {
           setSelectedProjectId(current)
         }
       }).catch(console.error)
+    } else {
+      setUserProjects([])
+      setSelectedProjectId('')
     }
-  }, [showSavePrompt, sessionUser])
+  }, [sessionUser])
 
   // Hydrate custom assets from IndexedDB on mount
   useEffect(() => {
@@ -308,32 +319,46 @@ function EditorPage() {
     setIsCloudSaving(true)
     try {
       if (currentDesignId) {
-        // Only move design to a different project if the user explicitly selected one in the dropdown.
-        // If the dropdown is still "None" (empty string), don't touch project_id — the design stays where it is.
-        const updatePayload: { name?: string; config?: unknown; elements?: unknown; project_id?: string | null } = {
-          name: projectName || 'Untitled Design',
-          config: boothConfig,
-          elements: elements,
+        // Try updating the existing design
+        try {
+          const updatePayload: { name?: string; config?: unknown; elements?: unknown; project_id?: string | null } = {
+            name: projectName || 'Untitled Design',
+            config: boothConfig,
+            elements: elements,
+          }
+          if (selectedProjectId) {
+            updatePayload.project_id = selectedProjectId
+            localStorage.setItem('current-project-id', selectedProjectId)
+          } else {
+            updatePayload.project_id = null
+            localStorage.removeItem('current-project-id')
+          }
+          await updateDesign(currentDesignId, updatePayload)
+          showAlert('Design saved', 'success', 'Saved')
+          setShowSavePrompt(false)
+          return
+        } catch (updateErr: any) {
+          // If design belongs to another user / not found, fall through to create a new design
+          if (updateErr.message?.includes('not found') || updateErr.message?.includes('404')) {
+            console.warn('Current design ID not found for this user, saving as new design...')
+            setCurrentDesignId(null)
+            localStorage.removeItem('current-design-id')
+          } else {
+            throw updateErr
+          }
         }
-        if (selectedProjectId) {
-          // User explicitly picked a project folder — move design there
-          updatePayload.project_id = selectedProjectId
-          localStorage.setItem('current-project-id', selectedProjectId)
-        }
-        await updateDesign(currentDesignId, updatePayload)
-        showAlert('Design saved', 'success', 'Saved')
-      } else {
-        // No current design — create a new one
-        const projectId = selectedProjectId ? selectedProjectId : null
-        const newDesign = await saveDesign(projectId, projectName || 'Untitled Design', boothConfig, elements)
-        setCurrentDesignId(newDesign.id)
-        if (projectId) {
-          localStorage.setItem('current-project-id', projectId)
-        } else {
-          localStorage.removeItem('current-project-id')
-        }
-        showAlert('Design saved', 'success', 'Saved')
       }
+
+      // Create new design
+      const projectId = selectedProjectId ? selectedProjectId : null
+      const newDesign = await saveDesign(projectId, projectName || 'Untitled Design', boothConfig, elements)
+      setCurrentDesignId(newDesign.id)
+      if (projectId) {
+        localStorage.setItem('current-project-id', projectId)
+      } else {
+        localStorage.removeItem('current-project-id')
+      }
+      showAlert('Design saved', 'success', 'Saved')
       setShowSavePrompt(false)
     } catch (err: any) {
       console.error('Cloud save failed:', err)
@@ -381,6 +406,8 @@ function EditorPage() {
     setHistoryStep(0)
     if (designId) setCurrentDesignId(designId)
     if (designName) setProjectName(designName)
+    const currentProj = localStorage.getItem('current-project-id') || ''
+    setSelectedProjectId(currentProj)
 
     // Force canvas refresh
     setTimeout(() => {
@@ -906,16 +933,63 @@ function EditorPage() {
 
       {/* Top Bar */}
       <div className="h-14 border-b border-[var(--line)] bg-[var(--surface-strong)] flex items-center justify-between px-4 z-30 shadow-sm transition-all shrink-0 whitespace-nowrap gap-3 relative">
-        {/* Left Section: Logo, Undo/Redo/Clear, View Toggles */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Left Section: Logo + Breadcrumb (Project Name + Design Name) */}
+        <div className="flex items-center gap-2.5 min-w-0">
           <Link 
             to={sessionUser ? "/dashboard" : "/"} 
-            className="flex items-center gap-1.5 hover:opacity-80 transition py-1 pr-2.5 border-r border-[var(--border)]" 
+            className="flex items-center gap-1.5 hover:opacity-80 transition py-1 pr-2.5 border-r border-[var(--border)] shrink-0" 
             title={sessionUser ? "Back to Dashboard" : "Back to Home"}
           >
             <img src="/krafcfavicon.png" alt="krafc Logo" className="h-6 w-auto" />
           </Link>
 
+          {/* Project & Design Name Display */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            {activeProjectObj && (
+              <>
+                <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--chip-bg)] border border-[var(--line)] text-xs text-[var(--sea-ink-soft)] font-medium shrink-0 max-w-[150px] truncate" title={`Project: ${activeProjectObj.name}`}>
+                  <Folder className="w-3.5 h-3.5 text-[var(--brand)] shrink-0" />
+                  <span className="truncate">{activeProjectObj.name}</span>
+                </div>
+                <span className="text-[var(--line)] text-sm font-semibold select-none">/</span>
+              </>
+            )}
+
+            {/* Editable Design Name */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--sand)]/80 border border-[var(--line)] group shadow-xs hover:border-[var(--brand)]/40 transition-colors max-w-[220px]">
+              <input
+                value={projectName}
+                onChange={e => setProjectName(e.target.value)}
+                onKeyDown={async e => {
+                  if (e.key === 'Enter') {
+                    (e.target as HTMLInputElement).blur()
+                  }
+                }}
+                onBlur={async () => {
+                  const trimmed = projectName.trim() || 'Untitled Design'
+                  setProjectName(trimmed)
+                  if (currentDesignId) {
+                    localStorage.setItem('current-design-name', trimmed)
+                    if (sessionUser) {
+                      try {
+                        await updateDesign(currentDesignId, { name: trimmed })
+                      } catch (err) {
+                        console.error('Failed to sync design rename to cloud:', err)
+                      }
+                    }
+                  }
+                }}
+                className="font-bold text-xs text-[var(--fg)] tracking-tight bg-transparent border-none outline-none focus:ring-1 focus:ring-[var(--brand)]/50 rounded px-1 py-0.5 transition-all flex-1 min-w-0 truncate"
+                title="Click to rename design (press Enter or click away to save)"
+                placeholder="Design Name"
+              />
+              <Pencil className="w-2.5 h-2.5 text-[var(--fg-dim)] opacity-40 group-hover:opacity-100 transition-opacity shrink-0 pointer-events-none" />
+            </div>
+          </div>
+        </div>
+
+        {/* Right Section: Undo/Redo/Clear + View Toggles + User / Auth */}
+        <div className="flex items-center gap-2.5 shrink-0 ml-auto">
           {/* Undo / Redo / Clear */}
           <div className="flex items-center gap-0.5">
             <button onClick={undo} disabled={historyStep <= 0} className="p-1.5 rounded-lg hover:bg-[var(--chip-bg)] text-[var(--sea-ink-soft)] disabled:opacity-30 transition cursor-pointer" title="Undo (Ctrl+Z)">
@@ -929,7 +1003,7 @@ function EditorPage() {
             </button>
           </div>
 
-          <div className="w-px h-5 bg-[var(--line)] mx-1" />
+          <div className="w-px h-5 bg-[var(--line)]" />
 
           {/* View Toggles - desktop only */}
           <div className="hidden md:flex items-center gap-1 bg-[var(--sand)] p-0.5 rounded-lg border border-[var(--line)]">
@@ -955,25 +1029,10 @@ function EditorPage() {
               <PanelRightClose className="w-3.5 h-3.5" />
             </button>
           </div>
-        </div>
 
-        {/* Center Section: Centralized Design / Project Name */}
-        <div className="flex-1 flex justify-center items-center px-2 min-w-0">
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[var(--sand)]/80 border border-[var(--line)] group shadow-xs max-w-sm w-full justify-center">
-            <input
-              value={projectName}
-              onChange={e => setProjectName(e.target.value)}
-              className="font-bold text-xs text-[var(--fg)] tracking-tight bg-transparent border-none outline-none focus:ring-1 focus:ring-[var(--brand)]/50 rounded px-1.5 py-0.5 text-center transition-all flex-1 min-w-0 hover:bg-black/5 dark:hover:bg-white/5 truncate"
-              title="Click to rename design"
-              placeholder="Design Name"
-            />
-            <Pencil className="w-3 h-3 text-[var(--fg-dim)] opacity-40 group-hover:opacity-100 transition-opacity shrink-0 pointer-events-none" />
-          </div>
-        </div>
+          <div className="w-px h-5 bg-[var(--line)]" />
 
-        {/* Right Section: User & Auth */}
-        <div className="flex items-center gap-2 shrink-0">
-
+          {/* User & Auth */}
           {!sessionUser ? (
             <button
               onClick={() => setAuthModalOpen(true)}
@@ -1018,6 +1077,8 @@ function EditorPage() {
               onNewProject={handleNewProject}
               onSaveProject={() => {
                 if (!sessionUser) {
+                  setPendingSaveTrigger(true)
+                  setSaveAsMode(false)
                   setAuthModalOpen(true)
                   return
                 }
@@ -1034,6 +1095,8 @@ function EditorPage() {
               }}
               onSaveAsProject={() => {
                 if (!sessionUser) {
+                  setPendingSaveTrigger(true)
+                  setSaveAsMode(true)
                   setAuthModalOpen(true)
                   return
                 }
@@ -1192,6 +1255,8 @@ function EditorPage() {
                 onNewProject={handleNewProject}
                 onSaveProject={() => {
                   if (!sessionUser) {
+                    setPendingSaveTrigger(true)
+                    setSaveAsMode(false)
                     setAuthModalOpen(true)
                     return
                   }
@@ -1206,6 +1271,8 @@ function EditorPage() {
                 }}
                 onSaveAsProject={() => {
                   if (!sessionUser) {
+                    setPendingSaveTrigger(true)
+                    setSaveAsMode(true)
                     setAuthModalOpen(true)
                     return
                   }
@@ -1430,7 +1497,59 @@ function EditorPage() {
       {/* Supabase Integration Overlays */}
       <AuthModal
         isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
+        onClose={() => {
+          setAuthModalOpen(false)
+          setPendingSaveTrigger(false)
+        }}
+        onSuccess={() => {
+          getCurrentUser().then(async user => {
+            setSessionUser(user)
+            if (user) {
+              try {
+                const projects = await listProjects().catch(() => [])
+                setUserProjects(projects || [])
+
+                // Check user's current designs for limit check
+                const userDesigns = await listDesigns().catch(() => [])
+                const isLimitReached = userDesigns.length >= 6
+
+                // If user was prompted by clicking Save
+                if (pendingSaveTrigger) {
+                  setPendingSaveTrigger(false)
+                  if (isLimitReached) {
+                    showAlert('Account design limit reached (6 maximum). Please delete an existing design to save a new one.', 'warning', 'Limit Reached')
+                  } else {
+                    const currentProj = localStorage.getItem('current-project-id')
+                    setSelectedProjectId(currentProj || '')
+                    setShowSavePrompt(true)
+                  }
+                } else if (!currentDesignId && (elements.length > 0 || boothConfig)) {
+                  // User signed in naturally while having an unsaved design in editor
+                  if (isLimitReached) {
+                    showAlert('Account design limit reached (6 maximum). Your current design was not auto-saved.', 'warning', 'Limit Reached')
+                  } else {
+                    try {
+                      const designNameToSave = projectName && projectName !== 'My Design 1' ? projectName : 'Untitled Design'
+                      const newDesign = await saveDesign(null, designNameToSave, boothConfig, elements)
+                      setCurrentDesignId(newDesign.id)
+                      setProjectName(newDesign.name)
+                      localStorage.setItem('current-design-id', newDesign.id)
+                      localStorage.setItem('current-design-name', newDesign.name)
+                      localStorage.removeItem('current-project-id')
+                      setSelectedProjectId('')
+                      showAlert('Your design was saved as a standalone design and auto-sync is now active.', 'success', 'Design Saved')
+                    } catch (saveErr: any) {
+                      console.error('Auto-save guest design failed:', saveErr)
+                      showAlert(saveErr.message || 'Could not auto-save design.', 'error', 'Save Failed')
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error('Post-login initialization error:', err)
+              }
+            }
+          }).catch(console.error)
+        }}
       />
 
       <CloudProjectsDrawer

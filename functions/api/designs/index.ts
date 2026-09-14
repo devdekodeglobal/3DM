@@ -64,23 +64,13 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return jsonError('Design name must not exceed 100 characters')
   }
 
-  // If assigned to a project, limit to 2 designs per project
-  if (assignedProjectId) {
-    const { results: existing } = await env.DB.prepare(
-      'SELECT COUNT(*) as count FROM designs WHERE project_id = ?'
-    ).bind(assignedProjectId).all<{ count: number }>()
+  // Limit to 6 total designs per user account
+  const { results: existing } = await env.DB.prepare(
+    'SELECT COUNT(*) as count FROM designs WHERE user_id = ?'
+  ).bind(user.id).all<{ count: number }>()
 
-    const count = existing[0]?.count ?? 0
-    if (count >= 2) return jsonError('Max capacity reached: Limit of 2 designs per project.', 403)
-  } else {
-    // Standalone designs (project_id IS NULL), limit to 2 designs per user
-    const { results: existing } = await env.DB.prepare(
-      'SELECT COUNT(*) as count FROM designs WHERE user_id = ? AND project_id IS NULL'
-    ).bind(user.id).all<{ count: number }>()
-
-    const count = existing[0]?.count ?? 0
-    if (count >= 2) return jsonError('Max capacity reached: Limit of 2 standalone designs.', 403)
-  }
+  const count = existing[0]?.count ?? 0
+  if (count >= 6) return jsonError('Max capacity reached: Limit of 6 designs per account.', 403)
 
   const { results } = await env.DB.prepare(
     'INSERT INTO designs (user_id, project_id, name, config, elements) VALUES (?, ?, ?, ?, ?) RETURNING id, project_id, name, created_at'

@@ -162,18 +162,9 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
 
   // Add empty design directly to a project (or as standalone)
   const handleAddEmptyDesign = (targetProjectId: string | null) => {
-    if (targetProjectId) {
-      const existingInProj = designs.filter(d => d.project_id === targetProjectId).length
-      if (existingInProj >= 2) {
-        setErrorMsg('Limit reached: Maximum 2 designs allowed for this project.')
-        return
-      }
-    } else {
-      const existingStandalone = designs.filter(d => !d.project_id).length
-      if (existingStandalone >= 2) {
-        setErrorMsg('Limit reached: Maximum 2 standalone designs allowed.')
-        return
-      }
+    if (designs.length >= 6) {
+      setErrorMsg('Limit reached: Maximum 6 designs allowed per account.')
+      return
     }
 
     const defaultName = targetProjectId
@@ -315,20 +306,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
       const target = designs.find(d => d.id === designId)
       if (!target) return
       
-      // If moving to a project, check capacity limit of 2 designs
-      if (newProjectId) {
-        const countInProj = designs.filter(d => d.project_id === newProjectId && d.id !== designId).length
-        if (countInProj >= 2) {
-          setErrorMsg('Target project has reached its maximum capacity of 2 designs.')
-          return
-        }
-      } else {
-        const countStandalone = designs.filter(d => !d.project_id && d.id !== designId).length
-        if (countStandalone >= 2) {
-          setErrorMsg('Standalone designs section has reached its maximum capacity of 2 designs.')
-          return
-        }
-      }
+      // No per-project or standalone limit anymore (total 6 limit is maintained, moving between folders does not increase total count)
 
       await updateDesign(designId, { project_id: newProjectId })
       setDesigns(prev => prev.map(d => d.id === designId ? { ...d, project_id: newProjectId, updated_at: new Date().toISOString() } : d))
@@ -833,25 +811,19 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
               {/* None (No Project / Standalone) option */}
               {(() => {
                 const isCurrent = !movingDesign.project_id
-                const countStandalone = designs.filter(d => !d.project_id).length
-                const isStandaloneFull = countStandalone >= 2 && !isCurrent
                 return (
                   <button
                     onClick={() => handleMoveDesign(movingDesign.id, null)}
-                    disabled={isStandaloneFull || updatingId === movingDesign.id}
-                    title={isStandaloneFull ? 'Limit of 2 standalone designs reached' : undefined}
+                    disabled={updatingId === movingDesign.id}
                     className={`w-full p-3 rounded-xl border text-left flex items-center justify-between transition cursor-pointer ${
                       isCurrent
                         ? 'border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand)] font-bold'
-                        : isStandaloneFull
-                        ? 'border-[var(--border)] dark:border-white/10 opacity-40 cursor-not-allowed bg-[var(--surface-light)] dark:bg-white/5 text-[var(--fg-dim)]'
                         : 'border-[var(--border)] dark:border-white/10 hover:border-[var(--brand)]/40 bg-[var(--surface-light)] dark:bg-white/5 text-[var(--fg)] dark:text-white/80'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <FileText className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
                       <span className="text-xs">None (Standalone)</span>
-                      {isStandaloneFull && <span className="text-[10px] text-amber-500">(2/2 Full)</span>}
                     </div>
                     {isCurrent && <Check className="w-4 h-4 text-[var(--brand)]" />}
                   </button>
@@ -862,18 +834,15 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
               {projects.map(proj => {
                 const isCurrent = movingDesign.project_id === proj.id
                 const countInProj = designs.filter(d => d.project_id === proj.id).length
-                const isFull = countInProj >= 2 && !isCurrent
 
                 return (
                   <button
                     key={proj.id}
                     onClick={() => handleMoveDesign(movingDesign.id, proj.id)}
-                    disabled={isFull || updatingId === movingDesign.id}
+                    disabled={updatingId === movingDesign.id}
                     className={`w-full p-3 rounded-xl border text-left flex items-center justify-between transition cursor-pointer ${
                       isCurrent
                         ? 'border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand)] font-bold'
-                        : isFull
-                        ? 'border-[var(--border)]/40 dark:border-white/5 bg-[var(--bg-subtle)]/30 dark:bg-white/[0.02] text-[var(--fg-dim)] dark:text-white/30 cursor-not-allowed'
                         : 'border-[var(--border)] dark:border-white/10 hover:border-[var(--brand)]/40 bg-[var(--surface-light)] dark:bg-white/5 text-[var(--fg)] dark:text-white/80'
                     }`}
                   >
@@ -881,14 +850,12 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
                       <Folder className="w-4 h-4 text-[var(--brand)]" />
                       <div>
                         <span className="text-xs font-bold block text-[var(--fg)] dark:text-white">{proj.name}</span>
-                        <span className="text-[10px] text-[var(--fg-dim)] dark:text-white/40">{countInProj} / 2 designs</span>
+                        <span className="text-[10px] text-[var(--fg-dim)] dark:text-white/40">{countInProj} {countInProj === 1 ? 'design' : 'designs'}</span>
                       </div>
                     </div>
-                    {isCurrent ? (
+                    {isCurrent && (
                       <Check className="w-4 h-4 text-[var(--brand)]" />
-                    ) : isFull ? (
-                      <span className="text-[10px] uppercase font-bold text-red-500 dark:text-red-400">Full</span>
-                    ) : null}
+                    )}
                   </button>
                 )
               })}

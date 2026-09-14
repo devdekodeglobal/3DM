@@ -67,19 +67,6 @@ export const onRequestPut: PagesFunction<Env> = async ({ request, env, params })
 
   if (project_id !== undefined) {
     const assignedProjectId = (typeof project_id === 'string' && project_id.trim().length > 0) ? project_id.trim() : null
-    if (assignedProjectId) {
-      const { results: existing } = await env.DB.prepare(
-        'SELECT COUNT(*) as count FROM designs WHERE project_id = ? AND id != ?'
-      ).bind(assignedProjectId, id).all<{ count: number }>()
-      const count = existing[0]?.count ?? 0
-      if (count >= 2) return jsonError('Target project folder has reached limit of 2 designs.', 403)
-    } else {
-      const { results: existing } = await env.DB.prepare(
-        'SELECT COUNT(*) as count FROM designs WHERE user_id = ? AND project_id IS NULL AND id != ?'
-      ).bind(user.id, id).all<{ count: number }>()
-      const count = existing[0]?.count ?? 0
-      if (count >= 2) return jsonError('Limit reached: Maximum 2 standalone designs allowed.', 403)
-    }
     updateParts.push('project_id = ?')
     bindings.push(assignedProjectId)
   }
