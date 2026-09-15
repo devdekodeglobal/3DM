@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   signUpWithEmail,
   signInWithEmail,
@@ -32,6 +32,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
+
+  // Reset to default "Sign In" mode whenever the modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setIsSignUp(false)
+      setIsOtpStep(false)
+      setIsForgotPassword(false)
+      setIsResetConfirmStep(false)
+      setOtpCode('')
+      setPassword('')
+      setNewPassword('')
+      setErrorMsg(null)
+      setSuccessMsg(null)
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
