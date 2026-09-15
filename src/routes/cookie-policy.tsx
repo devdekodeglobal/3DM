@@ -297,7 +297,8 @@ function CookiePolicyPage() {
             rel="noreferrer"
           >
             Privacy Policy
-          </a>.
+          </a>
+          .
         </p>
       </section>
 
@@ -361,25 +362,23 @@ function CookiePolicyPage() {
 
         <h3>Cloudflare</h3>
         <p>
-          Cloudflare - krafc uses Cloudflare infrastructure, including
-          services supporting website delivery, application processing,
-          security and cloud functionality. Cloudflare may process technical
-          information and request data as necessary to provide these services.
+          krafc uses Cloudflare infrastructure, including services supporting
+          website delivery, application processing, security and cloud
+          functionality. Cloudflare may process technical information and
+          request data as necessary to provide these services.
         </p>
 
         <h3>Google</h3>
         <p>
-          Google - krafc may use Google for account authentication and,
-          where you provide analytics consent, Google Analytics for platform
-          measurement.
+          krafc may use Google for account authentication and, where you provide
+          analytics consent, Google Analytics for platform measurement.
         </p>
 
         <h3>Resend</h3>
         <p>
-          Resend - krafc may use Resend to deliver verification and
-          transactional emails. Information necessary to send those emails, such
-          as your email address and relevant email content, may be processed by
-          Resend.
+          krafc may use Resend to deliver verification and transactional emails.
+          Information necessary to send those emails, such as your email address
+          and relevant email content, may be processed by Resend.
         </p>
 
         <p>
