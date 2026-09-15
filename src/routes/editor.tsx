@@ -109,6 +109,34 @@ function EditorPage() {
     getCurrentUser().then(user => setSessionUser(user)).catch(console.error)
   }, [])
 
+  // Helper to sync current editor design into user's account if space is available
+  const syncCurrentDesignToProfile = useCallback(async (user: any) => {
+    if (!user || (!boothConfig && elements.length === 0)) return
+    try {
+      const userDesigns = await listDesigns()
+      const alreadySaved = currentDesignId && userDesigns.some(d => d.id === currentDesignId)
+      if (alreadySaved) return
+
+      if (userDesigns.length >= 6) {
+        showAlert('Account design limit reached (6 maximum). Current design was not saved to cloud.', 'warning', 'Limit Reached')
+        return
+      }
+
+      const designNameToSave = projectName?.trim() || 'Untitled Design'
+      const newDesign = await saveDesign(null, designNameToSave, boothConfig, elements)
+      setCurrentDesignId(newDesign.id)
+      setProjectName(newDesign.name)
+      localStorage.setItem('current-design-id', newDesign.id)
+      localStorage.setItem('current-design-name', newDesign.name)
+      localStorage.removeItem('current-project-id')
+      setSelectedProjectId('')
+      setSyncStatus('saved')
+      showAlert('Space cleared! Your current design has now been saved to your account.', 'success', 'Design Saved')
+    } catch (err: any) {
+      console.error('Failed to save current design to profile:', err)
+    }
+  }, [boothConfig, elements, currentDesignId, projectName])
+
   // Fetch projects and sync active design whenever user logs in
   useEffect(() => {
     if (sessionUser) {
@@ -120,32 +148,7 @@ function EditorPage() {
         }
       }).catch(console.error)
 
-      // Save current editor design to the logged-in user's profile
-      if (boothConfig || elements.length > 0) {
-        listDesigns().then(async (userDesigns) => {
-          const alreadySaved = currentDesignId && userDesigns.some(d => d.id === currentDesignId)
-          if (!alreadySaved) {
-            if (userDesigns.length >= 6) {
-              showAlert('Account design limit reached (6 maximum). Current design was not saved to cloud.', 'warning', 'Limit Reached')
-              return
-            }
-            try {
-              const designNameToSave = projectName?.trim() || 'Untitled Design'
-              const newDesign = await saveDesign(null, designNameToSave, boothConfig, elements)
-              setCurrentDesignId(newDesign.id)
-              setProjectName(newDesign.name)
-              localStorage.setItem('current-design-id', newDesign.id)
-              localStorage.setItem('current-design-name', newDesign.name)
-              localStorage.removeItem('current-project-id')
-              setSelectedProjectId('')
-              setSyncStatus('saved')
-              showAlert('Your current design has been saved to your account.', 'success', 'Design Saved')
-            } catch (err: any) {
-              console.error('Failed to save current design on login:', err)
-            }
-          }
-        }).catch(console.error)
-      }
+      syncCurrentDesignToProfile(sessionUser)
     } else {
       setUserProjects([])
       setSelectedProjectId('')
@@ -1573,6 +1576,11 @@ function EditorPage() {
         onClose={() => setCloudDrawerOpen(false)}
         onLoadProject={loadCloudDesign}
         userId={sessionUser?.id || null}
+        onDesignDeleted={() => {
+          if (sessionUser) {
+            syncCurrentDesignToProfile(sessionUser)
+          }
+        }}
       />
 
       {/* Sleek Save Project Dialog */}
