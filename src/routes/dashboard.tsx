@@ -520,7 +520,7 @@ function SettingsTab({ user, onUserUpdate }: { user: User; onUserUpdate: (u: Use
 
   return (
     <div style={{ maxWidth: 640 }}>
-      <h2 style={{ fontFamily: 'Outfit', fontSize: '1.8rem', color: 'var(--fg)', marginBottom: 8, marginTop: 0 }}>Profile Settings</h2>
+      <h2 style={{ fontFamily: 'Outfit', fontSize: '1.8rem', color: 'var(--fg)', marginBottom: 8, marginTop: 0 }}>Account Settings</h2>
       <p style={{ color: 'var(--fg-soft)', marginBottom: 40 }}>Manage your personal details, security, and account preferences.</p>
 
       {/* Profile Details */}
@@ -1060,7 +1060,7 @@ function DashboardPage() {
                 transition: 'background 0.2s, color 0.2s', textAlign: 'left', fontSize: '0.92rem'
               }}
             >
-              <Settings size={18} /> Profile Settings
+              <Settings size={18} /> Account Settings
             </button>
           </nav>
 
