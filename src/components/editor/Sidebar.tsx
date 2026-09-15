@@ -1,5 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
-import { Box, PlusSquare, ChevronDown, ChevronRight, LayoutGrid, Search, Trash2, Palette, Plus, Save, Folder, FileText, DoorClosed, AppWindow } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Box, PlusSquare, ChevronDown, ChevronRight, LayoutGrid, Search, Trash2, Palette, Plus, Folder, FileText, DoorClosed, AppWindow, Copy } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import { ASSET_DIMENSIONS, ASSET_CATEGORIES, ASSET_REGISTRY } from '../../lib/assetRegistry'
 import ColorPickerPanel from './ColorPickerPanel'
@@ -19,8 +19,7 @@ export default function Sidebar({
   // showAlert
   onClose,
   onNewProject,
-  onSaveProject,
-  onSaveAsProject,
+  onCopyToProject,
   onOpenProjects,
   onGenerateReport,
   isCapturingReport = false,
@@ -38,8 +37,7 @@ export default function Sidebar({
   showAlert?: (message: string, type?: 'info' | 'success' | 'warning' | 'error', title?: string) => void;
   onClose?: () => void;
   onNewProject?: () => void;
-  onSaveProject?: () => void;
-  onSaveAsProject?: () => void;
+  onCopyToProject?: () => void;
   onOpenProjects?: () => void;
   onGenerateReport?: () => void;
   isCapturingReport?: boolean;
@@ -50,18 +48,6 @@ export default function Sidebar({
   const [isModelsOpen, setIsModelsOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>(ASSET_CATEGORIES[0].id)
   const [searchQuery, setSearchQuery] = useState('')
-  const [isSaveMenuOpen, setIsSaveMenuOpen] = useState(false)
-  const saveMenuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (saveMenuRef.current && !saveMenuRef.current.contains(e.target as Node)) {
-        setIsSaveMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
 
   const addCustomAsset = (asset: any) => {
     addElement({
@@ -314,7 +300,7 @@ export default function Sidebar({
 
       <div className="flex-1 overflow-y-auto flex flex-col custom-scrollbar">
         {/* Project Actions as clean list options */}
-        {(onNewProject || onSaveProject || onOpenProjects || onGenerateReport) && (
+        {(onNewProject || onCopyToProject || onOpenProjects || onGenerateReport) && (
           <div className="p-2 border-b border-[var(--line)] flex flex-col gap-0.5 shrink-0 bg-[var(--surface-light)]/20">
             {onNewProject && (
               <button
@@ -327,56 +313,17 @@ export default function Sidebar({
                 <span>New</span>
               </button>
             )}
-            {onSaveProject && (
-              <div 
-                ref={saveMenuRef}
-                className="flex flex-col"
+            {onCopyToProject && (
+              <button
+                onClick={onCopyToProject}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-xs font-semibold text-[var(--sea-ink)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition cursor-pointer group"
+                title="Make a copy into another project folder or standalone"
               >
-                <button
-                  onClick={() => setIsSaveMenuOpen(prev => !prev)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs font-semibold transition cursor-pointer group ${
-                    isSaveMenuOpen 
-                      ? 'bg-[var(--sand)] text-[var(--brand)] font-bold' 
-                      : 'text-[var(--sea-ink)] hover:bg-[var(--sand)] hover:text-[var(--brand)]'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-6 h-6 rounded-md bg-[var(--surface-light)] border border-[var(--line)] flex items-center justify-center shrink-0 group-hover:border-[var(--brand)] transition-colors">
-                      <Save className="w-3.5 h-3.5 text-[var(--sea-ink-soft)] group-hover:text-[var(--brand)] transition-colors" />
-                    </div>
-                    <span>Save</span>
-                  </div>
-                  {onSaveAsProject && (
-                    <ChevronDown className={`w-3.5 h-3.5 text-[var(--sea-ink-soft)] transition-transform duration-200 ${isSaveMenuOpen ? 'rotate-180 text-[var(--brand)]' : ''}`} />
-                  )}
-                </button>
-
-                {/* Canva-style expanded drawer options directly within the panel */}
-                {onSaveAsProject && isSaveMenuOpen && (
-                  <div className="ml-5 pl-3 border-l-2 border-[var(--brand)]/30 my-1 flex flex-col gap-1 py-1 animate-in fade-in slide-in-from-top-1 duration-150">
-                    <button
-                      onClick={() => {
-                        setIsSaveMenuOpen(false)
-                        onSaveProject()
-                      }}
-                      className="flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-medium text-[var(--sea-ink)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition text-left cursor-pointer group/btn"
-                    >
-                      <span>Save</span>
-                      <span className="text-[10px] text-[var(--sea-ink-soft)] group-hover/btn:text-[var(--brand)] font-normal">Quick save</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsSaveMenuOpen(false)
-                        onSaveAsProject()
-                      }}
-                      className="flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-medium text-[var(--sea-ink)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition text-left cursor-pointer group/btn"
-                    >
-                      <span>Save as...</span>
-                      <span className="text-[10px] text-[var(--sea-ink-soft)] group-hover/btn:text-[var(--brand)] font-normal">New copy</span>
-                    </button>
-                  </div>
-                )}
-              </div>
+                <div className="w-6 h-6 rounded-md bg-[var(--surface-light)] border border-[var(--line)] flex items-center justify-center shrink-0 group-hover:border-[var(--brand)] transition-colors">
+                  <Copy className="w-3.5 h-3.5 text-[var(--sea-ink-soft)] group-hover:text-[var(--brand)] transition-colors" />
+                </div>
+                <span>Copy to...</span>
+              </button>
             )}
             {onOpenProjects && (
               <button

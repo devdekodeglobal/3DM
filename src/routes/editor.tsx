@@ -8,7 +8,7 @@ import Preview3D from '../components/editor/Preview3D'
 import ColorPickerPanel from '../components/editor/ColorPickerPanel'
 import RoofCanvas from '../components/editor/RoofCanvas'
 import UserMenuDropdown from '../components/UserMenuDropdown'
-import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Save, LogIn, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil, LayoutGrid, Sliders, Monitor, Folder } from 'lucide-react'
+import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, LogIn, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil, LayoutGrid, Sliders, Monitor, Folder, CloudCheck, Loader2, Copy } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
@@ -82,7 +82,6 @@ function EditorPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [cloudDrawerOpen, setCloudDrawerOpen] = useState(false)
   const [showSavePrompt, setShowSavePrompt] = useState(false)
-  const [saveAsMode, setSaveAsMode] = useState(false)
   const [pendingSaveTrigger, setPendingSaveTrigger] = useState<boolean>(false)
   const [userProjects, setUserProjects] = useState<any[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<string>(() => {
@@ -310,64 +309,6 @@ function EditorPage() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  const handleCloudSave = async () => {
-    if (!sessionUser) {
-      setAuthModalOpen(true)
-      return
-    }
-
-    setIsCloudSaving(true)
-    try {
-      if (currentDesignId) {
-        // Try updating the existing design
-        try {
-          const updatePayload: { name?: string; config?: unknown; elements?: unknown; project_id?: string | null } = {
-            name: projectName || 'Untitled Design',
-            config: boothConfig,
-            elements: elements,
-          }
-          if (selectedProjectId) {
-            updatePayload.project_id = selectedProjectId
-            localStorage.setItem('current-project-id', selectedProjectId)
-          } else {
-            updatePayload.project_id = null
-            localStorage.removeItem('current-project-id')
-          }
-          await updateDesign(currentDesignId, updatePayload)
-          showAlert('Design saved', 'success', 'Saved')
-          setShowSavePrompt(false)
-          return
-        } catch (updateErr: any) {
-          // If design belongs to another user / not found, fall through to create a new design
-          if (updateErr.message?.includes('not found') || updateErr.message?.includes('404')) {
-            console.warn('Current design ID not found for this user, saving as new design...')
-            setCurrentDesignId(null)
-            localStorage.removeItem('current-design-id')
-          } else {
-            throw updateErr
-          }
-        }
-      }
-
-      // Create new design
-      const projectId = selectedProjectId ? selectedProjectId : null
-      const newDesign = await saveDesign(projectId, projectName || 'Untitled Design', boothConfig, elements)
-      setCurrentDesignId(newDesign.id)
-      if (projectId) {
-        localStorage.setItem('current-project-id', projectId)
-      } else {
-        localStorage.removeItem('current-project-id')
-      }
-      showAlert('Design saved', 'success', 'Saved')
-      setShowSavePrompt(false)
-    } catch (err: any) {
-      console.error('Cloud save failed:', err)
-      showAlert(err.message || 'Failed to save to the cloud.', 'error', 'Save Failed')
-    } finally {
-      setIsCloudSaving(false)
-    }
-  };
-
   const handleCloudSaveAs = async () => {
     if (!sessionUser) {
       setAuthModalOpen(true)
@@ -385,11 +326,11 @@ function EditorPage() {
       } else {
         localStorage.removeItem('current-project-id')
       }
-      showAlert('Design saved', 'success', 'Saved')
+      showAlert(`Created copy "${newDesign.name}" with auto-sync active`, 'success', 'Design Copied')
       setShowSavePrompt(false)
     } catch (err: any) {
       console.error('Cloud save failed:', err)
-      showAlert(err.message || 'Failed to save to the cloud.', 'error', 'Save Failed')
+      showAlert(err.message || 'Failed to create copy.', 'error', 'Copy Failed')
     } finally {
       setIsCloudSaving(false)
     }
@@ -435,9 +376,15 @@ function EditorPage() {
   }, [boothConfig, elements])
 
   // Auto-save to cloud (automatically syncs for all existing designs)
+  const [syncStatus, setSyncStatus] = useState<'saved' | 'saving' | 'idle'>('idle')
+
   useEffect(() => {
-    if (!currentDesignId || !sessionUser) return;
+    if (!currentDesignId || !sessionUser) {
+      setSyncStatus('idle')
+      return;
+    }
     
+    setSyncStatus('saving')
     const handler = setTimeout(async () => {
       try {
         await updateDesign(currentDesignId, {
@@ -445,15 +392,17 @@ function EditorPage() {
           config: boothConfig,
           elements: elements
         });
+        setSyncStatus('saved')
       } catch (err: any) {
         console.error('Auto-save to cloud failed:', err);
+        setSyncStatus('idle')
         if (err.message === 'Design not found' || err.message.includes('404')) {
           setCurrentDesignId(null)
           localStorage.removeItem('current-design-id')
-          showAlert('This design was deleted or no longer exists. Auto-save disabled. Please Save as New Design.', 'error', 'Design Missing')
+          showAlert('This design was deleted or no longer exists. Auto-save disabled. Please create a new copy.', 'error', 'Design Missing')
         }
       }
-    }, 2500);
+    }, 2000);
 
     return () => clearTimeout(handler);
   }, [boothConfig, elements, projectName, currentDesignId, sessionUser]);
@@ -972,9 +921,12 @@ function EditorPage() {
                     localStorage.setItem('current-design-name', trimmed)
                     if (sessionUser) {
                       try {
+                        setSyncStatus('saving')
                         await updateDesign(currentDesignId, { name: trimmed })
+                        setSyncStatus('saved')
                       } catch (err) {
                         console.error('Failed to sync design rename to cloud:', err)
+                        setSyncStatus('idle')
                       }
                     }
                   }
@@ -985,6 +937,26 @@ function EditorPage() {
               />
               <Pencil className="w-2.5 h-2.5 text-[var(--fg-dim)] opacity-40 group-hover:opacity-100 transition-opacity shrink-0 pointer-events-none" />
             </div>
+
+            {/* Cloud Auto-Save Status Indicator */}
+            {sessionUser && currentDesignId && (
+              <div 
+                className="hidden sm:flex items-center gap-1 text-[11px] text-[var(--fg-dim)] px-1 select-none transition-all"
+                title={syncStatus === 'saving' ? 'Saving changes to cloud...' : 'All changes saved to cloud'}
+              >
+                {syncStatus === 'saving' ? (
+                  <>
+                    <Loader2 className="w-3 h-3 text-[var(--brand)] animate-spin" />
+                    <span className="text-[10px] text-[var(--brand)] font-medium">Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <CloudCheck className="w-3.5 h-3.5 text-emerald-500" />
+                    <span className="text-[10px] text-[var(--fg-dim)] font-medium">Saved</span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -1075,32 +1047,12 @@ function EditorPage() {
               onDeleteCustomAsset={handleDeleteCustomAsset}
               showAlert={showAlert}
               onNewProject={handleNewProject}
-              onSaveProject={() => {
+              onCopyToProject={() => {
                 if (!sessionUser) {
                   setPendingSaveTrigger(true)
-                  setSaveAsMode(false)
                   setAuthModalOpen(true)
                   return
                 }
-                if (currentDesignId) {
-                  // Direct save current design
-                  handleCloudSave()
-                } else {
-                  // Unsaved design: prompt for name
-                  setSaveAsMode(false)
-                  const currentProj = localStorage.getItem('current-project-id')
-                  setSelectedProjectId(currentProj || '')
-                  setShowSavePrompt(true)
-                }
-              }}
-              onSaveAsProject={() => {
-                if (!sessionUser) {
-                  setPendingSaveTrigger(true)
-                  setSaveAsMode(true)
-                  setAuthModalOpen(true)
-                  return
-                }
-                setSaveAsMode(true)
                 const currentProj = localStorage.getItem('current-project-id')
                 setSelectedProjectId(currentProj || '')
                 setShowSavePrompt(true)
@@ -1253,30 +1205,12 @@ function EditorPage() {
                 showAlert={showAlert}
                 onClose={() => setMobileTab('canvas')}
                 onNewProject={handleNewProject}
-                onSaveProject={() => {
+                onCopyToProject={() => {
                   if (!sessionUser) {
                     setPendingSaveTrigger(true)
-                    setSaveAsMode(false)
                     setAuthModalOpen(true)
                     return
                   }
-                  if (currentDesignId) {
-                    handleCloudSave()
-                  } else {
-                    setSaveAsMode(false)
-                    const currentProj = localStorage.getItem('current-project-id')
-                    setSelectedProjectId(currentProj || '')
-                    setShowSavePrompt(true)
-                  }
-                }}
-                onSaveAsProject={() => {
-                  if (!sessionUser) {
-                    setPendingSaveTrigger(true)
-                    setSaveAsMode(true)
-                    setAuthModalOpen(true)
-                    return
-                  }
-                  setSaveAsMode(true)
                   const currentProj = localStorage.getItem('current-project-id')
                   setSelectedProjectId(currentProj || '')
                   setShowSavePrompt(true)
@@ -1570,20 +1504,20 @@ function EditorPage() {
               <X className="w-5 h-5" />
             </button>
             <h3 className="text-lg font-bold font-[Outfit] text-[var(--fg)] dark:text-white mb-4">
-              {saveAsMode ? 'Save As New Design' : 'Save Design'}
+              Copy Design To...
             </h3>
 
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black tracking-wider uppercase text-[var(--fg-dim)] dark:text-white/70 block">
-                  Project
+                  Target Project Folder
                 </label>
                 <select
                   value={selectedProjectId}
                   onChange={(e) => setSelectedProjectId(e.target.value)}
                   className="w-full bg-[var(--surface-light)] dark:bg-white/5 border border-[var(--border)] dark:border-white/10 text-[var(--fg)] dark:text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] transition appearance-none cursor-pointer"
                 >
-                  <option value="" className="bg-[var(--bg-card)] dark:bg-black text-[var(--fg)] dark:text-white">None</option>
+                  <option value="" className="bg-[var(--bg-card)] dark:bg-black text-[var(--fg)] dark:text-white">None (Standalone Design)</option>
                   {userProjects.map(p => (
                     <option key={p.id} value={p.id} className="bg-[var(--bg-card)] dark:bg-black text-[var(--fg)] dark:text-white">{p.name}</option>
                   ))}
@@ -1592,7 +1526,7 @@ function EditorPage() {
 
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black tracking-wider uppercase text-[var(--fg-dim)] dark:text-white/70 block">
-                  Design Name
+                  New Copy Name
                 </label>
                 <input
                   type="text"
@@ -1605,12 +1539,12 @@ function EditorPage() {
 
               <div className="space-y-2 pt-2">
                 <button
-                  onClick={saveAsMode ? handleCloudSaveAs : handleCloudSave}
+                  onClick={handleCloudSaveAs}
                   disabled={isCloudSaving}
                   className="w-full bg-[#4f46e5] hover:bg-[#4338ca] active:bg-[#3730a3] text-white text-xs font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
                 >
-                  <Save className="w-4 h-4 text-white" />
-                  <span className="text-white">{isCloudSaving ? 'Saving...' : sessionUser ? (saveAsMode ? 'Save As' : 'Save') : 'Login to Save'}</span>
+                  <Copy className="w-4 h-4 text-white" />
+                  <span className="text-white">{isCloudSaving ? 'Copying...' : sessionUser ? 'Copy Design' : 'Login to Copy'}</span>
                 </button>
                 
                 <button

@@ -29,7 +29,6 @@ import {
 import { ConfirmModal } from '../components/editor/ConfirmModal'
 import { PromptModal } from '../components/editor/PromptModal'
 import { AnimatedHeaderLogo } from '../components/AnimatedHeaderLogo'
-import ThemeToggle from '../components/ThemeToggle'
 import UserMenuDropdown from '../components/UserMenuDropdown'
 
 interface DashboardSearch {
@@ -942,7 +941,7 @@ function DashboardPage() {
         {/* Inner Content Wrapper */}
         <div className="w-[260px] h-full flex flex-col overflow-hidden transition-opacity duration-300" style={{ opacity: sidebarOpen ? 1 : 0, pointerEvents: sidebarOpen ? 'auto' : 'none', padding: '24px 0' }}>
           <div style={{ padding: '0 24px', marginBottom: 24 }}>
-            <AnimatedHeaderLogo />
+            <AnimatedHeaderLogo href="/dashboard" />
           </div>
 
           {/* "+ Create new" Button in Left Nav Bar */}
@@ -1121,7 +1120,6 @@ function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <UserMenuDropdown user={user} onSignedOut={() => { window.location.href = '/' }} />
           </div>
         </header>

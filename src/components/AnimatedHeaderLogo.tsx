@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router'
 
-export function AnimatedHeaderLogo() {
+export function AnimatedHeaderLogo({ href = '/' }: { href?: string }) {
   return (
-    <Link to="/" className="flex items-center flex-shrink-0 no-underline group h-full overflow-visible">
+    <Link to={href} className="flex items-center flex-shrink-0 no-underline group h-full overflow-visible">
       {/* Light mode: use the image */}
       <img
         src="/originals/original.png"
@@ -17,3 +17,4 @@ export function AnimatedHeaderLogo() {
     </Link>
   )
 }
+
