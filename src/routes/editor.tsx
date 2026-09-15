@@ -243,6 +243,9 @@ function EditorPage() {
     if (currentDesignId) {
       localStorage.setItem('current-design-id', currentDesignId)
       localStorage.setItem('current-design-name', projectName)
+    } else {
+      localStorage.removeItem('current-design-id')
+      localStorage.removeItem('current-design-name')
     }
   }, [currentDesignId, projectName])
 
@@ -1068,6 +1071,10 @@ function EditorPage() {
                 onSignedOut={() => {
                   setSessionUser(null)
                   setCurrentDesignId(null)
+                  localStorage.removeItem('current-design-id')
+                  localStorage.removeItem('current-design-name')
+                  localStorage.removeItem('current-project-id')
+                  setSelectedProjectId('')
                 }}
               />
             </div>
