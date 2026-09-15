@@ -276,8 +276,9 @@ export async function sendOtpEmail(
 
   if (!res.ok) {
     const errorText = await res.text()
-    console.error(`Resend API Error (${res.status}):`, errorText)
+    console.error(`Resend API Error (${res.status}) sending to ${to}:`, errorText)
+    return false
   }
 
-  return res.ok
+  return true
 }
