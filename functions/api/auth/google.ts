@@ -33,12 +33,14 @@ function getOAuthStateCookie(request: Request): string | null {
   return match ? match[1] : null
 }
 
-function setOAuthStateCookie(state: string): string {
-  return `oauth_state=${state}; Path=/api/auth/google; HttpOnly; Secure; SameSite=Lax; Max-Age=300`
+function setOAuthStateCookie(request: Request, state: string): string {
+  const url = new URL(request.url)
+  const isSecure = url.protocol === 'https:' || request.headers.get('x-forwarded-proto') === 'https'
+  return `oauth_state=${state}; Path=/; HttpOnly; ${isSecure ? 'Secure; ' : ''}SameSite=Lax; Max-Age=300`
 }
 
 function clearOAuthStateCookie(): string {
-  return `oauth_state=; Path=/api/auth/google; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
+  return `oauth_state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`
 }
 
 // GET /api/auth/google — either start OAuth flow or handle callback
@@ -68,7 +70,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       status: 302,
       headers: {
         Location: `${GOOGLE_AUTH_URL}?${params}`,
-        'Set-Cookie': setOAuthStateCookie(stateId),
+        'Set-Cookie': setOAuthStateCookie(request, stateId),
       },
     })
   }
