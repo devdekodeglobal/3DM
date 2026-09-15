@@ -117,7 +117,7 @@ function EditorPage() {
   const [currentDesignId, setCurrentDesignId] = useState<string | null>(initialData.id || null)
 
   // Helper to sync current editor design into user's account if space is available
-  const syncCurrentDesignToProfile = useCallback(async (user: any) => {
+  const syncCurrentDesignToProfile = useCallback(async (user: any, reason: 'login' | 'space_cleared' = 'login') => {
     if (!user || (!boothConfig && elements.length === 0)) return
     try {
       const userDesigns = await listDesigns()
@@ -138,7 +138,10 @@ function EditorPage() {
       localStorage.removeItem('current-project-id')
       setSelectedProjectId('')
       setSyncStatus('saved')
-      showAlert('Space cleared! Your current design has now been saved to your account.', 'success', 'Design Saved')
+      const successMessage = reason === 'space_cleared'
+        ? 'Space cleared! Your current design has now been saved to your account.'
+        : 'Your current design has been saved to your account and auto-sync is active.'
+      showAlert(successMessage, 'success', 'Design Saved')
     } catch (err: any) {
       console.error('Failed to save current design to profile:', err)
     }
@@ -155,7 +158,7 @@ function EditorPage() {
         }
       }).catch(console.error)
 
-      syncCurrentDesignToProfile(sessionUser)
+      syncCurrentDesignToProfile(sessionUser, 'login')
     } else {
       setUserProjects([])
       setSelectedProjectId('')
@@ -1579,7 +1582,7 @@ function EditorPage() {
         userId={sessionUser?.id || null}
         onDesignDeleted={() => {
           if (sessionUser) {
-            syncCurrentDesignToProfile(sessionUser)
+            syncCurrentDesignToProfile(sessionUser, 'space_cleared')
           }
         }}
       />
