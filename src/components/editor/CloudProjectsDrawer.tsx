@@ -144,10 +144,10 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
 
     setPromptModalState({
       isOpen: true,
-      title: 'Create Project Folder',
+      title: 'Create Project',
       placeholder: 'e.g. Summer Expo 2026',
       initialValue: `Project ${projects.length + 1}`,
-      confirmText: 'Create Folder',
+      confirmText: 'Create Project',
       onConfirm: async (name: string) => {
         try {
           const newProj = await createProject(name.trim(), 'Space designs collection')
@@ -155,7 +155,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
           setPromptModalState(null)
         } catch (err: any) {
           console.error('Failed to create project:', err)
-          setErrorMsg(err.message || 'Failed to create project folder.')
+          setErrorMsg(err.message || 'Failed to create project.')
           setPromptModalState(null)
         }
       }
@@ -173,7 +173,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
 
     setPromptModalState({
       isOpen: true,
-      title: targetProjectId ? 'New Design in Folder' : 'New Standalone Design',
+      title: targetProjectId ? 'New Design in Project' : 'New Standalone Design',
       placeholder: 'e.g. Space Option A',
       initialValue: defaultName,
       confirmText: 'Create & Open',
@@ -204,8 +204,8 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
   const handleRenameProject = (project: Project) => {
     setPromptModalState({
       isOpen: true,
-      title: 'Rename Project Folder',
-      placeholder: 'Folder name',
+      title: 'Rename Project',
+      placeholder: 'Project name',
       initialValue: project.name,
       confirmText: 'Rename',
       onConfirm: async (newName: string) => {
@@ -216,7 +216,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
           setPromptModalState(null)
         } catch (err: any) {
           console.error('Failed to rename project:', err)
-          setErrorMsg(err.message || 'Failed to rename project folder.')
+          setErrorMsg(err.message || 'Failed to rename project.')
           setPromptModalState(null)
         }
       }
@@ -228,9 +228,9 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
     e.stopPropagation()
     setConfirmModalState({
       isOpen: true,
-      title: 'Delete Project Folder',
+      title: 'Delete Project',
       message: `Are you sure you want to delete "${project.name}"? Designs inside this project will also be deleted. This cannot be undone.`,
-      confirmText: 'Delete Folder',
+      confirmText: 'Delete Project',
       onConfirm: async () => {
         try {
           await deleteProject(project.id)
@@ -442,7 +442,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
                       className="flex items-center gap-3 px-3.5 py-2.5 text-xs font-semibold text-[var(--sea-ink)] dark:text-white/90 hover:bg-[var(--sand)] dark:hover:bg-white/5 hover:text-[var(--brand)] transition text-left cursor-pointer"
                     >
                       <MoveRight className="w-4 h-4 text-[var(--sea-ink-soft)] dark:text-white/50" />
-                      <span>Move to folder</span>
+                      <span>Move to project</span>
                     </button>
 
                     <button
@@ -508,7 +508,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
                 Projects & Designs
               </h2>
               <p className="text-sm text-[var(--fg-soft)] dark:text-white/80 font-medium mt-0.5">
-                Manage your folder projects and designs
+                Manage your projects and designs
               </p>
             </div>
           </div>
@@ -517,11 +517,11 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
             <button
               onClick={handleCreateProject}
               disabled={projects.length >= 2}
-              title={projects.length >= 2 ? 'Maximum of 2 projects reached' : 'Create new project folder'}
+              title={projects.length >= 2 ? 'Maximum of 2 projects reached' : 'Create new project'}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white shadow-md transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <FolderPlus className="w-4 h-4 text-white" />
-              <span className="text-white">New Folder</span>
+              <span className="text-white">New Project</span>
             </button>
             <button
               onClick={fetchData}
@@ -548,7 +548,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search folders and designs..."
+              placeholder="Search projects and designs..."
               className="w-full bg-[var(--surface-light)] dark:bg-white/5 border border-[var(--border)] dark:border-white/10 rounded-xl pl-10 pr-9 py-2.5 text-sm text-[var(--fg)] dark:text-white placeholder-[var(--fg-dim)] dark:placeholder-white/40 outline-none focus:border-[var(--brand)] transition"
             />
             {searchQuery && (
@@ -587,7 +587,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
               <FolderOpen className="w-12 h-12 stroke-[1.2] mx-auto text-[var(--fg-dim)]/40 dark:text-white/20 mb-3" />
               <p className="text-sm font-bold text-[var(--fg)] dark:text-white">No designs or projects yet</p>
               <p className="text-xs mt-1 max-w-[280px] mx-auto leading-relaxed">
-                Start drawing in the editor and click "Save" to keep your work safe. You can also create project folders to organize them.
+                Start drawing in the editor and click "Save" to keep your work safe. You can also create projects to organize them.
               </p>
               <div className="mt-4 flex items-center justify-center gap-2">
                 <button
@@ -602,7 +602,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
                   className="px-3.5 py-2 bg-[#4f46e5] hover:bg-[#4338ca] text-white text-xs font-bold rounded-xl transition inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
                 >
                   <FolderPlus className="w-4 h-4 text-white" />
-                  <span className="text-white">Create Folder</span>
+                  <span className="text-white">Create Project</span>
                 </button>
               </div>
             </div>
@@ -610,7 +610,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
             <div className="text-center py-12 px-4 text-[var(--fg-dim)] dark:text-white/50">
               <Search className="w-8 h-8 mx-auto text-[var(--fg-dim)]/40 dark:text-white/20 mb-2" />
               <p className="text-xs font-bold text-[var(--fg)] dark:text-white">No matches found</p>
-              <p className="text-[11px] text-[var(--fg-dim)] dark:text-white/40 mt-1">No folders or designs match "{searchQuery}"</p>
+              <p className="text-[11px] text-[var(--fg-dim)] dark:text-white/40 mt-1">No projects or designs match "{searchQuery}"</p>
               <button 
                 onClick={() => setSearchQuery('')}
                 className="mt-3 px-3 py-1.5 bg-[var(--bg-subtle)] dark:bg-white/10 hover:bg-[var(--border)] dark:hover:bg-white/15 text-[var(--fg)] dark:text-white text-xs font-semibold rounded-lg transition cursor-pointer"
@@ -656,7 +656,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
                 )}
               </div>
 
-              {/* Project Folders */}
+              {/* Projects */}
               {projects.map(project => {
                 const projectDesigns = filteredDesigns.filter(d => d.project_id === project.id)
                 const isCollapsed = !!collapsedProjects[project.id]
@@ -669,7 +669,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
                       isMenuInThisProject ? 'z-30' : 'z-0'
                     }`}
                   >
-                    {/* Project Folder Header */}
+                    {/* Project Header */}
                     <div
                       onClick={() => toggleCollapse(project.id)}
                       className={`p-4 flex items-center justify-between bg-[var(--sand)]/50 dark:bg-white/5 hover:bg-[var(--sand)] dark:hover:bg-white/10 transition cursor-pointer select-none ${
@@ -696,7 +696,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
                       </div>
 
                       <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                        {/* Add empty design to this folder */}
+                        {/* Add empty design to this project */}
                         <button
                           onClick={() => handleAddEmptyDesign(project.id)}
                           disabled={designs.length >= 6}
@@ -707,11 +707,11 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
                           <span>Design</span>
                         </button>
 
-                        {/* 3-dot Action Menu for folder */}
+                        {/* 3-dot Action Menu for project */}
                         <div className="relative" onClick={e => e.stopPropagation()}>
                           <button
                             onClick={() => setActiveMenuId(activeMenuId === `project-${project.id}` ? null : `project-${project.id}`)}
-                            title="Folder options"
+                            title="Project options"
                             className={`p-2 rounded-lg transition cursor-pointer ${
                               activeMenuId === `project-${project.id}`
                                 ? 'bg-[var(--surface-light)] text-[var(--brand)] shadow-xs'
@@ -757,12 +757,12 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
                       </div>
                     </div>
 
-                    {/* Designs inside this folder */}
+                    {/* Designs inside this project */}
                     {!isCollapsed && (
                       <div className="p-4 border-t border-[var(--border)] dark:border-white/5 rounded-b-2xl">
                         {projectDesigns.length === 0 ? (
                           <div className="py-7 text-center text-[var(--fg-dim)] dark:text-white/50 text-sm">
-                            <p>This folder is empty.</p>
+                            <p>This project is empty.</p>
                             <button
                               onClick={() => handleAddEmptyDesign(project.id)}
                               className="mt-2 text-sm font-bold text-[var(--brand)] hover:underline cursor-pointer"
@@ -786,7 +786,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
 
         {/* Footer info & stats */}
         <div className="px-8 py-4 border-t border-[var(--border)] dark:border-white/10 bg-[var(--bg-subtle)]/40 dark:bg-white/5 flex items-center justify-between text-xs text-[var(--fg-soft)] dark:text-white/80 font-semibold">
-          <span>{projects.length} / 2 Project Folders</span>
+          <span>{projects.length} / 2 Projects</span>
           <span>{designs.length} / 6 Total Designs</span>
         </div>
       </div>
@@ -805,7 +805,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
               </button>
             </div>
             <p className="text-xs text-[var(--fg-soft)] dark:text-white/60">
-              Select a project folder to group this design under, or keep it standalone.
+              Select a project to group this design under, or keep it standalone.
             </p>
 
             <div className="space-y-2">

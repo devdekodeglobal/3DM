@@ -209,7 +209,7 @@ function DesignCard({
                 onClick={handleStartMove}
                 className="w-full px-3.5 py-2.5 text-xs font-semibold text-[var(--fg)] hover:bg-[var(--bg-subtle)] hover:text-[#6366f1] flex items-center gap-2.5 transition-colors"
               >
-                <FolderInput size={14} /> Move to Folder
+                <FolderInput size={14} /> Move to Project
               </button>
               <div className="my-1 border-t border-[var(--border)]" />
               <button
@@ -351,7 +351,7 @@ function ProjectFolderCard({
               }}
               className="w-full px-3.5 py-2.5 text-xs font-semibold text-[var(--fg)] hover:bg-[var(--bg-subtle)] hover:text-[#6366f1] flex items-center gap-2.5 transition-colors"
             >
-              <ExternalLink size={14} /> Open Folder
+              <ExternalLink size={14} /> Open Project
             </button>
             <button
               onClick={(e) => {
@@ -377,7 +377,7 @@ function ProjectFolderCard({
               }}
               className="w-full px-3.5 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-500/10 flex items-center gap-2.5 transition-colors"
             >
-              <Trash2 size={14} /> Delete Folder
+              <Trash2 size={14} /> Delete Project
             </button>
           </div>
         )}
@@ -424,7 +424,7 @@ function ProjectFolderCard({
           {designCount} {designCount === 1 ? 'Design' : 'Designs'}
         </span>
         <span className="text-[11px] text-[#6366f1] font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
-          Explore folder &rarr;
+          View project &rarr;
         </span>
       </div>
     </div>
@@ -988,7 +988,7 @@ function DashboardPage() {
                   <>
                     <div className="my-1 border-t border-[var(--border)]" />
                     <div className="px-3 py-1 text-[10px] font-bold text-[var(--fg-dim)] uppercase tracking-wider">
-                      Add into Project Folder
+                      Add into Project
                     </div>
                     {projects.map(proj => {
                       const count = designs.filter(d => d.project_id === proj.id).length
@@ -1024,8 +1024,8 @@ function DashboardPage() {
                 >
                   <FolderPlus size={16} className="text-[#6366f1] flex-shrink-0 group-hover:scale-110 transition-transform" />
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs font-semibold text-[var(--fg)] group-hover:text-[#4f46e5]">New Project Folder</div>
-                    <div className="text-[10px] text-[var(--fg-dim)]">{projects.length}/2 folders</div>
+                    <div className="text-xs font-semibold text-[var(--fg)] group-hover:text-[#4f46e5]">New Project</div>
+                    <div className="text-[10px] text-[var(--fg-dim)]">{projects.length}/2 projects</div>
                   </div>
                 </button>
               </div>
@@ -1135,7 +1135,7 @@ function DashboardPage() {
                         Projects & Designs
                       </h1>
                       <p className="text-sm text-[var(--fg-dim)] mt-1">
-                        Organize 3D space variants across project folders or manage standalone space setups.
+                        Organize 3D space variants across projects or manage standalone space setups.
                       </p>
                     </div>
 
@@ -1152,7 +1152,7 @@ function DashboardPage() {
                           onClick={handleCreateProject}
                           className="px-3.5 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-subtle)] text-[var(--fg)] text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-all"
                         >
-                          <FolderPlus size={15} /> New Folder
+                          <FolderPlus size={15} /> New Project
                         </button>
                       )}
                     </div>
@@ -1190,7 +1190,7 @@ function DashboardPage() {
                     </div>
                   )}
 
-                  {/* Project Folders */}
+                  {/* Projects */}
                   {projects.length === 0 && designs.filter(d => !d.project_id).length === 0 ? (
                     <div className="flex flex-col items-center justify-center p-12 md:p-16 text-center border-2 border-dashed border-[var(--border)] rounded-2xl bg-[var(--bg-card)] mt-6">
                       <div className="w-16 h-16 rounded-2xl mb-4 bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-[#6366f1]">
@@ -1198,7 +1198,7 @@ function DashboardPage() {
                       </div>
                       <h2 className="font-sans font-bold text-lg text-[var(--fg)] mb-1">Welcome to your 3D Space Studio</h2>
                       <p className="text-xs text-[var(--fg-dim)] max-w-sm mb-6">
-                        Create your first standalone design or create a project folder to organize 3D space variants.
+                        Create your first standalone design or create a project to organize 3D space variants.
                       </p>
                       <div className="flex items-center gap-3">
                         <button
@@ -1211,7 +1211,7 @@ function DashboardPage() {
                           onClick={handleCreateProject}
                           className="px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-subtle)] text-[var(--fg)] text-xs font-semibold flex items-center gap-2"
                         >
-                          <FolderPlus size={16} /> Create Folder
+                          <FolderPlus size={16} /> Create Project
                         </button>
                       </div>
                     </div>
@@ -1220,13 +1220,13 @@ function DashboardPage() {
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
                           <h2 className="font-sans font-bold text-base text-[var(--fg)]">
-                            Project Folders
+                            Projects
                           </h2>
                           <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--bg-subtle)] text-[var(--fg-dim)] font-medium">
                             {projects.length} / 2
                           </span>
                         </div>
-                        <span className="text-xs text-[var(--fg-dim)]">Max 2 project folders per account</span>
+                        <span className="text-xs text-[var(--fg-dim)]">Max 2 projects per account</span>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
                         {filteredProjects.map((project) => (
@@ -1247,7 +1247,7 @@ function DashboardPage() {
                   ) : null}
                 </>
               ) : (
-                /* Inside Active Project Folder */
+                /* Inside Active Project */
                 <>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-3.5">
@@ -1264,7 +1264,7 @@ function DashboardPage() {
                             {activeProject.name}
                           </h1>
                           <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 font-semibold border border-indigo-500/20">
-                            Folder
+                            Project
                           </span>
                         </div>
                         <p className="text-xs text-[var(--fg-dim)] mt-0.5">
@@ -1289,9 +1289,9 @@ function DashboardPage() {
                       <div className="w-16 h-16 rounded-2xl mb-4 bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-[#6366f1]">
                         <Box size={28} />
                       </div>
-                      <h2 className="font-sans font-bold text-base text-[var(--fg)] mb-1">No designs in this folder yet</h2>
+                      <h2 className="font-sans font-bold text-base text-[var(--fg)] mb-1">No designs in this project yet</h2>
                       <p className="text-xs text-[var(--fg-dim)] max-w-sm mb-6">
-                        Launch the space wizard to design your first 3D variant in this folder.
+                        Launch the space wizard to design your first 3D variant in this project.
                       </p>
                       <button
                         onClick={handleNewDesign}
@@ -1369,7 +1369,7 @@ function DashboardPage() {
         />
       )}
 
-      {/* Move Design to Folder / Standalone Dialog */}
+      {/* Move Design to Project / Standalone Dialog */}
       {movingDesign && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
           <div className="relative w-full max-w-[580px] overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/15 bg-[var(--bg-card)] dark:bg-[#16181d] p-7 sm:p-9 shadow-2xl transition-all text-[var(--fg)] dark:text-white"
@@ -1392,7 +1392,7 @@ function DashboardPage() {
               </button>
             </div>
             <p className="text-sm text-[var(--fg-soft)] dark:text-white/85 mb-6 leading-relaxed">
-              Select a project folder to group this design under, or keep it standalone.
+              Select a project to group this design under, or keep it standalone.
             </p>
 
             <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
@@ -1414,7 +1414,7 @@ function DashboardPage() {
                       </div>
                       <div>
                         <span className="text-sm font-bold block text-[var(--fg)] dark:text-white">None (Standalone Design)</span>
-                        <span className="text-xs text-[var(--fg-soft)] dark:text-white/75 mt-0.5 block font-medium">Direct space not assigned to any folder</span>
+                        <span className="text-xs text-[var(--fg-soft)] dark:text-white/75 mt-0.5 block font-medium">Direct space not assigned to any project</span>
                       </div>
                     </div>
                     {isCurrent && <Check size={18} className="text-[#6366f1]" />}
@@ -1422,7 +1422,7 @@ function DashboardPage() {
                 )
               })()}
 
-              {/* Project Folders */}
+              {/* Projects */}
               {projects.map(proj => {
                 const isCurrent = movingDesign.project_id === proj.id
                 const countInProj = designs.filter(d => d.project_id === proj.id).length

@@ -1606,7 +1606,7 @@ function EditorPage() {
             <div className="space-y-5">
               <div className="space-y-2">
                 <label className="text-xs font-bold tracking-wider uppercase text-[var(--fg-soft)] dark:text-white/85 block">
-                  Target Project Folder
+                  Target Project
                 </label>
                 <select
                   value={selectedProjectId}

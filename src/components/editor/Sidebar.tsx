@@ -317,7 +317,7 @@ export default function Sidebar({
               <button
                 onClick={onCopyToProject}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-xs font-semibold text-[var(--sea-ink)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition cursor-pointer group"
-                title="Make a copy into another project folder or standalone"
+                title="Make a copy into another project or standalone"
               >
                 <div className="w-6 h-6 rounded-md bg-[var(--surface-light)] border border-[var(--line)] flex items-center justify-center shrink-0 group-hover:border-[var(--brand)] transition-colors">
                   <Copy className="w-3.5 h-3.5 text-[var(--sea-ink-soft)] group-hover:text-[var(--brand)] transition-colors" />
