@@ -66,6 +66,11 @@ export const onRequestDelete: PagesFunction<Env> = async ({ request, env, params
 
   const projectId = params.id as string
 
+  // Cascade delete all designs belonging to this project for the user
+  await env.DB.prepare(
+    'DELETE FROM designs WHERE project_id = ? AND user_id = ?'
+  ).bind(projectId, user.id).run()
+
   const { success } = await env.DB.prepare(
     'DELETE FROM projects WHERE id = ? AND user_id = ?'
   ).bind(projectId, user.id).all()

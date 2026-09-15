@@ -1,23 +1,23 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState, useRef } from 'react'
 import { getCurrentUser, listDesigns, listProjects, createProject, updateProject, deleteProject, deleteDesign, updateDesign, changePassword, deleteAccount, saveDesign, updateProfile, getDisplayName, type User, type Design, type Project } from '../lib/authClient'
-import { 
-  Plus, 
-  FolderPlus, 
-  Folder, 
-  FileText, 
-  Trash2, 
-  LayoutGrid, 
-  Loader2, 
-  Box, 
-  Pencil, 
-  Check, 
-  X, 
-  Settings, 
-  ShieldAlert, 
-  Key, 
-  Menu, 
-  ChevronLeft, 
+import {
+  Plus,
+  FolderPlus,
+  Folder,
+  FileText,
+  Trash2,
+  LayoutGrid,
+  Loader2,
+  Box,
+  Pencil,
+  Check,
+  X,
+  Settings,
+  ShieldAlert,
+  Key,
+  Menu,
+  ChevronLeft,
   ChevronRight,
   MoreVertical,
   ExternalLink,
@@ -82,26 +82,26 @@ function BoothMiniSVG({ config }: { config: any }) {
         </pattern>
       </defs>
       <rect width="100" height="100" fill="url(#grid-dots)" />
-      
+
       {/* Space Floor */}
-      <rect 
-        x={ox} 
-        y={oy} 
-        width={sw} 
-        height={sh} 
-        fill="rgba(255,255,255,0.06)" 
-        rx="3" 
-        stroke="rgba(255,255,255,0.25)" 
-        strokeWidth="0.8" 
-        strokeDasharray="2,2" 
+      <rect
+        x={ox}
+        y={oy}
+        width={sw}
+        height={sh}
+        fill="rgba(255,255,255,0.06)"
+        rx="3"
+        stroke="rgba(255,255,255,0.25)"
+        strokeWidth="0.8"
+        strokeDasharray="2,2"
       />
-      
+
       {/* Walls */}
       {walls.north && <line x1={ox} y1={oy} x2={ox + sw} y2={oy} stroke="#818cf8" strokeWidth="2.5" strokeLinecap="round" />}
       {walls.south && <line x1={ox} y1={oy + sh} x2={ox + sw} y2={oy + sh} stroke="#818cf8" strokeWidth="2.5" strokeLinecap="round" />}
       {walls.east && <line x1={ox + sw} y1={oy} x2={ox + sw} y2={oy + sh} stroke="#818cf8" strokeWidth="2.5" strokeLinecap="round" />}
       {walls.west && <line x1={ox} y1={oy} x2={ox} y2={oy + sh} stroke="#818cf8" strokeWidth="2.5" strokeLinecap="round" />}
-      
+
       {/* Space Badge */}
       <rect x={50 - 18} y={oy + sh / 2 - 5} width={36} height={10} rx="5" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
       <text x="50" y={oy + sh / 2 + 2.2} textAnchor="middle" fill="#fff" fontSize="4.5" fontWeight="600" fontFamily="Outfit, Inter, sans-serif">
@@ -111,11 +111,11 @@ function BoothMiniSVG({ config }: { config: any }) {
   )
 }
 
-function DesignCard({ 
-  design, 
-  index, 
-  onOpen, 
-  onDeleteRequest, 
+function DesignCard({
+  design,
+  index,
+  onOpen,
+  onDeleteRequest,
   onRenameRequest,
   onMoveRequest,
   isMenuOpen,
@@ -134,7 +134,7 @@ function DesignCard({
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(design.name)
   let config: any = null
-  try { config = JSON.parse(design.config) } catch {}
+  try { config = JSON.parse(design.config) } catch { }
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -157,15 +157,14 @@ function DesignCard({
   return (
     <div
       onClick={onOpen}
-      className={`group relative flex flex-col rounded-2xl cursor-pointer transition-all duration-300 border bg-[var(--bg-card)] hover:-translate-y-1.5 hover:shadow-xl hover:border-[#6366f1] ${
-        isMenuOpen ? 'z-40 ring-2 ring-[#6366f1]/30' : 'z-10'
-      }`}
+      className={`group relative flex flex-col rounded-2xl cursor-pointer transition-all duration-300 border bg-[var(--bg-card)] hover:-translate-y-1.5 hover:shadow-xl hover:border-[#6366f1] ${isMenuOpen ? 'z-40 ring-2 ring-[#6366f1]/30' : 'z-10'
+        }`}
       style={{
         borderColor: 'var(--border)',
       }}
     >
       {/* Blueprint Visual Header */}
-      <div 
+      <div
         className="h-36 relative rounded-t-2xl p-3 flex items-center justify-center"
         style={{ background: gradient }}
       >
@@ -185,7 +184,7 @@ function DesignCard({
           </button>
 
           {isMenuOpen && (
-            <div 
+            <div
               onClick={e => e.stopPropagation()}
               className="absolute right-0 top-10 w-48 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl py-1.5 z-50 text-left animate-in fade-in zoom-in-95 duration-150"
               style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.35)' }}
@@ -232,7 +231,7 @@ function DesignCard({
         <div>
           {isEditing ? (
             <div className="flex items-center gap-1.5 mb-2" onClick={e => e.stopPropagation()}>
-              <input 
+              <input
                 autoFocus
                 value={editName}
                 onChange={e => setEditName(e.target.value)}
@@ -248,11 +247,11 @@ function DesignCard({
                 }}
                 className="flex-1 bg-[var(--bg)] border border-[#6366f1] text-[var(--fg)] text-sm rounded-lg px-2.5 py-1 outline-none"
               />
-              <button 
-                onClick={() => { 
+              <button
+                onClick={() => {
                   if (editName.trim()) onRenameRequest(design.id, editName.trim())
-                  setIsEditing(false) 
-                }} 
+                  setIsEditing(false)
+                }}
                 className="p-1 text-[#6366f1] hover:bg-[#6366f1]/10 rounded"
               >
                 <Check size={16} />
@@ -282,16 +281,16 @@ function DesignCard({
   )
 }
 
-function ProjectFolderCard({ 
-  project, 
+function ProjectFolderCard({
+  project,
   designCount,
-  onOpen, 
-  onDeleteRequest, 
+  onOpen,
+  onDeleteRequest,
   onRenameRequest,
   onNewDesignInProject,
   isMenuOpen,
   onToggleMenu
-}: { 
+}: {
   project: Project
   designCount: number
   onOpen: () => void
@@ -319,9 +318,8 @@ function ProjectFolderCard({
   return (
     <div
       onClick={onOpen}
-      className={`group relative flex flex-col p-5 rounded-2xl cursor-pointer transition-all duration-300 border bg-[var(--bg-card)] hover:-translate-y-1.5 hover:shadow-xl hover:border-[#6366f1] ${
-        isMenuOpen ? 'z-40 ring-2 ring-[#6366f1]/30' : 'z-10'
-      }`}
+      className={`group relative flex flex-col p-5 rounded-2xl cursor-pointer transition-all duration-300 border bg-[var(--bg-card)] hover:-translate-y-1.5 hover:shadow-xl hover:border-[#6366f1] ${isMenuOpen ? 'z-40 ring-2 ring-[#6366f1]/30' : 'z-10'
+        }`}
       style={{
         borderColor: 'var(--border)',
       }}
@@ -340,7 +338,7 @@ function ProjectFolderCard({
         </button>
 
         {isMenuOpen && (
-          <div 
+          <div
             onClick={e => e.stopPropagation()}
             className="absolute right-0 top-10 w-48 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl py-1.5 z-50 text-left animate-in fade-in zoom-in-95 duration-150"
             style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.35)' }}
@@ -392,12 +390,12 @@ function ProjectFolderCard({
         <div className="flex-1 min-w-0 pr-8">
           {isEditing ? (
             <div className="flex items-center gap-1.5 mb-1" onClick={e => e.stopPropagation()}>
-              <input 
-                autoFocus 
-                value={editName} 
+              <input
+                autoFocus
+                value={editName}
                 onChange={e => setEditName(e.target.value)}
                 onKeyDown={e => {
-                  if (e.key === 'Enter') { 
+                  if (e.key === 'Enter') {
                     e.preventDefault()
                     if (editName.trim()) { onRenameRequest(project.id, editName.trim()) }
                     setIsEditing(false)
@@ -459,7 +457,7 @@ function SettingsTab({ user, onUserUpdate }: { user: User; onUserUpdate: (u: Use
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [pwdMsg, setPwdMsg] = useState<{ text: string, type: 'error' | 'success' } | null>(null)
-  
+
   const [confirmModalState, setConfirmModalState] = useState<{
     isOpen: boolean; title?: string; message: string; confirmText?: string; onConfirm: () => void
   } | null>(null)
@@ -526,10 +524,11 @@ function SettingsTab({ user, onUserUpdate }: { user: User; onUserUpdate: (u: Use
       {/* Profile Details */}
       <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, marginBottom: 32 }}>
         <h3 style={{ margin: '0 0 20px', fontSize: '1.1rem', color: 'var(--fg)', fontWeight: 600 }}>Personal Details</h3>
-        
+
         <form onSubmit={handleNameSave} style={{ marginBottom: 20 }}>
           {nameMsg && (
-            <div style={{ padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: '0.9rem', 
+            <div style={{
+              padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: '0.9rem',
               background: nameMsg.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
               color: nameMsg.type === 'error' ? '#ef4444' : '#22c55e',
               border: `1px solid ${nameMsg.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`
@@ -541,16 +540,16 @@ function SettingsTab({ user, onUserUpdate }: { user: User; onUserUpdate: (u: Use
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--fg-dim)', marginBottom: 6 }}>Display Name</label>
               <div style={{ display: 'flex', gap: 8 }}>
-                <input 
-                  type="text" 
-                  value={displayName} 
+                <input
+                  type="text"
+                  value={displayName}
                   onChange={e => setDisplayName(e.target.value)}
                   placeholder={getDisplayName(user)}
                   maxLength={100}
-                  style={{ flex: 1, background: 'var(--bg)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '0.95rem', outline: 'none' }} 
+                  style={{ flex: 1, background: 'var(--bg)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '0.95rem', outline: 'none' }}
                 />
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={nameLoading || displayName.trim() === (user.name || '')}
                   className="btn btn-primary"
                   style={{ padding: '10px 18px', fontSize: '0.9rem', opacity: (nameLoading || displayName.trim() === (user.name || '')) ? 0.6 : 1 }}
@@ -577,7 +576,7 @@ function SettingsTab({ user, onUserUpdate }: { user: User; onUserUpdate: (u: Use
         <h3 style={{ margin: '0 0 20px', fontSize: '1.1rem', color: 'var(--fg)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
           <Key size={18} /> Password & Security
         </h3>
-        
+
         {user.google_id ? (
           <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: 16, color: 'var(--fg-soft)', fontSize: '0.9rem' }}>
             Your account is authenticated via Google. Password management is handled by your Google account.
@@ -585,7 +584,8 @@ function SettingsTab({ user, onUserUpdate }: { user: User; onUserUpdate: (u: Use
         ) : (
           <form onSubmit={handlePasswordChange}>
             {pwdMsg && (
-              <div style={{ padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: '0.9rem', 
+              <div style={{
+                padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: '0.9rem',
                 background: pwdMsg.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
                 color: pwdMsg.type === 'error' ? '#ef4444' : '#22c55e',
                 border: `1px solid ${pwdMsg.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'}`
@@ -596,23 +596,23 @@ function SettingsTab({ user, onUserUpdate }: { user: User; onUserUpdate: (u: Use
             <div style={{ display: 'grid', gap: 16 }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--fg-dim)', marginBottom: 6 }}>Current Password</label>
-                <input 
+                <input
                   type="password" required value={oldPassword} onChange={e => setOldPassword(e.target.value)}
-                  style={{ width: '100%', background: 'var(--bg)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '0.95rem', outline: 'none' }} 
+                  style={{ width: '100%', background: 'var(--bg)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '0.95rem', outline: 'none' }}
                 />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--fg-dim)', marginBottom: 6 }}>New Password</label>
-                <input 
+                <input
                   type="password" required minLength={8} value={newPassword} onChange={e => setNewPassword(e.target.value)}
-                  style={{ width: '100%', background: 'var(--bg)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '0.95rem', outline: 'none' }} 
+                  style={{ width: '100%', background: 'var(--bg)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '0.95rem', outline: 'none' }}
                 />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--fg-dim)', marginBottom: 6 }}>Confirm New Password</label>
-                <input 
+                <input
                   type="password" required minLength={8} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
-                  style={{ width: '100%', background: 'var(--bg)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '0.95rem', outline: 'none' }} 
+                  style={{ width: '100%', background: 'var(--bg)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', color: 'var(--fg)', fontSize: '0.95rem', outline: 'none' }}
                 />
               </div>
             </div>
@@ -634,8 +634,8 @@ function SettingsTab({ user, onUserUpdate }: { user: User; onUserUpdate: (u: Use
           fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
           transition: 'background 0.2s'
         }}
-        onMouseEnter={e => e.currentTarget.style.background = '#dc2626'}
-        onMouseLeave={e => e.currentTarget.style.background = '#ef4444'}
+          onMouseEnter={e => e.currentTarget.style.background = '#dc2626'}
+          onMouseLeave={e => e.currentTarget.style.background = '#ef4444'}
         >
           <Trash2 size={16} /> Delete Account
         </button>
@@ -686,23 +686,23 @@ function DashboardPage() {
   const [confirmModalState, setConfirmModalState] = useState<{
     isOpen: boolean; title?: string; message: string; confirmText?: string; onConfirm: () => void
   } | null>(null)
-  
+
   const [promptModalState, setPromptModalState] = useState<{
     isOpen: boolean; title: string; message?: string; placeholder?: string; initialValue?: string; confirmText?: string; onConfirm: (val: string) => void
   } | null>(null)
 
   useEffect(() => {
     document.title = 'Dashboard | krafc'
-    ;(async () => {
-      const u = await getCurrentUser()
-      if (!u) { navigate({ to: '/' }); return }
-      setUser(u)
-      const p = await listProjects()
-      setProjects(p)
-      const d = await listDesigns()
-      setDesigns(d)
-      setLoading(false)
-    })()
+      ; (async () => {
+        const u = await getCurrentUser()
+        if (!u) { navigate({ to: '/' }); return }
+        setUser(u)
+        const p = await listProjects()
+        setProjects(p)
+        const d = await listDesigns()
+        setDesigns(d)
+        setLoading(false)
+      })()
   }, [])
 
   const handleOpen = (design: Design) => {
@@ -716,7 +716,7 @@ function DashboardPage() {
       } else {
         localStorage.removeItem('current-project-id')
       }
-    } catch {}
+    } catch { }
     navigate({ to: '/editor' })
   }
 
@@ -766,7 +766,7 @@ function DashboardPage() {
     try {
       const target = designs.find(d => d.id === id)
       if (!target) return
-      
+
       await updateDesign(id, { name: newName, config: JSON.parse(target.config), elements: JSON.parse(target.elements) })
       setDesigns(prev => prev.map(d => d.id === id ? { ...d, name: newName, updated_at: new Date().toISOString() } : d))
     } catch (err) {
@@ -796,6 +796,7 @@ function DashboardPage() {
         try {
           await deleteProject(id)
           setProjects(prev => prev.filter(p => p.id !== id))
+          setDesigns(prev => prev.filter(d => d.project_id !== id))
           if (localStorage.getItem('current-project-id') === id) {
             localStorage.removeItem('current-project-id')
             localStorage.removeItem('current-design-id')
@@ -905,34 +906,32 @@ function DashboardPage() {
 
   const filteredActiveProjectDesigns = activeProject
     ? designs
-        .filter(d => d.project_id === activeProject.id)
-        .filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      .filter(d => d.project_id === activeProject.id)
+      .filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()))
     : []
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
-      
+
       {/* Sidebar Overlay (mobile) */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside 
-        className={`fixed md:relative inset-y-0 left-0 z-50 bg-[var(--bg-card)] flex flex-col flex-shrink-0 transition-all duration-300 ${
-          sidebarOpen ? 'translate-x-0 w-[260px]' : '-translate-x-full w-[260px] md:translate-x-0 md:w-0'
-        }`}
+      <aside
+        className={`fixed md:relative inset-y-0 left-0 z-50 bg-[var(--bg-card)] flex flex-col flex-shrink-0 transition-all duration-300 ${sidebarOpen ? 'translate-x-0 w-[260px]' : '-translate-x-full w-[260px] md:translate-x-0 md:w-0'
+          }`}
         style={{ borderRight: sidebarOpen ? '1px solid var(--border)' : 'none' }}
       >
         {/* Desktop Toggle Button */}
-        <button 
+        <button
           onClick={toggleSidebar}
-          className={`hidden md:flex absolute -right-4 top-6 w-8 h-8 bg-[var(--bg-card)] border border-[var(--border)] rounded-full items-center justify-center text-[var(--fg-soft)] hover:text-[#4f46e5] hover:border-[#4f46e5] transition-all z-50 shadow-sm ${
-            !sidebarOpen ? 'translate-x-4' : ''
-          }`}
+          className={`hidden md:flex absolute -right-4 top-6 w-8 h-8 bg-[var(--bg-card)] border border-[var(--border)] rounded-full items-center justify-center text-[var(--fg-soft)] hover:text-[#4f46e5] hover:border-[#4f46e5] transition-all z-50 shadow-sm ${!sidebarOpen ? 'translate-x-4' : ''
+            }`}
           title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
         >
           {sidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
@@ -962,7 +961,7 @@ function DashboardPage() {
 
             {/* Create New Dropdown */}
             {createMenuOpen && (
-              <div 
+              <div
                 onClick={e => e.stopPropagation()}
                 className="absolute left-4 right-4 top-13 mt-2 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150"
               >
@@ -972,15 +971,13 @@ function DashboardPage() {
                 <button
                   disabled={designs.length >= 6}
                   onClick={() => handleCreateNewDesign(null)}
-                  className={`w-full px-3 py-2 text-left rounded-lg group flex items-start gap-2.5 transition-colors ${
-                    designs.length >= 6 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[var(--bg-subtle)]'
-                  }`}
+                  className={`w-full px-3 py-2 text-left rounded-lg group flex items-start gap-2.5 transition-colors ${designs.length >= 6 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[var(--bg-subtle)]'
+                    }`}
                 >
                   <FileText size={16} className="text-[#6366f1] mt-0.5 flex-shrink-0 group-hover:scale-110 transition-transform" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
                       <div className="text-xs font-semibold text-[var(--fg)] group-hover:text-[#4f46e5]">Standalone Design</div>
-                      <span className="text-[10px] text-[var(--fg-dim)]">{designs.length}/6</span>
                     </div>
                     <div className="text-[10px] text-[var(--fg-dim)] leading-tight">Launches space setup wizard</div>
                   </div>
@@ -1000,9 +997,8 @@ function DashboardPage() {
                           key={proj.id}
                           disabled={isFull}
                           onClick={() => handleCreateNewDesign(proj.id)}
-                          className={`w-full px-3 py-1.5 text-left rounded-lg flex items-center justify-between group transition-colors ${
-                            isFull ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[var(--bg-subtle)]'
-                          }`}
+                          className={`w-full px-3 py-1.5 text-left rounded-lg flex items-center justify-between group transition-colors ${isFull ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[var(--bg-subtle)]'
+                            }`}
                         >
                           <div className="flex items-center gap-2 min-w-0 pr-2">
                             <Folder size={14} className="text-[#6366f1] flex-shrink-0" />
@@ -1022,14 +1018,13 @@ function DashboardPage() {
                     setCreateMenuOpen(false)
                     handleCreateProject()
                   }}
-                  className={`w-full px-3 py-2 text-left rounded-lg flex items-center gap-2.5 group transition-colors ${
-                    projects.length >= 2 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[var(--bg-subtle)]'
-                  }`}
+                  className={`w-full px-3 py-2 text-left rounded-lg flex items-center gap-2.5 group transition-colors ${projects.length >= 2 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[var(--bg-subtle)]'
+                    }`}
                 >
                   <FolderPlus size={16} className="text-[#6366f1] flex-shrink-0 group-hover:scale-110 transition-transform" />
                   <div className="min-w-0 flex-1">
                     <div className="text-xs font-semibold text-[var(--fg)] group-hover:text-[#4f46e5]">New Project Folder</div>
-                    <div className="text-[10px] text-[var(--fg-dim)]">{projects.length}/2 folders used</div>
+                    <div className="text-[10px] text-[var(--fg-dim)]">{projects.length}/2 folders</div>
                   </div>
                 </button>
               </div>
@@ -1037,9 +1032,9 @@ function DashboardPage() {
           </div>
 
           <nav style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '0 16px' }}>
-            <button 
+            <button
               onClick={() => { setActiveTab('projects'); if (window.innerWidth <= 768) setSidebarOpen(false) }}
-              style={{ 
+              style={{
                 display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 10,
                 background: activeTab === 'projects' ? 'var(--bg-subtle)' : 'transparent',
                 color: activeTab === 'projects' ? 'var(--brand)' : 'var(--fg-soft)',
@@ -1049,10 +1044,10 @@ function DashboardPage() {
             >
               <LayoutGrid size={18} /> Projects
             </button>
-            
-            <button 
+
+            <button
               onClick={() => { setActiveTab('settings'); if (window.innerWidth <= 768) setSidebarOpen(false) }}
-              style={{ 
+              style={{
                 display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 10,
                 background: activeTab === 'settings' ? 'var(--bg-subtle)' : 'transparent',
                 color: activeTab === 'settings' ? 'var(--brand)' : 'var(--fg-soft)',
@@ -1087,11 +1082,11 @@ function DashboardPage() {
 
       {/* Main Content */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-        
+
         {/* Topbar with Search & Actions */}
         <header className="h-[72px] border-b border-[var(--border)] flex items-center justify-between px-6 md:px-8 bg-[var(--bg-card)] flex-shrink-0 gap-4">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               className="md:hidden p-2 text-[var(--fg)] hover:text-[#4f46e5] transition-colors"
               onClick={() => setSidebarOpen(true)}
             >
@@ -1126,10 +1121,10 @@ function DashboardPage() {
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6 md:p-10">
-          
+
           {activeTab === 'projects' && (
             <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-              
+
               {!activeProject ? (
                 <>
                   {/* Hero / Header Section */}
@@ -1144,7 +1139,7 @@ function DashboardPage() {
                     </div>
 
                     <div className="flex items-center gap-2.5">
-                      <button 
+                      <button
                         onClick={() => handleCreateNewDesign(null)}
                         disabled={designs.length >= 6}
                         className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
@@ -1152,8 +1147,8 @@ function DashboardPage() {
                         <Plus size={15} /> New Design
                       </button>
                       {projects.length < 2 && (
-                        <button 
-                          onClick={handleCreateProject} 
+                        <button
+                          onClick={handleCreateProject}
                           className="px-3.5 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-subtle)] text-[var(--fg)] text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-all"
                         >
                           <FolderPlus size={15} /> New Folder
@@ -1205,14 +1200,14 @@ function DashboardPage() {
                         Create your first standalone design or create a project folder to organize 3D space variants.
                       </p>
                       <div className="flex items-center gap-3">
-                        <button 
-                          onClick={() => handleCreateNewDesign(null)} 
+                        <button
+                          onClick={() => handleCreateNewDesign(null)}
                           className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md flex items-center gap-2"
                         >
                           <Plus size={16} /> Create First Design
                         </button>
-                        <button 
-                          onClick={handleCreateProject} 
+                        <button
+                          onClick={handleCreateProject}
                           className="px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-subtle)] text-[var(--fg)] text-xs font-semibold flex items-center gap-2"
                         >
                           <FolderPlus size={16} /> Create Folder
@@ -1255,8 +1250,8 @@ function DashboardPage() {
                 <>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-3.5">
-                      <button 
-                        onClick={() => setActiveProject(null)} 
+                      <button
+                        onClick={() => setActiveProject(null)}
                         className="p-2 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-subtle)] text-[var(--fg-soft)] transition-colors"
                         title="Back to all projects"
                       >
@@ -1278,9 +1273,9 @@ function DashboardPage() {
                     </div>
 
                     <div>
-                      <button 
-                        onClick={handleNewDesign} 
-                        disabled={designs.length >= 6} 
+                      <button
+                        onClick={handleNewDesign}
+                        disabled={designs.length >= 6}
                         className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm flex items-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <Plus size={16} /> New Design
@@ -1297,8 +1292,8 @@ function DashboardPage() {
                       <p className="text-xs text-[var(--fg-dim)] max-w-sm mb-6">
                         Launch the space wizard to design your first 3D variant in this folder.
                       </p>
-                      <button 
-                        onClick={handleNewDesign} 
+                      <button
+                        onClick={handleNewDesign}
                         disabled={designs.length >= 6}
                         className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
@@ -1359,7 +1354,7 @@ function DashboardPage() {
           onCancel={() => setConfirmModalState(null)}
         />
       )}
-      
+
       {promptModalState && (
         <PromptModal
           isOpen={promptModalState.isOpen}
@@ -1376,26 +1371,30 @@ function DashboardPage() {
       {/* Move Design to Folder / Standalone Dialog */}
       {movingDesign && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-2xl transition-all text-[var(--fg)]">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <FolderInput size={18} className="text-[#6366f1]" />
-                <h3 className="font-sans font-bold text-base text-[var(--fg)]">
+          <div className="relative w-full max-w-[580px] overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/15 bg-[var(--bg-card)] dark:bg-[#16181d] p-7 sm:p-9 shadow-2xl transition-all text-[var(--fg)] dark:text-white"
+            style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.45)' }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-[#6366f1]/15 rounded-2xl text-[#6366f1]">
+                  <FolderInput size={24} />
+                </div>
+                <h3 className="font-[Outfit] font-bold text-xl text-[var(--fg)] dark:text-white">
                   Move "{movingDesign.name}"
                 </h3>
               </div>
-              <button 
-                onClick={() => setMovingDesign(null)} 
-                className="p-1 text-[var(--fg-dim)] hover:text-[var(--fg)] rounded-lg hover:bg-[var(--bg-subtle)] transition-colors"
+              <button
+                onClick={() => setMovingDesign(null)}
+                className="p-2 text-[var(--fg-soft)] dark:text-white/80 hover:text-[var(--fg)] dark:hover:text-white rounded-full hover:bg-[var(--bg-subtle)] dark:hover:bg-white/10 transition-colors cursor-pointer"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
-            <p className="text-xs text-[var(--fg-dim)] mb-5">
+            <p className="text-sm text-[var(--fg-soft)] dark:text-white/85 mb-6 leading-relaxed">
               Select a project folder to group this design under, or keep it standalone.
             </p>
 
-            <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
               {/* Standalone (None) option */}
               {(() => {
                 const isCurrent = !movingDesign.project_id
@@ -1403,20 +1402,21 @@ function DashboardPage() {
                   <button
                     onClick={() => handleMoveDesignRequest(movingDesign.id, null)}
                     disabled={isMoving}
-                    className={`w-full p-3.5 rounded-xl border text-left flex items-center justify-between transition cursor-pointer ${
-                      isCurrent
-                        ? 'border-[#6366f1] bg-[#6366f1]/10 text-[#6366f1] font-bold'
-                        : 'border-[var(--border)] hover:border-[#6366f1]/40 bg-[var(--bg)] text-[var(--fg)] hover:bg-[var(--bg-subtle)]'
-                    }`}
+                    className={`w-full p-4 rounded-2xl border text-left flex items-center justify-between transition cursor-pointer ${isCurrent
+                        ? 'border-[#6366f1] bg-[#6366f1]/10 text-[#6366f1] font-bold shadow-xs'
+                        : 'border-[var(--border)] dark:border-white/10 hover:border-[#6366f1]/50 bg-[var(--bg)] dark:bg-white/5 text-[var(--fg)] dark:text-white hover:bg-[var(--bg-subtle)] dark:hover:bg-white/10'
+                      }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <FileText size={18} className="text-emerald-500" />
+                    <div className="flex items-center gap-3.5">
+                      <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                        <FileText size={20} />
+                      </div>
                       <div>
-                        <span className="text-xs font-semibold block text-[var(--fg)]">None (Standalone Design)</span>
-                        <span className="text-[11px] text-[var(--fg-dim)]">Direct space not assigned to any folder</span>
+                        <span className="text-sm font-bold block text-[var(--fg)] dark:text-white">None (Standalone Design)</span>
+                        <span className="text-xs text-[var(--fg-soft)] dark:text-white/75 mt-0.5 block font-medium">Direct space not assigned to any folder</span>
                       </div>
                     </div>
-                    {isCurrent && <Check size={16} className="text-[#6366f1]" />}
+                    {isCurrent && <Check size={18} className="text-[#6366f1]" />}
                   </button>
                 )
               })()}
@@ -1431,20 +1431,21 @@ function DashboardPage() {
                     key={proj.id}
                     onClick={() => handleMoveDesignRequest(movingDesign.id, proj.id)}
                     disabled={isMoving}
-                    className={`w-full p-3.5 rounded-xl border text-left flex items-center justify-between transition cursor-pointer ${
-                      isCurrent
-                        ? 'border-[#6366f1] bg-[#6366f1]/10 text-[#6366f1] font-bold'
-                        : 'border-[var(--border)] hover:border-[#6366f1]/40 bg-[var(--bg)] text-[var(--fg)] hover:bg-[var(--bg-subtle)]'
-                    }`}
+                    className={`w-full p-4 rounded-2xl border text-left flex items-center justify-between transition cursor-pointer ${isCurrent
+                        ? 'border-[#6366f1] bg-[#6366f1]/10 text-[#6366f1] font-bold shadow-xs'
+                        : 'border-[var(--border)] dark:border-white/10 hover:border-[#6366f1]/50 bg-[var(--bg)] dark:bg-white/5 text-[var(--fg)] dark:text-white hover:bg-[var(--bg-subtle)] dark:hover:bg-white/10'
+                      }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <Folder size={18} className="text-[#6366f1]" />
+                    <div className="flex items-center gap-3.5">
+                      <div className="p-2.5 rounded-xl bg-[#6366f1]/15 text-[#6366f1]">
+                        <Folder size={20} />
+                      </div>
                       <div>
-                        <span className="text-xs font-semibold block text-[var(--fg)]">{proj.name}</span>
-                        <span className="text-[11px] text-[var(--fg-dim)]">{countInProj} {countInProj === 1 ? 'design' : 'designs'}</span>
+                        <span className="text-sm font-bold block text-[var(--fg)] dark:text-white">{proj.name}</span>
+                        <span className="text-xs text-[var(--fg-soft)] dark:text-white/75 mt-0.5 block font-medium">{countInProj} {countInProj === 1 ? 'design' : 'designs'}</span>
                       </div>
                     </div>
-                    {isCurrent && <Check size={16} className="text-[#6366f1]" />}
+                    {isCurrent && <Check size={18} className="text-[#6366f1]" />}
                   </button>
                 )
               })}

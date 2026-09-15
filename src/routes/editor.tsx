@@ -536,11 +536,13 @@ function EditorPage() {
         setElements([])
         saveToHistory([])
         setCurrentDesignId(null)
-        setProjectName('My Design 1')
+        setProjectName('Untitled Design')
         localStorage.removeItem('stall-config')
         localStorage.removeItem('stall-elements')
         localStorage.removeItem('current-design-id')
         localStorage.removeItem('current-design-name')
+        localStorage.removeItem('current-project-id')
+        setSelectedProjectId('')
         setConfirmModalState(null)
       }
     })
@@ -596,8 +598,31 @@ function EditorPage() {
                 setBoothConfig(newConfig)
                 setElements(initialWalls)
                 saveToHistory(initialWalls)
-                if (currentDesignId && sessionUser) {
-                  updateDesign(currentDesignId, { config: newConfig, elements: initialWalls }).catch(console.error)
+
+                if (sessionUser) {
+                  if (currentDesignId) {
+                    updateDesign(currentDesignId, { config: newConfig, elements: initialWalls }).catch(console.error)
+                  } else {
+                    // Automatically create as standalone design so auto-saving is instantly active
+                    listDesigns().then(async (userDesigns) => {
+                      if (userDesigns.length >= 6) {
+                        showAlert('Account design limit reached (6 maximum). New design will not be auto-saved to cloud.', 'warning', 'Limit Reached')
+                      } else {
+                        try {
+                          const newDesign = await saveDesign(null, projectName || 'Untitled Design', newConfig, initialWalls)
+                          setCurrentDesignId(newDesign.id)
+                          setProjectName(newDesign.name)
+                          localStorage.setItem('current-design-id', newDesign.id)
+                          localStorage.setItem('current-design-name', newDesign.name)
+                          localStorage.removeItem('current-project-id')
+                          setSelectedProjectId('')
+                          setSyncStatus('saved')
+                        } catch (err: any) {
+                          console.error('Auto-create standalone design failed:', err)
+                        }
+                      }
+                    }).catch(console.error)
+                  }
                 }
               }}
               className="text-xs font-bold text-[var(--sea-ink-soft)] hover:text-[var(--brand)] transition px-3 py-1.5 rounded-full bg-[var(--sand)] hover:bg-gray-200"
@@ -840,8 +865,31 @@ function EditorPage() {
                     setBoothConfig(newConfig)
                     setElements(initialElements)
                     saveToHistory(initialElements)
-                    if (currentDesignId && sessionUser) {
-                      updateDesign(currentDesignId, { config: newConfig, elements: initialElements }).catch(console.error)
+
+                    if (sessionUser) {
+                      if (currentDesignId) {
+                        updateDesign(currentDesignId, { config: newConfig, elements: initialElements }).catch(console.error)
+                      } else {
+                        // Automatically create as standalone design so auto-saving starts right away
+                        listDesigns().then(async (userDesigns) => {
+                          if (userDesigns.length >= 6) {
+                            showAlert('Account design limit reached (6 maximum). New design will not be auto-saved to cloud.', 'warning', 'Limit Reached')
+                          } else {
+                            try {
+                              const newDesign = await saveDesign(null, projectName || 'Untitled Design', newConfig, initialElements)
+                              setCurrentDesignId(newDesign.id)
+                              setProjectName(newDesign.name)
+                              localStorage.setItem('current-design-id', newDesign.id)
+                              localStorage.setItem('current-design-name', newDesign.name)
+                              localStorage.removeItem('current-project-id')
+                              setSelectedProjectId('')
+                              setSyncStatus('saved')
+                            } catch (err: any) {
+                              console.error('Auto-create standalone design failed:', err)
+                            }
+                          }
+                        }).catch(console.error)
+                      }
                     }
                   }}
                   className="rounded-full bg-[var(--lagoon-deep)] flex-1 text-white font-bold py-3 hover:bg-[var(--palm)] transition flex items-center justify-center gap-2"
@@ -1496,61 +1544,63 @@ function EditorPage() {
       {/* Sleek Save Project Dialog */}
       {showSavePrompt && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-[var(--border)] dark:border-white/10 bg-[var(--bg-card)] dark:bg-black/60 backdrop-blur-xl p-6 shadow-2xl transition-all text-[var(--fg)] dark:text-white">
+          <div className="relative w-full max-w-[560px] overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/15 bg-[var(--bg-card)] dark:bg-[#16181d] backdrop-blur-2xl p-8 sm:p-9 shadow-2xl transition-all text-[var(--fg)] dark:text-white"
+            style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.45)' }}
+          >
             <button
               onClick={() => setShowSavePrompt(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-full text-[var(--fg-dim)] dark:text-white/50 hover:text-[var(--fg)] dark:hover:text-white hover:bg-[var(--bg-subtle)] dark:hover:bg-white/10 transition cursor-pointer"
+              className="absolute top-5 right-5 p-2 rounded-full text-[var(--fg-soft)] dark:text-white/80 hover:text-[var(--fg)] dark:hover:text-white hover:bg-[var(--bg-subtle)] dark:hover:bg-white/10 transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-lg font-bold font-[Outfit] text-[var(--fg)] dark:text-white mb-4">
+            <h3 className="text-2xl font-bold font-[Outfit] text-[var(--fg)] dark:text-white mb-6 tracking-tight">
               Copy Design To...
             </h3>
 
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black tracking-wider uppercase text-[var(--fg-dim)] dark:text-white/70 block">
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-xs font-bold tracking-wider uppercase text-[var(--fg-soft)] dark:text-white/85 block">
                   Target Project Folder
                 </label>
                 <select
                   value={selectedProjectId}
                   onChange={(e) => setSelectedProjectId(e.target.value)}
-                  className="w-full bg-[var(--surface-light)] dark:bg-white/5 border border-[var(--border)] dark:border-white/10 text-[var(--fg)] dark:text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] transition appearance-none cursor-pointer"
+                  className="w-full bg-[var(--surface-light)] dark:bg-white/5 border border-[var(--border)] dark:border-white/15 text-[var(--fg)] dark:text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-[var(--brand)] transition appearance-none cursor-pointer"
                 >
-                  <option value="" className="bg-[var(--bg-card)] dark:bg-black text-[var(--fg)] dark:text-white">None (Standalone Design)</option>
+                  <option value="" className="bg-[var(--bg-card)] dark:bg-[#16181d] text-[var(--fg)] dark:text-white">None (Standalone Design)</option>
                   {userProjects.map(p => (
-                    <option key={p.id} value={p.id} className="bg-[var(--bg-card)] dark:bg-black text-[var(--fg)] dark:text-white">{p.name}</option>
+                    <option key={p.id} value={p.id} className="bg-[var(--bg-card)] dark:bg-[#16181d] text-[var(--fg)] dark:text-white">{p.name}</option>
                   ))}
                 </select>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black tracking-wider uppercase text-[var(--fg-dim)] dark:text-white/70 block">
+              <div className="space-y-2">
+                <label className="text-xs font-bold tracking-wider uppercase text-[var(--fg-soft)] dark:text-white/70 block">
                   New Copy Name
                 </label>
                 <input
                   type="text"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
-                  className="w-full bg-[var(--surface-light)] dark:bg-white/5 border border-[var(--border)] dark:border-white/10 text-[var(--fg)] dark:text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] transition"
+                  className="w-full bg-[var(--surface-light)] dark:bg-white/5 border border-[var(--border)] dark:border-white/15 text-[var(--fg)] dark:text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-[var(--brand)] transition"
                   placeholder="E.g., Tech Summit 2026 Stand"
                 />
               </div>
 
-              <div className="space-y-2 pt-2">
+              <div className="space-y-3 pt-3">
                 <button
                   onClick={handleCloudSaveAs}
                   disabled={isCloudSaving}
-                  className="w-full bg-[#4f46e5] hover:bg-[#4338ca] active:bg-[#3730a3] text-white text-xs font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
+                  className="w-full bg-[#4f46e5] hover:bg-[#4338ca] active:bg-[#3730a3] text-white text-base font-bold py-3.5 px-5 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-[0_4px_16px_rgba(79,70,229,0.35)] disabled:opacity-50"
                 >
-                  <Copy className="w-4 h-4 text-white" />
+                  <Copy className="w-5 h-5 text-white" />
                   <span className="text-white">{isCloudSaving ? 'Copying...' : sessionUser ? 'Copy Design' : 'Login to Copy'}</span>
                 </button>
                 
                 <button
                   onClick={() => setShowSavePrompt(false)}
                   disabled={isCloudSaving}
-                  className="w-full bg-transparent text-[var(--fg-dim)] dark:text-white/50 hover:text-[var(--fg)] dark:hover:text-white text-[11px] font-semibold py-2 px-4 transition cursor-pointer"
+                  className="w-full bg-transparent text-[var(--fg-dim)] dark:text-white/60 hover:text-[var(--fg)] dark:hover:text-white text-sm font-semibold py-2.5 px-4 transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1633,33 +1683,33 @@ function EditorPage() {
           onClick={() => setToastModal(null)}
         >
           <div 
-            className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-[var(--border)] dark:border-white/10 bg-[var(--bg-card)] dark:bg-[#181a1d]/95 backdrop-blur-xl p-6 shadow-2xl transition-all text-center flex flex-col items-center text-[var(--fg)] dark:text-white"
-            style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.35)' }}
+            className="relative w-full max-w-[480px] overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/15 bg-[var(--bg-card)] dark:bg-[#181a1d] backdrop-blur-2xl p-8 sm:p-9 shadow-2xl transition-all text-center flex flex-col items-center text-[var(--fg)] dark:text-white"
+            style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.45)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3 shadow-lg ${
-              toastModal.type === 'error' ? 'bg-red-500/10 border border-red-500/20 text-red-500 dark:text-red-400' :
-              toastModal.type === 'success' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400' :
-              toastModal.type === 'warning' ? 'bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400' :
-              'bg-[var(--brand)]/10 border border-[var(--brand)]/20 text-[var(--brand)]'
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg ${
+              toastModal.type === 'error' ? 'bg-red-500/15 border border-red-500/25 text-red-500 dark:text-red-400' :
+              toastModal.type === 'success' ? 'bg-emerald-500/15 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400' :
+              toastModal.type === 'warning' ? 'bg-amber-500/15 border border-amber-500/25 text-amber-600 dark:text-amber-400' :
+              'bg-[var(--brand)]/15 border border-[var(--brand)]/25 text-[var(--brand)]'
             }`}>
-              {toastModal.type === 'error' ? <AlertCircle className="w-6 h-6" /> :
-               toastModal.type === 'success' ? <CheckCircle className="w-6 h-6" /> :
-               toastModal.type === 'warning' ? <AlertTriangle className="w-6 h-6" /> :
-               <Info className="w-6 h-6" />}
+              {toastModal.type === 'error' ? <AlertCircle className="w-8 h-8" /> :
+               toastModal.type === 'success' ? <CheckCircle className="w-8 h-8" /> :
+               toastModal.type === 'warning' ? <AlertTriangle className="w-8 h-8" /> :
+               <Info className="w-8 h-8" />}
             </div>
 
-            <h3 className="text-base font-bold font-[Outfit] text-[var(--fg)] dark:text-white mb-1">
+            <h3 className="text-2xl font-bold font-[Outfit] text-[var(--fg)] dark:text-white mb-2 tracking-tight">
               {toastModal.title || (toastModal.type === 'error' ? 'Error' : toastModal.type === 'success' ? 'Success' : toastModal.type === 'warning' ? 'Notice' : 'Information')}
             </h3>
 
-            <p className="text-xs text-[var(--fg-dim)] dark:text-gray-300 mb-5 leading-relaxed">
+            <p className="text-base text-[var(--fg-soft)] dark:text-white/80 mb-7 leading-relaxed px-2">
               {toastModal.message}
             </p>
 
             <button
               onClick={() => setToastModal(null)}
-              className="w-full py-2.5 px-4 bg-[#4f46e5] hover:bg-[#4338ca] active:bg-[#3730a3] text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
+              className="w-full py-3.5 px-5 bg-[#4f46e5] hover:bg-[#4338ca] active:bg-[#3730a3] text-white font-bold text-base rounded-xl shadow-[0_4px_16px_rgba(79,70,229,0.35)] transition cursor-pointer"
             >
               <span className="text-white font-bold">Got it</span>
             </button>

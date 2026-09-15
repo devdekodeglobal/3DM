@@ -397,14 +397,14 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
           ) : (
             <>
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-[var(--sand)] dark:bg-white/5 border border-[var(--border)] dark:border-white/10 flex items-center justify-center shrink-0 group-hover:border-[var(--brand)] transition-colors">
-                  <FileText className="w-5 h-5 text-[var(--sea-ink-soft)] dark:text-white/60 group-hover:text-[var(--brand)] transition-colors" />
+                <div className="w-10 h-10 rounded-xl bg-[var(--sand)] dark:bg-white/10 border border-[var(--border)] dark:border-white/10 flex items-center justify-center shrink-0 group-hover:border-[var(--brand)] transition-colors">
+                  <FileText className="w-5 h-5 text-[var(--fg-soft)] dark:text-white/80 group-hover:text-[var(--brand)] transition-colors" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="font-bold text-sm text-[var(--sea-ink)] dark:text-white font-[Outfit] group-hover:text-[var(--brand)] transition truncate">
+                  <span className="font-bold text-sm text-[var(--fg)] dark:text-white font-[Outfit] group-hover:text-[var(--brand)] transition truncate">
                     {design.name}
                   </span>
-                  <span className="text-xs text-[var(--sea-ink-soft)] dark:text-white/50 flex items-center gap-1 mt-0.5 font-medium">
+                  <span className="text-xs text-[var(--fg-soft)] dark:text-white/70 flex items-center gap-1.5 mt-0.5 font-medium">
                     <Calendar className="w-3.5 h-3.5" />
                     {timeAgo(design.updated_at || design.created_at)}
                   </span>
@@ -419,7 +419,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
                   className={`p-2 rounded-lg transition cursor-pointer ${
                     activeMenuId === `design-${design.id}`
                       ? 'bg-[var(--sand)] text-[var(--brand)] shadow-xs'
-                      : 'text-[var(--sea-ink-soft)] dark:text-white/40 hover:text-[var(--sea-ink)] dark:hover:text-white hover:bg-[var(--sand)] dark:hover:bg-white/10'
+                      : 'text-[var(--fg-soft)] dark:text-white/70 hover:text-[var(--fg)] dark:hover:text-white hover:bg-[var(--sand)] dark:hover:bg-white/10'
                   }`}
                 >
                   <MoreVertical className="w-4 h-4" />
@@ -487,36 +487,36 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
       <div 
-        className="relative w-full max-w-3xl max-h-[88vh] overflow-hidden rounded-2xl border border-[var(--border)] dark:border-white/10 bg-[var(--bg-card)] dark:bg-[#121417]/95 backdrop-blur-xl shadow-2xl flex flex-col transition-all text-[var(--fg)] dark:text-white"
-        style={{ boxShadow: '0 16px 50px 0 rgba(0, 0, 0, 0.45)' }}
+        className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/15 bg-[var(--bg-card)] dark:bg-[#121417] backdrop-blur-2xl shadow-2xl flex flex-col transition-all text-[var(--fg)] dark:text-white"
+        style={{ boxShadow: '0 20px 60px 0 rgba(0, 0, 0, 0.5)' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Glow Orbs */}
-        <div className="absolute -top-24 -left-24 -z-10 h-48 w-48 rounded-full bg-[var(--brand)] opacity-10 dark:opacity-20 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 -z-10 h-48 w-48 rounded-full bg-[var(--accent)] opacity-10 dark:opacity-20 blur-3xl pointer-events-none" />
+        <div className="absolute -top-24 -left-24 -z-10 h-56 w-56 rounded-full bg-[var(--brand)] opacity-10 dark:opacity-20 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 -z-10 h-56 w-56 rounded-full bg-[var(--accent)] opacity-10 dark:opacity-20 blur-3xl pointer-events-none" />
 
         {/* Header */}
-        <div className="px-6 py-5 border-b border-[var(--border)] dark:border-white/10 flex items-center justify-between bg-[var(--bg-subtle)]/30 dark:bg-transparent">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[var(--sand)] dark:bg-white/5 border border-[var(--border)] dark:border-white/10 text-[var(--brand)]">
-              <FolderOpen className="w-6 h-6" />
+        <div className="px-8 py-6 border-b border-[var(--border)] dark:border-white/10 flex items-center justify-between bg-[var(--bg-subtle)]/40 dark:bg-transparent">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2.5 rounded-2xl bg-[var(--sand)] dark:bg-white/10 border border-[var(--border)] dark:border-white/10 text-[var(--brand)]">
+              <FolderOpen className="w-7 h-7" />
             </div>
             <div>
-              <h2 className="text-base font-black font-[Outfit] text-[var(--fg)] dark:text-white tracking-wide uppercase">
+              <h2 className="text-xl font-extrabold font-[Outfit] text-[var(--fg)] dark:text-white tracking-wide uppercase">
                 Projects & Designs
               </h2>
-              <p className="text-xs text-[var(--fg-dim)] dark:text-white/50 mt-0.5">
+              <p className="text-sm text-[var(--fg-soft)] dark:text-white/80 font-medium mt-0.5">
                 Manage your folder projects and designs
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             {/* Create Project Button */}
             <button
               onClick={handleCreateProject}
               disabled={projects.length >= 2}
               title={projects.length >= 2 ? 'Maximum of 2 projects reached' : 'Create new project folder'}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white shadow-md transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <FolderPlus className="w-4 h-4 text-white" />
               <span className="text-white">New Folder</span>
@@ -525,13 +525,13 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
               onClick={fetchData}
               title="Refresh list"
               disabled={loading}
-              className="p-2 rounded-xl text-[var(--fg-soft)] dark:text-white/50 hover:text-[var(--fg)] dark:hover:text-white hover:bg-[var(--bg-subtle)] dark:hover:bg-white/10 transition disabled:opacity-50 cursor-pointer"
+              className="p-2.5 rounded-xl text-[var(--fg)] dark:text-white/80 hover:text-[var(--brand)] dark:hover:text-white hover:bg-[var(--bg-subtle)] dark:hover:bg-white/10 transition disabled:opacity-50 cursor-pointer"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <button 
               onClick={onClose}
-              className="p-2 rounded-xl text-[var(--fg-soft)] dark:text-white/50 hover:text-[var(--fg)] dark:hover:text-white hover:bg-[var(--bg-subtle)] dark:hover:bg-white/10 transition cursor-pointer"
+              className="p-2.5 rounded-xl text-[var(--fg)] dark:text-white/80 hover:text-[var(--brand)] dark:hover:text-white hover:bg-[var(--bg-subtle)] dark:hover:bg-white/10 transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -622,21 +622,21 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
               <div className={`space-y-3.5 relative ${standaloneDesigns.some(d => activeMenuId === `design-${d.id}`) ? 'z-30' : 'z-10'}`}>
                 <div className="flex items-center justify-between pb-2.5 border-b border-[var(--border)] dark:border-white/10">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                       <FileText className="w-4 h-4" />
                     </div>
-                    <h3 className="text-sm font-bold text-[var(--sea-ink)] dark:text-white tracking-wider uppercase font-[Outfit]">
+                    <h3 className="text-sm font-bold text-[var(--fg)] dark:text-white tracking-wider uppercase font-[Outfit]">
                       Standalone Designs
                     </h3>
-                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-[var(--sand)] dark:bg-white/10 text-[var(--sea-ink-soft)] dark:text-white/80 font-bold">
-                      {standaloneDesigns.length} / 2
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-[var(--sand)] dark:bg-white/10 text-[var(--fg-soft)] dark:text-white font-bold">
+                      {standaloneDesigns.length} {standaloneDesigns.length === 1 ? 'design' : 'designs'}
                     </span>
                   </div>
                   <button
                     onClick={() => handleAddEmptyDesign(null)}
-                    disabled={standaloneDesigns.length >= 2}
-                    title={standaloneDesigns.length >= 2 ? 'Limit of 2 standalone designs reached' : 'Create empty standalone design'}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--brand)] hover:bg-[var(--brand)]/10 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                    disabled={designs.length >= 6}
+                    title={designs.length >= 6 ? 'Total account limit of 6 designs reached' : 'Create empty standalone design'}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[var(--brand)] hover:bg-[var(--brand)]/10 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     <span>New Design</span>
@@ -658,7 +658,6 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
               {projects.map(project => {
                 const projectDesigns = filteredDesigns.filter(d => d.project_id === project.id)
                 const isCollapsed = !!collapsedProjects[project.id]
-                const isFull = projectDesigns.length >= 2
                 const isMenuInThisProject = activeMenuId === `project-${project.id}` || projectDesigns.some(d => activeMenuId === `design-${d.id}`)
 
                 return (
@@ -685,11 +684,11 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
                           <Folder className="w-4 h-4" />
                         </div>
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="font-bold text-sm text-[var(--sea-ink)] dark:text-white font-[Outfit] truncate">
+                          <span className="font-bold text-sm text-[var(--fg)] dark:text-white font-[Outfit] truncate">
                             {project.name}
                           </span>
-                          <span className="text-xs text-[var(--sea-ink-soft)] dark:text-white/50 font-medium shrink-0 bg-[var(--sand)]/80 dark:bg-white/10 px-2 py-0.5 rounded-md">
-                            {projectDesigns.length} / 2
+                          <span className="text-xs text-[var(--fg-soft)] dark:text-white/80 font-bold shrink-0 bg-[var(--sand)] dark:bg-white/10 px-2.5 py-0.5 rounded-md">
+                            {projectDesigns.length} {projectDesigns.length === 1 ? 'design' : 'designs'}
                           </span>
                         </div>
                       </div>
@@ -698,8 +697,8 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
                         {/* Add empty design to this folder */}
                         <button
                           onClick={() => handleAddEmptyDesign(project.id)}
-                          disabled={isFull}
-                          title={isFull ? 'Project folder is full (max 2 designs)' : 'Create design in this project'}
+                          disabled={designs.length >= 6}
+                          title={designs.length >= 6 ? 'Total account limit of 6 designs reached' : 'Create design in this project'}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--brand)] hover:bg-[var(--brand)]/10 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                         >
                           <Plus className="w-3.5 h-3.5" />
@@ -784,9 +783,9 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
         </div>
 
         {/* Footer info & stats */}
-        <div className="px-6 py-4 border-t border-[var(--border)] dark:border-white/10 bg-[var(--bg-subtle)]/40 dark:bg-white/5 flex items-center justify-between text-xs text-[var(--fg-dim)] dark:text-white/60 font-medium">
+        <div className="px-8 py-4 border-t border-[var(--border)] dark:border-white/10 bg-[var(--bg-subtle)]/40 dark:bg-white/5 flex items-center justify-between text-xs text-[var(--fg-soft)] dark:text-white/80 font-semibold">
           <span>{projects.length} / 2 Project Folders</span>
-          <span>{designs.length} Total Designs</span>
+          <span>{designs.length} / 6 Total Designs</span>
         </div>
       </div>
 
