@@ -167,9 +167,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
       return
     }
 
-    const defaultName = targetProjectId
-      ? `Design ${designs.filter(d => d.project_id === targetProjectId).length + 1}`
-      : `Design ${designs.filter(d => !d.project_id).length + 1}`
+    const defaultName = 'Untitled Design'
 
     setPromptModalState({
       isOpen: true,

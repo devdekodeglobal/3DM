@@ -90,7 +90,7 @@ function EditorPage() {
     }
     return ''
   })
-  const [projectName, setProjectName] = useState(initialData.name || 'My Design 1')
+  const [projectName, setProjectName] = useState(initialData.name || 'Untitled Design')
   const [isCloudSaving, setIsCloudSaving] = useState(false)
   const [toastModal, setToastModal] = useState<{ title?: string; message: string; type?: 'info' | 'success' | 'warning' | 'error' } | null>(null)
   const [confirmModalState, setConfirmModalState] = useState<{ isOpen: boolean; title?: string; message: string; confirmText?: string; onConfirm: () => void } | null>(null)
@@ -1518,7 +1518,7 @@ function EditorPage() {
                     showAlert('Account design limit reached (6 maximum). Your current design was not auto-saved.', 'warning', 'Limit Reached')
                   } else {
                     try {
-                      const designNameToSave = projectName && projectName !== 'My Design 1' ? projectName : 'Untitled Design'
+                      const designNameToSave = projectName?.trim() || 'Untitled Design'
                       const newDesign = await saveDesign(null, designNameToSave, boothConfig, elements)
                       setCurrentDesignId(newDesign.id)
                       setProjectName(newDesign.name)

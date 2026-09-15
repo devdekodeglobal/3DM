@@ -861,16 +861,17 @@ function DashboardPage() {
       isOpen: true,
       title: 'Name Your Design',
       placeholder: 'e.g. Modern Space with LED Wall',
-      initialValue: `New Space Design`,
+      initialValue: 'Untitled Design',
       confirmText: 'Start Space Setup',
       onConfirm: async (name: string) => {
         try {
+          const designName = name.trim() || 'Untitled Design'
           // Pass null config and [] elements so editor triggers the Space Setup Wizard
-          const newDesign = await saveDesign(targetProjectId || null, name, null, [])
+          const newDesign = await saveDesign(targetProjectId || null, designName, null, [])
           localStorage.removeItem('stall-config')
           localStorage.setItem('stall-elements', '[]')
           localStorage.setItem('current-design-id', newDesign.id)
-          localStorage.setItem('current-design-name', name)
+          localStorage.setItem('current-design-name', designName)
           if (targetProjectId) {
             localStorage.setItem('current-project-id', targetProjectId)
           } else {

@@ -94,6 +94,9 @@ function LandingPage() {
                   onClick={() => {
                     localStorage.removeItem('stall-config')
                     localStorage.removeItem('stall-elements')
+                    localStorage.removeItem('current-design-id')
+                    localStorage.removeItem('current-project-id')
+                    localStorage.setItem('current-design-name', 'Untitled Design')
                   }}
                   className="btn btn-outline"
                   style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
@@ -105,6 +108,13 @@ function LandingPage() {
               <Link
                 to="/editor"
                 id="hero-start-designing"
+                onClick={() => {
+                  localStorage.removeItem('stall-config')
+                  localStorage.removeItem('stall-elements')
+                  localStorage.removeItem('current-design-id')
+                  localStorage.removeItem('current-project-id')
+                  localStorage.setItem('current-design-name', 'Untitled Design')
+                }}
                 className="btn btn-primary"
                 style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
               >
