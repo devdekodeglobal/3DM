@@ -109,6 +109,13 @@ function EditorPage() {
     getCurrentUser().then(user => setSessionUser(user)).catch(console.error)
   }, [])
 
+  const [elements, setElements] = useState<any[]>(initialData.elements || [])
+  const [history, setHistory] = useState<any[][]>(initialData.elements ? [initialData.elements] : [])
+  const [historyStep, setHistoryStep] = useState(initialData.elements ? 0 : -1)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [gridVisible, setGridVisible] = useState(true)
+  const [currentDesignId, setCurrentDesignId] = useState<string | null>(initialData.id || null)
+
   // Helper to sync current editor design into user's account if space is available
   const syncCurrentDesignToProfile = useCallback(async (user: any) => {
     if (!user || (!boothConfig && elements.length === 0)) return
@@ -261,12 +268,6 @@ function EditorPage() {
     'brio_70': 0,
   })
 
-  const [elements, setElements] = useState<any[]>(initialData.elements || [])
-  const [history, setHistory] = useState<any[][]>(initialData.elements ? [initialData.elements] : [])
-  const [historyStep, setHistoryStep] = useState(initialData.elements ? 0 : -1)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [gridVisible, setGridVisible] = useState(true)
-  const [currentDesignId, setCurrentDesignId] = useState<string | null>(initialData.id || null)
 
   // Sync id and name to localStorage
   useEffect(() => {
