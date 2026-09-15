@@ -13,8 +13,7 @@ function TermsOfServicePage() {
         <p>
           These Terms of Service ("Terms") govern your access to and use of{" "}
           <strong>krafc</strong>, a 3D design and spatial visualization platform
-          operated by <strong>DEKODE GLOBAL LLP</strong> ("DEKODE", "we", "us"
-          or "our").
+          operated by DEKODE GLOBAL LLP ("DEKODE", "we", "us" or "our").
         </p>
         <p>
           By creating an account, accessing or using krafc, you agree to these
@@ -549,9 +548,9 @@ function TermsOfServicePage() {
         <h2>21. Contact us</h2>
         <p>If you have questions about these Terms or krafc, please contact:</p>
         <p>
-          <strong>DEKODE GLOBAL LLP</strong>
+          DEKODE GLOBAL LLP
           <br />
-          <strong>Operator of krafc</strong>
+          Operator of krafc
           <br />
           Email:{" "}
           <a href="mailto:contactus@dekodeglobal.com">
