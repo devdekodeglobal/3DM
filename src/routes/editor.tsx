@@ -115,6 +115,7 @@ function EditorPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [gridVisible, setGridVisible] = useState(true)
   const [currentDesignId, setCurrentDesignId] = useState<string | null>(initialData.id || null)
+  const [cloudIdValidated, setCloudIdValidated] = useState(false)
 
   // Helper to sync current editor design into user's account if space is available
   const syncCurrentDesignToProfile = useCallback(async (user: any, reason: 'login' | 'space_cleared' = 'login') => {
@@ -158,10 +159,29 @@ function EditorPage() {
         }
       }).catch(console.error)
 
-      syncCurrentDesignToProfile(sessionUser, 'login')
+      // Validate the locally-stored cloud design id still exists before auto-save
+      // touches it, so a deleted design doesn't trigger a 404 + scary error toast.
+      listDesigns()
+        .then(allDesigns => {
+          setCloudIdValidated(true)
+          const openId = currentDesignId || localStorage.getItem('current-design-id')
+          if (openId && !allDesigns.some(d => d.id === openId)) {
+            setCurrentDesignId(null)
+            setSelectedProjectId('')
+            localStorage.removeItem('current-design-id')
+            localStorage.removeItem('current-design-name')
+            localStorage.removeItem('current-project-id')
+          }
+        })
+        .catch(() => setCloudIdValidated(true))
+        .finally(() => {
+          syncCurrentDesignToProfile(sessionUser, 'login')
+        })
     } else {
       setUserProjects([])
       setSelectedProjectId('')
+      setSyncStatus('idle')
+      setCloudIdValidated(false)
     }
   }, [sessionUser])
 
@@ -416,7 +436,7 @@ function EditorPage() {
   const [syncStatus, setSyncStatus] = useState<'saved' | 'saving' | 'idle'>('idle')
 
   useEffect(() => {
-    if (!currentDesignId || !sessionUser) {
+    if (!currentDesignId || !sessionUser || !cloudIdValidated) {
       setSyncStatus('idle')
       return;
     }
@@ -442,7 +462,7 @@ function EditorPage() {
     }, 2000);
 
     return () => clearTimeout(handler);
-  }, [boothConfig, elements, projectName, currentDesignId, sessionUser]);
+  }, [boothConfig, elements, projectName, currentDesignId, sessionUser, cloudIdValidated]);
 
   const saveToHistory = useCallback((newElements: any[]) => {
     setHistory(prev => {
@@ -1580,8 +1600,20 @@ function EditorPage() {
         onClose={() => setCloudDrawerOpen(false)}
         onLoadProject={loadCloudDesign}
         userId={sessionUser?.id || null}
-        onDesignDeleted={() => {
-          if (sessionUser) {
+        onDesignDeleted={({ designId, projectId }) => {
+          if (!sessionUser) return
+          const deletedOpenDesign = designId
+            ? currentDesignId === designId
+            : selectedProjectId === projectId
+          if (deletedOpenDesign) {
+            setCurrentDesignId(null)
+            setSyncStatus('idle')
+            setSelectedProjectId('')
+            localStorage.removeItem('current-design-id')
+            localStorage.removeItem('current-design-name')
+            localStorage.removeItem('current-project-id')
+            showAlert('This design was deleted from the cloud. Your work stays on screen as an unsaved copy and will not auto-save until you save it again.', 'info', 'Design Deleted')
+          } else {
             syncCurrentDesignToProfile(sessionUser, 'space_cleared')
           }
         }}

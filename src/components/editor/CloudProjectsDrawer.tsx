@@ -39,7 +39,7 @@ interface CloudProjectsDrawerProps {
   onClose: () => void
   onLoadProject: (boothConfig: any, elements: any[], designId?: string, designName?: string) => void
   userId: string | null
-  onDesignDeleted?: () => void
+  onDesignDeleted?: (deleted: { designId?: string | null; projectId?: string | null }) => void
 }
 
 function timeAgo(dateStr: string): string {
@@ -239,7 +239,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
           if (localStorage.getItem('current-project-id') === project.id) {
             localStorage.removeItem('current-project-id')
           }
-          onDesignDeleted?.()
+          onDesignDeleted?.({ projectId: project.id })
         } catch (err: any) {
           console.error('Delete project error:', err)
           setErrorMsg(err.message || 'Failed to delete project.')
@@ -267,7 +267,7 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
             localStorage.removeItem('current-design-id')
             localStorage.removeItem('current-design-name')
           }
-          onDesignDeleted?.()
+          onDesignDeleted?.({ designId: id })
         } catch (err: any) {
           console.error('Delete error:', err)
           setErrorMsg(err.message || 'Failed to delete design.')
