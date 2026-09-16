@@ -395,9 +395,9 @@ export default function Preview3D({
           depth: dVal
         }, scene);
 
-        // Position: center x and z, y is above wall height (with a tiny offset to prevent Z-fighting)
+        // Position: center x and z, y is at roof height
         const cX = pX + wVal / 2;
-        const cZ = boothConfig.depth - (pY + dVal / 2);
+        const cZ = pY + dVal / 2;
         const cY = rHeight + rThickness / 2 + index * 0.002;
 
         roofPanelMesh.position.set(cX, cY, cZ);
@@ -416,7 +416,7 @@ export default function Preview3D({
         const pY = light.y / PPM;
 
         const cX = pX + wVal / 2;
-        const cZ = boothConfig.depth - (pY + dVal / 2);
+        const cZ = pY + dVal / 2;
         const cY = rHeight - 0.01; // slightly below ceiling
 
         let lightMesh: BABYLON.Mesh;
