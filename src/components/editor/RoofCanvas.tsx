@@ -184,7 +184,7 @@ export default function RoofCanvas({ boothConfig, onSave, onClose }: RoofCanvasP
   return (
     <div className="flex flex-1 h-full overflow-hidden select-none">
       {/* 2D Canvas Editor Area */}
-      <div className="flex-1 flex flex-col h-full bg-[#f8fafc] relative" ref={containerRef}>
+      <div className="flex-1 flex flex-col h-full bg-[var(--bg-base)] relative" ref={containerRef}>
         <div className="absolute top-4 left-4 z-10 flex gap-2">
           <button
             onClick={addPanel}
