@@ -706,8 +706,9 @@ const ParametricStructureShape = ({ shapeProps, onSelect, onChange }: any) => {
     }
 
     if (orientation === 'horizontal') {
-      // Plates span the width and are spaced along the depth (Z -> 2D Y)
-      let offset = -d / 2 + (plateThickness * PPM) / 2
+      // Plates span the width and are spaced along the depth (Z -> 2D Y), centered so they fit evenly inside [ -d/2, d/2 ]
+      const totalSpan = (platesCount - 1) * step;
+      let offset = -totalSpan / 2;
       for (let i = 0; i < platesCount; i++) {
         plateLines.push(
           <Line
@@ -722,7 +723,8 @@ const ParametricStructureShape = ({ shapeProps, onSelect, onChange }: any) => {
       }
     } else {
       // Plates span the depth and are spaced along the width (X)
-      let offset = -w / 2 + (plateThickness * PPM) / 2
+      const totalSpan = (platesCount - 1) * step;
+      let offset = -totalSpan / 2;
       for (let i = 0; i < platesCount; i++) {
         plateLines.push(
           <Line

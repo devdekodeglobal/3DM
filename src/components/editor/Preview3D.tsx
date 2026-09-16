@@ -1623,10 +1623,9 @@ export default function Preview3D({
                 plate.material = pMat;
               }
             } else { // caged-panel
-              // Generate plates starting from back (horizontal) or left (vertical)
-              let offset = orientation === 'horizontal' 
-                ? (-d / 2 + plateThickness / 2) 
-                : (-w / 2 + plateThickness / 2);
+              // Generate plates centered across depth or width
+              const totalSpan = (platesCount - 1) * (plateThickness + plateGap);
+              let offset = -totalSpan / 2;
               
               for (let i = 0; i < platesCount; i++) {
                 const plateName = `${el.id}_plate_${i}`;
