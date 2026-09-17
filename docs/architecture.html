@@ -290,18 +290,20 @@
       height: auto;
     }
 
-    /* ER Diagram gets its own fixed-size treatment so fonts don't shrink */
+    /* ER Diagram scalable responsive container */
     .er-scroll-box {
       width: 100%;
       overflow-x: auto;
       padding: 12px 0;
+      display: flex;
+      justify-content: center;
     }
 
     svg.er-diagram {
       display: block;
-      width: 1200px;
-      min-width: 1200px;
-      height: 710px;
+      width: 100%;
+      max-width: 1160px;
+      height: auto;
     }
 
     .table-scroll-box {
@@ -309,6 +311,165 @@
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       margin-top: 8px;
+    }
+
+    /* ─── Document Toolbar (Print / Export) ─── */
+    .doc-toolbar {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .print-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      background: #1e3a8a;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
+      transition: all 0.15s ease;
+    }
+
+    .print-btn:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(30, 58, 138, 0.3);
+    }
+
+    .print-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    /* ─── Print & PDF Optimization Styles ─── */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 12mm 10mm;
+      }
+
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      .doc-toolbar {
+        display: none !important;
+      }
+
+      .doc-container {
+        max-width: 100% !important;
+        width: 100% !important;
+        gap: 16px !important;
+      }
+
+      .card {
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+        padding: 18px 16px !important;
+        border-radius: 8px !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+        margin-bottom: 12px;
+      }
+
+      .card-title {
+        font-size: 1.25rem !important;
+        margin-bottom: 12px !important;
+        color: #0f172a !important;
+      }
+
+      .architecture-wrapper {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .svg-flow-box {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      svg.flow-chart {
+        max-width: 520px !important;
+        height: auto !important;
+      }
+
+      .er-scroll-box {
+        overflow: visible !important;
+        padding: 0 !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      svg.er-diagram {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-width: unset !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      table {
+        font-size: 0.85rem !important;
+        page-break-inside: auto;
+      }
+
+      tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      th, td {
+        padding: 8px 10px !important;
+        font-size: 0.88rem !important;
+        line-height: 1.4 !important;
+      }
+
+      th {
+        font-size: 0.92rem !important;
+      }
+
+      td strong {
+        font-size: 0.92rem !important;
+      }
+
+      code {
+        font-size: 0.82rem !important;
+        padding: 1px 4px !important;
+      }
+
+      .section-label {
+        font-size: 0.85rem !important;
+        padding: 4px 10px !important;
+        margin-top: 14px !important;
+        margin-bottom: 8px !important;
+        page-break-after: avoid;
+        break-after: avoid;
+      }
+
+      .ver-badge, .cat-badge {
+        font-size: 0.78rem !important;
+        padding: 2px 8px !important;
+      }
+
+      .table-scroll-box {
+        overflow: visible !important;
+      }
     }
 
     /* ─── Mobile Responsiveness ─── */
@@ -420,6 +581,13 @@
 
   <h1 class="main-title">krafc Technical Specification</h1>
   <p class="sub-title">System Architecture, Vector User Flows & Database Specification</p>
+
+  <div class="doc-toolbar">
+    <button class="print-btn" onclick="window.print()">
+      <svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+      Print / Save as PDF
+    </button>
+  </div>
 
   <div class="doc-container">
 
