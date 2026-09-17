@@ -104,10 +104,6 @@ function EditorPage() {
   // Custom 3D Assets state (limit 5 per user)
   const [customAssets, setCustomAssets] = useState<any[]>([]);
 
-  // Fetch user session & initialize UI
-  useEffect(() => {
-    getCurrentUser().then(user => setSessionUser(user)).catch(console.error)
-  }, [])
 
   const [elements, setElements] = useState<any[]>(initialData.elements || [])
   const [history, setHistory] = useState<any[][]>(initialData.elements ? [initialData.elements] : [])
@@ -117,13 +113,28 @@ function EditorPage() {
   const [currentDesignId, setCurrentDesignId] = useState<string | null>(initialData.id || null)
   const [cloudIdValidated, setCloudIdValidated] = useState(false)
 
+  // Refs to access latest editor state inside syncCurrentDesignToProfile without recreating it
+  const boothConfigRef = useRef(boothConfig)
+  boothConfigRef.current = boothConfig
+  const elementsRef = useRef(elements)
+  elementsRef.current = elements
+  const currentDesignIdRef = useRef(currentDesignId)
+  currentDesignIdRef.current = currentDesignId
+  const projectNameRef = useRef(projectName)
+  projectNameRef.current = projectName
+
   // Helper to sync or resume current editor design into user's account
   const syncCurrentDesignToProfile = useCallback(async (user: any, reason: 'login' | 'space_cleared' = 'login', existingDesigns?: any[]) => {
-    if (!user || (!boothConfig && elements.length === 0)) return
+    const activeConfig = boothConfigRef.current
+    const activeElements = elementsRef.current
+    const activeDesignId = currentDesignIdRef.current
+    const activeProjectName = projectNameRef.current
+
+    if (!user || (!activeConfig && activeElements.length === 0)) return
     try {
       const userDesigns = existingDesigns || (await listDesigns())
       const storedId = localStorage.getItem('current-design-id')
-      const targetId = currentDesignId || storedId
+      const targetId = activeDesignId || storedId
 
       // 1. Check if user already owns this design ID
       const matchingDesignById = targetId ? userDesigns.find(d => d.id === targetId) : null
@@ -135,9 +146,9 @@ function EditorPage() {
         localStorage.setItem('current-design-name', matchingDesignById.name)
         setSyncStatus('saving')
         await updateDesign(matchingDesignById.id, {
-          name: projectName || matchingDesignById.name || 'Untitled Design',
-          config: boothConfig,
-          elements: elements
+          name: activeProjectName || matchingDesignById.name || 'Untitled Design',
+          config: activeConfig,
+          elements: activeElements
         })
         setSyncStatus('saved')
         return
@@ -154,9 +165,9 @@ function EditorPage() {
         localStorage.setItem('current-design-name', mostRecent.name)
         setSyncStatus('saving')
         await updateDesign(mostRecent.id, {
-          name: projectName || mostRecent.name || 'Untitled Design',
-          config: boothConfig,
-          elements: elements
+          name: activeProjectName || mostRecent.name || 'Untitled Design',
+          config: activeConfig,
+          elements: activeElements
         })
         setSyncStatus('saved')
         return
@@ -169,8 +180,8 @@ function EditorPage() {
       }
 
       // Save as a brand new design
-      const designNameToSave = projectName?.trim() || 'Untitled Design'
-      const newDesign = await saveDesign(null, designNameToSave, boothConfig, elements)
+      const designNameToSave = activeProjectName?.trim() || 'Untitled Design'
+      const newDesign = await saveDesign(null, designNameToSave, activeConfig, activeElements)
       setCurrentDesignId(newDesign.id)
       setProjectName(newDesign.name)
       localStorage.setItem('current-design-id', newDesign.id)
@@ -186,11 +197,17 @@ function EditorPage() {
     } catch (err: any) {
       console.error('Failed to save current design to profile:', err)
     }
-  }, [boothConfig, elements, currentDesignId, projectName])
+  }, [])
+
+  // Track the last synced user ID to avoid re-running login sync on every render
+  const lastSyncedUserIdRef = useRef<string | null>(null)
 
   // Fetch projects and sync active design whenever user logs in
   useEffect(() => {
     if (sessionUser) {
+      if (lastSyncedUserIdRef.current === sessionUser.id) return
+      lastSyncedUserIdRef.current = sessionUser.id
+
       Promise.all([listProjects(), listDesigns()])
         .then(([res, allDesigns]) => {
           setUserProjects(res || [])
@@ -207,6 +224,7 @@ function EditorPage() {
           setCloudIdValidated(true)
         })
     } else {
+      lastSyncedUserIdRef.current = null
       setUserProjects([])
       setSelectedProjectId('')
       setSyncStatus('idle')
