@@ -1,13 +1,14 @@
 import pkg from 'file-saver';
 const { saveAs } = pkg;
+import { ASSET_REGISTRY } from './assetRegistry';
+import { getArchitecturalSymbolSvgString } from '../components/editor/ArchitecturalSymbolSVG';
 
 export async function generateReport(boothConfig: any, elements: any[], screenshots: Record<string, string>) {
   const docId = `DKD-${Date.now().toString(36).toUpperCase()}`;
   const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const projectName = typeof window !== 'undefined' ? (localStorage.getItem('current-design-name') || 'Untitled Space Design') : 'Space Design';
 
-  // Export JSON - Now handled by a dedicated Save button in editor.tsx
-  
   // BOM & Element Collection
   const walls = elements.filter(el => el.type === 'wall');
   const topLevelAssets = elements.filter(el => el.type === 'asset');
@@ -35,339 +36,783 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     }
   });
 
-  const assetCounts: Record<string, { count: number; label: string; dims: string; specs: string }> = {};
+  const assetCounts: Record<string, { 
+    id: string;
+    count: number; 
+    label: string; 
+    category: string;
+    dims: string; 
+    specs: string;
+    svgSymbol?: string;
+  }> = {};
+
   allAssets.forEach(a => {
     const key = a.assetName || a.id;
-    if (!assetCounts[key]) assetCounts[key] = {
-      count: 0, label: a.label || a.assetName || 'Asset',
-      dims: a.realWidth ? `${a.realWidth}m × ${a.realDepth}m × ${a.realHeight}m` : `${(a.width / 100).toFixed(2)}m × ${(a.height / 100).toFixed(2)}m × 1.0m`,
-      specs: a.details || '-'
-    };
+    const reg = ASSET_REGISTRY.find(r => r.id === a.assetName || r.id === a.id);
+    const categoryName = reg?.category || a.categoryFolder || 'general';
+    if (!assetCounts[key]) {
+      assetCounts[key] = {
+        id: key,
+        count: 0,
+        label: a.label || reg?.label || a.assetName || 'Asset',
+        category: categoryName.replace(/-/g, ' ').toUpperCase(),
+        dims: a.realWidth ? `${a.realWidth}m × ${a.realDepth || 1.0}m × ${a.realHeight || 1.0}m` : `${(a.width / 100).toFixed(2)}m × ${(a.height / 100).toFixed(2)}m × 1.0m`,
+        specs: reg?.details || a.details || 'Standard specification',
+        svgSymbol: getArchitecturalSymbolSvgString(categoryName, key)
+      };
+    }
     assetCounts[key].count++;
   });
 
   const boothArea = (boothConfig.width * boothConfig.depth).toFixed(2);
   const perimeterM = (2 * (boothConfig.width + boothConfig.depth)).toFixed(2);
+  const floorplan2D = screenshots['floorplan_2d'];
 
-  const views = Object.keys(screenshots).sort((a, b) => a === 'top' ? -1 : b === 'top' ? 1 : 0);
+  // Filter 3D blueprint views
+  const standardViews = ['top', 'north', 'south', 'east', 'west'];
+  const elevationViews = Object.keys(screenshots).filter(k => k.startsWith('elevation_'));
+  const otherViews = Object.keys(screenshots).filter(k => !standardViews.includes(k) && !k.startsWith('elevation_') && k !== 'floorplan_2d');
 
-  const viewSections = views.map(view => {
-    const img = screenshots[view];
+  const getSheetTitle = (viewKey: string) => {
+    switch (viewKey) {
+      case 'top': return '3D Orthographic Top Plan';
+      case 'north': return 'North Elevation (Front/Rear)';
+      case 'south': return 'South Elevation (Front/Rear)';
+      case 'east': return 'East Elevation (Side View)';
+      case 'west': return 'West Elevation (Side View)';
+      default:
+        if (viewKey.startsWith('elevation_')) {
+          const wallId = viewKey.replace('elevation_', '').substring(0, 8).toUpperCase();
+          return `Wall Detail Elevation · ID: ${wallId}`;
+        }
+        return `${viewKey.charAt(0).toUpperCase() + viewKey.slice(1)} View`;
+    }
+  };
+
+  const getSheetSubtitle = (viewKey: string) => {
+    switch (viewKey) {
+      case 'top': return 'Spatial layout, boundary clearance, and asset footprint';
+      case 'north': return 'Exterior/interior vertical elevation with height and opening markers';
+      case 'south': return 'Exterior/interior vertical elevation with height and opening markers';
+      case 'east': return 'Side perspective with architectural wall dimensions';
+      case 'west': return 'Side perspective with architectural wall dimensions';
+      default:
+        return 'Custom architectural elevation sheet with mounted fixtures';
+    }
+  };
+
+  // Generate full-page drawing sheets
+  let drawingSheetNumber = 2;
+
+  // 2D Floor Plan Sheet
+  const floorPlanSheetHtml = floorplan2D ? `
+  <div class="sheet full-page">
+    <div class="sheet-header">
+      <div class="sheet-title-group">
+        <span class="sheet-tag">DRAWING DWG-${String(drawingSheetNumber++).padStart(2, '0')}</span>
+        <h2>2D Floor Plan & Spatial Layout</h2>
+        <p class="sheet-sub">2D Technical schematic with element coordinates and workspace boundary</p>
+      </div>
+      <div class="sheet-meta">
+        <div><label>Scale</label><span>1:50</span></div>
+        <div><label>Floor Size</label><span>${boothConfig.width}m × ${boothConfig.depth}m</span></div>
+      </div>
+    </div>
+    <div class="drawing-frame">
+      <div class="drawing-canvas-wrap">
+        <img src="${floorplan2D}" alt="2D Floor Plan" class="blueprint-img" />
+      </div>
+    </div>
+    <div class="sheet-title-block">
+      <div class="tb-left">
+        <strong>DEKODE SPACE DESIGNER</strong> · 2D ARCHITECTURAL FLOOR PLAN
+      </div>
+      <div class="tb-right">
+        <span>PROJECT: <strong>${projectName}</strong></span>
+        <span>SHEET: <strong>DWG-02</strong></span>
+      </div>
+    </div>
+  </div>` : '';
+
+  // 3D Elevation & Blueprint Sheets
+  const blueprintSheetsHtml = [...standardViews, ...elevationViews, ...otherViews].map((viewKey) => {
+    const img = screenshots[viewKey];
     if (!img) return '';
-    let title = view.charAt(0).toUpperCase() + view.slice(1) + ' View';
-    if (view.startsWith('elevation_')) title = `Wall Elevation - ID: ${view.replace('elevation_', '').substring(0, 8).toUpperCase()}`;
+    const sheetNum = String(drawingSheetNumber++).padStart(2, '0');
+    const title = getSheetTitle(viewKey);
+    const subtitle = getSheetSubtitle(viewKey);
+
     return `
-    <div class="view-block">
-      <div class="view-label"><span class="badge">VIEW</span>${title}</div>
-      <div class="view-img-wrap"><img src="${img}" alt="${title}" /></div>
+    <div class="sheet full-page">
+      <div class="sheet-header">
+        <div class="sheet-title-group">
+          <span class="sheet-tag">DRAWING DWG-${sheetNum}</span>
+          <h2>${title}</h2>
+          <p class="sheet-sub">${subtitle}</p>
+        </div>
+        <div class="sheet-meta">
+          <div><label>Projection</label><span>Orthographic</span></div>
+          <div><label>Space Size</label><span>${boothConfig.width}m × ${boothConfig.depth}m</span></div>
+        </div>
+      </div>
+      <div class="drawing-frame">
+        <div class="drawing-canvas-wrap blueprint-dark">
+          <img src="${img}" alt="${title}" class="blueprint-img" />
+        </div>
+      </div>
+      <div class="sheet-title-block">
+        <div class="tb-left">
+          <strong>DEKODE ARCHITECTURAL SYSTEM</strong> · ${title.toUpperCase()}
+        </div>
+        <div class="tb-right">
+          <span>PROJECT: <strong>${projectName}</strong></span>
+          <span>SHEET: <strong>DWG-${sheetNum}</strong></span>
+        </div>
+      </div>
     </div>`;
   }).join('');
 
-  const bomRows = Object.values(assetCounts).map((item, i) => `
-    <tr class="${i % 2 === 0 ? 'even' : ''}">
-      <td class="center bold accent">${item.count}</td>
-      <td class="bold">${item.label}</td>
-      <td><code>${item.dims}</code></td>
-      <td class="soft">${item.specs}</td>
-    </tr>`).join('');
+  // BOM Visual Catalog Cards
+  const bomCatalogHtml = Object.values(assetCounts).map(item => `
+    <div class="bom-card">
+      <div class="bom-card-header">
+        <div class="bom-card-thumb">${item.svgSymbol || ''}</div>
+        <span class="bom-card-qty">${item.count}×</span>
+        <div class="bom-card-title">
+          <h4>${item.label}</h4>
+          <span class="bom-card-cat">${item.category}</span>
+        </div>
+      </div>
+      <div class="bom-card-body">
+        <div class="bom-card-row">
+          <label>Dimensions:</label>
+          <code>${item.dims}</code>
+        </div>
+        <div class="bom-card-row">
+          <label>Specs:</label>
+          <span class="bom-card-specs">${item.specs}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
 
-  const elemRows = [
-    ...allBanners.map(e => `<tr><td>Banner</td><td>${e.id}</td><td>${e.width}px × ${e.height}px</td><td>${e.shape || 'square'}</td><td>-</td></tr>`),
-    ...allWindows.map(e => `<tr><td>Window</td><td>${e.id}</td><td>${e.width}px × ${e.height}px</td><td>${e.shape || 'square'}</td><td>-</td></tr>`),
-    ...allLogos.map(e => `<tr><td>3D Logo</td><td>${e.id}</td><td>${e.width}px × ${e.height}px</td><td>-</td><td>${e.logoStyle || 'standard'}</td></tr>`),
-    ...allLights.map(e => `<tr><td>Light</td><td>${e.id}</td><td>${e.width || '-'}px × ${e.height || '-'}px</td><td>-</td><td>${e.lightType || e.color || 'standard'}</td></tr>`),
-  ].join('');
-
+  // Wall Schedule Rows
   const wallRows = walls.map(w => `
     <tr>
-      <td class="bold">${w.id}</td>
-      <td>${w.isOuter ? '<span class="tag">Outer</span>' : '<span class="tag inner">Inner</span>'}</td>
-      <td>${w.width}px × ${w.thickness}px</td>
-      <td>${w.material || '-'}</td>
-      <td>${(w.wallElements || []).length} element(s)</td>
+      <td class="bold"><code>${w.id.substring(0, 12)}</code></td>
+      <td>${w.isOuter ? '<span class="tag">Outer Structural</span>' : '<span class="tag inner">Internal Partition</span>'}</td>
+      <td><strong>${w.realWidth || (w.width / 100).toFixed(2)}m</strong> × <strong>${(w.thickness / 100).toFixed(2)}m</strong></td>
+      <td>${w.material || 'Standard Matte'}</td>
+      <td>${(w.wallElements || []).length} mounted fixture(s)</td>
     </tr>`).join('');
+
+  // Mounted Fixtures Rows
+  const elemRows = [
+    ...allBanners.map(e => `<tr><td><span class="tag">Banner</span></td><td><code>${e.id.substring(0, 10)}</code></td><td>${e.width}px × ${e.height}px</td><td>${e.shape || 'Rectangle'}</td><td>Wall Graphic</td></tr>`),
+    ...allWindows.map(e => `<tr><td><span class="tag inner">Window / Cutout</span></td><td><code>${e.id.substring(0, 10)}</code></td><td>${e.width}px × ${e.height}px</td><td>${e.shape || 'Aperture'}</td><td>Aperture</td></tr>`),
+    ...allLogos.map(e => `<tr><td><span class="tag brand">3D Brand Logo</span></td><td><code>${e.id.substring(0, 10)}</code></td><td>${e.width}px × ${e.height}px</td><td>3D Illuminated</td><td>${e.logoStyle || 'Custom'}</td></tr>`),
+    ...allLights.map(e => `<tr><td><span class="tag warm">Lighting Fixture</span></td><td><code>${e.id.substring(0, 10)}</code></td><td>${e.width || '-'}px × ${e.height || '-'}px</td><td>Spotlight / Downlight</td><td>${e.color || '#fff8e7'}</td></tr>`),
+  ].join('');
 
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Space Design Report - ${docId}</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<title>Architectural Space Specification - ${projectName} - ${docId}</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --navy: #0f1724;
-    --navy2: #1a2640;
-    --blue: #2563eb;
-    --blue-light: #3b82f6;
+    --navy: #090d16;
+    --navy2: #111827;
+    --navy3: #1e293b;
+    --brand: #4f46e5;
+    --brand-light: #818cf8;
     --cyan: #06b6d4;
     --green: #10b981;
     --amber: #f59e0b;
-    --red: #ef4444;
-    --text: #1e293b;
-    --soft: #64748b;
-    --border: #e2e8f0;
+    --text: #0f172a;
+    --soft: #475569;
+    --border: #cbd5e1;
+    --border-light: #e2e8f0;
     --bg: #f8fafc;
     --white: #ffffff;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', system-ui, sans-serif; color: var(--text); background: var(--white); font-size: 14px; line-height: 1.6; }
+  body { 
+    font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+    color: var(--text); 
+    background: #e2e8f0; 
+    font-size: 13px; 
+    line-height: 1.5; 
+  }
 
-  /* ── PRINT BUTTON ── */
-  .fab { position: fixed; top: 24px; right: 24px; background: var(--blue); color: #fff; border: none; padding: 12px 24px; border-radius: 99px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 4px 20px rgba(37,99,235,.4); transition: all .2s; z-index: 999; display: flex; align-items: center; gap: 8px; }
-  .fab:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(37,99,235,.5); }
+  /* ── PRINT & ACTION BUTTONS ── */
+  .action-bar { 
+    position: fixed; 
+    top: 20px; 
+    right: 20px; 
+    display: flex; 
+    gap: 12px; 
+    z-index: 9999; 
+  }
+  .btn-print { 
+    background: var(--brand); 
+    color: #fff; 
+    border: none; 
+    padding: 12px 24px; 
+    border-radius: 99px; 
+    font-weight: 700; 
+    font-size: 14px; 
+    cursor: pointer; 
+    box-shadow: 0 4px 20px rgba(79,70,229,.4); 
+    transition: all .2s; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    font-family: 'Outfit', sans-serif;
+  }
+  .btn-print:hover { 
+    transform: translateY(-2px); 
+    box-shadow: 0 8px 28px rgba(79,70,229,.5); 
+    background: #4338ca;
+  }
 
-  /* ── COVER ── */
-  .cover { background: var(--navy); color: white; padding: 0; min-height: 320px; display: flex; flex-direction: column; position: relative; overflow: hidden; }
-  .cover-accent { position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, var(--blue), var(--cyan)); }
-  .cover-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; }
-  .cover-body { padding: 60px 72px; position: relative; z-index: 1; flex: 1; }
-  .cover-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: var(--cyan); text-transform: uppercase; margin-bottom: 20px; }
-  .cover h1 { font-size: 48px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 12px; }
-  .cover h1 span { color: var(--blue-light); }
-  .cover-sub { font-size: 16px; color: rgba(255,255,255,.6); font-weight: 300; margin-bottom: 48px; }
-  .cover-meta { display: flex; gap: 48px; }
-  .cover-meta-item label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,.4); display: block; margin-bottom: 4px; }
-  .cover-meta-item span { font-size: 15px; font-weight: 600; font-family: 'JetBrains Mono', monospace; color: white; }
-  .cover-footer { background: var(--navy2); padding: 16px 72px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: rgba(255,255,255,.35); letter-spacing: 0.05em; position: relative; z-index: 1; }
-  .cover-footer strong { color: rgba(255,255,255,.7); }
+  /* ── FULL-PAGE SHEETS (A4/LANDSCAPE READY) ── */
+  .sheet {
+    max-width: 1200px;
+    margin: 32px auto;
+    background: var(--white);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    border-radius: 8px;
+    padding: 44px 52px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 840px;
+  }
 
-  /* ── LAYOUT ── */
-  .page { max-width: 1100px; margin: 0 auto; padding: 64px 72px; }
-  
+  /* ── COVER SHEET ── */
+  .cover-sheet {
+    background: #0f172a;
+    color: white;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border: 1px solid #1e293b;
+  }
+  .cover-accent { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 6px; 
+    height: 100%; 
+    background: linear-gradient(180deg, var(--brand), var(--cyan)); 
+  }
+  .cover-grid { 
+    position: absolute; 
+    inset: 0; 
+    background-image: 
+      linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), 
+      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); 
+    background-size: 32px 32px; 
+    pointer-events: none; 
+  }
+  .cover-body { 
+    padding: 72px 80px; 
+    position: relative; 
+    z-index: 1; 
+  }
+  .cover-tag { 
+    display: inline-block;
+    font-size: 11px; 
+    font-weight: 800; 
+    letter-spacing: 0.15em; 
+    color: var(--brand-light); 
+    text-transform: uppercase; 
+    margin-bottom: 20px; 
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(99, 102, 241, 0.15);
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+  }
+  .cover h1 { 
+    font-size: 44px; 
+    font-weight: 800; 
+    letter-spacing: -0.02em; 
+    line-height: 1.15; 
+    margin-bottom: 12px; 
+    font-family: 'Outfit', sans-serif;
+    color: #ffffff;
+  }
+  .cover h1 span { 
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .cover-project-title {
+    font-size: 22px;
+    color: #94a3b8;
+    font-weight: 500;
+    margin-bottom: 48px;
+  }
+  .cover-meta-grid { 
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 24px; 
+    border-top: 1px solid rgba(255,255,255,0.12);
+    padding-top: 28px;
+  }
+  .cover-meta-item label { 
+    font-size: 10px; 
+    text-transform: uppercase; 
+    letter-spacing: 0.12em; 
+    color: rgba(255,255,255,.5); 
+    display: block; 
+    margin-bottom: 6px; 
+  }
+  .cover-meta-item span { 
+    font-size: 14px; 
+    font-weight: 600; 
+    font-family: 'JetBrains Mono', monospace; 
+    color: #f8fafc; 
+  }
+  .cover-footer { 
+    background: #090d16; 
+    padding: 20px 80px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    font-size: 11px; 
+    color: rgba(255,255,255,.45); 
+    letter-spacing: 0.05em; 
+    position: relative; 
+    z-index: 1; 
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .cover-footer strong { color: rgba(255,255,255,.8); }
+
   /* ── STATS ROW ── */
-  .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 64px; }
-  .stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; overflow: hidden; }
-  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--blue); border-radius: 2px 2px 0 0; }
+  .stats-grid { 
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 16px; 
+    margin: 28px 0 36px; 
+  }
+  .stat-card { 
+    background: var(--bg); 
+    border: 1px solid var(--border); 
+    border-radius: 12px; 
+    padding: 20px; 
+    position: relative; 
+    overflow: hidden; 
+  }
+  .stat-card::before { 
+    content: ''; 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    height: 4px; 
+    background: var(--brand); 
+    border-radius: 2px 2px 0 0; 
+  }
   .stat-card.cyan::before { background: var(--cyan); }
   .stat-card.green::before { background: var(--green); }
   .stat-card.amber::before { background: var(--amber); }
-  .stat-card.red::before { background: var(--red); }
-  .stat-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--soft); margin-bottom: 8px; }
-  .stat-value { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1; }
-  .stat-unit { font-size: 13px; font-weight: 400; color: var(--soft); margin-left: 2px; }
+  .stat-label { 
+    font-size: 11px; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    letter-spacing: 0.1em; 
+    color: var(--soft); 
+    margin-bottom: 8px; 
+  }
+  .stat-value { 
+    font-size: 32px; 
+    font-weight: 800; 
+    color: var(--text); 
+    line-height: 1; 
+    font-family: 'Outfit', sans-serif;
+  }
+  .stat-unit { 
+    font-size: 14px; 
+    font-weight: 500; 
+    color: var(--soft); 
+    margin-left: 3px; 
+  }
 
-  /* ── SECTION ── */
-  .section { margin-bottom: 56px; }
-  .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
-  .section-num { width: 32px; height: 32px; background: var(--blue); color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
-  .section-header h2 { font-size: 20px; font-weight: 700; color: var(--navy); }
-  .section-desc { font-size: 13px; color: var(--soft); margin-bottom: 20px; }
+  /* ── DRAWING SHEET HEADERS & FRAMES ── */
+  .sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid var(--navy);
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+  .sheet-tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--brand);
+    background: rgba(79,70,229,0.08);
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+  }
+  .sheet-title-group h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1.2;
+  }
+  .sheet-sub {
+    font-size: 12px;
+    color: var(--soft);
+    margin-top: 4px;
+  }
+  .sheet-meta {
+    display: flex;
+    gap: 20px;
+    text-align: right;
+  }
+  .sheet-meta label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--soft);
+    display: block;
+    margin-bottom: 2px;
+  }
+  .sheet-meta span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy);
+  }
 
-  /* ── VIEWS ── */
-  .views-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  .views-grid .view-block:first-child:nth-last-child(odd) { grid-column: span 2; }
-  .view-block { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--bg); }
-  .view-label { padding: 12px 16px; font-size: 12px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); background: white; }
-  .badge { background: var(--navy); color: white; font-size: 9px; letter-spacing: 0.1em; padding: 2px 7px; border-radius: 4px; font-weight: 700; }
-  .view-img-wrap { background: #0d1117; display: flex; justify-content: center; align-items: center; min-height: 200px; }
-  .view-img-wrap img { display: block; max-width: 100%; height: auto; }
+  .drawing-frame {
+    flex: 1;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #0d1117;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 580px;
+    position: relative;
+  }
+  .drawing-canvas-wrap {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .drawing-canvas-wrap.blueprint-dark {
+    background: #0b0f19;
+  }
+  .blueprint-img {
+    max-width: 100%;
+    max-height: 600px;
+    object-fit: contain;
+    display: block;
+  }
 
-  /* ── TABLES ── */
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead tr { background: var(--navy); color: white; }
-  thead th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-  tbody tr { border-bottom: 1px solid var(--border); }
-  tbody tr:hover { background: var(--bg); }
-  tbody tr.even { background: #fbfcfd; }
-  td { padding: 11px 16px; vertical-align: top; }
-  td.center { text-align: center; }
-  td.bold { font-weight: 600; }
-  td.accent { color: var(--blue); font-family: 'JetBrains Mono', monospace; font-size: 16px; }
-  td.soft { color: var(--soft); font-size: 12px; }
-  code { font-family: 'JetBrains Mono', monospace; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--navy); }
-  .tag { display: inline-block; background: var(--blue); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.05em; text-transform: uppercase; }
+  /* ── SHEET TITLE BLOCK ── */
+  .sheet-title-block {
+    margin-top: 16px;
+    border-top: 2px solid var(--navy);
+    padding-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--soft);
+  }
+  .tb-left strong { color: var(--navy); }
+  .tb-right { display: flex; gap: 24px; }
+  .tb-right strong { color: var(--navy); }
+
+  /* ── TABLES & SCHEDULES ── */
+  table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    font-size: 12px; 
+    margin-top: 12px;
+  }
+  thead tr { 
+    background: var(--navy); 
+    color: white; 
+  }
+  thead th { 
+    padding: 12px 16px; 
+    text-align: left; 
+    font-size: 10px; 
+    font-weight: 700; 
+    letter-spacing: 0.1em; 
+    text-transform: uppercase; 
+    font-family: 'Outfit', sans-serif;
+  }
+  tbody tr { 
+    border-bottom: 1px solid var(--border-light); 
+  }
+  tbody tr:nth-child(even) { 
+    background: #f8fafc; 
+  }
+  td { 
+    padding: 12px 16px; 
+    vertical-align: middle; 
+  }
+  td.bold { font-weight: 600; color: var(--navy); }
+  td code { 
+    font-family: 'JetBrains Mono', monospace; 
+    background: #eef2ff; 
+    color: var(--brand); 
+    padding: 2px 6px; 
+    border-radius: 4px; 
+    font-size: 11px; 
+  }
+  .tag { 
+    display: inline-block; 
+    background: var(--navy); 
+    color: white; 
+    font-size: 9px; 
+    font-weight: 700; 
+    padding: 3px 8px; 
+    border-radius: 4px; 
+    letter-spacing: 0.05em; 
+    text-transform: uppercase; 
+  }
   .tag.inner { background: var(--cyan); color: var(--navy); }
+  .tag.brand { background: var(--brand); }
+  .tag.warm { background: var(--amber); color: var(--navy); }
 
-  /* ── INFO BOXES ── */
-  .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
-  .info-card { border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
-  .info-card-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--soft); margin-bottom: 6px; }
-  .info-card-value { font-size: 18px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--navy); }
-  .info-card-sub { font-size: 12px; color: var(--soft); margin-top: 2px; }
+  /* ── BOM VISUAL CARDS GRID ── */
+  .bom-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .bom-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    background: var(--bg);
+  }
+  .bom-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .bom-card-thumb {
+    width: 48px;
+    height: 48px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 2px;
+  }
+  .bom-card-thumb svg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .bom-card-qty {
+    background: var(--brand);
+    color: white;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+  .bom-card-title h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .bom-card-cat {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--soft);
+  }
+  .bom-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .bom-card-row label {
+    font-weight: 600;
+    color: var(--soft);
+  }
+  .bom-card-specs {
+    font-size: 11px;
+    color: var(--soft);
+    max-width: 65%;
+    text-align: right;
+  }
 
-  /* ── FOOTER ── */
-  .report-footer { margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--soft); }
-  .report-footer strong { color: var(--text); }
-
-  /* ── DIVIDER ── */
-  .divider { height: 1px; background: var(--border); margin: 48px 0; }
-
+  /* ── PRINT RULES (PAGE-BREAK PER SHEET) ── */
   @media print {
-    .fab { display: none !important; }
-    .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .cover-accent, .stat-card::before, thead tr { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .page { padding: 40px 48px; }
-    .section { page-break-inside: avoid; }
-    .view-block { page-break-inside: avoid; }
+    body { background: white; }
+    .no-print, .action-bar { display: none !important; }
+    .sheet {
+      margin: 0;
+      padding: 24px 32px;
+      box-shadow: none;
+      border-radius: 0;
+      min-height: 100vh;
+      page-break-after: always;
+      break-after: page;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .drawing-frame {
+      min-height: 720px;
+    }
+    .blueprint-img {
+      max-height: 700px;
+    }
   }
 </style>
 </head>
 <body>
 
-<button class="fab no-print" onclick="window.print()">
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-  Export PDF
-</button>
+<div class="action-bar no-print">
+  <button class="btn-print" onclick="window.print()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    Print / Save as PDF
+  </button>
+</div>
 
-<!-- COVER -->
-<div class="cover">
+<!-- 1. COVER SHEET -->
+<div class="sheet cover-sheet full-page">
   <div class="cover-accent"></div>
   <div class="cover-grid"></div>
   <div class="cover-body">
-    <div class="cover-tag">DEKODE Space Designer · Official Design Document</div>
-    <h1>Architectural<br><span>Structure Report</span></h1>
-    <p class="cover-sub">Space Configuration · Material Specifications · Asset Inventory</p>
-    <div class="cover-meta">
+    <div class="cover-tag">DEKODE SPACE DESIGNER · ARCHITECTURAL SPECIFICATION</div>
+    <h1>Architectural Space<br><span>Technical Report</span></h1>
+    <div class="cover-project-title">${projectName}</div>
+    
+    <div class="cover-meta-grid">
       <div class="cover-meta-item"><label>Document ID</label><span>${docId}</span></div>
-      <div class="cover-meta-item"><label>Generated</label><span>${dateStr}</span></div>
-      <div class="cover-meta-item"><label>Time</label><span>${timeStr}</span></div>
-      <div class="cover-meta-item"><label>Space Size</label><span>${boothConfig.width}m × ${boothConfig.depth}m</span></div>
+      <div class="cover-meta-item"><label>Date Generated</label><span>${dateStr}</span></div>
+      <div class="cover-meta-item"><label>Timestamp</label><span>${timeStr}</span></div>
+      <div class="cover-meta-item"><label>Space Dimensions</label><span>${boothConfig.width}m × ${boothConfig.depth}m</span></div>
     </div>
   </div>
   <div class="cover-footer">
-    <span>CONFIDENTIAL - INTERNAL USE ONLY</span>
-    <strong>DEKODE Space Designer</strong>
-    <span>Rev. 1.0</span>
+    <span>OFFICIAL SPECIFICATION DOCUMENT</span>
+    <strong>DEKODE SPACE DESIGNER</strong>
+    <span>PAGE 1 OF ${drawingSheetNumber}</span>
   </div>
 </div>
 
-<div class="page">
+<!-- 2. PROJECT OVERVIEW & METRICS SHEET -->
+<div class="sheet full-page">
+  <div class="sheet-header">
+    <div class="sheet-title-group">
+      <span class="sheet-tag">PROJECT SUMMARY</span>
+      <h2>Spatial Specifications & Metric Overview</h2>
+      <p class="sheet-sub">Comprehensive architectural metrics, wall schedule, and mounted fixtures</p>
+    </div>
+    <div class="sheet-meta">
+      <div><label>Project</label><span>${projectName}</span></div>
+      <div><label>Doc Ref</label><span>${docId}</span></div>
+    </div>
+  </div>
 
-  <!-- STATS -->
-  <div class="stats-grid" style="margin-top:48px;">
+  <div class="stats-grid">
     <div class="stat-card">
-      <div class="stat-label">Floor Area</div>
+      <div class="stat-label">Total Floor Area</div>
       <div class="stat-value">${boothArea}<span class="stat-unit">m²</span></div>
     </div>
     <div class="stat-card cyan">
-      <div class="stat-label">Perimeter</div>
+      <div class="stat-label">Boundary Perimeter</div>
       <div class="stat-value">${perimeterM}<span class="stat-unit">m</span></div>
     </div>
     <div class="stat-card green">
-      <div class="stat-label">Total Assets</div>
+      <div class="stat-label">Furniture & Assets</div>
       <div class="stat-value">${allAssets.length}</div>
     </div>
     <div class="stat-card amber">
-      <div class="stat-label">Wall Elements</div>
-      <div class="stat-value">${allBanners.length + allWindows.length}</div>
-    </div>
-    <div class="stat-card red">
-      <div class="stat-label">3D Logos</div>
-      <div class="stat-value">${allLogos.length}</div>
-    </div>
-    <div class="stat-card" style="grid-column:span 1;">
-      <div class="stat-label">Lights</div>
-      <div class="stat-value">${allLights.length}</div>
+      <div class="stat-label">Structural Walls</div>
+      <div class="stat-value">${walls.length}</div>
     </div>
   </div>
 
-  <!-- PROJECT OVERVIEW -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">1</div>
-      <h2>Project Overview</h2>
-    </div>
-    <div class="info-grid">
-      <div class="info-card">
-        <div class="info-card-label">Width</div>
-        <div class="info-card-value">${boothConfig.width}m</div>
-        <div class="info-card-sub">${(boothConfig.width * 100).toFixed(0)} cm total</div>
-      </div>
-      <div class="info-card">
-        <div class="info-card-label">Depth</div>
-        <div class="info-card-value">${boothConfig.depth}m</div>
-        <div class="info-card-sub">${(boothConfig.depth * 100).toFixed(0)} cm total</div>
-      </div>
-      <div class="info-card">
-        <div class="info-card-label">Wall Thickness</div>
-        <div class="info-card-value">${((boothConfig.wallThickness || 0.1) * 100).toFixed(0)}cm</div>
-        <div class="info-card-sub">${(boothConfig.wallThickness || 0.1).toFixed(3)}m</div>
-      </div>
-      <div class="info-card">
-        <div class="info-card-label">Space Walls</div>
-        <div class="info-card-value">${walls.length}</div>
-        <div class="info-card-sub">Structural + decorative</div>
-      </div>
-      <div class="info-card">
-        <div class="info-card-label">Banners</div>
-        <div class="info-card-value">${allBanners.length}</div>
-        <div class="info-card-sub">Wall-mounted graphics</div>
-      </div>
-      <div class="info-card">
-        <div class="info-card-label">Windows</div>
-        <div class="info-card-value">${allWindows.length}</div>
-        <div class="info-card-sub">Openings / apertures</div>
-      </div>
-      <div class="info-card">
-        <div class="info-card-label">Lights</div>
-        <div class="info-card-value">${allLights.length}</div>
-        <div class="info-card-sub">Lighting fixtures</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- VISUALIZATIONS -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">2</div>
-      <h2>3D Visualizations</h2>
-    </div>
-    <p class="section-desc">High-resolution renders captured from multiple camera positions for complete spatial documentation.</p>
-    <div class="views-grid">${viewSections}</div>
-  </div>
-
-  <!-- WALL SCHEDULE -->
   ${walls.length > 0 ? `
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">3</div>
-      <h2>Wall Schedule</h2>
-    </div>
-    <p class="section-desc">Complete listing of all structural and decorative walls including their mounted elements.</p>
+  <div style="margin-top: 16px;">
+    <h3 style="font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;color:var(--navy);">Structural & Partition Walls</h3>
     <table>
-      <thead><tr><th>Wall ID</th><th>Type</th><th>Dimensions</th><th>Material</th><th>Elements</th></tr></thead>
+      <thead><tr><th>Wall Reference</th><th>Classification</th><th>Real Dimensions (W × T)</th><th>Material Finish</th><th>Mounted Elements</th></tr></thead>
       <tbody>${wallRows}</tbody>
     </table>
   </div>` : ''}
 
-  <!-- BOM -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">${walls.length > 0 ? '4' : '3'}</div>
-      <h2>Bill of Materials - Furniture & Assets</h2>
-    </div>
-    <p class="section-desc">Consolidated procurement list for all space assets with quantity, dimensions and specifications.</p>
-    ${bomRows ? `<table>
-      <thead><tr><th>Qty</th><th>Item</th><th>Dimensions (W×D×H)</th><th>Specifications</th></tr></thead>
-      <tbody>${bomRows}</tbody>
-    </table>` : '<p style="color:var(--soft);font-style:italic;padding:16px 0;">No furniture assets placed in this design.</p>'}
-  </div>
-
-  <!-- WALL ELEMENTS -->
   ${elemRows ? `
-  <div class="section">
-    <div class="section-header">
-      <div class="section-num">${walls.length > 0 ? '5' : '4'}</div>
-      <h2>Wall Elements Register</h2>
-    </div>
-    <p class="section-desc">All banners, windows, and 3D logos mounted on walls within the space structure.</p>
+  <div style="margin-top: 24px;">
+    <h3 style="font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;color:var(--navy);">Mounted Wall Fixtures & Branding</h3>
     <table>
-      <thead><tr><th>Type</th><th>Element ID</th><th>Size</th><th>Shape</th><th>Style</th></tr></thead>
+      <thead><tr><th>Category</th><th>Element Reference</th><th>Dimensions</th><th>Type / Style</th><th>Specification</th></tr></thead>
       <tbody>${elemRows}</tbody>
     </table>
   </div>` : ''}
 
-  <div class="divider"></div>
-
-  <div class="report-footer">
-    <div>
-      <strong>Document ID:</strong> ${docId} &nbsp;·&nbsp;
-      <strong>Generated:</strong> ${dateStr} at ${timeStr}
-    </div>
-    <div>Generated by <strong>DEKODE Space Designer</strong> · All rights reserved.</div>
+  <div class="sheet-title-block" style="margin-top: auto;">
+    <div class="tb-left"><strong>DEKODE ARCHITECTURAL SYSTEM</strong> · EXECUTIVE SPECIFICATION</div>
+    <div class="tb-right"><span>REF: <strong>${docId}</strong></span><span>SHEET: <strong>DWG-01</strong></span></div>
   </div>
 </div>
+
+<!-- 3. DRAWING SHEETS (2D FLOOR PLAN + 3D ORTHOGRAPHIC ELEVATIONS) -->
+${floorPlanSheetHtml}
+${blueprintSheetsHtml}
+
+<!-- 4. BILL OF MATERIALS (BOM) & ASSET PROCUREMENT CATALOG -->
+<div class="sheet full-page">
+  <div class="sheet-header">
+    <div class="sheet-title-group">
+      <span class="sheet-tag">SCHEDULE OF ASSETS</span>
+      <h2>Bill of Materials & Furniture Schedule</h2>
+      <p class="sheet-sub">Consolidated asset procurement breakdown with physical dimensions and quantities</p>
+    </div>
+    <div class="sheet-meta">
+      <div><label>Total Item Count</label><span>${allAssets.length}</span></div>
+      <div><label>Unique Models</label><span>${Object.keys(assetCounts).length}</span></div>
+    </div>
+  </div>
+
+  <div class="bom-grid">
+    ${bomCatalogHtml || '<p style="color:var(--soft);font-style:italic;grid-column:span 2;padding:24px 0;">No furniture assets placed in this design.</p>'}
+  </div>
+
+  <div class="sheet-title-block" style="margin-top: auto;">
+    <div class="tb-left"><strong>DEKODE SPACE DESIGNER</strong> · BILL OF MATERIALS & PROCUREMENT SCHEDULE</div>
+    <div class="tb-right"><span>PROJECT: <strong>${projectName}</strong></span><span>FINAL SCHEDULE</span></div>
+  </div>
+</div>
+
 </body>
 </html>`;
 

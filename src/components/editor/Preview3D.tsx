@@ -472,15 +472,29 @@ export default function Preview3D({
     
     if (!blueprintCam || !orbitCam) return;
 
-    // --- BLUEPRINT VISUAL POLISH: DIM LIGHTS ---
+    // --- BLUEPRINT VISUAL POLISH: DIM LIGHTS & ELIMINATE FLOOR GLARE ---
     const baseView = activeView.replace('_download', '').replace('_capture', '');
     const isBlueprint = baseView !== 'perspective';
+
+    const floorMesh = scene.getMeshByName("floor");
+    if (floorMesh && floorMesh.material instanceof BABYLON.PBRMaterial) {
+      if (isBlueprint) {
+        floorMesh.material.reflectionColor = new BABYLON.Color3(0, 0, 0);
+        floorMesh.material.roughness = 0.95;
+      } else {
+        floorMesh.material.reflectionColor = new BABYLON.Color3(1, 1, 1);
+        const fType = boothConfig.floorType || 'hardwood';
+        floorMesh.material.roughness = fType === 'marble' ? 0.05 : fType === 'hardwood' ? 0.25 : fType === 'carpet' ? 0.9 : 0.5;
+      }
+    }
+
     scene.lights.forEach(l => {
       if (l instanceof BABYLON.HemisphericLight) {
-        l.intensity = isBlueprint ? 0.3 : 0.8;
+        l.intensity = isBlueprint ? 0.9 : 0.6;
       }
       if (l instanceof BABYLON.DirectionalLight) {
-        l.intensity = isBlueprint ? 0.2 : 1.0;
+        l.intensity = isBlueprint ? 0.1 : 0.8;
+        l.specular = isBlueprint ? new BABYLON.Color3(0, 0, 0) : new BABYLON.Color3(1, 1, 1);
       }
     });
     if (scene.environmentIntensity !== undefined) {
@@ -514,16 +528,22 @@ export default function Preview3D({
       const hemi = scene.getLightByName("hemi") as BABYLON.HemisphericLight;
       if (hemi) hemi.intensity = 0.6;
       const dir = scene.getLightByName("dir") as BABYLON.DirectionalLight;
-      if (dir) dir.intensity = 0.8;
+      if (dir) {
+        dir.intensity = 0.8;
+        dir.specular = new BABYLON.Color3(1, 1, 1);
+      }
     } else {
       scene.activeCamera = blueprintCam;
       blueprintCam.attachControl(canvasRef.current, true);
       
-      // Blueprint Lighting (Softer, flat look)
+      // Blueprint Lighting (Softer, flat look without specular floor bounce)
       const hemi = scene.getLightByName("hemi") as BABYLON.HemisphericLight;
-      if (hemi) hemi.intensity = 1.0;
+      if (hemi) hemi.intensity = 0.9;
       const dir = scene.getLightByName("dir") as BABYLON.DirectionalLight;
-      if (dir) dir.intensity = 0.2; // Reduce harsh shadows
+      if (dir) {
+        dir.intensity = 0.1;
+        dir.specular = new BABYLON.Color3(0, 0, 0);
+      }
       
       const centerX = boothConfig.width / 2;
       const centerZ = boothConfig.depth / 2;
@@ -531,12 +551,7 @@ export default function Preview3D({
       
       // Update Orthographic scale to fit the booth
       const aspect = engineRef.current ? engineRef.current.getAspectRatio(blueprintCam) : 1;
-      const zoom = maxDim * 0.8;
-      
-      blueprintCam.orthoTop = zoom;
-      blueprintCam.orthoBottom = -zoom;
-      blueprintCam.orthoLeft = -zoom * aspect;
-      blueprintCam.orthoRight = zoom * aspect;
+      let zoom = maxDim * 0.55;
 
       let camPos = new BABYLON.Vector3(centerX, 10, centerZ);
       let targetPos = new BABYLON.Vector3(centerX, 0, centerZ);
@@ -550,14 +565,19 @@ export default function Preview3D({
           const rot = (wallEl.rotation || 0) * (Math.PI / 180);
           const wX = wallEl.x / PPM;
           const wZ = boothConfig.depth - (wallEl.y / PPM);
+          const wallW = (wallEl.realWidth || wallEl.width / PPM);
+          const wallH = (wallEl.realHeight || 2.5);
+
+          // Tight framing specifically tailored to this wall
+          const wallSpan = Math.max(wallW, wallH * 1.6);
+          zoom = Math.max(wallSpan * 0.58, 1.8);
           
           // Camera should look AT the wall (target) from the INNER side (interior)
-          // We flip the normal (nx, nz) to look from inside the booth outwards
           const nx = -Math.sin(rot);
           const nz = -Math.cos(rot);
           
-          camPos = new BABYLON.Vector3(wX + nx * 5, 1.25, wZ + nz * 5);
-          targetPos = new BABYLON.Vector3(wX, 1.25, wZ);
+          camPos = new BABYLON.Vector3(wX + nx * 5, wallH / 2, wZ + nz * 5);
+          targetPos = new BABYLON.Vector3(wX, wallH / 2, wZ);
           
           // Hide everything
           scene.meshes.forEach(m => { m.isVisible = false; });
@@ -577,6 +597,14 @@ export default function Preview3D({
           }
         }
       } else {
+        if (baseView === 'top') {
+          zoom = maxDim * 0.55;
+        } else {
+          // North/South/East/West elevations
+          const viewH = boothConfig.wallHeight || 2.5;
+          const viewW = (baseView === 'north' || baseView === 'south') ? boothConfig.width : boothConfig.depth;
+          zoom = Math.max(viewW * 0.55, viewH * 1.1);
+        }
         switch (baseView) {
           case 'top':
             camPos = new BABYLON.Vector3(centerX, 10, centerZ);
@@ -612,6 +640,11 @@ export default function Preview3D({
           });
         }
       }
+
+      blueprintCam.orthoTop = zoom;
+      blueprintCam.orthoBottom = -zoom;
+      blueprintCam.orthoLeft = -zoom * aspect;
+      blueprintCam.orthoRight = zoom * aspect;
 
       blueprintCam.position = camPos;
       blueprintCam.setTarget(targetPos);
@@ -758,24 +791,25 @@ export default function Preview3D({
         addArrow(p2, dir);
       }
 
-      // Add labels (centered on lines)
+      // Add labels (centered on lines with high-contrast, scalable pills)
       if (points.length >= 2) {
         const p1 = points[0];
         const p2 = points[points.length - 1];
         const mid = BABYLON.Vector3.Center(p1, p2);
         
         const rect = new GUI.Rectangle();
-        rect.width = "48px";
-        rect.height = "16px";
-        rect.cornerRadius = 2;
-        rect.thickness = 0;
-        rect.background = "rgba(0,0,0,0.7)";
+        rect.width = "72px";
+        rect.height = "26px";
+        rect.cornerRadius = 6;
+        rect.thickness = 1.5;
+        rect.color = chain.type === 'neighbor' ? "#10b981" : chain.type === 'asset' ? "#38bdf8" : "#94a3b8";
+        rect.background = "rgba(15, 23, 42, 0.92)";
         gui.addControl(rect);
         
         const labelText = new GUI.TextBlock();
         labelText.text = chain.label;
-        labelText.color = chain.type === 'gap' ? "#aaaaaa" : "white";
-        labelText.fontSize = 9;
+        labelText.color = chain.type === 'gap' ? "#e2e8f0" : "#ffffff";
+        labelText.fontSize = 13;
         labelText.fontWeight = "bold";
         rect.addControl(labelText);
 
@@ -786,7 +820,7 @@ export default function Preview3D({
       }
     });
 
-    // Add Rulers (Faded for blueprint mode)
+    // Add Rulers (Clear, bold for blueprint mode)
     const isTop = baseView === 'top';
     const maxDim = Math.max(boothConfig.width, boothConfig.depth);
     for (let i = 0; i <= maxDim; i++) {
@@ -796,8 +830,9 @@ export default function Preview3D({
         xNode.position = new BABYLON.Vector3(i, 0, isTop ? -0.4 : 0);
         const xLabel = new GUI.TextBlock();
         xLabel.text = `${i}m`;
-        xLabel.color = "rgba(255,255,255,0.7)";
-        xLabel.fontSize = 9;
+        xLabel.color = "rgba(255,255,255,0.9)";
+        xLabel.fontSize = 12;
+        xLabel.fontWeight = "bold";
         gui.addControl(xLabel);
         xLabel.linkWithMesh(xNode);
         measurementLinesRef.current.push(xNode as any);
@@ -809,8 +844,9 @@ export default function Preview3D({
         zNode.position = new BABYLON.Vector3(-0.4, 0, i);
         const zLabel = new GUI.TextBlock();
         zLabel.text = `${i}m`;
-        zLabel.color = "rgba(255,255,255,0.7)";
-        zLabel.fontSize = 9;
+        zLabel.color = "rgba(255,255,255,0.9)";
+        zLabel.fontSize = 12;
+        zLabel.fontWeight = "bold";
         gui.addControl(zLabel);
         zLabel.linkWithMesh(zNode);
         measurementLinesRef.current.push(zNode as any);

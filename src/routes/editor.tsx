@@ -585,7 +585,18 @@ function EditorPage() {
 
   const submitExport = () => {
     setIsCapturingReport(true)
-    setReportScreenshots({})
+    
+    // Capture high-res 2D Floor Plan directly from 2D Stage
+    let floorplan2D: string | null = null
+    if (typeof window !== 'undefined' && typeof (window as any).export2DCanvasDataURL === 'function') {
+      try {
+        floorplan2D = (window as any).export2DCanvasDataURL()
+      } catch (err) {
+        console.warn('Failed to capture 2D floor plan snapshot:', err)
+      }
+    }
+
+    setReportScreenshots(floorplan2D ? { floorplan_2d: floorplan2D } : {})
 
     // Queue: Top view + standard directional elevations + specific wall elevations
     const queue = ['top', 'north', 'south', 'east', 'west'];
