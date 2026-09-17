@@ -139,14 +139,15 @@ function EditorPage() {
       // 1. Check if user already owns this design ID
       const matchingDesignById = targetId ? userDesigns.find(d => d.id === targetId) : null
       if (matchingDesignById) {
-        // Design already belongs to this user. Resume it and save any offline/logged-out changes.
+        // Design already belongs to this user. Resume it and save any offline/logged-out changes (including any offline rename).
+        const resolvedName = (activeProjectName && activeProjectName.trim()) || matchingDesignById.name || 'Untitled Design'
         setCurrentDesignId(matchingDesignById.id)
-        setProjectName(matchingDesignById.name)
+        setProjectName(resolvedName)
         localStorage.setItem('current-design-id', matchingDesignById.id)
-        localStorage.setItem('current-design-name', matchingDesignById.name)
+        localStorage.setItem('current-design-name', resolvedName)
         setSyncStatus('saving')
         await updateDesign(matchingDesignById.id, {
-          name: activeProjectName || matchingDesignById.name || 'Untitled Design',
+          name: resolvedName,
           config: activeConfig,
           elements: activeElements
         })
@@ -159,13 +160,14 @@ function EditorPage() {
       if (!isFreshGuestDesign && userDesigns.length > 0) {
         // Automatically attach to their most recently updated design or match
         const mostRecent = userDesigns[0]
+        const resolvedName = (activeProjectName && activeProjectName.trim()) || mostRecent.name || 'Untitled Design'
         setCurrentDesignId(mostRecent.id)
-        setProjectName(mostRecent.name)
+        setProjectName(resolvedName)
         localStorage.setItem('current-design-id', mostRecent.id)
-        localStorage.setItem('current-design-name', mostRecent.name)
+        localStorage.setItem('current-design-name', resolvedName)
         setSyncStatus('saving')
         await updateDesign(mostRecent.id, {
-          name: activeProjectName || mostRecent.name || 'Untitled Design',
+          name: resolvedName,
           config: activeConfig,
           elements: activeElements
         })
