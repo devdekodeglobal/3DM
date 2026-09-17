@@ -171,14 +171,11 @@ export async function signOut() {
     // Shared browser privacy cleanup (KK 08)
     if (typeof window !== 'undefined') {
       try {
-        localStorage.removeItem('stall-config')
-        localStorage.removeItem('stall-elements')
-        localStorage.removeItem('user-custom-assets')
-        localStorage.removeItem('current-design-id')
-        localStorage.removeItem('current-design-name')
+        // Keep working stall elements and last known design info intact so returning users can resume their work
+        // without creating duplicate designs upon logging back in.
         localStorage.removeItem('auto-save-cloud')
       } catch (e) {
-        console.warn('Failed to clear local design cache on sign out:', e)
+        console.warn('Failed to update local cache on sign out:', e)
       }
 
       try {

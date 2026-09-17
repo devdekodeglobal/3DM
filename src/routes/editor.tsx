@@ -117,31 +117,71 @@ function EditorPage() {
   const [currentDesignId, setCurrentDesignId] = useState<string | null>(initialData.id || null)
   const [cloudIdValidated, setCloudIdValidated] = useState(false)
 
-  // Helper to sync current editor design into user's account if space is available
+  // Helper to sync or resume current editor design into user's account
   const syncCurrentDesignToProfile = useCallback(async (user: any, reason: 'login' | 'space_cleared' = 'login', existingDesigns?: any[]) => {
     if (!user || (!boothConfig && elements.length === 0)) return
     try {
       const userDesigns = existingDesigns || (await listDesigns())
-      const alreadySaved = currentDesignId && userDesigns.some(d => d.id === currentDesignId)
-      if (alreadySaved) return
+      const storedId = localStorage.getItem('current-design-id')
+      const targetId = currentDesignId || storedId
 
-      if (userDesigns.length >= 6) {
-        showAlert('Account design limit reached (6 maximum). Current design was not saved to cloud.', 'warning', 'Limit Reached')
+      // 1. Check if user already owns this design ID
+      const matchingDesignById = targetId ? userDesigns.find(d => d.id === targetId) : null
+      if (matchingDesignById) {
+        // Design already belongs to this user. Resume it and save any offline/logged-out changes.
+        setCurrentDesignId(matchingDesignById.id)
+        setProjectName(matchingDesignById.name)
+        localStorage.setItem('current-design-id', matchingDesignById.id)
+        localStorage.setItem('current-design-name', matchingDesignById.name)
+        setSyncStatus('saving')
+        await updateDesign(matchingDesignById.id, {
+          name: projectName || matchingDesignById.name || 'Untitled Design',
+          config: boothConfig,
+          elements: elements
+        })
+        setSyncStatus('saved')
         return
       }
 
+      // 2. If no design ID, but user has existing cloud designs and canvas wasn't explicitly started as a brand-new design
+      const isFreshGuestDesign = localStorage.getItem('is-fresh-guest-design') === 'true'
+      if (!isFreshGuestDesign && userDesigns.length > 0) {
+        // Automatically attach to their most recently updated design or match
+        const mostRecent = userDesigns[0]
+        setCurrentDesignId(mostRecent.id)
+        setProjectName(mostRecent.name)
+        localStorage.setItem('current-design-id', mostRecent.id)
+        localStorage.setItem('current-design-name', mostRecent.name)
+        setSyncStatus('saving')
+        await updateDesign(mostRecent.id, {
+          name: projectName || mostRecent.name || 'Untitled Design',
+          config: boothConfig,
+          elements: elements
+        })
+        setSyncStatus('saved')
+        return
+      }
+
+      // 3. User genuinely created a fresh guest design from scratch:
+      if (userDesigns.length >= 6) {
+        showAlert('Account design limit reached (6 maximum). Choose an existing design from "Cloud Projects" to overwrite, or delete old designs.', 'warning', 'Limit Reached')
+        return
+      }
+
+      // Save as a brand new design
       const designNameToSave = projectName?.trim() || 'Untitled Design'
       const newDesign = await saveDesign(null, designNameToSave, boothConfig, elements)
       setCurrentDesignId(newDesign.id)
       setProjectName(newDesign.name)
       localStorage.setItem('current-design-id', newDesign.id)
       localStorage.setItem('current-design-name', newDesign.name)
+      localStorage.removeItem('is-fresh-guest-design')
       localStorage.removeItem('current-project-id')
       setSelectedProjectId('')
       setSyncStatus('saved')
       const successMessage = reason === 'space_cleared'
         ? 'Space cleared! Your current design has now been saved to your account.'
-        : 'Your current design has been saved to your account and auto-sync is active.'
+        : 'Your design has been saved to your account and auto-sync is active.'
       showAlert(successMessage, 'success', 'Design Saved')
     } catch (err: any) {
       console.error('Failed to save current design to profile:', err)
@@ -160,15 +200,6 @@ function EditorPage() {
           }
 
           setCloudIdValidated(true)
-          const openId = currentDesignId || localStorage.getItem('current-design-id')
-          if (openId && !allDesigns.some(d => d.id === openId)) {
-            setCurrentDesignId(null)
-            setSelectedProjectId('')
-            localStorage.removeItem('current-design-id')
-            localStorage.removeItem('current-design-name')
-            localStorage.removeItem('current-project-id')
-          }
-
           syncCurrentDesignToProfile(sessionUser, 'login', allDesigns)
         })
         .catch(err => {
@@ -592,6 +623,7 @@ function EditorPage() {
         saveToHistory([])
         setCurrentDesignId(null)
         setProjectName('Untitled Design')
+        localStorage.setItem('is-fresh-guest-design', 'true')
         localStorage.removeItem('stall-config')
         localStorage.removeItem('stall-elements')
         localStorage.removeItem('current-design-id')
