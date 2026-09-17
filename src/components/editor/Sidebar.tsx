@@ -582,7 +582,7 @@ export default function Sidebar({
                     customAssets.map(asset => (
                       <div
                         key={asset.id}
-                        className="w-full text-left p-2.5 rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-white hover:border-[var(--lagoon)] transition group flex items-center justify-between gap-2"
+                        className="w-full text-left p-2.5 rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-[var(--surface-strong)] hover:border-[var(--brand)] transition group flex items-center justify-between gap-2"
                       >
                         <button
                           onClick={() => addCustomAsset(asset)}
@@ -592,10 +592,10 @@ export default function Sidebar({
                             3D
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-[var(--sea-ink)] truncate group-hover:text-[var(--brand)]">
+                            <p className="text-xs font-bold text-[var(--sea-ink)] truncate group-hover:text-[var(--brand)] transition-colors">
                               {asset.label}
                             </p>
-                            <p className="text-[9px] text-gray-400 truncate mt-0.5 uppercase tracking-wider">
+                            <p className="text-[9px] text-[var(--sea-ink-soft)] truncate mt-0.5 uppercase tracking-wider">
                               Custom Model
                             </p>
                           </div>
@@ -603,7 +603,7 @@ export default function Sidebar({
                         {onDeleteCustomAsset && (
                           <button
                             onClick={() => onDeleteCustomAsset(asset.id)}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer"
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition cursor-pointer"
                             title="Delete Custom Asset"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -619,9 +619,9 @@ export default function Sidebar({
                     <button
                       key={asset.id}
                       onClick={() => addAsset((asset as any).categoryFolder || asset.category, asset.id)}
-                      className="w-full text-left p-2.5 rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-white hover:border-[var(--lagoon)] transition group flex items-center gap-3 cursor-pointer"
+                      className="w-full text-left p-2.5 rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-[var(--surface-strong)] hover:border-[var(--brand)] transition group flex items-center gap-3 cursor-pointer"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-[var(--surface-strong)] border border-[var(--line)] flex items-center justify-center shrink-0 p-1 text-[var(--sea-ink)] group-hover:border-[var(--lagoon)] transition-colors">
+                      <div className="w-8 h-8 rounded-lg bg-[var(--surface-strong)] border border-[var(--line)] flex items-center justify-center shrink-0 p-1 text-[var(--sea-ink)] group-hover:border-[var(--brand)] transition-colors">
                         <ArchitecturalSymbolSVG
                           category={asset.category}
                           assetName={asset.id}
@@ -629,10 +629,10 @@ export default function Sidebar({
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-[var(--sea-ink)] truncate group-hover:text-[var(--lagoon-deep)]">
+                        <p className="text-xs font-bold text-[var(--sea-ink)] truncate group-hover:text-[var(--brand)] transition-colors">
                           {asset.label}
                         </p>
-                        <p className="text-[9px] text-gray-400 truncate mt-0.5 uppercase tracking-wider">
+                        <p className="text-[9px] text-[var(--sea-ink-soft)] truncate mt-0.5 uppercase tracking-wider">
                           {asset.category.replace(/-/g, ' ')}
                         </p>
                       </div>
@@ -674,9 +674,9 @@ export default function Sidebar({
                 key={asset.id}
                 onClick={() => selectAssetFromGallery(asset)}
                 title={`Add ${asset.label}`}
-                className="group h-[190px] rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-white hover:border-[var(--lagoon)] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lagoon)] transition cursor-pointer overflow-hidden text-left flex flex-col"
+                className="group h-[190px] rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-[var(--surface-strong)] hover:border-[var(--brand)] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] transition cursor-pointer overflow-hidden text-left flex flex-col"
               >
-                <div className="h-[135px] shrink-0 p-3 bg-[var(--surface-strong)] border-b border-[var(--line)] flex items-center justify-center transition-colors">
+                <div className="h-[135px] shrink-0 p-3 bg-[var(--surface-strong)] border-b border-[var(--line)] flex items-center justify-center transition-colors group-hover:bg-[var(--bg-subtle)]">
                   <AssetModelThumbnail
                     assetName={asset.id}
                     categoryFolder={(asset as any).categoryFolder || asset.category}
@@ -684,11 +684,11 @@ export default function Sidebar({
                     className="w-full h-full"
                   />
                 </div>
-                <div className="px-3 py-2.5 flex-1 min-h-0">
-                  <p className="text-xs leading-4 font-bold text-[var(--sea-ink)] group-hover:text-[var(--lagoon-deep)] break-words">
+                <div className="px-3 py-2.5 flex-1 min-h-0 flex flex-col justify-center">
+                  <p className="text-xs leading-4 font-bold text-[var(--sea-ink)] group-hover:text-[var(--brand)] break-words transition-colors">
                     {asset.label}
                   </p>
-                  <p className="text-[10px] text-[var(--sea-ink-soft)] mt-1">Click to add</p>
+                  <p className="text-[10px] text-[var(--sea-ink-soft)] mt-1 group-hover:text-[var(--sea-ink)] transition-colors">Click to add</p>
                 </div>
               </button>
             ))}
