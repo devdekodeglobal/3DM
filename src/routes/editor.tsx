@@ -118,10 +118,10 @@ function EditorPage() {
   const [cloudIdValidated, setCloudIdValidated] = useState(false)
 
   // Helper to sync current editor design into user's account if space is available
-  const syncCurrentDesignToProfile = useCallback(async (user: any, reason: 'login' | 'space_cleared' = 'login') => {
+  const syncCurrentDesignToProfile = useCallback(async (user: any, reason: 'login' | 'space_cleared' = 'login', existingDesigns?: any[]) => {
     if (!user || (!boothConfig && elements.length === 0)) return
     try {
-      const userDesigns = await listDesigns()
+      const userDesigns = existingDesigns || (await listDesigns())
       const alreadySaved = currentDesignId && userDesigns.some(d => d.id === currentDesignId)
       if (alreadySaved) return
 
@@ -151,18 +151,14 @@ function EditorPage() {
   // Fetch projects and sync active design whenever user logs in
   useEffect(() => {
     if (sessionUser) {
-      listProjects().then(res => {
-        setUserProjects(res || [])
-        const current = localStorage.getItem('current-project-id')
-        if (current && res?.some(p => p.id === current)) {
-          setSelectedProjectId(current)
-        }
-      }).catch(console.error)
+      Promise.all([listProjects(), listDesigns()])
+        .then(([res, allDesigns]) => {
+          setUserProjects(res || [])
+          const current = localStorage.getItem('current-project-id')
+          if (current && res?.some(p => p.id === current)) {
+            setSelectedProjectId(current)
+          }
 
-      // Validate the locally-stored cloud design id still exists before auto-save
-      // touches it, so a deleted design doesn't trigger a 404 + scary error toast.
-      listDesigns()
-        .then(allDesigns => {
           setCloudIdValidated(true)
           const openId = currentDesignId || localStorage.getItem('current-design-id')
           if (openId && !allDesigns.some(d => d.id === openId)) {
@@ -172,10 +168,12 @@ function EditorPage() {
             localStorage.removeItem('current-design-name')
             localStorage.removeItem('current-project-id')
           }
+
+          syncCurrentDesignToProfile(sessionUser, 'login', allDesigns)
         })
-        .catch(() => setCloudIdValidated(true))
-        .finally(() => {
-          syncCurrentDesignToProfile(sessionUser, 'login')
+        .catch(err => {
+          console.error(err)
+          setCloudIdValidated(true)
         })
     } else {
       setUserProjects([])
@@ -183,7 +181,7 @@ function EditorPage() {
       setSyncStatus('idle')
       setCloudIdValidated(false)
     }
-  }, [sessionUser])
+  }, [sessionUser, syncCurrentDesignToProfile])
 
   // Hydrate custom assets from IndexedDB on mount
   useEffect(() => {

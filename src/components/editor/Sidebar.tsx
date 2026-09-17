@@ -1,5 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
-import { Box, PlusSquare, ChevronDown, ChevronRight, ChevronLeft, LayoutGrid, Search, Trash2, Palette, Plus, Save, Folder, FileText, DoorClosed, AppWindow, Copy, X } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { Box, PlusSquare, ChevronDown, ChevronRight, ChevronLeft, LayoutGrid, Search, Trash2, Palette, Plus, Folder, FileText, DoorClosed, AppWindow, Copy, X } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import { ASSET_DIMENSIONS, ASSET_CATEGORIES, ASSET_REGISTRY } from '../../lib/assetRegistry'
 import ColorPickerPanel from './ColorPickerPanel'
@@ -52,18 +52,6 @@ export default function Sidebar({
   const [searchQuery, setSearchQuery] = useState('')
   const [isAssetGalleryOpen, setIsAssetGalleryOpen] = useState(false)
   const [galleryPage, setGalleryPage] = useState(0)
-  const [isSaveMenuOpen, setIsSaveMenuOpen] = useState(false)
-  const saveMenuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (saveMenuRef.current && !saveMenuRef.current.contains(e.target as Node)) {
-        setIsSaveMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
 
   const addCustomAsset = (asset: any) => {
     addElement({
@@ -277,15 +265,6 @@ export default function Sidebar({
       facingOffset: asset ? (asset as any).facingOffset || 0 : 0
     })
   }
-
-  /* const TECHNICAL_VIEWS = [
-    { id: 'perspective', label: '3D Orbit', icon: <Box className="w-3 h-3" /> },
-    { id: 'top', label: 'Top View', icon: <Download className="w-3 h-3" /> },
-    { id: 'north', label: 'North Elev', icon: <Download className="w-3 h-3" /> },
-    { id: 'south', label: 'South Elev', icon: <Download className="w-3 h-3" /> },
-    { id: 'east', label: 'East Elev', icon: <Download className="w-3 h-3" /> },
-    { id: 'west', label: 'West Elev', icon: <Download className="w-3 h-3" /> },
-  ] */
 
   const filteredAssets = useMemo(() => {
     let filtered = ASSET_REGISTRY
@@ -745,51 +724,6 @@ export default function Sidebar({
         </section>
       )}
 
-      {/* Technical Drawings - temporarily commented out
-      <div className="border-t border-[var(--line)] bg-[var(--surface-light)] shrink-0">
-        <button
-          onClick={() => setIsTechOpen(!isTechOpen)}
-          className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-strong)] transition-colors"
-        >
-          <p className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--sea-ink-soft)] flex items-center gap-2">
-            <LayoutGrid className="w-3 h-3 text-[var(--lagoon-deep)]" />
-            Technical Drawings
-          </p>
-          {isTechOpen
-            ? <ChevronDown className="h-3 w-3 text-[var(--sea-ink-soft)]" />
-            : <ChevronRight className="h-3 w-3 text-[var(--sea-ink-soft)]" />
-          }
-        </button>
-
-        {isTechOpen && (
-          <div className="px-4 pb-4 grid grid-cols-2 gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
-            {TECHNICAL_VIEWS.map(view => (
-              <button
-                key={view.id}
-                onClick={() => onViewChange?.(view.id)}
-                className={`flex items-center justify-between gap-2 p-2 rounded-lg border text-[10px] font-bold transition-all ${activeView === view.id
-                    ? 'bg-[var(--lagoon)] text-white border-[var(--lagoon-deep)] shadow-sm'
-                    : 'bg-[var(--sand)] text-[var(--sea-ink-soft)] border-transparent hover:border-[var(--line)]'
-                  }`}
-              >
-                <div className="flex items-center gap-2">
-                  {view.id === 'perspective' ? <Box className="w-2.5 h-2.5" /> : null}
-                  {view.label}
-                </div>
-                {view.id !== 'perspective' && (
-                  <div
-                    onClick={(e) => { e.stopPropagation(); onViewChange?.(view.id + '_download' as any); }}
-                    className="p-1 hover:bg-white/20 rounded-md transition-colors"
-                  >
-                    <Download className="w-3 h-3" />
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      */}
     </aside>
   )
 }

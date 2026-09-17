@@ -693,16 +693,20 @@ function DashboardPage() {
 
   useEffect(() => {
     document.title = 'Dashboard | krafc'
-      ; (async () => {
+    ;(async () => {
+      try {
         const u = await getCurrentUser()
         if (!u) { navigate({ to: '/' }); return }
         setUser(u)
-        const p = await listProjects()
+        const [p, d] = await Promise.all([listProjects(), listDesigns()])
         setProjects(p)
-        const d = await listDesigns()
         setDesigns(d)
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err)
+      } finally {
         setLoading(false)
-      })()
+      }
+    })()
   }, [])
 
   const handleOpen = (design: Design) => {
