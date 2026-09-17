@@ -274,16 +274,18 @@
 
     .svg-flow-box {
       width: 100%;
-      overflow-x: auto;
-      padding: 20px 0;
+      padding: 10px 0;
       display: flex;
       justify-content: center;
+      background: #fafafa;
+      border-radius: 12px;
+      border: 1px solid #f1f5f9;
     }
 
     svg.flow-chart {
       display: block;
       margin: 0 auto;
-      max-width: 780px;
+      max-width: 620px;
       width: 100%;
       height: auto;
     }
@@ -492,91 +494,90 @@
     <div class="card">
       <div class="card-title">User Flow 1: Authentication &amp; Multi-Page Destination Routing</div>
       <div class="svg-flow-box">
-        <svg class="flow-chart" viewBox="0 0 760 620" xmlns="http://www.w3.org/2000/svg">
+        <svg class="flow-chart" viewBox="0 0 740 560" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <marker id="v-arrow" viewBox="0 0 10 10" refX="5" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" />
+            <marker id="v-arr" viewBox="0 0 10 10" refX="5" refY="6" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
             </marker>
           </defs>
 
           <!-- 1. START -->
-          <rect x="315" y="15" width="130" height="48" rx="24" fill="#3b82f6" />
-          <text x="380" y="46" fill="#ffffff" font-size="16" font-weight="900" text-anchor="middle">START</text>
+          <rect x="320" y="16" width="100" height="38" rx="19" fill="#2563eb" />
+          <text x="370" y="40" fill="#ffffff" font-size="13" font-weight="800" text-anchor="middle" letter-spacing="0.05em">START</text>
 
-          <!-- Arrow to Entry Decision -->
-          <path d="M 380 63 L 380 95" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow)" />
+          <path d="M 370 54 L 370 86" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
 
-          <!-- 2. Entry Decision Diamond -->
-          <polygon points="380,95 480,140 380,185 280,140" fill="#1e293b" />
-          <text x="380" y="146" fill="#ffffff" font-size="14" font-weight="800" text-anchor="middle">Entry Route?</text>
+          <!-- 2. Entry Route Decision -->
+          <polygon points="370,86 460,120 370,154 280,120" fill="#1e293b" />
+          <text x="370" y="125" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">Entry Route?</text>
 
-          <!-- Left Branch: Landing Page (/) -->
-          <path d="M 280 140 L 175 140 L 175 205" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow)" />
-          <rect x="75" y="205" width="200" height="50" rx="12" fill="#ea580c" />
-          <text x="175" y="236" fill="#ffffff" font-size="15" font-weight="800" text-anchor="middle">Landing Page ( / )</text>
+          <!-- Branch 1: Landing Page (Left) -->
+          <path d="M 280 120 L 180 120 L 180 178" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <rect x="95" y="178" width="170" height="42" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5" />
+          <text x="180" y="204" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">Landing Page ( / )</text>
 
-          <!-- Right Branch: Editor Page (/editor) -->
-          <path d="M 480 140 L 585 140 L 585 205" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow)" />
-          <rect x="485" y="205" width="200" height="50" rx="12" fill="#ea580c" />
-          <text x="585" y="236" fill="#ffffff" font-size="15" font-weight="800" text-anchor="middle">Editor ( /editor )</text>
+          <!-- Branch 2: Editor Page (Right) -->
+          <path d="M 460 120 L 560 120 L 560 178" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <rect x="475" y="178" width="170" height="42" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5" />
+          <text x="560" y="204" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">Editor ( /editor )</text>
 
-          <!-- Left Decision: Logged in? -->
-          <path d="M 175 255 L 175 285" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow)" />
-          <polygon points="175,285 255,325 175,365 95,325" fill="#1e293b" />
-          <text x="175" y="331" fill="#ffffff" font-size="14" font-weight="800" text-anchor="middle">Logged in?</text>
+          <!-- Left Logged In Decision -->
+          <path d="M 180 220 L 180 250" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <polygon points="180,250 245,280 180,310 115,280" fill="#1e293b" />
+          <text x="180" y="285" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">Logged in?</text>
 
-          <!-- Left Yes -> /dashboard -->
-          <path d="M 95 325 L 30 325 L 30 405" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow)" />
-          <circle cx="55" cy="325" r="14" fill="#22c55e" />
-          <text x="55" y="330" fill="#ffffff" font-size="12" font-weight="900" text-anchor="middle">Yes</text>
+          <!-- Left: Yes -> Redirect to /dashboard -->
+          <path d="M 115 280 L 45 280 L 45 350" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <rect x="65" y="269" width="34" height="20" rx="10" fill="#dcfce7" stroke="#86efac" stroke-width="1" />
+          <text x="82" y="283" fill="#15803d" font-size="10" font-weight="800" text-anchor="middle">YES</text>
 
-          <rect x="5" y="405" width="165" height="52" rx="12" fill="#0284c7" />
-          <text x="87.5" y="428" fill="#ffffff" font-size="13" font-weight="800" text-anchor="middle">Redirect to</text>
-          <text x="87.5" y="446" fill="#ffffff" font-size="14" font-weight="900" text-anchor="middle">/dashboard</text>
+          <rect x="10" y="350" width="140" height="48" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5" />
+          <text x="80" y="371" fill="#1d4ed8" font-size="11" font-weight="600" text-anchor="middle">Redirect to</text>
+          <text x="80" y="387" fill="#1d4ed8" font-size="13" font-weight="800" text-anchor="middle">/dashboard</text>
 
-          <!-- Left No -> Stay on / & Login Modal -->
-          <path d="M 255 325 L 290 325 L 290 405" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow)" />
-          <circle cx="270" cy="325" r="14" fill="#ef4444" />
-          <text x="270" y="330" fill="#ffffff" font-size="12" font-weight="900" text-anchor="middle">No</text>
+          <!-- Left: No -> Stay on / & Login Modal -->
+          <path d="M 245 280 L 250 280 L 250 350" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <rect x="250" y="269" width="30" height="20" rx="10" fill="#fee2e2" stroke="#fca5a5" stroke-width="1" />
+          <text x="265" y="283" fill="#b91c1c" font-size="10" font-weight="800" text-anchor="middle">NO</text>
 
-          <rect x="195" y="405" width="180" height="52" rx="12" fill="#475569" />
-          <text x="285" y="428" fill="#ffffff" font-size="13" font-weight="800" text-anchor="middle">Prompt Sign In</text>
-          <text x="285" y="446" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">(Google / OTP)</text>
+          <rect x="175" y="350" width="150" height="48" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+          <text x="250" y="371" fill="#334155" font-size="11" font-weight="600" text-anchor="middle">Stay on /</text>
+          <text x="250" y="387" fill="#0f172a" font-size="12" font-weight="700" text-anchor="middle">Prompt Sign In</text>
 
-          <!-- Right Decision: Logged in? -->
-          <path d="M 585 255 L 585 285" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow)" />
-          <polygon points="585,285 665,325 585,365 505,325" fill="#1e293b" />
-          <text x="585" y="331" fill="#ffffff" font-size="14" font-weight="800" text-anchor="middle">Logged in?</text>
+          <!-- Right Logged In Decision -->
+          <path d="M 560 220 L 560 250" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <polygon points="560,250 625,280 560,310 495,280" fill="#1e293b" />
+          <text x="560" y="285" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">Logged in?</text>
 
-          <!-- Right Yes -> Auto-Sync -->
-          <path d="M 505 325 L 465 325 L 465 405" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow)" />
-          <circle cx="485" cy="325" r="14" fill="#22c55e" />
-          <text x="485" y="330" fill="#ffffff" font-size="12" font-weight="900" text-anchor="middle">Yes</text>
+          <!-- Right: Yes -> Auto-Sync -->
+          <path d="M 495 280 L 490 280 L 490 350" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <rect x="460" y="269" width="34" height="20" rx="10" fill="#dcfce7" stroke="#86efac" stroke-width="1" />
+          <text x="477" y="283" fill="#15803d" font-size="10" font-weight="800" text-anchor="middle">YES</text>
 
-          <rect x="390" y="405" width="175" height="52" rx="12" fill="#0284c7" />
-          <text x="477.5" y="428" fill="#ffffff" font-size="13" font-weight="800" text-anchor="middle">Auto-Sync Active</text>
-          <text x="477.5" y="446" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">Design to D1</text>
+          <rect x="415" y="350" width="150" height="48" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5" />
+          <text x="490" y="371" fill="#1d4ed8" font-size="11" font-weight="600" text-anchor="middle">Auto-Sync Active</text>
+          <text x="490" y="387" fill="#1d4ed8" font-size="12" font-weight="800" text-anchor="middle">Design to D1</text>
 
-          <!-- Right No -> Guest Mode -->
-          <path d="M 665 325 L 695 325 L 695 405" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow)" />
-          <circle cx="680" cy="325" r="14" fill="#ef4444" />
-          <text x="680" y="330" fill="#ffffff" font-size="12" font-weight="900" text-anchor="middle">No</text>
+          <!-- Right: No -> Guest Mode -->
+          <path d="M 625 280 L 660 280 L 660 350" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <rect x="645" y="269" width="30" height="20" rx="10" fill="#fee2e2" stroke="#fca5a5" stroke-width="1" />
+          <text x="660" y="283" fill="#b91c1c" font-size="10" font-weight="800" text-anchor="middle">NO</text>
 
-          <rect x="580" y="405" width="170" height="52" rx="12" fill="#475569" />
-          <text x="665" y="428" fill="#ffffff" font-size="13" font-weight="800" text-anchor="middle">Guest Mode</text>
-          <text x="665" y="446" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">(LocalStorage)</text>
+          <rect x="585" y="350" width="145" height="48" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+          <text x="657.5" y="371" fill="#334155" font-size="11" font-weight="600" text-anchor="middle">Guest Mode</text>
+          <text x="657.5" y="387" fill="#0f172a" font-size="12" font-weight="700" text-anchor="middle">(LocalStorage)</text>
 
-          <!-- Convergence lines down to END -->
-          <path d="M 87.5 457 L 87.5 520 L 380 520" fill="none" stroke="#94a3b8" stroke-width="3" />
-          <path d="M 285 457 L 285 520" fill="none" stroke="#94a3b8" stroke-width="3" />
-          <path d="M 477.5 457 L 477.5 520" fill="none" stroke="#94a3b8" stroke-width="3" />
-          <path d="M 665 457 L 665 520 L 380 520" fill="none" stroke="#94a3b8" stroke-width="3" />
+          <!-- Routing lines down to END -->
+          <path d="M 80 398 L 80 460 L 370 460" fill="none" stroke="#94a3b8" stroke-width="2" />
+          <path d="M 250 398 L 250 460" fill="none" stroke="#94a3b8" stroke-width="2" />
+          <path d="M 490 398 L 490 460" fill="none" stroke="#94a3b8" stroke-width="2" />
+          <path d="M 657.5 398 L 657.5 460 L 370 460" fill="none" stroke="#94a3b8" stroke-width="2" />
 
-          <path d="M 380 520 L 380 555" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow)" />
+          <path d="M 370 460 L 370 495" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
 
           <!-- END -->
-          <rect x="325" y="555" width="110" height="48" rx="24" fill="#64748b" />
-          <text x="380" y="586" fill="#ffffff" font-size="16" font-weight="900" text-anchor="middle">END</text>
+          <rect x="325" y="495" width="90" height="38" rx="19" fill="#64748b" />
+          <text x="370" y="519" fill="#ffffff" font-size="13" font-weight="800" text-anchor="middle" letter-spacing="0.05em">END</text>
         </svg>
       </div>
     </div>
@@ -585,90 +586,86 @@
     <div class="card">
       <div class="card-title">User Flow 2: 2D/3D Editor &amp; Cloud Auto-Save</div>
       <div class="svg-flow-box">
-        <svg class="flow-chart" viewBox="0 0 760 760" xmlns="http://www.w3.org/2000/svg">
+        <svg class="flow-chart" viewBox="0 0 680 620" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <marker id="v-arrow2" viewBox="0 0 10 10" refX="5" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" />
+            <marker id="v-arr2" viewBox="0 0 10 10" refX="5" refY="6" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
             </marker>
           </defs>
 
           <!-- 1. START -->
-          <rect x="315" y="15" width="130" height="48" rx="24" fill="#3b82f6" />
-          <text x="380" y="46" fill="#ffffff" font-size="16" font-weight="900" text-anchor="middle">START</text>
+          <rect x="290" y="16" width="100" height="38" rx="19" fill="#2563eb" />
+          <text x="340" y="40" fill="#ffffff" font-size="13" font-weight="800" text-anchor="middle" letter-spacing="0.05em">START</text>
 
-          <!-- Arrow to Edit Canvas -->
-          <path d="M 380 63 L 380 95" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow2)" />
+          <path d="M 340 54 L 340 82" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
 
-          <!-- 2. Edit Canvas -->
-          <rect x="255" y="95" width="250" height="52" rx="12" fill="#ea580c" />
-          <text x="380" y="127" fill="#ffffff" font-size="15" font-weight="800" text-anchor="middle">Edits 2D / 3D Canvas</text>
+          <!-- 2. Action: Edit Canvas -->
+          <rect x="235" y="82" width="210" height="42" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5" />
+          <text x="340" y="108" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">Edits 2D / 3D Canvas</text>
 
-          <!-- Arrow to Instant Local Backup -->
-          <path d="M 380 147 L 380 178" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow2)" />
+          <path d="M 340 124 L 340 152" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
 
-          <!-- 3. Local Backup -->
-          <rect x="240" y="178" width="280" height="52" rx="12" fill="#ea580c" />
-          <text x="380" y="210" fill="#ffffff" font-size="15" font-weight="800" text-anchor="middle">Instant LocalStorage Backup</text>
+          <!-- 3. Action: Local Backup -->
+          <rect x="225" y="152" width="230" height="42" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5" />
+          <text x="340" y="178" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">Instant LocalStorage Backup</text>
 
-          <!-- Arrow to Signed In Decision -->
-          <path d="M 380 230 L 380 262" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow2)" />
+          <path d="M 340 194 L 340 224" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
 
           <!-- 4. Decision: Signed In? -->
-          <polygon points="380,262 480,307 380,352 280,307" fill="#1e293b" />
-          <text x="380" y="313" fill="#ffffff" font-size="14" font-weight="800" text-anchor="middle">Signed In?</text>
+          <polygon points="340,224 415,256 340,288 265,256" fill="#1e293b" />
+          <text x="340" y="261" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">Signed In?</text>
 
-          <!-- Signed In? -> NO Branch (Right) -->
-          <path d="M 480 307 L 570 307 L 570 380" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow2)" />
-          <circle cx="525" cy="307" r="14" fill="#ef4444" />
-          <text x="525" y="312" fill="#ffffff" font-size="12" font-weight="900" text-anchor="middle">No</text>
+          <!-- No -> Saved Locally (Right Branch) -->
+          <path d="M 415 256 L 520 256 L 520 310" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
+          <rect x="445" y="245" width="30" height="20" rx="10" fill="#fee2e2" stroke="#fca5a5" stroke-width="1" />
+          <text x="460" y="259" fill="#b91c1c" font-size="10" font-weight="800" text-anchor="middle">NO</text>
 
-          <rect x="470" y="380" width="200" height="54" rx="12" fill="#475569" />
-          <text x="570" y="403" fill="#ffffff" font-size="14" font-weight="800" text-anchor="middle">Saved Locally Only</text>
-          <text x="570" y="422" fill="#ffffff" font-size="13" font-weight="700" text-anchor="middle">(Guest Mode Active)</text>
+          <rect x="440" y="310" width="160" height="48" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+          <text x="520" y="331" fill="#334155" font-size="11" font-weight="600" text-anchor="middle">Saved Locally Only</text>
+          <text x="520" y="347" fill="#0f172a" font-size="12" font-weight="700" text-anchor="middle">(Guest Mode Active)</text>
 
-          <!-- Signed In? -> YES Branch (Down) -->
-          <path d="M 380 352 L 380 395" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow2)" />
-          <circle cx="380" cy="370" r="14" fill="#22c55e" />
-          <text x="380" y="375" fill="#ffffff" font-size="12" font-weight="900" text-anchor="middle">Yes</text>
+          <!-- Yes -> Limit Check Decision (Down) -->
+          <path d="M 340 288 L 340 336" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
+          <rect x="323" y="298" width="34" height="20" rx="10" fill="#dcfce7" stroke="#86efac" stroke-width="1" />
+          <text x="340" y="312" fill="#15803d" font-size="10" font-weight="800" text-anchor="middle">YES</text>
 
           <!-- 5. Decision: Limit >= 6? -->
-          <polygon points="380,395 480,440 380,485 280,440" fill="#1e293b" />
-          <text x="380" y="446" fill="#ffffff" font-size="14" font-weight="800" text-anchor="middle">Limit &ge; 6?</text>
+          <polygon points="340,336 415,368 340,400 265,368" fill="#1e293b" />
+          <text x="340" y="373" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">Limit &ge; 6?</text>
 
-          <!-- Limit >= 6? -> YES Branch (Left) -->
-          <path d="M 280 440 L 190 440 L 190 515" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow2)" />
-          <circle cx="235" cy="440" r="14" fill="#ef4444" />
-          <text x="235" y="445" fill="#ffffff" font-size="12" font-weight="900" text-anchor="middle">Yes</text>
+          <!-- Limit Yes -> Alert / Upgrade (Left Branch) -->
+          <path d="M 265 368 L 160 368 L 160 422" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
+          <rect x="205" y="357" width="34" height="20" rx="10" fill="#fee2e2" stroke="#fca5a5" stroke-width="1" />
+          <text x="222" y="371" fill="#b91c1c" font-size="10" font-weight="800" text-anchor="middle">YES</text>
 
-          <rect x="90" y="515" width="200" height="54" rx="12" fill="#dc2626" />
-          <text x="190" y="538" fill="#ffffff" font-size="14" font-weight="800" text-anchor="middle">Cloud Limit Reached</text>
-          <text x="190" y="557" fill="#ffffff" font-size="13" font-weight="700" text-anchor="middle">(Prompt Upgrade)</text>
+          <rect x="80" y="422" width="160" height="48" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5" />
+          <text x="160" y="443" fill="#991b1b" font-size="11" font-weight="600" text-anchor="middle">Limit Reached</text>
+          <text x="160" y="459" fill="#991b1b" font-size="12" font-weight="800" text-anchor="middle">Prompt Upgrade</text>
 
-          <!-- Limit >= 6? -> NO Branch (Down) -->
-          <path d="M 380 485 L 380 525" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow2)" />
-          <circle cx="380" cy="505" r="14" fill="#22c55e" />
-          <text x="380" y="510" fill="#ffffff" font-size="12" font-weight="900" text-anchor="middle">No</text>
+          <!-- Limit No -> Cloud Sync (Down) -->
+          <path d="M 340 400 L 340 435" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
+          <rect x="325" y="405" width="30" height="20" rx="10" fill="#dcfce7" stroke="#86efac" stroke-width="1" />
+          <text x="340" y="419" fill="#15803d" font-size="10" font-weight="800" text-anchor="middle">NO</text>
 
-          <rect x="250" y="525" width="260" height="54" rx="12" fill="#ea580c" />
-          <text x="380" y="548" fill="#ffffff" font-size="14" font-weight="800" text-anchor="middle">Debounced Cloud Sync</text>
-          <text x="380" y="567" fill="#ffffff" font-size="13" font-weight="700" text-anchor="middle">(Cloudflare D1 SQLite)</text>
+          <rect x="245" y="435" width="190" height="42" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5" />
+          <text x="340" y="461" fill="#1d4ed8" font-size="12" font-weight="700" text-anchor="middle">Debounced Cloud Sync (D1)</text>
 
           <!-- Arrow to Design Saved -->
-          <path d="M 380 579 L 380 610" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow2)" />
+          <path d="M 340 477 L 340 502" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
 
-          <rect x="260" y="610" width="240" height="48" rx="12" fill="#0284c7" />
-          <text x="380" y="640" fill="#ffffff" font-size="15" font-weight="800" text-anchor="middle">Design Saved to Cloud</text>
+          <rect x="240" y="502" width="200" height="42" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5" />
+          <text x="340" y="528" fill="#15803d" font-size="13" font-weight="800" text-anchor="middle">✓ Design Saved to Cloud</text>
 
           <!-- Join all paths to END -->
-          <path d="M 190 569 L 190 680 L 380 680" fill="none" stroke="#94a3b8" stroke-width="3" />
-          <path d="M 570 434 L 570 680 L 380 680" fill="none" stroke="#94a3b8" stroke-width="3" />
-          <path d="M 380 658 L 380 680" fill="none" stroke="#94a3b8" stroke-width="3" />
+          <path d="M 160 470 L 160 565 L 340 565" fill="none" stroke="#94a3b8" stroke-width="2" />
+          <path d="M 520 358 L 520 565 L 340 565" fill="none" stroke="#94a3b8" stroke-width="2" />
+          <path d="M 340 544 L 340 565" fill="none" stroke="#94a3b8" stroke-width="2" />
 
-          <path d="M 380 680 L 380 705" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow2)" />
+          <path d="M 340 565 L 340 580" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
 
           <!-- END -->
-          <rect x="325" y="705" width="110" height="48" rx="24" fill="#64748b" />
-          <text x="380" y="736" fill="#ffffff" font-size="16" font-weight="900" text-anchor="middle">END</text>
+          <rect x="295" y="580" width="90" height="34" rx="17" fill="#64748b" />
+          <text x="340" y="602" fill="#ffffff" font-size="12" font-weight="800" text-anchor="middle" letter-spacing="0.05em">END</text>
         </svg>
       </div>
     </div>
@@ -677,46 +674,42 @@
     <div class="card">
       <div class="card-title">User Flow 3: Technical Spec Report &amp; Visual Export</div>
       <div class="svg-flow-box">
-        <svg class="flow-chart" viewBox="0 0 520 460" xmlns="http://www.w3.org/2000/svg">
+        <svg class="flow-chart" viewBox="0 0 460 380" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <marker id="v-arrow3" viewBox="0 0 10 10" refX="5" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" />
+            <marker id="v-arr3" viewBox="0 0 10 10" refX="5" refY="6" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
             </marker>
           </defs>
 
           <!-- 1. START -->
-          <rect x="195" y="15" width="130" height="48" rx="24" fill="#3b82f6" />
-          <text x="260" y="46" fill="#ffffff" font-size="16" font-weight="900" text-anchor="middle">START</text>
+          <rect x="180" y="14" width="100" height="36" rx="18" fill="#2563eb" />
+          <text x="230" y="37" fill="#ffffff" font-size="13" font-weight="800" text-anchor="middle" letter-spacing="0.05em">START</text>
 
-          <!-- Arrow 1 -->
-          <path d="M 260 63 L 260 95" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow3)" />
+          <path d="M 230 50 L 230 78" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr3)" />
 
           <!-- 2. Action: Click Generate Report -->
-          <rect x="135" y="95" width="250" height="52" rx="12" fill="#ea580c" />
-          <text x="260" y="127" fill="#ffffff" font-size="15" font-weight="800" text-anchor="middle">Click Generate Report</text>
+          <rect x="120" y="78" width="220" height="42" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5" />
+          <text x="230" y="104" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">Click Generate Report</text>
 
-          <!-- Arrow 2 -->
-          <path d="M 260 147 L 260 180" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow3)" />
+          <path d="M 230 120 L 230 148" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr3)" />
 
           <!-- 3. Action: Capture Viewports -->
-          <rect x="110" y="180" width="300" height="58" rx="12" fill="#ea580c" />
-          <text x="260" y="205" fill="#ffffff" font-size="15" font-weight="800" text-anchor="middle">Capture 2D Floor Plan &amp;</text>
-          <text x="260" y="226" fill="#ffffff" font-size="14" font-weight="700" text-anchor="middle">3D Babylon Viewport Canvas</text>
+          <rect x="95" y="148" width="270" height="50" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5" />
+          <text x="230" y="170" fill="#c2410c" font-size="12" font-weight="600" text-anchor="middle">Capture 2D Floor Plan &amp;</text>
+          <text x="230" y="188" fill="#c2410c" font-size="13" font-weight="800" text-anchor="middle">3D Babylon Viewport Canvas</text>
 
-          <!-- Arrow 3 -->
-          <path d="M 260 238 L 260 270" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow3)" />
+          <path d="M 230 198 L 230 226" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr3)" />
 
           <!-- 4. Action: Compile HTML & Trigger File Download -->
-          <rect x="100" y="270" width="320" height="58" rx="12" fill="#0284c7" />
-          <text x="260" y="295" fill="#ffffff" font-size="15" font-weight="800" text-anchor="middle">Compile HTML Spec Report</text>
-          <text x="260" y="316" fill="#ffffff" font-size="14" font-weight="700" text-anchor="middle">&amp; Trigger Client Download</text>
+          <rect x="85" y="226" width="290" height="50" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5" />
+          <text x="230" y="248" fill="#1d4ed8" font-size="13" font-weight="800" text-anchor="middle">Compile HTML Spec Report</text>
+          <text x="230" y="266" fill="#1d4ed8" font-size="11" font-weight="600" text-anchor="middle">&amp; Trigger Client File Download</text>
 
-          <!-- Arrow 4 -->
-          <path d="M 260 328 L 260 365" fill="none" stroke="#94a3b8" stroke-width="3" marker-end="url(#v-arrow3)" />
+          <path d="M 230 276 L 230 310" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr3)" />
 
           <!-- 5. END -->
-          <rect x="205" y="365" width="110" height="48" rx="24" fill="#64748b" />
-          <text x="260" y="396" fill="#ffffff" font-size="16" font-weight="900" text-anchor="middle">END</text>
+          <rect x="185" y="310" width="90" height="36" rx="18" fill="#64748b" />
+          <text x="230" y="333" fill="#ffffff" font-size="13" font-weight="800" text-anchor="middle" letter-spacing="0.05em">END</text>
         </svg>
       </div>
     </div>
