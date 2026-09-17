@@ -1,11 +1,13 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
-import { Box, PlusSquare, ChevronDown, ChevronRight, LayoutGrid, Search, Trash2, Palette, Plus, Save, Folder, FileText, DoorClosed, AppWindow } from 'lucide-react'
+import { Box, PlusSquare, ChevronDown, ChevronRight, ChevronLeft, LayoutGrid, Search, Trash2, Palette, Plus, Save, Folder, FileText, DoorClosed, AppWindow, X } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import { ASSET_DIMENSIONS, ASSET_CATEGORIES, ASSET_REGISTRY } from '../../lib/assetRegistry'
 import ColorPickerPanel from './ColorPickerPanel'
 import { ArchitecturalSymbolSVG } from './ArchitecturalSymbolSVG'
+import AssetModelThumbnail from './AssetModelThumbnail'
 
 const DEFAULT_ASSET_SIZE_PX = 100
+const GALLERY_PAGE_SIZE = 12
 
 export default function Sidebar({
   addElement,
@@ -50,6 +52,8 @@ export default function Sidebar({
   const [isModelsOpen, setIsModelsOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>(ASSET_CATEGORIES[0].id)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isAssetGalleryOpen, setIsAssetGalleryOpen] = useState(false)
+  const [galleryPage, setGalleryPage] = useState(0)
   const [isSaveMenuOpen, setIsSaveMenuOpen] = useState(false)
   const saveMenuRef = useRef<HTMLDivElement>(null)
 
@@ -297,8 +301,23 @@ export default function Sidebar({
     return filtered
   }, [selectedCategory, searchQuery])
 
+  const galleryPageCount = Math.max(1, Math.ceil(filteredAssets.length / GALLERY_PAGE_SIZE))
+  const visibleGalleryAssets = useMemo(
+    () => filteredAssets.slice(galleryPage * GALLERY_PAGE_SIZE, (galleryPage + 1) * GALLERY_PAGE_SIZE),
+    [filteredAssets, galleryPage],
+  )
+
+  useEffect(() => {
+    setGalleryPage(0)
+  }, [selectedCategory, searchQuery])
+
+  const selectAssetFromGallery = (asset: (typeof ASSET_REGISTRY)[number]) => {
+    addAsset((asset as any).categoryFolder || asset.category, asset.id)
+    setIsAssetGalleryOpen(false)
+  }
+
   return (
-    <aside className="w-full md:w-56 h-full border-r border-[var(--line)] bg-[var(--surface-strong)] flex flex-col overflow-hidden">
+    <aside className="w-full md:w-56 h-full border-r border-[var(--line)] bg-[var(--surface-strong)] flex flex-col overflow-visible relative z-20">
       {/* Sidebar Header with Close (Mobile) */}
       {onClose && (
         <div className="p-2 border-b border-[var(--line)] flex justify-end items-center md:hidden shrink-0">
@@ -576,19 +595,35 @@ export default function Sidebar({
 
           {isModelsOpen && (
             <div className="px-4 pb-4 flex flex-col gap-3 flex-1 overflow-hidden animate-in fade-in duration-200">
-              <select
-                value={selectedCategory}
-                onChange={e => setSelectedCategory(e.target.value)}
-                className="w-full p-2 bg-[var(--surface-strong)] border border-[var(--line)] rounded-lg text-xs font-bold text-[var(--sea-ink)] outline-none focus:border-[var(--lagoon)] shrink-0"
-              >
-                <option value="all">All Categories</option>
-                {customAssets && customAssets.length > 0 && (
-                  <option value="custom-uploads">My Uploads ({customAssets.length}/5)</option>
-                )}
-                {ASSET_CATEGORIES.map(c => (
-                  <option key={c.id} value={c.id}>{c.label}</option>
-                ))}
-              </select>
+              <div className="flex gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsAssetGalleryOpen(prev => !prev)}
+                  aria-pressed={isAssetGalleryOpen}
+                  title={isAssetGalleryOpen ? 'Close visual asset gallery' : 'Show visual asset gallery'}
+                  className={`w-9 rounded-lg border flex items-center justify-center transition cursor-pointer ${
+                    isAssetGalleryOpen
+                      ? 'bg-[var(--lagoon)] border-[var(--lagoon)] text-white shadow-sm'
+                      : 'bg-[var(--surface-strong)] border-[var(--line)] text-[var(--sea-ink-soft)] hover:border-[var(--lagoon)] hover:text-[var(--lagoon-deep)]'
+                  }`}
+                >
+                  {isAssetGalleryOpen ? <X className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
+                  <span className="sr-only">{isAssetGalleryOpen ? 'Close visual asset gallery' : 'Show visual asset gallery'}</span>
+                </button>
+                <select
+                  value={selectedCategory}
+                  onChange={e => setSelectedCategory(e.target.value)}
+                  className="flex-1 min-w-0 p-2 bg-[var(--surface-strong)] border border-[var(--line)] rounded-lg text-xs font-bold text-[var(--sea-ink)] outline-none focus:border-[var(--lagoon)]"
+                >
+                  <option value="all">All Categories</option>
+                  {customAssets && customAssets.length > 0 && (
+                    <option value="custom-uploads">My Uploads ({customAssets.length}/5)</option>
+                  )}
+                  {ASSET_CATEGORIES.map(c => (
+                    <option key={c.id} value={c.id}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
 
               <div className="relative shrink-0">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -671,6 +706,85 @@ export default function Sidebar({
           )}
         </div>
       </div>
+
+      {isAssetGalleryOpen && selectedCategory !== 'custom-uploads' && (
+        <section
+          aria-label="Visual asset picker"
+          className="hidden md:flex absolute left-full top-3 ml-3 w-[min(620px,calc(100vw-19rem))] max-h-[calc(100%-24px)] flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-strong)] shadow-2xl animate-in fade-in slide-in-from-left-2 duration-200"
+        >
+          <div className="flex items-center justify-between gap-4 border-b border-[var(--line)] bg-[var(--surface-light)] px-5 py-4 shrink-0">
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-[var(--sea-ink)]">Choose an asset</p>
+              <p className="text-[11px] text-[var(--sea-ink-soft)] mt-0.5 truncate">
+                {selectedCategory === 'all' ? 'All categories' : ASSET_CATEGORIES.find(category => category.id === selectedCategory)?.label}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsAssetGalleryOpen(false)}
+              className="p-2 rounded-lg text-[var(--sea-ink-soft)] hover:bg-[var(--sand)] hover:text-[var(--sea-ink)] transition cursor-pointer"
+              title="Close visual asset picker"
+            >
+              <X className="w-4 h-4" />
+              <span className="sr-only">Close visual asset picker</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 overflow-y-auto p-5 custom-scrollbar content-start">
+            {visibleGalleryAssets.map(asset => (
+              <button
+                key={asset.id}
+                onClick={() => selectAssetFromGallery(asset)}
+                title={`Add ${asset.label}`}
+                className="group h-[190px] rounded-xl border border-[var(--line)] bg-[var(--sand)] hover:bg-white hover:border-[var(--lagoon)] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lagoon)] transition cursor-pointer overflow-hidden text-left flex flex-col"
+              >
+                <div className="h-[135px] shrink-0 p-3 bg-[var(--surface-strong)] border-b border-[var(--line)] flex items-center justify-center transition-colors">
+                  <AssetModelThumbnail
+                    assetName={asset.id}
+                    categoryFolder={(asset as any).categoryFolder || asset.category}
+                    label={asset.label}
+                    className="w-full h-full"
+                  />
+                </div>
+                <div className="px-3 py-2.5 flex-1 min-h-0">
+                  <p className="text-xs leading-4 font-bold text-[var(--sea-ink)] group-hover:text-[var(--lagoon-deep)] break-words">
+                    {asset.label}
+                  </p>
+                  <p className="text-[10px] text-[var(--sea-ink-soft)] mt-1">Click to add</p>
+                </div>
+              </button>
+            ))}
+          </div>
+          {filteredAssets.length > GALLERY_PAGE_SIZE && (
+            <div className="flex items-center justify-between border-t border-[var(--line)] px-5 py-3 bg-[var(--surface-light)] shrink-0">
+              <p className="text-[11px] text-[var(--sea-ink-soft)]">
+                {galleryPage * GALLERY_PAGE_SIZE + 1}–{Math.min((galleryPage + 1) * GALLERY_PAGE_SIZE, filteredAssets.length)} of {filteredAssets.length} assets
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setGalleryPage(page => Math.max(0, page - 1))}
+                  disabled={galleryPage === 0}
+                  className="p-1.5 rounded-lg border border-[var(--line)] text-[var(--sea-ink)] hover:border-[var(--lagoon)] disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  title="Previous assets"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-[11px] font-semibold text-[var(--sea-ink)]">{galleryPage + 1} / {galleryPageCount}</span>
+                <button
+                  type="button"
+                  onClick={() => setGalleryPage(page => Math.min(galleryPageCount - 1, page + 1))}
+                  disabled={galleryPage >= galleryPageCount - 1}
+                  className="p-1.5 rounded-lg border border-[var(--line)] text-[var(--sea-ink)] hover:border-[var(--lagoon)] disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  title="Next assets"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Technical Drawings - temporarily commented out
       <div className="border-t border-[var(--line)] bg-[var(--surface-light)] shrink-0">
