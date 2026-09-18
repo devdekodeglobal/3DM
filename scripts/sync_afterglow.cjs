@@ -14,9 +14,27 @@ const userIds = [
   'bfca91620686471cbb80dc043980f720', // vanssh.ug20@nsut.ac.in
 ];
 
+let parsedConfig = data.config;
+while (typeof parsedConfig === 'string') {
+  try {
+    parsedConfig = JSON.parse(parsedConfig);
+  } catch {
+    break;
+  }
+}
+
+let parsedElements = data.elements;
+while (typeof parsedElements === 'string') {
+  try {
+    parsedElements = JSON.parse(parsedElements);
+  } catch {
+    break;
+  }
+}
+
 const name = (data.name || 'AFTERGLOW — Chill & Social Club').replace(/'/g, "''");
-const configStr = JSON.stringify(data.config || {}).replace(/'/g, "''");
-const elementsStr = JSON.stringify(data.elements || []).replace(/'/g, "''");
+const configStr = JSON.stringify(parsedConfig).replace(/'/g, "''");
+const elementsStr = JSON.stringify(parsedElements).replace(/'/g, "''");
 
 let sqlStatements = [];
 
@@ -40,7 +58,7 @@ try {
 
 console.log('--- Executing on REMOTE D1 ---');
 try {
-  execSync('npx wrangler d1 execute DB --remote --file=sync_afterglow.sql', { stdio: 'inherit' });
+  execSync('npx wrangler d1 execute DB --remote -y --file=sync_afterglow.sql', { stdio: 'inherit' });
   console.log('Remote D1 updated successfully!');
 } catch (e) {
   console.error('Remote D1 error:', e.message);

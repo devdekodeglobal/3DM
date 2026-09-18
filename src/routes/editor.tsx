@@ -41,12 +41,20 @@ function getInitialData() {
   const savedName = window.localStorage.getItem('current-design-name');
   if (!savedStall) return { config: null, elements: null, id: savedId, name: savedName };
 
-  const config = JSON.parse(savedStall);
-  let parsedElements = savedElements ? JSON.parse(savedElements) : [];
+  let config: any = savedStall;
+  while (typeof config === 'string') {
+    try { config = JSON.parse(config); } catch { break; }
+  }
+
+  let parsedElements: any = savedElements ? savedElements : [];
+  while (typeof parsedElements === 'string') {
+    try { parsedElements = JSON.parse(parsedElements); } catch { break; }
+  }
+  if (!Array.isArray(parsedElements)) parsedElements = [];
 
   // MIGRATION: If old save has structural walls in config but not in elements, convert them
-  if (parsedElements.length > 0) {
-    const hasOuterWalls = parsedElements.some((el: any) => el.isOuter);
+  if (parsedElements.length > 0 && config && typeof config === 'object' && config.width && config.depth) {
+    const hasOuterWalls = parsedElements.some((el: any) => el?.isOuter);
     if (!hasOuterWalls && config.walls) {
       const PPM = 100;
       const W = config.width * PPM;
@@ -443,16 +451,32 @@ function EditorPage() {
   };
 
   const loadCloudDesign = (loadedConfig: any, loadedElements: any[], designId?: string, designName?: string) => {
-    setBoothConfig(loadedConfig)
-    if (!loadedConfig) {
+    let cleanConfig = loadedConfig;
+    while (typeof cleanConfig === 'string') {
+      try { cleanConfig = JSON.parse(cleanConfig); } catch { break; }
+    }
+    let cleanElements = loadedElements;
+    while (typeof cleanElements === 'string') {
+      try { cleanElements = JSON.parse(cleanElements); } catch { break; }
+    }
+    if (!Array.isArray(cleanElements)) cleanElements = [];
+
+    setBoothConfig(cleanConfig)
+    if (!cleanConfig) {
       setWizardStep(1)
       localStorage.removeItem('stall-config')
     }
-    setElements(loadedElements || [])
-    setHistory([loadedElements || []])
+    setElements(cleanElements)
+    setHistory([cleanElements])
     setHistoryStep(0)
-    if (designId) setCurrentDesignId(designId)
-    if (designName) setProjectName(designName)
+    if (designId) {
+      setCurrentDesignId(designId)
+      localStorage.setItem('current-design-id', designId)
+    }
+    if (designName) {
+      setProjectName(designName)
+      localStorage.setItem('current-design-name', designName)
+    }
     const currentProj = localStorage.getItem('current-project-id') || ''
     setSelectedProjectId(currentProj)
 

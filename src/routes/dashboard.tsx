@@ -711,8 +711,17 @@ function DashboardPage() {
 
   const handleOpen = (design: Design) => {
     try {
-      localStorage.setItem('stall-config', design.config)
-      localStorage.setItem('stall-elements', design.elements)
+      let cleanConfig = design.config;
+      while (typeof cleanConfig === 'string') {
+        try { cleanConfig = JSON.parse(cleanConfig); } catch { break; }
+      }
+      let cleanElements = design.elements;
+      while (typeof cleanElements === 'string') {
+        try { cleanElements = JSON.parse(cleanElements); } catch { break; }
+      }
+
+      localStorage.setItem('stall-config', JSON.stringify(cleanConfig));
+      localStorage.setItem('stall-elements', JSON.stringify(cleanElements || []));
       localStorage.setItem('current-design-id', design.id)
       localStorage.setItem('current-design-name', design.name)
       if (design.project_id) {
