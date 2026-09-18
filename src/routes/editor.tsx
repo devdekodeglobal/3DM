@@ -464,19 +464,23 @@ function EditorPage() {
 
   // Auto-save to local storage (safely stripped of data URLs)
   useEffect(() => {
-    if (boothConfig) {
+    if (boothConfig && Array.isArray(elements)) {
       try {
         localStorage.setItem('stall-config', JSON.stringify(boothConfig));
         const cleanElements = elements.map(el => {
-          if (el.assetUrl && el.assetUrl.startsWith('data:')) {
-            const { assetUrl, ...rest } = el;
-            return rest;
+          if (!el) return el;
+          let cleaned = { ...el };
+          if (cleaned.customTexture?.startsWith('data:image/')) {
+            delete cleaned.customTexture;
           }
-          return el;
+          if (cleaned.assetUrl?.startsWith('data:')) {
+            delete cleaned.assetUrl;
+          }
+          return cleaned;
         });
         localStorage.setItem('stall-elements', JSON.stringify(cleanElements));
-      } catch (err) {
-        console.warn('Skipping stall-elements localStorage save due to quota:', err);
+      } catch (e) {
+        console.warn('Local storage save failed:', e);
       }
     }
   }, [boothConfig, elements])
@@ -496,7 +500,7 @@ function EditorPage() {
         await updateDesign(currentDesignId, {
           name: projectName || 'Untitled Design',
           config: boothConfig,
-          elements: elements
+          elements: elements || []
         });
         setSyncStatus('saved')
       } catch (err: any) {
@@ -514,8 +518,9 @@ function EditorPage() {
   }, [boothConfig, elements, projectName, currentDesignId, sessionUser, cloudIdValidated]);
 
   const saveToHistory = useCallback((newElements: any[]) => {
+    if (!Array.isArray(newElements)) return;
     setHistory(prev => {
-      const nextHistory = prev.slice(0, historyStep + 1)
+      const nextHistory = prev.slice(0, Math.max(0, historyStep + 1))
       return [...nextHistory, newElements]
     })
     setHistoryStep(prev => prev + 1)
@@ -524,18 +529,22 @@ function EditorPage() {
   const undo = () => {
     if (historyStep > 0) {
       const prev = history[historyStep - 1]
-      setElements(prev)
-      setHistoryStep(historyStep - 1)
-      setSelectedId(null)
+      if (Array.isArray(prev)) {
+        setElements(prev)
+        setHistoryStep(historyStep - 1)
+        setSelectedId(null)
+      }
     }
   }
 
   const redo = () => {
     if (historyStep < history.length - 1) {
       const next = history[historyStep + 1]
-      setElements(next)
-      setHistoryStep(historyStep + 1)
-      setSelectedId(null)
+      if (Array.isArray(next)) {
+        setElements(next)
+        setHistoryStep(historyStep + 1)
+        setSelectedId(null)
+      }
     }
   }
 

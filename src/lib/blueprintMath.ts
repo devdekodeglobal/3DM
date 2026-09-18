@@ -14,13 +14,14 @@ export interface MeasurementChain {
 
 export function calculateBlueprintMeasurements(
   view: string,
-  elements: any[],
-  boothConfig: { width: number; depth: number }
+  elements: any[] = [],
+  boothConfig: { width: number; depth: number } = { width: 6, depth: 5 }
 ): MeasurementChain[] {
+  if (!elements || !Array.isArray(elements) || !boothConfig) return [];
   const chains: MeasurementChain[] = [];
   const PPM = 100;
 
-  const items = elements.filter(el => ['asset', '3d_logo', 'wall'].includes(el.type) && !el.isOuter).map(el => {
+  const items = elements.filter(el => el && ['asset', '3d_logo', 'wall'].includes(el.type) && !el.isOuter).map(el => {
     const w = el.width / PPM;
     const h = el.height / PPM;
     const x = el.x / PPM;
