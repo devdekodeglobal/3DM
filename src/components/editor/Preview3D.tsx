@@ -22,6 +22,7 @@ interface Preview3DProps {
   autoRotate?: boolean;
   hideControls?: boolean;
   cameraDistanceScale?: number;
+  modelUrl?: string;
 }
 
 const PPM = 100;
@@ -38,6 +39,7 @@ export default function Preview3D({
   autoRotate = false,
   hideControls = false,
   cameraDistanceScale = 1,
+  modelUrl,
 }: Preview3DProps) {
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [cameraMode, setCameraMode] = useState<'orbit' | 'flight'>('orbit');
@@ -1002,6 +1004,24 @@ export default function Preview3D({
     const shadowGenerator = shadowGeneratorRef.current;
     if (!scene || !shadowGenerator) return;
 
+    if (modelUrl) {
+      if (!scene.getMeshByName("baked_showcase_model")) {
+        BABYLON.SceneLoader.ImportMeshAsync("", "", modelUrl, scene).then((result) => {
+          const root = result.meshes[0];
+          if (root) {
+            root.name = "baked_showcase_model";
+            result.meshes.forEach(m => {
+              if (m.getTotalVertices() > 20) {
+                m.receiveShadows = true;
+                shadowGenerator.addShadowCaster(m, true);
+              }
+            });
+          }
+        }).catch(err => console.error("Failed to load baked showcase model:", err));
+      }
+      return;
+    }
+
     const currentIds = new Set(elements.map(el => el.id));
     const registry = meshRegistryRef.current;
 
@@ -1872,7 +1892,8 @@ export default function Preview3D({
         return true;
       };
       const glbData = await GLTF2Export.GLBAsync(scene, "design.glb", { shouldExportNode });
-      const blob = glbData.glTFFiles["design.glb"];
+      const rawFile = glbData.glTFFiles["design.glb"];
+      const blob = rawFile instanceof Blob ? rawFile : new Blob([rawFile], { type: 'model/gltf-binary' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;

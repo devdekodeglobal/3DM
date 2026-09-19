@@ -168,6 +168,7 @@ export function InteractiveWorkflowShowcase() {
                   activeView="perspective"
                   backgroundColor="#1e293b"
                   cameraDistanceScale={0.68}
+                  modelUrl="/models/showcase/trial3.glb"
                 />
               </div>
             </div>
