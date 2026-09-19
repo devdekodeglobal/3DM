@@ -1034,31 +1034,13 @@ ${blueprintSheetsHtml}
 </body>
 </html>`;
 
-  // Open formatted document via high-reliability Blob URL
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const blobUrl = URL.createObjectURL(blob);
+  const blob = typeof window !== 'undefined' ? new Blob([html], { type: 'text/html;charset=utf-8' }) : null;
+  const blobUrl = blob ? URL.createObjectURL(blob) : '';
 
-  let win = targetWindow;
-  if (win && !win.closed) {
-    try {
-      win.location.href = blobUrl;
-      return blobUrl;
-    } catch (e) {
-      console.warn('Could not redirect pre-opened window:', e);
-    }
-  }
-
-  // If no pre-opened window or it was closed, open fresh or trigger fallback
-  const printWindow = window.open(blobUrl, '_blank');
-  if (!printWindow) {
-    const link = document.createElement('a');
-    link.href = blobUrl;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
-  return blobUrl;
+  return {
+    html,
+    docId,
+    projectName,
+    blobUrl,
+  };
 }
