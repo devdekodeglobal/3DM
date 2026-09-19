@@ -975,18 +975,31 @@ ${blueprintSheetsHtml}
     const html2pdf = await loadHtml2Pdf();
     if (html2pdf) {
       const tempDiv = document.createElement('div');
-      tempDiv.style.position = 'fixed';
-      tempDiv.style.left = '-9999px';
+      tempDiv.id = 'report-render-root';
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '0';
       tempDiv.style.top = '0';
+      tempDiv.style.zIndex = '-99999';
       tempDiv.style.width = '1080px';
+      tempDiv.style.background = '#ffffff';
       tempDiv.innerHTML = html;
       document.body.appendChild(tempDiv);
+
+      // Allow fonts and images to settle in DOM
+      await new Promise(r => setTimeout(r, 400));
 
       const opt = {
         margin: 0,
         filename: `krafc_report_${docId}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1080 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          logging: false, 
+          windowWidth: 1080,
+          scrollY: 0,
+          scrollX: 0
+        },
         jsPDF: { unit: 'px', format: [1080, 720], orientation: 'landscape', hotfixes: ['px_scaling'] },
         pagebreak: { mode: ['css', 'legacy'], after: '.sheet' }
       };

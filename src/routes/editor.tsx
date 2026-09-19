@@ -616,8 +616,11 @@ function EditorPage() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedId, historyStep, history, editingWallId])
 
+  const reportScreenshotsRef = useRef<Record<string, string>>({})
+
   const submitExport = () => {
     setIsCapturingReport(true)
+    reportScreenshotsRef.current = {}
     
     // Capture high-res 2D Floor Plan directly from 2D Stage
     let floorplan2D: string | null = null
@@ -629,7 +632,10 @@ function EditorPage() {
       }
     }
 
-    setReportScreenshots(floorplan2D ? { floorplan_2d: floorplan2D } : {})
+    if (floorplan2D) {
+      reportScreenshotsRef.current['floorplan_2d'] = floorplan2D
+    }
+    setReportScreenshots(reportScreenshotsRef.current)
 
     // Queue: Top view + standard directional elevations + specific wall elevations
     const queue = ['top', 'north', 'south', 'east', 'west'];
@@ -655,7 +661,8 @@ function EditorPage() {
 
       // Small timeout to ensure state has settled
       setTimeout(() => {
-        generateReport(boothConfig, elements, reportScreenshots).then(() => {
+        const finalScreenshots = { ...reportScreenshotsRef.current };
+        generateReport(boothConfig, elements, finalScreenshots).then(() => {
           console.log('[Report] Document generated and downloaded.');
         }).catch(err => {
           console.error('[Report] Generation failed:', err);
@@ -667,6 +674,7 @@ function EditorPage() {
 
   const onExportComplete = useCallback((baseView: string, data?: string) => {
     if (isCapturingReport && data) {
+      reportScreenshotsRef.current[baseView] = data;
       setReportScreenshots(prev => ({ ...prev, [baseView]: data }))
       setCaptureQueue(prev => prev.slice(1))
     } else {
