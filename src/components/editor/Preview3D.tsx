@@ -1602,9 +1602,6 @@ export default function Preview3D({
           shadowGenerator.addShadowCaster(facePlane);
 
           if (el.svgData) {
-            const PX_W = Math.round(el.width * 4);
-            const PX_H = Math.round(el.height * 4);
-            
             let url = '';
             let isBlobUrl = false;
             if (el.svgData.startsWith('data:')) {
@@ -1622,7 +1619,8 @@ export default function Preview3D({
               textureUrl = URL.createObjectURL(blob);
             }
 
-            const logoTex = new BABYLON.Texture(textureUrl, scene, false, false);
+            // invertY = true (default in BabylonJS) so image/SVG textures render right-side up on planes
+            const logoTex = new BABYLON.Texture(textureUrl, scene, false, true);
             logoTex.hasAlpha = true;
 
             faceMat.diffuseTexture = logoTex;
