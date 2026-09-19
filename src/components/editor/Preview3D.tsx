@@ -191,6 +191,8 @@ export default function Preview3D({
     );
     orbitCam.lowerRadiusLimit = 0.1;
     orbitCam.upperRadiusLimit = 100.0;
+    orbitCam.lowerBetaLimit = 0.1; // Never flip over the top pole
+    orbitCam.upperBetaLimit = Math.PI / 2.15; // Never dip below ground level
     orbitCam.wheelPrecision = 100;
     orbitCam.minZ = 0.1;
     orbitCam.maxZ = 200.0;
@@ -2533,14 +2535,15 @@ export default function Preview3D({
     const scene = sceneRef.current;
     if (!scene) return;
 
+    // Tour perspectives showing the open front and angled interior (no back wall or under-floor views)
     const tourWaypoints = [
-      { alpha: -Math.PI * 0.28, beta: Math.PI / 3.2 }, // Front Right / Isometric
-      { alpha: -Math.PI * 0.2, beta: Math.PI / 3.8 },  // Top Right
-      { alpha: 0, beta: Math.PI / 3.0 },              // Right View
-      { alpha: Math.PI / 2, beta: Math.PI / 3.2 },    // Back View
-      { alpha: -Math.PI * 0.75, beta: Math.PI / 3.6 }, // Top Left
-      { alpha: -Math.PI, beta: Math.PI / 3.0 },       // Left View
-      { alpha: -Math.PI / 2, beta: Math.PI / 3.2 },   // Front View
+      { alpha: -Math.PI * 0.35, beta: Math.PI / 3.2 }, // Front-Right Isometric (~56° elevation)
+      { alpha: -Math.PI * 0.22, beta: Math.PI / 3.8 }, // Top-Right Overview (~47° elevation)
+      { alpha: -Math.PI * 0.08, beta: Math.PI / 3.1 }, // Right Side Perspective
+      { alpha: -Math.PI * 0.50, beta: Math.PI / 4.2 }, // Elevated Center Blueprint View (~43° elevation)
+      { alpha: -Math.PI * 0.92, beta: Math.PI / 3.1 }, // Left Side Perspective
+      { alpha: -Math.PI * 0.78, beta: Math.PI / 3.8 }, // Top-Left Overview (~47° elevation)
+      { alpha: -Math.PI * 0.65, beta: Math.PI / 3.2 }, // Front-Left Isometric (~56° elevation)
     ];
 
     let currentIndex = 0;
