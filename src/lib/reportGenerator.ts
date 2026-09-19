@@ -1,22 +1,7 @@
 import { ASSET_REGISTRY } from './assetRegistry';
 import { getArchitecturalSymbolSvgString } from '../components/editor/ArchitecturalSymbolSVG';
 
-async function loadHtml2Pdf(): Promise<any> {
-  if (typeof window === 'undefined') return null;
-  if ((window as any).html2pdf) return (window as any).html2pdf;
-  return new Promise((resolve, reject) => {
-    const existing = document.querySelector('script[src*="html2pdf"]');
-    if (existing) {
-      existing.addEventListener('load', () => resolve((window as any).html2pdf));
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-    script.onload = () => resolve((window as any).html2pdf);
-    script.onerror = () => reject(new Error('Failed to load html2pdf'));
-    document.head.appendChild(script);
-  });
-}
+
 
 export async function generateReport(boothConfig: any, elements: any[], screenshots: Record<string, string>) {
   const docId = `KRAFC-${Date.now().toString(36).toUpperCase()}`;
@@ -971,55 +956,15 @@ ${blueprintSheetsHtml}
 </body>
 </html>`;
 
-  try {
-    const html2pdf = await loadHtml2Pdf();
-    if (html2pdf) {
-      const tempDiv = document.createElement('div');
-      tempDiv.id = 'report-render-root';
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '0';
-      tempDiv.style.top = '0';
-      tempDiv.style.zIndex = '-99999';
-      tempDiv.style.width = '1080px';
-      tempDiv.style.background = '#ffffff';
-      tempDiv.innerHTML = html;
-      document.body.appendChild(tempDiv);
-
-      // Allow fonts and images to settle in DOM
-      await new Promise(r => setTimeout(r, 400));
-
-      const opt = {
-        margin: 0,
-        filename: `krafc_report_${docId}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-          scale: 2, 
-          useCORS: true, 
-          logging: false, 
-          windowWidth: 1080,
-          scrollY: 0,
-          scrollX: 0
-        },
-        jsPDF: { unit: 'px', format: [1080, 720], orientation: 'landscape', hotfixes: ['px_scaling'] },
-        pagebreak: { mode: ['css', 'legacy'], after: '.sheet' }
-      };
-
-      await html2pdf().set(opt).from(tempDiv).save();
-      document.body.removeChild(tempDiv);
-      return;
-    }
-  } catch (err) {
-    console.warn('Direct PDF export fallback:', err);
-  }
-
-  // Fallback: Trigger native browser print-to-PDF dialog
+  // Open high-fidelity formatted document and trigger native PDF export
   const printWindow = window.open('', '_blank');
   if (printWindow) {
+    printWindow.document.open();
     printWindow.document.write(html);
     printWindow.document.close();
     printWindow.focus();
     setTimeout(() => {
       printWindow.print();
-    }, 500);
+    }, 600);
   }
 }
