@@ -13,6 +13,18 @@ export default defineConfig({
     TanStackRouterVite(),
     viteReact(),
   ],
+  optimizeDeps: {
+    include: [
+      '@babylonjs/core',
+      '@babylonjs/loaders',
+      '@babylonjs/materials',
+      '@babylonjs/gui',
+      'konva',
+      'react-konva',
+      'lucide-react',
+      'uuid',
+    ],
+  },
   ssr: {
     noExternal: ['konva', 'react-konva'],
   },

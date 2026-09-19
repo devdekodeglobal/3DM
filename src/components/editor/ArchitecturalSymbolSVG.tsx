@@ -153,3 +153,110 @@ export const ArchitecturalSymbolSVG: React.FC<SymbolThumbnailProps> = ({
     </svg>
   )
 }
+
+/**
+ * Returns raw standalone SVG string for HTML document reports.
+ */
+export function getArchitecturalSymbolSvgString(category: string = '', assetName: string = ''): string {
+  const normCat = (category || '').toLowerCase()
+  const normName = (assetName || '').toLowerCase()
+
+  if (
+    normCat.includes('kitchen') ||
+    normName.includes('fridge') ||
+    normName.includes('frigaro') ||
+    normName.includes('frigidaire') ||
+    normName.includes('oven') ||
+    normName.includes('microwave')
+  ) {
+    if (normName.includes('fridge') || normName.includes('frigaro') || normName.includes('frigidaire')) {
+      return `<svg viewBox="0 0 32 32" width="48" height="48" fill="none" stroke="#334155" stroke-width="1.5">
+        <rect x="5" y="4" width="22" height="24" rx="2" fill="#f8fafc" stroke="#334155"/>
+        <line x1="5" y1="21" x2="27" y2="21" stroke="#334155" stroke-width="1.5"/>
+        <rect x="7" y="23" width="7" height="2" rx="0.5" fill="#334155"/>
+        <line x1="7" y1="7" x2="25" y2="7" stroke-dasharray="2 2" stroke="#94a3b8"/>
+      </svg>`
+    }
+    if (normName.includes('oven') || normName.includes('atino') || normName.includes('insolita')) {
+      return `<svg viewBox="0 0 32 32" width="48" height="48" fill="none" stroke="#334155" stroke-width="1.5">
+        <rect x="4" y="4" width="24" height="24" rx="2" fill="#f8fafc" stroke="#334155"/>
+        <circle cx="11" cy="11" r="3.5" stroke="#334155"/>
+        <circle cx="11" cy="11" r="1.5" fill="#64748b"/>
+        <circle cx="21" cy="11" r="2.8" stroke="#334155"/>
+        <circle cx="21" cy="11" r="1.2" fill="#64748b"/>
+        <circle cx="11" cy="21" r="2.8" stroke="#334155"/>
+        <circle cx="11" cy="21" r="1.2" fill="#64748b"/>
+        <circle cx="21" cy="21" r="3.5" stroke="#334155"/>
+        <circle cx="21" cy="21" r="1.5" fill="#64748b"/>
+      </svg>`
+    }
+    return `<svg viewBox="0 0 32 32" width="48" height="48" fill="none" stroke="#334155" stroke-width="1.5">
+      <circle cx="16" cy="16" r="11" fill="#f8fafc" stroke="#334155"/>
+      <circle cx="16" cy="16" r="7" stroke="#94a3b8" stroke-dasharray="2 2"/>
+    </svg>`
+  }
+
+  if (normCat.includes('sofa') || normCat.includes('lounge')) {
+    const isLong = normName.includes('ii') || normName.includes('iii') || normName.includes('format')
+    return `<svg viewBox="0 0 32 32" width="48" height="48" fill="none" stroke="#334155" stroke-width="1.5">
+      <rect x="4" y="6" width="24" height="20" rx="3" fill="#f1f5f9" stroke="#334155"/>
+      <rect x="4" y="6" width="24" height="6" rx="2" fill="#e2e8f0" stroke="#334155"/>
+      <rect x="4" y="12" width="5" height="14" rx="1" fill="#e2e8f0" stroke="#334155"/>
+      <rect x="23" y="12" width="5" height="14" rx="1" fill="#e2e8f0" stroke="#334155"/>
+      ${isLong ? '<line x1="16" y1="12" x2="16" y2="26" stroke="#94a3b8"/>' : ''}
+    </svg>`
+  }
+
+  if (normCat.includes('barstool') || normCat.includes('stool')) {
+    const isSquare = normName.includes('cubo') || normName.includes('pomp')
+    if (isSquare) {
+      return `<svg viewBox="0 0 32 32" width="48" height="48" fill="none" stroke="#334155" stroke-width="1.5">
+        <rect x="7" y="7" width="18" height="18" rx="2" fill="#f8fafc" stroke="#334155"/>
+        <rect x="10" y="10" width="12" height="12" rx="1" stroke="#94a3b8" stroke-dasharray="2 2"/>
+      </svg>`
+    }
+    return `<svg viewBox="0 0 32 32" width="48" height="48" fill="none" stroke="#334155" stroke-width="1.5">
+      <circle cx="16" cy="16" r="10" fill="#f8fafc" stroke="#334155"/>
+      <circle cx="16" cy="16" r="6.5" stroke="#64748b"/>
+      <line x1="10" y1="10" x2="22" y2="10" stroke="#334155" stroke-width="2"/>
+    </svg>`
+  }
+
+  if (normCat.includes('chair')) {
+    return `<svg viewBox="0 0 32 32" width="48" height="48" fill="none" stroke="#334155" stroke-width="1.5">
+      <rect x="7" y="11" width="18" height="16" rx="3" fill="#f8fafc" stroke="#334155"/>
+      <path d="M6 13 C 6 6, 26 6, 26 13" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
+      <line x1="11" y1="19" x2="21" y2="19" stroke="#94a3b8"/>
+    </svg>`
+  }
+
+  if (normCat.includes('table') || normCat.includes('office') || normName.includes('table') || normName.includes('desk')) {
+    const isRound = normName.includes('ø') || normName.includes('rund') || normName.includes('round')
+    if (isRound) {
+      return `<svg viewBox="0 0 32 32" width="48" height="48" fill="none" stroke="#334155" stroke-width="1.5">
+        <circle cx="16" cy="16" r="11" fill="#f8fafc" stroke="#334155"/>
+        <circle cx="16" cy="16" r="8.5" stroke="#94a3b8" stroke-dasharray="2 2"/>
+        <circle cx="16" cy="16" r="2" fill="#334155"/>
+      </svg>`
+    }
+    return `<svg viewBox="0 0 32 32" width="48" height="48" fill="none" stroke="#334155" stroke-width="1.5">
+      <rect x="4" y="7" width="24" height="18" rx="2" fill="#f8fafc" stroke="#334155"/>
+      <rect x="7" y="10" width="18" height="12" rx="1" stroke="#94a3b8"/>
+    </svg>`
+  }
+
+  if (normCat.includes('counter') || normCat.includes('showcase')) {
+    return `<svg viewBox="0 0 32 32" width="48" height="48" fill="none" stroke="#334155" stroke-width="1.5">
+      <rect x="4" y="7" width="24" height="18" rx="2" fill="#f8fafc" stroke="#334155"/>
+      <rect x="4" y="7" width="24" height="6" fill="#e2e8f0" stroke="#334155"/>
+      <line x1="9" y1="8.5" x2="13" y2="11.5" stroke="#94a3b8"/>
+      <line x1="16" y1="13" x2="16" y2="25" stroke="#94a3b8" stroke-dasharray="2 2"/>
+    </svg>`
+  }
+
+  return `<svg viewBox="0 0 32 32" width="48" height="48" fill="none" stroke="#334155" stroke-width="1.5">
+    <rect x="6" y="6" width="20" height="20" rx="2" fill="#f8fafc" stroke="#334155"/>
+    <line x1="6" y1="6" x2="26" y2="26" stroke="#cbd5e1" stroke-dasharray="2 2"/>
+    <line x1="26" y1="6" x2="6" y2="26" stroke="#cbd5e1" stroke-dasharray="2 2"/>
+  </svg>`
+}

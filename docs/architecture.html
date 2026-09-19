@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>krafc Technical Specification & User Flows</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .main-title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #1e3a8a;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .sub-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #64748b;
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .doc-container {
+      max-width: 1280px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+
+    /* ─── Architecture Diagram ─── */
+    .architecture-wrapper {
+      display: flex;
+      gap: 16px;
+      width: 100%;
+      align-items: stretch;
+    }
+
+    .side-panel {
+      width: 190px;
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .panel-header {
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .security-header { color: #0284c7; }
+    .external-header { color: #d97706; }
+
+    .side-card {
+      background: #f0f9ff;
+      border: 1.5px solid #bae6fd;
+      border-radius: 10px;
+      padding: 14px 12px;
+      text-align: center;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #0369a1;
+    }
+
+    .external-card {
+      background: #fffbe6;
+      border: 1.5px solid #fef08a;
+      color: #b45309;
+    }
+
+    .center-flow {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tier-block {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 16px 22px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .tier-label {
+      width: 145px;
+      font-size: 0.92rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .tier-items {
+      flex: 1;
+      display: flex;
+      gap: 12px;
+    }
+
+    .item-pill {
+      flex: 1;
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 12px 16px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .tier-client { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
+    .tier-client .tier-label { color: #16a34a; }
+
+    .tier-routing { background: #eff6ff; border: 1.5px solid #bfdbfe; }
+    .tier-routing .tier-label { color: #2563eb; }
+
+    .tier-business { background: #faf5ff; border: 1.5px solid #e9d5ff; }
+    .tier-business .tier-label { color: #9333ea; }
+
+    .tier-data-access { background: #fdf2f8; border: 1.5px solid #fbcfe8; }
+    .tier-data-access .tier-label { color: #db2777; }
+
+    .tier-database { background: #fff7ed; border: 1.5px solid #ffedd5; }
+    .tier-database .tier-label { color: #ea580c; }
+
+    .flow-label {
+      text-align: center;
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #64748b;
+      margin: 2px 0;
+    }
+
+    /* ─── Cards & Tables ─── */
+    .card {
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 36px 32px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
+    }
+
+    .card-title {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #1e3a8a;
+      margin-bottom: 24px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 16px 18px;
+      text-align: left;
+      font-size: 1.15rem;
+      line-height: 1.6;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #0f172a;
+      font-size: 1.2rem;
+      font-weight: 800;
+      border-bottom: 2.5px solid #cbd5e1;
+    }
+
+    td { color: #334155; }
+    td strong { color: #0f172a; font-weight: 800; font-size: 1.22rem; }
+
+    code {
+      background: #f1f5f9;
+      color: #0f172a;
+      font-size: 1.05rem;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-family: 'Menlo', 'Consolas', monospace;
+      font-weight: 600;
+    }
+
+    /* ─── Tech Stack Section Labels ─── */
+    .section-label {
+      display: inline-block;
+      font-size: 1.02rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #1e3a8a;
+      background: #eff6ff;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 7px 18px;
+      margin-bottom: 16px;
+    }
+
+    /* ─── Version Badges ─── */
+    .ver-badge {
+      display: inline-block;
+      font-size: 0.96rem;
+      font-weight: 700;
+      font-family: 'Menlo', 'Consolas', monospace;
+      color: #0f172a;
+      background: #f1f5f9;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 20px;
+      padding: 4px 13px;
+      white-space: nowrap;
+    }
+
+    .ver-badge.tier-cf {
+      color: #b45309;
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+
+    .ver-badge.tier-ext {
+      color: #7c3aed;
+      background: #f5f3ff;
+      border-color: #ddd6fe;
+    }
+
+    .ver-badge.tier-native {
+      color: #065f46;
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+    }
+
+    /* ─── Category Badges ─── */
+    .cat-badge {
+      display: inline-block;
+      font-size: 0.94rem;
+      font-weight: 800;
+      border-radius: 20px;
+      padding: 4px 13px;
+      white-space: nowrap;
+    }
+
+    .cat-auth  { color: #1d4ed8; background: #dbeafe; }
+    .cat-email { color: #9a3412; background: #ffedd5; }
+    .cat-storage { color: #065f46; background: #d1fae5; }
+    .cat-ui    { color: #6b21a8; background: #f3e8ff; }
+    .cat-build { color: #374151; background: #f3f4f6; }
+
+    .svg-flow-box {
+      width: 100%;
+      padding: 10px 0;
+      display: flex;
+      justify-content: center;
+      background: #fafafa;
+      border-radius: 12px;
+      border: 1px solid #f1f5f9;
+    }
+
+    svg.flow-chart {
+      display: block;
+      margin: 0 auto;
+      max-width: 620px;
+      width: 100%;
+      height: auto;
+    }
+
+    /* ER Diagram scalable responsive container */
+    .er-scroll-box {
+      width: 100%;
+      overflow-x: auto;
+      padding: 12px 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    svg.er-diagram {
+      display: block;
+      width: 100%;
+      max-width: 1160px;
+      height: auto;
+    }
+
+    .table-scroll-box {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 8px;
+    }
+
+    /* ─── Document Toolbar (Print / Export) ─── */
+    .doc-toolbar {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .print-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      background: #1e3a8a;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
+      transition: all 0.15s ease;
+    }
+
+    .print-btn:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(30, 58, 138, 0.3);
+    }
+
+    .print-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    /* ─── Print & PDF Optimization Styles ─── */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 12mm 10mm;
+      }
+
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      .doc-toolbar {
+        display: none !important;
+      }
+
+      .doc-container {
+        max-width: 100% !important;
+        width: 100% !important;
+        gap: 16px !important;
+      }
+
+      .card {
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+        padding: 18px 16px !important;
+        border-radius: 8px !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+        margin-bottom: 12px;
+      }
+
+      .card-title {
+        font-size: 1.25rem !important;
+        margin-bottom: 12px !important;
+        color: #0f172a !important;
+      }
+
+      .architecture-wrapper {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .svg-flow-box {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      svg.flow-chart {
+        max-width: 520px !important;
+        height: auto !important;
+      }
+
+      .er-scroll-box {
+        overflow: visible !important;
+        padding: 0 !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      svg.er-diagram {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-width: unset !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      table {
+        font-size: 0.85rem !important;
+        page-break-inside: auto;
+      }
+
+      tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      th, td {
+        padding: 8px 10px !important;
+        font-size: 0.88rem !important;
+        line-height: 1.4 !important;
+      }
+
+      th {
+        font-size: 0.92rem !important;
+      }
+
+      td strong {
+        font-size: 0.92rem !important;
+      }
+
+      code {
+        font-size: 0.82rem !important;
+        padding: 1px 4px !important;
+      }
+
+      .section-label {
+        font-size: 0.85rem !important;
+        padding: 4px 10px !important;
+        margin-top: 14px !important;
+        margin-bottom: 8px !important;
+        page-break-after: avoid;
+        break-after: avoid;
+      }
+
+      .ver-badge, .cat-badge {
+        font-size: 0.78rem !important;
+        padding: 2px 8px !important;
+      }
+
+      .table-scroll-box {
+        overflow: visible !important;
+      }
+    }
+
+    /* ─── Mobile Responsiveness ─── */
+    @media (max-width: 900px) {
+      body {
+        padding: 24px 12px;
+      }
+
+      .main-title {
+        font-size: 1.65rem;
+      }
+
+      .sub-title {
+        font-size: 0.92rem;
+        margin-bottom: 24px;
+      }
+
+      .doc-container {
+        gap: 24px;
+      }
+
+      .card {
+        padding: 22px 16px;
+        border-radius: 12px;
+      }
+
+      .card-title {
+        font-size: 1.35rem;
+        margin-bottom: 16px;
+      }
+
+      th, td {
+        padding: 12px 14px;
+        font-size: 1rem;
+      }
+
+      th {
+        font-size: 1.05rem;
+      }
+
+      td strong {
+        font-size: 1.05rem;
+      }
+
+      .section-label {
+        font-size: 0.9rem;
+        padding: 6px 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .main-title {
+        font-size: 1.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1 class="main-title">krafc Technical Specification</h1>
+  <p class="sub-title">System Architecture, Vector User Flows & Database Specification</p>
+
+  <div class="doc-toolbar">
+    <button class="print-btn" onclick="window.print()">
+      <svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+      Print / Save as PDF
+    </button>
+  </div>
+
+  <div class="doc-container">
+
+    <!-- 1. System Architecture Diagram -->
+    <div class="architecture-wrapper">
+
+      <div class="side-panel">
+        <div class="panel-header security-header">Security</div>
+        <div class="side-card">Cloudflare WAF</div>
+        <div class="side-card">Global DNS / CDN</div>
+        <div class="side-card">SSL Termination</div>
+      </div>
+
+      <div class="center-flow">
+
+        <div class="tier-block tier-client">
+          <div class="tier-label">Client</div>
+          <div class="tier-items">
+            <div class="item-pill">Web Application (2D & 3D Editor)</div>
+          </div>
+        </div>
+
+        <div class="flow-label">↓ REST API / JSON</div>
+
+        <div class="tier-block tier-routing">
+          <div class="tier-label">API Routing</div>
+          <div class="tier-items">
+            <div class="item-pill">Cloudflare Pages Functions</div>
+          </div>
+        </div>
+
+        <div class="flow-label">↓ Auth & Session Middleware</div>
+
+        <div class="tier-block tier-business">
+          <div class="tier-label">Business Services</div>
+          <div class="tier-items">
+            <div class="item-pill">Design & Auth Logic</div>
+          </div>
+        </div>
+
+        <div class="flow-label">↓ SQL Driver Queries</div>
+
+        <div class="tier-block tier-data-access">
+          <div class="tier-label">Data Access</div>
+          <div class="tier-items">
+            <div class="item-pill">D1 Driver & Client Cache</div>
+          </div>
+        </div>
+
+        <div class="flow-label">↓ Database Driver Queries</div>
+
+        <div class="tier-block tier-database">
+          <div class="tier-label">Database Layer</div>
+          <div class="tier-items">
+            <div class="item-pill">Cloudflare D1 (SQLite)</div>
+            <div class="item-pill">IndexedDB Asset Storage</div>
+            <div class="item-pill">LocalStorage Drafts</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="side-panel">
+        <div class="panel-header external-header">External APIs</div>
+        <div class="side-card external-card">Google OAuth 2.0</div>
+        <div class="side-card external-card">Resend Email API</div>
+      </div>
+
+    </div>
+
+    <!-- 2. Expanded User Flow 1: Multi-Entry Auth & Destination Routing Flow -->
+    <div class="card">
+      <div class="card-title">User Flow 1: Authentication &amp; Multi-Page Destination Routing</div>
+      <div class="svg-flow-box">
+        <svg class="flow-chart" viewBox="0 0 740 560" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="v-arr" viewBox="0 0 10 10" refX="5" refY="6" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+            </marker>
+          </defs>
+
+          <!-- 1. START -->
+          <rect x="320" y="16" width="100" height="38" rx="19" fill="#2563eb" />
+          <text x="370" y="40" fill="#ffffff" font-size="13" font-weight="800" text-anchor="middle" letter-spacing="0.05em">START</text>
+
+          <path d="M 370 54 L 370 86" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+
+          <!-- 2. Entry Route Decision -->
+          <polygon points="370,86 460,120 370,154 280,120" fill="#1e293b" />
+          <text x="370" y="125" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">Entry Route?</text>
+
+          <!-- Branch 1: Landing Page (Left) -->
+          <path d="M 280 120 L 180 120 L 180 178" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <rect x="95" y="178" width="170" height="42" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5" />
+          <text x="180" y="204" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">Landing Page ( / )</text>
+
+          <!-- Branch 2: Editor Page (Right) -->
+          <path d="M 460 120 L 560 120 L 560 178" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <rect x="475" y="178" width="170" height="42" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5" />
+          <text x="560" y="204" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">Editor ( /editor )</text>
+
+          <!-- Left Logged In Decision -->
+          <path d="M 180 220 L 180 250" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <polygon points="180,250 245,280 180,310 115,280" fill="#1e293b" />
+          <text x="180" y="285" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">Logged in?</text>
+
+          <!-- Left: Yes -> Redirect to /dashboard -->
+          <path d="M 115 280 L 45 280 L 45 350" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <rect x="65" y="269" width="34" height="20" rx="10" fill="#dcfce7" stroke="#86efac" stroke-width="1" />
+          <text x="82" y="283" fill="#15803d" font-size="10" font-weight="800" text-anchor="middle">YES</text>
+
+          <rect x="10" y="350" width="140" height="48" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5" />
+          <text x="80" y="371" fill="#1d4ed8" font-size="11" font-weight="600" text-anchor="middle">Redirect to</text>
+          <text x="80" y="387" fill="#1d4ed8" font-size="13" font-weight="800" text-anchor="middle">/dashboard</text>
+
+          <!-- Left: No -> Stay on / & Login Modal -->
+          <path d="M 245 280 L 250 280 L 250 350" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <rect x="250" y="269" width="30" height="20" rx="10" fill="#fee2e2" stroke="#fca5a5" stroke-width="1" />
+          <text x="265" y="283" fill="#b91c1c" font-size="10" font-weight="800" text-anchor="middle">NO</text>
+
+          <rect x="175" y="350" width="150" height="48" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+          <text x="250" y="371" fill="#334155" font-size="11" font-weight="600" text-anchor="middle">Stay on /</text>
+          <text x="250" y="387" fill="#0f172a" font-size="12" font-weight="700" text-anchor="middle">Prompt Sign In</text>
+
+          <!-- Right Logged In Decision -->
+          <path d="M 560 220 L 560 250" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <polygon points="560,250 625,280 560,310 495,280" fill="#1e293b" />
+          <text x="560" y="285" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">Logged in?</text>
+
+          <!-- Right: Yes -> Auto-Sync -->
+          <path d="M 495 280 L 490 280 L 490 350" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <rect x="460" y="269" width="34" height="20" rx="10" fill="#dcfce7" stroke="#86efac" stroke-width="1" />
+          <text x="477" y="283" fill="#15803d" font-size="10" font-weight="800" text-anchor="middle">YES</text>
+
+          <rect x="415" y="350" width="150" height="48" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5" />
+          <text x="490" y="371" fill="#1d4ed8" font-size="11" font-weight="600" text-anchor="middle">Auto-Sync Active</text>
+          <text x="490" y="387" fill="#1d4ed8" font-size="12" font-weight="800" text-anchor="middle">Design to D1</text>
+
+          <!-- Right: No -> Guest Mode -->
+          <path d="M 625 280 L 660 280 L 660 350" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+          <rect x="645" y="269" width="30" height="20" rx="10" fill="#fee2e2" stroke="#fca5a5" stroke-width="1" />
+          <text x="660" y="283" fill="#b91c1c" font-size="10" font-weight="800" text-anchor="middle">NO</text>
+
+          <rect x="585" y="350" width="145" height="48" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+          <text x="657.5" y="371" fill="#334155" font-size="11" font-weight="600" text-anchor="middle">Guest Mode</text>
+          <text x="657.5" y="387" fill="#0f172a" font-size="12" font-weight="700" text-anchor="middle">(LocalStorage)</text>
+
+          <!-- Routing lines down to END -->
+          <path d="M 80 398 L 80 460 L 370 460" fill="none" stroke="#94a3b8" stroke-width="2" />
+          <path d="M 250 398 L 250 460" fill="none" stroke="#94a3b8" stroke-width="2" />
+          <path d="M 490 398 L 490 460" fill="none" stroke="#94a3b8" stroke-width="2" />
+          <path d="M 657.5 398 L 657.5 460 L 370 460" fill="none" stroke="#94a3b8" stroke-width="2" />
+
+          <path d="M 370 460 L 370 495" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr)" />
+
+          <!-- END -->
+          <rect x="325" y="495" width="90" height="38" rx="19" fill="#64748b" />
+          <text x="370" y="519" fill="#ffffff" font-size="13" font-weight="800" text-anchor="middle" letter-spacing="0.05em">END</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 3. User Flow 2: 2D/3D Editor & Cloud Auto-Save -->
+    <div class="card">
+      <div class="card-title">User Flow 2: 2D/3D Editor &amp; Cloud Auto-Save</div>
+      <div class="svg-flow-box">
+        <svg class="flow-chart" viewBox="0 0 680 620" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="v-arr2" viewBox="0 0 10 10" refX="5" refY="6" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+            </marker>
+          </defs>
+
+          <!-- 1. START -->
+          <rect x="290" y="16" width="100" height="38" rx="19" fill="#2563eb" />
+          <text x="340" y="40" fill="#ffffff" font-size="13" font-weight="800" text-anchor="middle" letter-spacing="0.05em">START</text>
+
+          <path d="M 340 54 L 340 82" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
+
+          <!-- 2. Action: Edit Canvas -->
+          <rect x="235" y="82" width="210" height="42" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5" />
+          <text x="340" y="108" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">Edits 2D / 3D Canvas</text>
+
+          <path d="M 340 124 L 340 152" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
+
+          <!-- 3. Action: Local Backup -->
+          <rect x="225" y="152" width="230" height="42" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5" />
+          <text x="340" y="178" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">Instant LocalStorage Backup</text>
+
+          <path d="M 340 194 L 340 224" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
+
+          <!-- 4. Decision: Signed In? -->
+          <polygon points="340,224 415,256 340,288 265,256" fill="#1e293b" />
+          <text x="340" y="261" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">Signed In?</text>
+
+          <!-- No -> Saved Locally (Right Branch) -->
+          <path d="M 415 256 L 520 256 L 520 310" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
+          <rect x="445" y="245" width="30" height="20" rx="10" fill="#fee2e2" stroke="#fca5a5" stroke-width="1" />
+          <text x="460" y="259" fill="#b91c1c" font-size="10" font-weight="800" text-anchor="middle">NO</text>
+
+          <rect x="440" y="310" width="160" height="48" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+          <text x="520" y="331" fill="#334155" font-size="11" font-weight="600" text-anchor="middle">Saved Locally Only</text>
+          <text x="520" y="347" fill="#0f172a" font-size="12" font-weight="700" text-anchor="middle">(Guest Mode Active)</text>
+
+          <!-- Yes -> Limit Check Decision (Down) -->
+          <path d="M 340 288 L 340 336" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
+          <rect x="323" y="298" width="34" height="20" rx="10" fill="#dcfce7" stroke="#86efac" stroke-width="1" />
+          <text x="340" y="312" fill="#15803d" font-size="10" font-weight="800" text-anchor="middle">YES</text>
+
+          <!-- 5. Decision: Limit >= 6? -->
+          <polygon points="340,336 415,368 340,400 265,368" fill="#1e293b" />
+          <text x="340" y="373" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle">Limit &ge; 6?</text>
+
+          <!-- Limit Yes -> Alert / Upgrade (Left Branch) -->
+          <path d="M 265 368 L 160 368 L 160 422" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
+          <rect x="205" y="357" width="34" height="20" rx="10" fill="#fee2e2" stroke="#fca5a5" stroke-width="1" />
+          <text x="222" y="371" fill="#b91c1c" font-size="10" font-weight="800" text-anchor="middle">YES</text>
+
+          <rect x="80" y="422" width="160" height="48" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5" />
+          <text x="160" y="443" fill="#991b1b" font-size="11" font-weight="600" text-anchor="middle">Limit Reached</text>
+          <text x="160" y="459" fill="#991b1b" font-size="12" font-weight="800" text-anchor="middle">Prompt Upgrade</text>
+
+          <!-- Limit No -> Cloud Sync (Down) -->
+          <path d="M 340 400 L 340 435" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
+          <rect x="325" y="405" width="30" height="20" rx="10" fill="#dcfce7" stroke="#86efac" stroke-width="1" />
+          <text x="340" y="419" fill="#15803d" font-size="10" font-weight="800" text-anchor="middle">NO</text>
+
+          <rect x="245" y="435" width="190" height="42" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5" />
+          <text x="340" y="461" fill="#1d4ed8" font-size="12" font-weight="700" text-anchor="middle">Debounced Cloud Sync (D1)</text>
+
+          <!-- Arrow to Design Saved -->
+          <path d="M 340 477 L 340 502" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
+
+          <rect x="240" y="502" width="200" height="42" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5" />
+          <text x="340" y="528" fill="#15803d" font-size="13" font-weight="800" text-anchor="middle">✓ Design Saved to Cloud</text>
+
+          <!-- Join all paths to END -->
+          <path d="M 160 470 L 160 565 L 340 565" fill="none" stroke="#94a3b8" stroke-width="2" />
+          <path d="M 520 358 L 520 565 L 340 565" fill="none" stroke="#94a3b8" stroke-width="2" />
+          <path d="M 340 544 L 340 565" fill="none" stroke="#94a3b8" stroke-width="2" />
+
+          <path d="M 340 565 L 340 580" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr2)" />
+
+          <!-- END -->
+          <rect x="295" y="580" width="90" height="34" rx="17" fill="#64748b" />
+          <text x="340" y="602" fill="#ffffff" font-size="12" font-weight="800" text-anchor="middle" letter-spacing="0.05em">END</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 4. User Flow 3: Report Generation & Export Flow -->
+    <div class="card">
+      <div class="card-title">User Flow 3: Technical Spec Report &amp; Visual Export</div>
+      <div class="svg-flow-box">
+        <svg class="flow-chart" viewBox="0 0 460 380" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="v-arr3" viewBox="0 0 10 10" refX="5" refY="6" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+            </marker>
+          </defs>
+
+          <!-- 1. START -->
+          <rect x="180" y="14" width="100" height="36" rx="18" fill="#2563eb" />
+          <text x="230" y="37" fill="#ffffff" font-size="13" font-weight="800" text-anchor="middle" letter-spacing="0.05em">START</text>
+
+          <path d="M 230 50 L 230 78" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr3)" />
+
+          <!-- 2. Action: Click Generate Report -->
+          <rect x="120" y="78" width="220" height="42" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5" />
+          <text x="230" y="104" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle">Click Generate Report</text>
+
+          <path d="M 230 120 L 230 148" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr3)" />
+
+          <!-- 3. Action: Capture Viewports -->
+          <rect x="95" y="148" width="270" height="50" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5" />
+          <text x="230" y="170" fill="#c2410c" font-size="12" font-weight="600" text-anchor="middle">Capture 2D Floor Plan &amp;</text>
+          <text x="230" y="188" fill="#c2410c" font-size="13" font-weight="800" text-anchor="middle">3D Babylon Viewport Canvas</text>
+
+          <path d="M 230 198 L 230 226" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr3)" />
+
+          <!-- 4. Action: Compile HTML & Trigger File Download -->
+          <rect x="85" y="226" width="290" height="50" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5" />
+          <text x="230" y="248" fill="#1d4ed8" font-size="13" font-weight="800" text-anchor="middle">Compile HTML Spec Report</text>
+          <text x="230" y="266" fill="#1d4ed8" font-size="11" font-weight="600" text-anchor="middle">&amp; Trigger Client File Download</text>
+
+          <path d="M 230 276 L 230 310" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#v-arr3)" />
+
+          <!-- 5. END -->
+          <rect x="185" y="310" width="90" height="36" rx="18" fill="#64748b" />
+          <text x="230" y="333" fill="#ffffff" font-size="13" font-weight="800" text-anchor="middle" letter-spacing="0.05em">END</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 5. SQLite D1 Entity Relationship (ER) Diagram -->
+    <div class="card">
+      <div class="card-title">Entity Relationship (ER) Diagram — Cloudflare D1 (SQLite)</div>
+      <div class="er-scroll-box">
+        <svg class="er-diagram" viewBox="0 0 1200 710" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="er-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#0284c7" />
+            </marker>
+            <marker id="er-arrow-orange" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c" />
+            </marker>
+            <marker id="er-arrow-teal" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#0d9488" />
+            </marker>
+          </defs>
+
+          <!-- Top-Over-Box Arch: Users.id -> Designs.user_id (1:N) -->
+          <path d="M 175 60 L 175 22 L 955 22 L 955 60" fill="none" stroke="#0d9488" stroke-width="2.5" stroke-dasharray="6 3" marker-end="url(#er-arrow-teal)" />
+          <rect x="450" y="8" width="230" height="28" rx="14" fill="#e6fffa" stroke="#0d9488" stroke-width="2" />
+          <text x="565" y="27" fill="#0d9488" font-size="13" font-weight="900" text-anchor="middle">1 : N (User → Designs)</text>
+
+          <!-- Row 1: Col 1 - USERS TABLE -->
+          <g transform="translate(20, 60)">
+            <rect x="0" y="0" width="310" height="280" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+            <path d="M 0 8 A 8 8 0 0 1 8 0 L 302 0 A 8 8 0 0 1 310 8 L 310 42 L 0 42 Z" fill="#0f172a" />
+            <text x="155" y="27" fill="#ffffff" font-size="17" font-weight="900" text-anchor="middle">users (User Profiles &amp; Auth)</text>
+
+            <!-- id -->
+            <rect x="12" y="52" width="32" height="20" rx="4" fill="#3b82f6" />
+            <text x="28" y="66" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">PK</text>
+            <text x="50" y="67" fill="#0f172a" font-size="14" font-weight="800">id</text>
+            <text x="298" y="67" fill="#475569" font-size="13" font-weight="700" text-anchor="end">TEXT</text>
+
+            <!-- email -->
+            <rect x="12" y="80" width="56" height="20" rx="4" fill="#64748b" />
+            <text x="40" y="94" fill="#ffffff" font-size="10" font-weight="900" text-anchor="middle">UNIQUE</text>
+            <text x="74" y="95" fill="#0f172a" font-size="14" font-weight="800">email</text>
+            <text x="298" y="95" fill="#475569" font-size="13" font-weight="700" text-anchor="end">TEXT</text>
+
+            <!-- password_hash -->
+            <circle cx="24" cy="122" r="4" fill="#94a3b8" />
+            <text x="50" y="126" fill="#334155" font-size="13">password_hash</text>
+            <text x="298" y="126" fill="#94a3b8" font-size="12" text-anchor="end">TEXT (NULL)</text>
+
+            <!-- google_id -->
+            <rect x="12" y="137" width="56" height="20" rx="4" fill="#64748b" />
+            <text x="40" y="151" fill="#ffffff" font-size="10" font-weight="900" text-anchor="middle">UNIQUE</text>
+            <text x="74" y="152" fill="#334155" font-size="13">google_id</text>
+            <text x="298" y="152" fill="#94a3b8" font-size="12" text-anchor="end">TEXT (NULL)</text>
+
+            <!-- name / avatar_url -->
+            <circle cx="24" cy="179" r="4" fill="#94a3b8" />
+            <text x="50" y="183" fill="#334155" font-size="13">name / avatar_url</text>
+            <text x="298" y="183" fill="#94a3b8" font-size="12" text-anchor="end">TEXT</text>
+
+            <!-- email_verified -->
+            <circle cx="24" cy="207" r="4" fill="#94a3b8" />
+            <text x="50" y="211" fill="#334155" font-size="13">email_verified</text>
+            <text x="298" y="211" fill="#94a3b8" font-size="12" text-anchor="end">INTEGER</text>
+
+            <!-- created_at -->
+            <circle cx="24" cy="235" r="4" fill="#94a3b8" />
+            <text x="50" y="239" fill="#334155" font-size="13">created_at</text>
+            <text x="298" y="239" fill="#94a3b8" font-size="12" text-anchor="end">TEXT</text>
+
+            <!-- updated_at -->
+            <circle cx="24" cy="263" r="4" fill="#94a3b8" />
+            <text x="50" y="267" fill="#334155" font-size="13">updated_at</text>
+            <text x="298" y="267" fill="#94a3b8" font-size="12" text-anchor="end">TEXT</text>
+          </g>
+
+          <!-- Row 1: Col 2 - PROJECTS TABLE -->
+          <g transform="translate(415, 60)">
+            <rect x="0" y="0" width="310" height="200" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+            <path d="M 0 8 A 8 8 0 0 1 8 0 L 302 0 A 8 8 0 0 1 310 8 L 310 42 L 0 42 Z" fill="#ea580c" />
+            <text x="155" y="27" fill="#ffffff" font-size="17" font-weight="900" text-anchor="middle">projects (Design Folders)</text>
+
+            <!-- id -->
+            <rect x="12" y="52" width="32" height="20" rx="4" fill="#3b82f6" />
+            <text x="28" y="66" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">PK</text>
+            <text x="50" y="67" fill="#0f172a" font-size="14" font-weight="800">id</text>
+            <text x="298" y="67" fill="#475569" font-size="13" font-weight="700" text-anchor="end">TEXT</text>
+
+            <!-- user_id FK -->
+            <rect x="12" y="80" width="32" height="20" rx="4" fill="#f59e0b" />
+            <text x="28" y="94" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">FK</text>
+            <text x="50" y="95" fill="#ea580c" font-size="14" font-weight="800">user_id</text>
+            <text x="298" y="95" fill="#64748b" font-size="12" font-weight="700" text-anchor="end">TEXT → users.id</text>
+
+            <!-- name -->
+            <circle cx="24" cy="122" r="4" fill="#94a3b8" />
+            <text x="50" y="126" fill="#0f172a" font-size="14" font-weight="800">name</text>
+            <text x="298" y="126" fill="#64748b" font-size="13" text-anchor="end">TEXT</text>
+
+            <!-- description -->
+            <circle cx="24" cy="150" r="4" fill="#94a3b8" />
+            <text x="50" y="154" fill="#334155" font-size="13">description</text>
+            <text x="298" y="154" fill="#94a3b8" font-size="12" text-anchor="end">TEXT</text>
+
+            <!-- created_at / updated_at -->
+            <circle cx="24" cy="178" r="4" fill="#94a3b8" />
+            <text x="50" y="182" fill="#334155" font-size="13">created_at / updated_at</text>
+            <text x="298" y="182" fill="#94a3b8" font-size="12" text-anchor="end">TEXT</text>
+          </g>
+
+          <!-- Row 1: Col 3 - DESIGNS TABLE -->
+          <g transform="translate(810, 60)">
+            <rect x="0" y="0" width="310" height="255" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+            <path d="M 0 8 A 8 8 0 0 1 8 0 L 302 0 A 8 8 0 0 1 310 8 L 310 42 L 0 42 Z" fill="#0d9488" />
+            <text x="155" y="27" fill="#ffffff" font-size="16" font-weight="900" text-anchor="middle">designs (2D / 3D Spatial Plans)</text>
+
+            <!-- id -->
+            <rect x="12" y="52" width="32" height="20" rx="4" fill="#3b82f6" />
+            <text x="28" y="66" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">PK</text>
+            <text x="50" y="67" fill="#0f172a" font-size="14" font-weight="800">id</text>
+            <text x="298" y="67" fill="#475569" font-size="13" font-weight="700" text-anchor="end">TEXT</text>
+
+            <!-- user_id FK -->
+            <rect x="12" y="80" width="32" height="20" rx="4" fill="#f59e0b" />
+            <text x="28" y="94" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">FK</text>
+            <text x="50" y="95" fill="#0d9488" font-size="14" font-weight="800">user_id</text>
+            <text x="298" y="95" fill="#64748b" font-size="12" font-weight="700" text-anchor="end">TEXT → users.id</text>
+
+            <!-- project_id FK -->
+            <rect x="12" y="108" width="32" height="20" rx="4" fill="#f59e0b" />
+            <text x="28" y="122" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">FK</text>
+            <text x="50" y="123" fill="#0d9488" font-size="14" font-weight="800">project_id</text>
+            <text x="298" y="123" fill="#64748b" font-size="12" font-weight="700" text-anchor="end">TEXT → projects.id</text>
+
+            <!-- name -->
+            <circle cx="24" cy="150" r="4" fill="#94a3b8" />
+            <text x="50" y="154" fill="#0f172a" font-size="14" font-weight="800">name</text>
+            <text x="298" y="154" fill="#64748b" font-size="13" text-anchor="end">TEXT</text>
+
+            <!-- config -->
+            <circle cx="24" cy="178" r="4" fill="#94a3b8" />
+            <text x="50" y="182" fill="#0f172a" font-size="14" font-weight="800">config</text>
+            <text x="298" y="182" fill="#64748b" font-size="13" text-anchor="end">JSON TEXT</text>
+
+            <!-- elements -->
+            <circle cx="24" cy="206" r="4" fill="#94a3b8" />
+            <text x="50" y="210" fill="#0f172a" font-size="14" font-weight="800">elements</text>
+            <text x="298" y="210" fill="#64748b" font-size="13" text-anchor="end">JSON TEXT</text>
+
+            <!-- created_at / updated_at -->
+            <circle cx="24" cy="234" r="4" fill="#94a3b8" />
+            <text x="50" y="238" fill="#334155" font-size="13">created_at / updated_at</text>
+            <text x="298" y="238" fill="#94a3b8" font-size="12" text-anchor="end">TEXT</text>
+          </g>
+
+          <!-- Connector 1: Users.id -> Projects.user_id -->
+          <path d="M 330 155 L 415 155" fill="none" stroke="#ea580c" stroke-width="2.5" marker-end="url(#er-arrow-orange)" />
+          <rect x="345" y="142" width="55" height="26" rx="13" fill="#fff7ed" stroke="#ea580c" stroke-width="2" />
+          <text x="372.5" y="159" fill="#ea580c" font-size="12" font-weight="900" text-anchor="middle">1 : N</text>
+
+          <!-- Connector 2: Projects.id -> Designs.project_id -->
+          <path d="M 725 127 L 767 127 L 767 183 L 810 183" fill="none" stroke="#0d9488" stroke-width="2.5" marker-end="url(#er-arrow-teal)" />
+          <rect x="740" y="142" width="55" height="26" rx="13" fill="#f0fdf4" stroke="#0d9488" stroke-width="2" />
+          <text x="767.5" y="159" fill="#0d9488" font-size="12" font-weight="900" text-anchor="middle">1 : N</text>
+
+          <!-- Connector 3: Users.id -> Sessions.user_id -->
+          <path d="M 175 340 L 175 370" fill="none" stroke="#0284c7" stroke-width="2.5" marker-end="url(#er-arrow)" />
+          <rect x="147.5" y="342" width="55" height="24" rx="12" fill="#f0f9ff" stroke="#0284c7" stroke-width="2" />
+          <text x="175" y="358" fill="#0284c7" font-size="12" font-weight="900" text-anchor="middle">1 : N</text>
+
+          <!-- Row 2: Col 1 - SESSIONS TABLE -->
+          <g transform="translate(20, 370)">
+            <rect x="0" y="0" width="310" height="170" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+            <path d="M 0 8 A 8 8 0 0 1 8 0 L 302 0 A 8 8 0 0 1 310 8 L 310 42 L 0 42 Z" fill="#0284c7" />
+            <text x="155" y="27" fill="#ffffff" font-size="17" font-weight="900" text-anchor="middle">sessions (Server-Side Cookies)</text>
+
+            <rect x="12" y="52" width="32" height="20" rx="4" fill="#3b82f6" />
+            <text x="28" y="66" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">PK</text>
+            <text x="50" y="67" fill="#0f172a" font-size="14" font-weight="800">id</text>
+            <text x="298" y="67" fill="#475569" font-size="13" font-weight="700" text-anchor="end">TEXT</text>
+
+            <rect x="12" y="80" width="32" height="20" rx="4" fill="#f59e0b" />
+            <text x="28" y="94" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">FK</text>
+            <text x="50" y="95" fill="#0284c7" font-size="14" font-weight="800">user_id</text>
+            <text x="298" y="95" fill="#64748b" font-size="12" font-weight="700" text-anchor="end">TEXT → users.id</text>
+
+            <circle cx="24" cy="122" r="4" fill="#94a3b8" />
+            <text x="50" y="126" fill="#334155" font-size="13">expires_at</text>
+            <text x="298" y="126" fill="#64748b" font-size="12" text-anchor="end">TEXT (30-day)</text>
+
+            <circle cx="24" cy="150" r="4" fill="#94a3b8" />
+            <text x="50" y="154" fill="#334155" font-size="13">created_at</text>
+            <text x="298" y="154" fill="#94a3b8" font-size="12" text-anchor="end">TEXT</text>
+          </g>
+
+          <!-- Row 2: Col 2 - OTP_CODES TABLE -->
+          <g transform="translate(415, 370)">
+            <rect x="0" y="0" width="310" height="170" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+            <path d="M 0 8 A 8 8 0 0 1 8 0 L 302 0 A 8 8 0 0 1 310 8 L 310 42 L 0 42 Z" fill="#475569" />
+            <text x="155" y="27" fill="#ffffff" font-size="17" font-weight="900" text-anchor="middle">otp_codes (Email Verification OTP)</text>
+
+            <rect x="12" y="52" width="32" height="20" rx="4" fill="#3b82f6" />
+            <text x="28" y="66" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">PK</text>
+            <text x="50" y="67" fill="#0f172a" font-size="14" font-weight="800">id</text>
+            <text x="298" y="67" fill="#475569" font-size="13" font-weight="700" text-anchor="end">TEXT</text>
+
+            <circle cx="24" cy="94" r="4" fill="#94a3b8" />
+            <text x="50" y="98" fill="#334155" font-size="13">email / code</text>
+            <text x="298" y="98" fill="#64748b" font-size="12" text-anchor="end">TEXT</text>
+
+            <circle cx="24" cy="122" r="4" fill="#94a3b8" />
+            <text x="50" y="126" fill="#334155" font-size="13">type</text>
+            <text x="298" y="126" fill="#64748b" font-size="12" text-anchor="end">verify_email | reset_password</text>
+
+            <circle cx="24" cy="150" r="4" fill="#94a3b8" />
+            <text x="50" y="154" fill="#334155" font-size="13">expires_at / used</text>
+            <text x="298" y="154" fill="#94a3b8" font-size="12" text-anchor="end">TEXT / INTEGER</text>
+          </g>
+
+          <!-- Row 2: Col 3 - SECURITY_LIMITS TABLE -->
+          <g transform="translate(810, 370)">
+            <rect x="0" y="0" width="310" height="170" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+            <path d="M 0 8 A 8 8 0 0 1 8 0 L 302 0 A 8 8 0 0 1 310 8 L 310 42 L 0 42 Z" fill="#475569" />
+            <text x="155" y="27" fill="#ffffff" font-size="17" font-weight="900" text-anchor="middle">security_limits &amp; rate_limits</text>
+
+            <rect x="12" y="52" width="32" height="20" rx="4" fill="#3b82f6" />
+            <text x="28" y="66" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">PK</text>
+            <text x="50" y="67" fill="#0f172a" font-size="14" font-weight="800">key / id</text>
+            <text x="298" y="67" fill="#475569" font-size="13" font-weight="700" text-anchor="end">TEXT</text>
+
+            <circle cx="24" cy="94" r="4" fill="#94a3b8" />
+            <text x="50" y="98" fill="#334155" font-size="13">count / hits</text>
+            <text x="298" y="98" fill="#64748b" font-size="12" text-anchor="end">INTEGER</text>
+
+            <circle cx="24" cy="122" r="4" fill="#94a3b8" />
+            <text x="50" y="126" fill="#334155" font-size="13">reset_at</text>
+            <text x="298" y="126" fill="#64748b" font-size="12" text-anchor="end">INTEGER (UNIX)</text>
+
+            <circle cx="24" cy="150" r="4" fill="#94a3b8" />
+            <text x="50" y="154" fill="#64748b" font-size="12">Protects auth endpoints at Edge</text>
+          </g>
+
+          <!-- Row 3: Col 2 - OAUTH_CHALLENGES TABLE -->
+          <g transform="translate(415, 560)">
+            <rect x="0" y="0" width="310" height="95" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+            <path d="M 0 8 A 8 8 0 0 1 8 0 L 302 0 A 8 8 0 0 1 310 8 L 310 34 L 0 34 Z" fill="#475569" />
+            <text x="155" y="22" fill="#ffffff" font-size="14" font-weight="900" text-anchor="middle">oauth_challenges (PKCE Verifiers)</text>
+
+            <rect x="12" y="46" width="32" height="20" rx="4" fill="#3b82f6" />
+            <text x="28" y="60" fill="#ffffff" font-size="11" font-weight="900" text-anchor="middle">PK</text>
+            <text x="50" y="61" fill="#0f172a" font-size="14" font-weight="800">id</text>
+            <text x="298" y="61" fill="#475569" font-size="13" font-weight="700" text-anchor="end">TEXT</text>
+
+            <circle cx="24" cy="77" r="4" fill="#94a3b8" />
+            <text x="50" y="81" fill="#334155" font-size="13">verifier / expires_at</text>
+            <text x="298" y="81" fill="#64748b" font-size="12" text-anchor="end">TEXT / INTEGER</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 6. Database Schema Table -->
+    <div class="card">
+      <div class="card-title">Database Schema &amp; Password Storage Rules (Cloudflare D1)</div>
+      <div class="table-scroll-box">
+        <table>
+          <thead>
+            <tr>
+              <th>Table Name</th>
+              <th>Primary &amp; Foreign Keys</th>
+              <th>Columns</th>
+              <th>Authentication &amp; Security Rules</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>users</strong></td>
+              <td><code>id (TEXT PK)</code></td>
+              <td><code>email</code>, <code>password_hash</code>, <code>name</code>, <code>avatar_url</code>, <code>google_id</code>, <code>email_verified</code>, <code>created_at</code>, <code>updated_at</code></td>
+              <td>
+                <strong>Google OAuth Users</strong>: <code>password_hash</code> is <code>NULL</code> (Password handled 100% by Google). <code>google_id</code> stores Google OAuth <code>sub</code> ID.<br>
+                <strong>Email Users</strong>: <code>google_id</code> is <code>NULL</code>. <code>password_hash</code> is PBKDF2 with SHA-256 (100,000 iterations + salt) via Web Crypto API.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>sessions</strong></td>
+              <td><code>id (TEXT PK)</code><br><code>user_id (FK → users.id)</code></td>
+              <td><code>expires_at</code>, <code>created_at</code></td>
+              <td>Server-side HTTP-Only, SameSite=Lax, Secure session cookie token (128-bit hex, 30-day lifespan). Indexed by <code>user_id</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>projects</strong></td>
+              <td><code>id (TEXT PK)</code><br><code>user_id (FK → users.id)</code></td>
+              <td><code>name</code>, <code>description</code>, <code>created_at</code>, <code>updated_at</code></td>
+              <td>Folders categorizing user interior designs. Indexed by <code>user_id</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>designs</strong></td>
+              <td><code>id (TEXT PK)</code><br><code>user_id (FK → users.id)</code><br><code>project_id (FK → projects.id)</code></td>
+              <td><code>name</code>, <code>config (JSON)</code>, <code>elements (JSON)</code>, <code>created_at</code>, <code>updated_at</code></td>
+              <td>Stores 2D wall dimensions, room config JSON, and 3D furniture/appliance fixture elements. Indexed by <code>user_id</code> &amp; <code>project_id</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>otp_codes</strong></td>
+              <td><code>id (TEXT PK)</code></td>
+              <td><code>email</code>, <code>code</code>, <code>type</code>, <code>expires_at</code>, <code>used</code>, <code>created_at</code></td>
+              <td>6-digit one-time passcodes for email verification (<code>verify_email</code>) and password resets (<code>reset_password</code>). Indexed by <code>(email, type)</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>security_limits &amp; rate_limits</strong></td>
+              <td><code>key / id (TEXT PK)</code></td>
+              <td><code>count / hits</code>, <code>reset_at (INTEGER)</code></td>
+              <td>IP-based rate limiting &amp; DDoS protection across Cloudflare Worker auth endpoints. Indexed by <code>reset_at</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>oauth_challenges</strong></td>
+              <td><code>id (TEXT PK)</code></td>
+              <td><code>verifier</code>, <code>expires_at (INTEGER)</code></td>
+              <td>Temporary OAuth 2.0 PKCE state &amp; code verifiers for secure Google authentication flows. Indexed by <code>expires_at</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 7. Technology Stack — Overview + Detailed Tables -->
+    <div class="card">
+      <div class="card-title">Technology Stack</div>
+
+      <!-- ── Quick-Reference Overview ── -->
+      <div class="section-label">Overview</div>
+      <div class="table-scroll-box">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:18%">Layer</th>
+              <th style="width:28%">Primary Technology</th>
+              <th style="width:24%">Supporting Libs</th>
+              <th>Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>UI / Routing</strong></td>
+              <td>React 19 · TanStack Router</td>
+              <td>Lucide React, Tailwind CSS v4</td>
+              <td>Component tree, file-based routing, icon set, utility styling</td>
+            </tr>
+            <tr>
+              <td><strong>2D Canvas</strong></td>
+              <td>Konva.js v10 · React-Konva</td>
+              <td>use-image</td>
+              <td>Interactive floor-plan drawing, snapping, wall measurement</td>
+            </tr>
+            <tr>
+              <td><strong>3D Engine</strong></td>
+              <td>Babylon.js v9 (WebGL 2)</td>
+              <td>—</td>
+              <td>Real-time 3D viewport, PBR materials, model import &amp; GLB/OBJ export via serializers</td>
+            </tr>
+            <tr>
+              <td><strong>Backend / API</strong></td>
+              <td>Cloudflare Pages Functions</td>
+              <td>Wrangler v3 CLI</td>
+              <td>Serverless Workers at edge — auth, CRUD, sync endpoints</td>
+            </tr>
+            <tr>
+              <td><strong>Database</strong></td>
+              <td>Cloudflare D1 (SQLite)</td>
+              <td>—</td>
+              <td>7-table relational schema for users, sessions, designs, security</td>
+            </tr>
+            <tr>
+              <td><strong>Client Storage</strong></td>
+              <td>LocalStorage · IndexedDB</td>
+              <td>—</td>
+              <td>Guest-mode draft saves; binary custom 3D asset blobs</td>
+            </tr>
+            <tr>
+              <td><strong>Auth</strong></td>
+              <td>Google OAuth 2.0 (PKCE) + Email OTP</td>
+              <td>Web Crypto API (PBKDF2)</td>
+              <td>Social login, email verification, password hashing</td>
+            </tr>
+            <tr>
+              <td><strong>Report Export</strong></td>
+              <td>file-saver · Babylon.js screenshot</td>
+              <td>—</td>
+              <td><strong>HTML file</strong> download (<code>space_report_*.html</code>) — styled report with embedded base64 screenshots captured directly from the Babylon.js canvas</td>
+            </tr>
+            <tr>
+              <td><strong>3D Asset Pipeline</strong></td>
+              <td>@gltf-transform · draco3dgltf</td>
+              <td>fbx2gltf, obj2gltf, gltf-pipeline</td>
+              <td>FBX / OBJ → glTF conversion, Draco mesh compression, optimisation</td>
+            </tr>
+            <tr>
+              <td><strong>Build / DX</strong></td>
+              <td>Vite v7 · TypeScript v5</td>
+              <td>Vitest v5, @testing-library/react</td>
+              <td>Dev server, production bundling, unit tests</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ── Section 1: Frontend ── -->
+      <div class="section-label" style="margin-top:28px">1 — Frontend UI &amp; Routing</div>
+      <div class="table-scroll-box">
+        <table>
+          <thead>
+            <tr><th style="width:22%">Package</th><th style="width:14%">Version</th><th style="width:22%">What it does</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>react</strong></td>
+              <td><span class="ver-badge">^19.2.0</span></td>
+              <td>Core UI library</td>
+              <td>Concurrent rendering, <code>use()</code> hook, Server Components ready</td>
+            </tr>
+            <tr>
+              <td><strong>react-dom</strong></td>
+              <td><span class="ver-badge">^19.2.0</span></td>
+              <td>DOM renderer</td>
+              <td>Pairs with React 19; manages actual DOM updates</td>
+            </tr>
+            <tr>
+              <td><strong>@tanstack/react-router</strong></td>
+              <td><span class="ver-badge">latest</span></td>
+              <td>File-based routing</td>
+              <td>Type-safe routes; <code>/</code>, <code>/editor</code>, <code>/dashboard</code>, <code>/auth/*</code> routes defined in <code>src/routes/</code></td>
+            </tr>
+            <tr>
+              <td><strong>@tanstack/router-plugin</strong></td>
+              <td><span class="ver-badge">^1.167</span></td>
+              <td>Vite plugin for router</td>
+              <td>Auto-generates route tree from <code>src/routes/</code> file structure at build time</td>
+            </tr>
+            <tr>
+              <td><strong>tailwindcss</strong></td>
+              <td><span class="ver-badge">^4.1.18</span></td>
+              <td>Utility CSS framework</td>
+              <td>v4 (Oxide engine, zero-config). Applied via <code>@tailwindcss/vite</code> Vite plugin</td>
+            </tr>
+            <tr>
+              <td><strong>lucide-react</strong></td>
+              <td><span class="ver-badge">^1.16.0</span></td>
+              <td>Icon set</td>
+              <td>Consistent SVG icons used throughout sidebar, toolbar, and modals</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ── Section 2: 2D Canvas ── -->
+      <div class="section-label" style="margin-top:28px">2 — 2D Floor Plan Canvas</div>
+      <div class="table-scroll-box">
+        <table>
+          <thead>
+            <tr><th style="width:22%">Package</th><th style="width:14%">Version</th><th style="width:22%">What it does</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>konva</strong></td>
+              <td><span class="ver-badge">^10.2.3</span></td>
+              <td>2D canvas engine</td>
+              <td>Renders walls, rooms, measurement annotations on an HTML <code>&lt;canvas&gt;</code>. Handles drag, snap, hit detection</td>
+            </tr>
+            <tr>
+              <td><strong>react-konva</strong></td>
+              <td><span class="ver-badge">^19.2.3</span></td>
+              <td>React bindings for Konva</td>
+              <td>Declarative <code>&lt;Stage&gt;</code>, <code>&lt;Layer&gt;</code>, <code>&lt;Line&gt;</code>, <code>&lt;Rect&gt;</code> components wrapping Konva nodes</td>
+            </tr>
+            <tr>
+              <td><strong>use-image</strong></td>
+              <td><span class="ver-badge">^1.1.4</span></td>
+              <td>Image hook for Konva</td>
+              <td>Loads texture/background images into Konva's <code>&lt;Image&gt;</code> node with async state handling</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ── Section 3: 3D Engine ── -->
+      <div class="section-label" style="margin-top:28px">3 — 3D Rendering Engine</div>
+      <div class="table-scroll-box">
+        <table>
+          <thead>
+            <tr><th style="width:22%">Package</th><th style="width:14%">Version</th><th style="width:22%">What it does</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>@babylonjs/core</strong></td>
+              <td><span class="ver-badge">^9.3.1</span></td>
+              <td>Primary 3D engine</td>
+              <td>WebGL 2 renderer; scene graph, camera, lights, PBR materials, raycasting, physics hook</td>
+            </tr>
+            <tr>
+              <td><strong>@babylonjs/loaders</strong></td>
+              <td><span class="ver-badge">^9.3.1</span></td>
+              <td>Model file loaders</td>
+              <td>Loads <code>.glb</code> / <code>.gltf</code> / <code>.obj</code> / <code>.babylon</code> mesh assets at runtime</td>
+            </tr>
+            <tr>
+              <td><strong>@babylonjs/materials</strong></td>
+              <td><span class="ver-badge">^9.6.2</span></td>
+              <td>Extended material library</td>
+              <td>Grid materials, water shaders, gradient materials used in room surfaces</td>
+            </tr>
+            <tr>
+              <td><strong>@babylonjs/gui</strong></td>
+              <td><span class="ver-badge">^9.6.2</span></td>
+              <td>In-scene 2D UI overlay</td>
+              <td>Labels, measurement callouts, and tooltip overlays rendered inside the Babylon viewport</td>
+            </tr>
+            <tr>
+              <td><strong>@babylonjs/serializers</strong></td>
+              <td><span class="ver-badge">^9.10.1</span></td>
+              <td>Scene export</td>
+              <td>Exports the live 3D scene as <code>.glb</code> (via <code>GLTF2Export</code>) and <code>.obj</code> (via <code>OBJExport</code>) for cloud save &amp; file download</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ── Section 4: Backend / Infra ── -->
+      <div class="section-label" style="margin-top:28px">4 — Backend, Infra &amp; Auth</div>
+      <div class="table-scroll-box">
+        <table>
+          <thead>
+            <tr><th style="width:22%">Technology</th><th style="width:14%">Version / Tier</th><th style="width:22%">What it does</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Cloudflare Pages</strong></td>
+              <td><span class="ver-badge tier-cf">Free</span></td>
+              <td>Static hosting + CDN</td>
+              <td>Hosts the Vite-built <code>dist/</code> bundle globally across Cloudflare's edge network</td>
+            </tr>
+            <tr>
+              <td><strong>Cloudflare Pages Functions</strong></td>
+              <td><span class="ver-badge tier-cf">Workers Runtime</span></td>
+              <td>Serverless API</td>
+              <td>TypeScript Workers under <code>functions/api/</code> — handle auth, session, CRUD. Bind to D1 &amp; KV</td>
+            </tr>
+            <tr>
+              <td><strong>Cloudflare D1</strong></td>
+              <td><span class="ver-badge tier-cf">SQLite at Edge</span></td>
+              <td>Relational database</td>
+              <td>7 tables. <code>schema.sql</code> + <code>migrations/0001_security.sql</code>. Bound as <code>DB</code> env binding</td>
+            </tr>
+            <tr>
+              <td><strong>Cloudflare KV</strong></td>
+              <td><span class="ver-badge tier-cf">Key-Value Store</span></td>
+              <td>Edge cache / session store</td>
+              <td>Fast session token lookup; cache for rate-limit state at edge (complementing D1 <code>security_limits</code>)</td>
+            </tr>
+            <tr>
+              <td><strong>Google OAuth 2.0</strong></td>
+              <td><span class="ver-badge tier-ext">External</span></td>
+              <td>Social authentication</td>
+              <td>PKCE flow. <code>oauth_challenges</code> table stores verifiers. Callback: <code>/api/auth/google/callback</code></td>
+            </tr>
+            <tr>
+              <td><strong>Web Crypto API</strong></td>
+              <td><span class="ver-badge tier-native">Native (Workers)</span></td>
+              <td>Password hashing</td>
+              <td>PBKDF2-SHA-256 · 100,000 iterations · random 16-byte salt. No third-party dep needed</td>
+            </tr>
+            <tr>
+              <td><strong>wrangler</strong></td>
+              <td><span class="ver-badge">^3.114</span></td>
+              <td>Cloudflare CLI</td>
+              <td>Local dev (<code>wrangler pages dev dist</code>), D1 migrations, production deploy</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ── Section 6: External Services ── -->
+      <div class="section-label" style="margin-top:28px">5 — External Services</div>
+      <div class="table-scroll-box">
+        <table>
+          <thead>
+            <tr><th style="width:22%">Service</th><th style="width:14%">Category</th><th style="width:22%">Integrated via</th><th>Purpose &amp; Usage</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Google OAuth</strong></td>
+              <td><span class="cat-badge cat-auth">Auth</span></td>
+              <td>REST redirect flow</td>
+              <td>One-click sign-in. <code>accounts.google.com/o/oauth2/v2/auth</code> → callback Worker → session cookie</td>
+            </tr>
+            <tr>
+              <td><strong>Resend (or Mailchannels)</strong></td>
+              <td><span class="cat-badge cat-email">Email</span></td>
+              <td>HTTP API from Worker</td>
+              <td>Sends OTP verification emails and password-reset codes via transactional email API</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ── Section 6: Build & DX ── -->
+      <div class="section-label" style="margin-top:28px">6 — Build, Tooling &amp; Developer Experience</div>
+      <div class="table-scroll-box">
+        <table>
+          <thead>
+            <tr><th style="width:22%">Package</th><th style="width:14%">Version</th><th style="width:22%">What it does</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>vite</strong></td>
+              <td><span class="ver-badge">^7.3.1</span></td>
+              <td>Dev server &amp; bundler</td>
+              <td>HMR dev server at <code>:5173</code>; Rollup-based production build → <code>dist/</code></td>
+            </tr>
+            <tr>
+              <td><strong>@vitejs/plugin-react</strong></td>
+              <td><span class="ver-badge">^5.2.0</span></td>
+              <td>React fast-refresh</td>
+              <td>Babel-powered HMR, JSX transform, React DevTools support in Vite</td>
+            </tr>
+            <tr>
+              <td><strong>typescript</strong></td>
+              <td><span class="ver-badge">^5.7.2</span></td>
+              <td>Type safety</td>
+              <td>Strict mode. Path aliases via <code>vite-tsconfig-paths</code> (<code>#/*</code> → <code>src/*</code>)</td>
+            </tr>
+            <tr>
+              <td><strong>vitest</strong></td>
+              <td><span class="ver-badge">^5.0.0</span></td>
+              <td>Unit test runner</td>
+              <td>Vite-native test framework. Config in <code>vite.config.ts</code>; run with <code>npm test</code></td>
+            </tr>
+            <tr>
+              <td><strong>@testing-library/react</strong></td>
+              <td><span class="ver-badge">^16.3.0</span></td>
+              <td>Component testing</td>
+              <td>DOM-based component tests; pairs with <code>jsdom ^28</code> environment for Vitest</td>
+            </tr>
+            <tr>
+              <td><strong>@cloudflare/workers-types</strong></td>
+              <td><span class="ver-badge">^5.2026</span></td>
+              <td>Worker type definitions</td>
+              <td>TypeScript types for <code>Env</code>, <code>D1Database</code>, <code>KVNamespace</code>, <code>ExecutionContext</code> in Function Workers</td>
+            </tr>
+            <tr>
+              <td><strong>file-saver</strong></td>
+              <td><span class="ver-badge">^2.0.5</span></td>
+              <td>Client-side file download</td>
+              <td><code>saveAs(blob, filename)</code> — triggers browser download. Used in <code>reportGenerator.ts</code> to save the HTML report blob, and in <code>Preview3D.tsx</code> for GLB / OBJ exports</td>
+            </tr>
+            <tr>
+              <td><strong>uuid</strong></td>
+              <td><span class="ver-badge">^13.0.0</span></td>
+              <td>UUID generation</td>
+              <td>Client-side v4 UUID generation for design/project IDs before cloud sync</td>
+            </tr>
+            <tr>
+              <td><strong>gl-matrix</strong></td>
+              <td><span class="ver-badge">^3.4.4</span></td>
+              <td>Math library</td>
+              <td>High-performance 3D vector/matrix math for asset pipeline transforms</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

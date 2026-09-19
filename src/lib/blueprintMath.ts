@@ -14,13 +14,14 @@ export interface MeasurementChain {
 
 export function calculateBlueprintMeasurements(
   view: string,
-  elements: any[],
-  boothConfig: { width: number; depth: number }
+  elements: any[] = [],
+  boothConfig: { width: number; depth: number } = { width: 6, depth: 5 }
 ): MeasurementChain[] {
+  if (!elements || !Array.isArray(elements) || !boothConfig) return [];
   const chains: MeasurementChain[] = [];
   const PPM = 100;
 
-  const items = elements.filter(el => ['asset', '3d_logo', 'wall'].includes(el.type) && !el.isOuter).map(el => {
+  const items = elements.filter(el => el && ['asset', '3d_logo', 'wall'].includes(el.type) && !el.isOuter).map(el => {
     const w = el.width / PPM;
     const h = el.height / PPM;
     const x = el.x / PPM;
@@ -79,39 +80,57 @@ export function calculateBlueprintMeasurements(
         });
       };
 
-      // 1. Asset Dims (Aligned)
-      addDim(item.corners[3], item.corners[2], `${item.w.toFixed(2)}m`, 'asset'); // Width
-      addDim(item.corners[0], item.corners[3], `${item.h.toFixed(2)}m`, 'asset'); // Depth
+      // 1. Asset Footprint Dimensions (Blue)
+      addDim(item.corners[3], item.corners[2], `W: ${item.w.toFixed(2)}m`, 'asset'); // Width
+      addDim(item.corners[0], item.corners[3], `D: ${item.h.toFixed(2)}m`, 'asset'); // Depth
 
-      // 2. Wall Gaps (Horizontal - X)
+      // 2. Wall Setbacks (Green) - Only connect to the closest X and closest Z wall to avoid clutter
       const leftC = item.corners.reduce((a, b) => a.x < b.x ? a : b);
       const rightC = item.corners.reduce((a, b) => a.x > b.x ? a : b);
+      const distLeft = leftC.x;
+      const distRight = boothConfig.width - rightC.x;
       
-      chains.push({
-        type: 'gap', axis: 'x', label: `${leftC.x.toFixed(2)}m`,
-        mainLine: [{ x: 0, y: 0.05, z: leftC.z }, { x: leftC.x, y: 0.05, z: leftC.z }],
-        extensionLines: []
-      });
-      chains.push({
-        type: 'gap', axis: 'x', label: `${(boothConfig.width - rightC.x).toFixed(2)}m`,
-        mainLine: [{ x: rightC.x, y: 0.05, z: rightC.z }, { x: boothConfig.width, y: 0.05, z: rightC.z }],
-        extensionLines: []
-      });
+      if (distLeft <= distRight) {
+        if (distLeft > 0.05) {
+          chains.push({
+            type: 'gap', axis: 'x', label: `${distLeft.toFixed(2)}m`,
+            mainLine: [{ x: 0, y: 0.05, z: leftC.z }, { x: leftC.x, y: 0.05, z: leftC.z }],
+            extensionLines: []
+          });
+        }
+      } else {
+        if (distRight > 0.05) {
+          chains.push({
+            type: 'gap', axis: 'x', label: `${distRight.toFixed(2)}m`,
+            mainLine: [{ x: rightC.x, y: 0.05, z: rightC.z }, { x: boothConfig.width, y: 0.05, z: rightC.z }],
+            extensionLines: []
+          });
+        }
+      }
 
-      // 3. Wall Gaps (Vertical - Z)
+      // 3. Wall Setbacks (Z Axis) - Nearest wall only
       const backC = item.corners.reduce((a, b) => a.z < b.z ? a : b);
       const frontC = item.corners.reduce((a, b) => a.z > b.z ? a : b);
+      const distBack = backC.z;
+      const distFront = boothConfig.depth - frontC.z;
 
-      chains.push({
-        type: 'gap', axis: 'z', label: `${backC.z.toFixed(2)}m`,
-        mainLine: [{ x: backC.x, y: 0.05, z: 0 }, { x: backC.x, y: 0.05, z: backC.z }],
-        extensionLines: []
-      });
-      chains.push({
-        type: 'gap', axis: 'z', label: `${(boothConfig.depth - frontC.z).toFixed(2)}m`,
-        mainLine: [{ x: frontC.x, y: 0.05, z: frontC.z }, { x: frontC.x, y: 0.05, z: boothConfig.depth }],
-        extensionLines: []
-      });
+      if (distBack <= distFront) {
+        if (distBack > 0.05) {
+          chains.push({
+            type: 'gap', axis: 'z', label: `${distBack.toFixed(2)}m`,
+            mainLine: [{ x: backC.x, y: 0.05, z: 0 }, { x: backC.x, y: 0.05, z: backC.z }],
+            extensionLines: []
+          });
+        }
+      } else {
+        if (distFront > 0.05) {
+          chains.push({
+            type: 'gap', axis: 'z', label: `${distFront.toFixed(2)}m`,
+            mainLine: [{ x: frontC.x, y: 0.05, z: frontC.z }, { x: frontC.x, y: 0.05, z: boothConfig.depth }],
+            extensionLines: []
+          });
+        }
+      }
     });
   }
 

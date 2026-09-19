@@ -757,11 +757,11 @@ export default function Properties({
             </div>
           </div>
         ) : (
-          /* ── Booth Materials Panel (shown when nothing selected) ── */
+          /* ── Space Materials Panel (shown when nothing selected) ── */
           <div className="space-y-6">
             <div className="flex items-center gap-2 mb-1">
               <Layers className="h-4 w-4 text-[var(--lagoon-deep)]" />
-              <span className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider">Booth Materials</span>
+              <span className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider">Space Materials</span>
             </div>
 
             {/* Floor Material */}

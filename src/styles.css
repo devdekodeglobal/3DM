@@ -33,8 +33,8 @@
 
   /* --- Foreground & Text --- */
   --color-fg: #0f172a;
-  --color-fg-soft: #475569;
-  --color-fg-dim: #94a3b8;
+  --color-fg-soft: #334155;
+  --color-fg-dim: #475569;
 
   /* --- Logo 3D Shading --- */
   --color-logo-left-front: #0f172a;
@@ -69,9 +69,9 @@
   --color-bg-glass: rgba(17, 24, 39, 0.88);
   --color-header-bg: rgba(8, 11, 20, 0.94);
 
-  --color-fg: #f1f5f9;
-  --color-fg-soft: #94a3b8;
-  --color-fg-dim: #4b5563;
+  --color-fg: #f8fafc;
+  --color-fg-soft: #cbd5e1;
+  --color-fg-dim: #94a3b8;
 
   /* --- Logo 3D Shading (Dark) --- */
   --color-logo-left-front: #ffffff;
@@ -107,9 +107,9 @@
     --color-bg-glass: rgba(17, 24, 39, 0.88);
     --color-header-bg: rgba(8, 11, 20, 0.94);
 
-    --color-fg: #f1f5f9;
-    --color-fg-soft: #94a3b8;
-    --color-fg-dim: #4b5563;
+    --color-fg: #f8fafc;
+    --color-fg-soft: #cbd5e1;
+    --color-fg-dim: #94a3b8;
 
     /* --- Logo 3D Shading (Dark) --- */
     --color-logo-left-front: #ffffff;
@@ -142,6 +142,7 @@
   /* --- Legacy Variable Aliases (for code compatibility) --- */
   --brand: var(--color-brand);
   --brand-h: var(--color-brand-h);
+  --brand-hover: var(--color-brand-h);
   --brand-bg: var(--color-brand-bg);
   --accent: var(--color-accent);
   --accent-bg: var(--color-accent-bg);
@@ -473,8 +474,11 @@ a {
   border-color: var(--brand);
 }
 .cookie-manage {
-  grid-column: 1;
-  justify-self: center;
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+  position: relative;
+  top: 30px;
   color: var(--fg-soft);
   background: none;
   border: 0;
@@ -861,6 +865,11 @@ a {
     grid-column: 1 / -1;
     width: 100%;
   }
+  .cookie-manage {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    top: 0;
+  }
 }
 
 @media (max-width: 520px) {
@@ -889,7 +898,10 @@ a {
     grid-template-columns: 1fr;
   }
   .cookie-manage {
-    grid-column: auto;
+    grid-column: 1;
+    grid-row: 3;
+    justify-self: end;
+    top: 0;
   }
   .cookie-modal {
     padding: 20px;

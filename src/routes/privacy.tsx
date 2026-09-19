@@ -70,7 +70,7 @@ function PrivacyPolicyPage() {
           <li>2D designs and layouts;</li>
           <li>3D projects and spatial configurations;</li>
           <li>project names and identifiers;</li>
-          <li>booth, room or space configurations;</li>
+          <li>space or room configurations;</li>
           <li>layout elements and design information;</li>
           <li>custom 3D models and other uploaded assets;</li>
           <li>asset metadata;</li>
@@ -290,7 +290,7 @@ function PrivacyPolicyPage() {
         <p>
           For details of individual cookies, similar technologies, their
           purposes, providers, retention periods and your choices, please see
-          the <a href="/cookie-policy">krafc Cookie Policy</a>.
+          the krafc <a href="/cookie-policy">Cookie Policy</a>.
         </p>
       </section>
 

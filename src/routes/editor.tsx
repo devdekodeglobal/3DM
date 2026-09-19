@@ -1,5 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Sidebar from '../components/editor/Sidebar'
 import Canvas from '../components/editor/Canvas'
 import WallCanvas from '../components/editor/WallCanvas'
@@ -7,11 +7,12 @@ import Properties from '../components/editor/Properties'
 import Preview3D from '../components/editor/Preview3D'
 import ColorPickerPanel from '../components/editor/ColorPickerPanel'
 import RoofCanvas from '../components/editor/RoofCanvas'
-import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, Cloud, LogIn, Folder, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil, LayoutGrid, Sliders, Monitor } from 'lucide-react'
+import UserMenuDropdown from '../components/UserMenuDropdown'
+import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, LogIn, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil, LayoutGrid, Sliders, Monitor, Folder, CloudCheck, Loader2, Copy } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
-import { getCurrentUser, saveDesign, updateDesign, listProjects } from '../lib/authClient'
+import { getCurrentUser, saveDesign, updateDesign, listProjects, listDesigns } from '../lib/authClient'
 import { AuthModal } from '../components/editor/AuthModal'
 import { CloudProjectsDrawer } from '../components/editor/CloudProjectsDrawer'
 import { saveAssetBlob, getAssetBlob, deleteAssetBlob } from '../lib/customAssetDB'
@@ -40,12 +41,20 @@ function getInitialData() {
   const savedName = window.localStorage.getItem('current-design-name');
   if (!savedStall) return { config: null, elements: null, id: savedId, name: savedName };
 
-  const config = JSON.parse(savedStall);
-  let parsedElements = savedElements ? JSON.parse(savedElements) : [];
+  let config: any = savedStall;
+  while (typeof config === 'string') {
+    try { config = JSON.parse(config); } catch { break; }
+  }
+
+  let parsedElements: any = savedElements ? savedElements : [];
+  while (typeof parsedElements === 'string') {
+    try { parsedElements = JSON.parse(parsedElements); } catch { break; }
+  }
+  if (!Array.isArray(parsedElements)) parsedElements = [];
 
   // MIGRATION: If old save has structural walls in config but not in elements, convert them
-  if (parsedElements.length > 0) {
-    const hasOuterWalls = parsedElements.some((el: any) => el.isOuter);
+  if (parsedElements.length > 0 && config && typeof config === 'object' && config.width && config.depth) {
+    const hasOuterWalls = parsedElements.some((el: any) => el?.isOuter);
     if (!hasOuterWalls && config.walls) {
       const PPM = 100;
       const W = config.width * PPM;
@@ -65,67 +74,6 @@ function getInitialData() {
   return { config, elements: parsedElements, id: savedId, name: savedName };
 }
 
-// Inline component to edit booth dimensions without resetting the design
-function EditSpaceDimensions({ boothConfig, setBoothConfig }: { boothConfig: BoothConfig | null, setBoothConfig: (c: any) => void }) {
-  const [open, setOpen] = React.useState(false)
-  const [w, setW] = React.useState(boothConfig?.width ?? 6)
-  const [d, setD] = React.useState(boothConfig?.depth ?? 5)
-  const [pos, setPos] = React.useState({ top: 0, left: 0 })
-  const btnRef = React.useRef<HTMLButtonElement>(null)
-
-  if (!boothConfig) return null
-
-  const handleOpen = () => {
-    setW(boothConfig.width)
-    setD(boothConfig.depth)
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect()
-      setPos({ top: rect.bottom + 6, left: rect.left })
-    }
-    setOpen(true)
-  }
-
-  const handleApply = () => {
-    setBoothConfig({ ...boothConfig, width: w, depth: d })
-    setOpen(false)
-  }
-
-  return (
-    <>
-      <button
-        ref={btnRef}
-        onClick={handleOpen}
-        className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--sand)] text-[var(--sea-ink)] text-xs font-bold transition hover:bg-[var(--lagoon)] hover:text-white"
-      >
-        Edit Space
-      </button>
-      {open && (
-        <>
-          {/* Backdrop to close on outside click */}
-          <div className="fixed inset-0 z-[98]" onClick={() => setOpen(false)} />
-          <div
-            style={{ top: pos.top, left: pos.left }}
-            className="fixed z-[99] bg-[var(--bg-base)] border border-[var(--line)] rounded-xl shadow-2xl p-4 flex flex-col gap-3 w-56 animate-in fade-in slide-in-from-top-2 duration-150"
-          >
-            <p className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider">Space Dimensions</p>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-[var(--fg-dim)] font-semibold">Width: <span className="text-[var(--brand)]">{w}m</span></label>
-              <input type="range" min={2} max={20} step={0.5} value={w} onChange={e => setW(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-[var(--fg-dim)] font-semibold">Depth: <span className="text-[var(--brand)]">{d}m</span></label>
-              <input type="range" min={2} max={20} step={0.5} value={d} onChange={e => setD(parseFloat(e.target.value))} className="w-full accent-[var(--lagoon-deep)]" />
-            </div>
-            <div className="flex gap-2 mt-1">
-              <button onClick={() => setOpen(false)} className="flex-1 rounded-lg py-1.5 text-xs font-bold bg-[var(--sand)] text-[var(--sea-ink)] hover:bg-gray-200 transition">Cancel</button>
-              <button onClick={handleApply} className="flex-1 rounded-lg py-1.5 text-xs font-bold bg-[var(--brand)] text-white hover:bg-[var(--brand-h)] transition">Apply</button>
-            </div>
-          </div>
-        </>
-      )}
-    </>
-  )
-}
 
 
 function EditorPage() {
@@ -142,10 +90,15 @@ function EditorPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [cloudDrawerOpen, setCloudDrawerOpen] = useState(false)
   const [showSavePrompt, setShowSavePrompt] = useState(false)
-  const [saveAsMode, setSaveAsMode] = useState(false)
+  const [pendingSaveTrigger, setPendingSaveTrigger] = useState<boolean>(false)
   const [userProjects, setUserProjects] = useState<any[]>([])
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('')
-  const [projectName, setProjectName] = useState(initialData.name || 'My Design 1')
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('current-project-id') || ''
+    }
+    return ''
+  })
+  const [projectName, setProjectName] = useState(initialData.name || 'Untitled Design')
   const [isCloudSaving, setIsCloudSaving] = useState(false)
   const [toastModal, setToastModal] = useState<{ title?: string; message: string; type?: 'info' | 'success' | 'warning' | 'error' } | null>(null)
   const [confirmModalState, setConfirmModalState] = useState<{ isOpen: boolean; title?: string; message: string; confirmText?: string; onConfirm: () => void } | null>(null)
@@ -154,28 +107,140 @@ function EditorPage() {
     setToastModal({ message, type, title })
   }
 
+  const activeProjectObj = selectedProjectId ? userProjects.find(p => p.id === selectedProjectId) : null
+
   // Custom 3D Assets state (limit 5 per user)
   const [customAssets, setCustomAssets] = useState<any[]>([]);
 
-  // Fetch user session & initialize UI
-  useEffect(() => {
-    getCurrentUser().then(user => setSessionUser(user)).catch(console.error)
+
+  const [elements, setElements] = useState<any[]>(initialData.elements || [])
+  const [history, setHistory] = useState<any[][]>(initialData.elements ? [initialData.elements] : [])
+  const [historyStep, setHistoryStep] = useState(initialData.elements ? 0 : -1)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [gridVisible, setGridVisible] = useState(true)
+  const [currentDesignId, setCurrentDesignId] = useState<string | null>(initialData.id || null)
+  const [cloudIdValidated, setCloudIdValidated] = useState(false)
+
+  // Refs to access latest editor state inside syncCurrentDesignToProfile without recreating it
+  const boothConfigRef = useRef(boothConfig)
+  boothConfigRef.current = boothConfig
+  const elementsRef = useRef(elements)
+  elementsRef.current = elements
+  const currentDesignIdRef = useRef(currentDesignId)
+  currentDesignIdRef.current = currentDesignId
+  const projectNameRef = useRef(projectName)
+  projectNameRef.current = projectName
+
+  // Helper to sync or resume current editor design into user's account
+  const syncCurrentDesignToProfile = useCallback(async (user: any, reason: 'login' | 'space_cleared' = 'login', existingDesigns?: any[]) => {
+    const activeConfig = boothConfigRef.current
+    const activeElements = elementsRef.current
+    const activeDesignId = currentDesignIdRef.current
+    const activeProjectName = projectNameRef.current
+
+    if (!user || (!activeConfig && activeElements.length === 0)) return
+    try {
+      const userDesigns = existingDesigns || (await listDesigns())
+      const storedId = localStorage.getItem('current-design-id')
+      const targetId = activeDesignId || storedId
+
+      // 1. Check if user already owns this design ID
+      const matchingDesignById = targetId ? userDesigns.find(d => d.id === targetId) : null
+      if (matchingDesignById) {
+        // Design already belongs to this user. Resume it and save any offline/logged-out changes (including any offline rename).
+        const resolvedName = (activeProjectName && activeProjectName.trim()) || matchingDesignById.name || 'Untitled Design'
+        setCurrentDesignId(matchingDesignById.id)
+        setProjectName(resolvedName)
+        localStorage.setItem('current-design-id', matchingDesignById.id)
+        localStorage.setItem('current-design-name', resolvedName)
+        setSyncStatus('saving')
+        await updateDesign(matchingDesignById.id, {
+          name: resolvedName,
+          config: activeConfig,
+          elements: activeElements
+        })
+        setSyncStatus('saved')
+        return
+      }
+
+      // 2. If no design ID, but user has existing cloud designs and canvas wasn't explicitly started as a brand-new design
+      const isFreshGuestDesign = localStorage.getItem('is-fresh-guest-design') === 'true'
+      if (!isFreshGuestDesign && userDesigns.length > 0) {
+        // Automatically attach to their most recently updated design or match
+        const mostRecent = userDesigns[0]
+        const resolvedName = (activeProjectName && activeProjectName.trim()) || mostRecent.name || 'Untitled Design'
+        setCurrentDesignId(mostRecent.id)
+        setProjectName(resolvedName)
+        localStorage.setItem('current-design-id', mostRecent.id)
+        localStorage.setItem('current-design-name', resolvedName)
+        setSyncStatus('saving')
+        await updateDesign(mostRecent.id, {
+          name: resolvedName,
+          config: activeConfig,
+          elements: activeElements
+        })
+        setSyncStatus('saved')
+        return
+      }
+
+      // 3. User genuinely created a fresh guest design from scratch:
+      if (userDesigns.length >= 6) {
+        showAlert('Account design limit reached (6 maximum). Choose an existing design from "Cloud Projects" to overwrite, or delete old designs.', 'warning', 'Limit Reached')
+        return
+      }
+
+      // Save as a brand new design
+      const designNameToSave = activeProjectName?.trim() || 'Untitled Design'
+      const newDesign = await saveDesign(null, designNameToSave, activeConfig, activeElements)
+      setCurrentDesignId(newDesign.id)
+      setProjectName(newDesign.name)
+      localStorage.setItem('current-design-id', newDesign.id)
+      localStorage.setItem('current-design-name', newDesign.name)
+      localStorage.removeItem('is-fresh-guest-design')
+      localStorage.removeItem('current-project-id')
+      setSelectedProjectId('')
+      setSyncStatus('saved')
+      const successMessage = reason === 'space_cleared'
+        ? 'Space cleared! Your current design has now been saved to your account.'
+        : 'Your design has been saved to your account and auto-sync is active.'
+      showAlert(successMessage, 'success', 'Design Saved')
+    } catch (err: any) {
+      console.error('Failed to save current design to profile:', err)
+    }
   }, [])
 
-  // Fetch projects when save prompt opens
+  // Track the last synced user ID to avoid re-running login sync on every render
+  const lastSyncedUserIdRef = useRef<string | null>(null)
+
+  // Fetch projects and sync active design whenever user logs in
   useEffect(() => {
-    if (showSavePrompt && sessionUser) {
-      listProjects().then(res => {
-        setUserProjects(res || [])
-        const current = localStorage.getItem('current-project-id')
-        if (current && res?.some(p => p.id === current)) {
-          setSelectedProjectId(current)
-        } else if (res && res.length > 0) {
-          setSelectedProjectId(res[0].id)
-        }
-      }).catch(console.error)
+    if (sessionUser) {
+      if (lastSyncedUserIdRef.current === sessionUser.id) return
+      lastSyncedUserIdRef.current = sessionUser.id
+
+      Promise.all([listProjects(), listDesigns()])
+        .then(([res, allDesigns]) => {
+          setUserProjects(res || [])
+          const current = localStorage.getItem('current-project-id')
+          if (current && res?.some(p => p.id === current)) {
+            setSelectedProjectId(current)
+          }
+
+          setCloudIdValidated(true)
+          syncCurrentDesignToProfile(sessionUser, 'login', allDesigns)
+        })
+        .catch(err => {
+          console.error(err)
+          setCloudIdValidated(true)
+        })
+    } else {
+      lastSyncedUserIdRef.current = null
+      setUserProjects([])
+      setSelectedProjectId('')
+      setSyncStatus('idle')
+      setCloudIdValidated(false)
     }
-  }, [showSavePrompt, sessionUser])
+  }, [sessionUser, syncCurrentDesignToProfile])
 
   // Hydrate custom assets from IndexedDB on mount
   useEffect(() => {
@@ -283,23 +348,15 @@ function EditorPage() {
     'brio_70': 0,
   })
 
-  const [elements, setElements] = useState<any[]>(initialData.elements || [])
-  const [history, setHistory] = useState<any[][]>(initialData.elements ? [initialData.elements] : [])
-  const [historyStep, setHistoryStep] = useState(initialData.elements ? 0 : -1)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [gridVisible, setGridVisible] = useState(true)
-  const [currentDesignId, setCurrentDesignId] = useState<string | null>(initialData.id || null)
-  const [autoSaveToCloud, setAutoSaveToCloud] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem('auto-save-cloud') === 'true';
-  })
-  const [cloudSyncStatus, setCloudSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   // Sync id and name to localStorage
   useEffect(() => {
     if (currentDesignId) {
       localStorage.setItem('current-design-id', currentDesignId)
       localStorage.setItem('current-design-name', projectName)
+    } else {
+      localStorage.removeItem('current-design-id')
+      localStorage.removeItem('current-design-name')
     }
   }, [currentDesignId, projectName])
 
@@ -320,7 +377,7 @@ function EditorPage() {
   const [mobileScreenBannerDismissed, setMobileScreenBannerDismissed] = useState(false)
   const [splitWidth, setSplitWidth] = useState(60)
   const splitContainerRef = useRef<HTMLDivElement>(null)
-  const [is3DGenerated, setIs3DGenerated] = useState(false)
+  const [is3DGenerated, setIs3DGenerated] = useState(true)
   const [editingWallId, setEditingWallId] = useState<string | null>(null)
   const [editingRoof, setEditingRoof] = useState(false)
   const [blueprintView, setBlueprintView] = useState<'perspective' | 'top' | 'north' | 'south' | 'east' | 'west'>('perspective')
@@ -366,78 +423,62 @@ function EditorPage() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  const handleCloudSave = async () => {
-    if (!sessionUser) {
-      setAuthModalOpen(true)
-      return
-    }
-
-    const projectId = selectedProjectId || localStorage.getItem('current-project-id')
-    if (!projectId && !currentDesignId) {
-      showAlert('No active project selected. Return to dashboard or select one below.', 'error', 'Save Failed')
-      return
-    }
-
-    setIsCloudSaving(true)
-    try {
-      if (currentDesignId) {
-        // If updating an existing design, it should technically stay in its current project
-        // unless we want to support moving it. For now, updateDesign doesn't change project_id.
-        await updateDesign(currentDesignId, {
-          name: projectName || 'Untitled Design',
-          config: boothConfig,
-          elements: elements
-        })
-        showAlert('Design successfully updated!', 'success', 'Design Updated')
-      } else {
-        const newDesign = await saveDesign(projectId!, projectName || 'Untitled Design', boothConfig, elements)
-        setCurrentDesignId(newDesign.id)
-        localStorage.setItem('current-project-id', projectId!)
-        showAlert('Design successfully saved to the cloud!', 'success', 'Design Saved')
-      }
-      setShowSavePrompt(false)
-    } catch (err: any) {
-      console.error('Cloud save failed:', err)
-      showAlert(err.message || 'Failed to save to the cloud.', 'error', 'Save Failed')
-    } finally {
-      setIsCloudSaving(false)
-    }
-  };
-
   const handleCloudSaveAs = async () => {
     if (!sessionUser) {
       setAuthModalOpen(true)
       return
     }
 
-    const projectId = selectedProjectId || localStorage.getItem('current-project-id')
-    if (!projectId) {
-      showAlert('No active project selected.', 'error', 'Save Failed')
-      return
-    }
+    const projectId = selectedProjectId ? selectedProjectId : null
 
     setIsCloudSaving(true)
     try {
       const newDesign = await saveDesign(projectId, projectName || 'Untitled Design', boothConfig, elements)
       setCurrentDesignId(newDesign.id)
-      localStorage.setItem('current-project-id', projectId)
-      showAlert('Saved as a new design!', 'success', 'Design Saved')
+      if (projectId) {
+        localStorage.setItem('current-project-id', projectId)
+      } else {
+        localStorage.removeItem('current-project-id')
+      }
+      showAlert(`Created copy "${newDesign.name}" with auto-sync active`, 'success', 'Design Copied')
       setShowSavePrompt(false)
     } catch (err: any) {
       console.error('Cloud save failed:', err)
-      showAlert(err.message || 'Failed to save to the cloud.', 'error', 'Save Failed')
+      showAlert(err.message || 'Failed to create copy.', 'error', 'Copy Failed')
     } finally {
       setIsCloudSaving(false)
     }
   };
 
   const loadCloudDesign = (loadedConfig: any, loadedElements: any[], designId?: string, designName?: string) => {
-    setBoothConfig(loadedConfig)
-    setElements(loadedElements)
-    setHistory([loadedElements])
+    let cleanConfig = loadedConfig;
+    while (typeof cleanConfig === 'string') {
+      try { cleanConfig = JSON.parse(cleanConfig); } catch { break; }
+    }
+    let cleanElements = loadedElements;
+    while (typeof cleanElements === 'string') {
+      try { cleanElements = JSON.parse(cleanElements); } catch { break; }
+    }
+    if (!Array.isArray(cleanElements)) cleanElements = [];
+
+    setBoothConfig(cleanConfig)
+    if (!cleanConfig) {
+      setWizardStep(1)
+      localStorage.removeItem('stall-config')
+    }
+    setElements(cleanElements)
+    setHistory([cleanElements])
     setHistoryStep(0)
-    if (designId) setCurrentDesignId(designId)
-    if (designName) setProjectName(designName)
+    if (designId) {
+      setCurrentDesignId(designId)
+      localStorage.setItem('current-design-id', designId)
+    }
+    if (designName) {
+      setProjectName(designName)
+      localStorage.setItem('current-design-name', designName)
+    }
+    const currentProj = localStorage.getItem('current-project-id') || ''
+    setSelectedProjectId(currentProj)
 
     // Force canvas refresh
     setTimeout(() => {
@@ -447,58 +488,63 @@ function EditorPage() {
 
   // Auto-save to local storage (safely stripped of data URLs)
   useEffect(() => {
-    if (boothConfig) {
+    if (boothConfig && Array.isArray(elements)) {
       try {
         localStorage.setItem('stall-config', JSON.stringify(boothConfig));
         const cleanElements = elements.map(el => {
-          if (el.assetUrl && el.assetUrl.startsWith('data:')) {
-            const { assetUrl, ...rest } = el;
-            return rest;
+          if (!el) return el;
+          let cleaned = { ...el };
+          if (cleaned.customTexture?.startsWith('data:image/')) {
+            delete cleaned.customTexture;
           }
-          return el;
+          if (cleaned.assetUrl?.startsWith('data:')) {
+            delete cleaned.assetUrl;
+          }
+          return cleaned;
         });
         localStorage.setItem('stall-elements', JSON.stringify(cleanElements));
-      } catch (err) {
-        console.warn('Skipping stall-elements localStorage save due to quota:', err);
+      } catch (e) {
+        console.warn('Local storage save failed:', e);
       }
     }
   }, [boothConfig, elements])
 
-  // Auto-save to cloud
+  // Auto-save to cloud (automatically syncs for all existing designs)
+  const [syncStatus, setSyncStatus] = useState<'saved' | 'saving' | 'idle'>('idle')
+
   useEffect(() => {
-    if (!autoSaveToCloud || !currentDesignId || !sessionUser) return;
+    if (!currentDesignId || !sessionUser || !cloudIdValidated) {
+      setSyncStatus('idle')
+      return;
+    }
     
-    setCloudSyncStatus('saving');
-    
+    setSyncStatus('saving')
     const handler = setTimeout(async () => {
       try {
         await updateDesign(currentDesignId, {
           name: projectName || 'Untitled Design',
           config: boothConfig,
-          elements: elements
+          elements: elements || []
         });
-        setCloudSyncStatus('saved');
-        setTimeout(() => {
-          setCloudSyncStatus(prev => prev === 'saved' ? 'idle' : prev);
-        }, 3000);
+        setSyncStatus('saved')
       } catch (err: any) {
         console.error('Auto-save to cloud failed:', err);
-        setCloudSyncStatus('error');
+        setSyncStatus('idle')
         if (err.message === 'Design not found' || err.message.includes('404')) {
-          setAutoSaveToCloud(false)
           setCurrentDesignId(null)
           localStorage.removeItem('current-design-id')
-          showAlert('This design was deleted or no longer exists. Auto-save disabled. Please Save as New Design.', 'error', 'Design Missing')
+          showAlert('This design was deleted or no longer exists. Auto-save disabled. Please create a new copy.', 'error', 'Design Missing')
         }
       }
-    }, 2500);
+    }, 2000);
 
     return () => clearTimeout(handler);
-  }, [boothConfig, elements, projectName, autoSaveToCloud, currentDesignId, sessionUser]);
+  }, [boothConfig, elements, projectName, currentDesignId, sessionUser, cloudIdValidated]);
 
   const saveToHistory = useCallback((newElements: any[]) => {
+    if (!Array.isArray(newElements)) return;
     setHistory(prev => {
-      const nextHistory = prev.slice(0, historyStep + 1)
+      const nextHistory = prev.slice(0, Math.max(0, historyStep + 1))
       return [...nextHistory, newElements]
     })
     setHistoryStep(prev => prev + 1)
@@ -507,18 +553,22 @@ function EditorPage() {
   const undo = () => {
     if (historyStep > 0) {
       const prev = history[historyStep - 1]
-      setElements(prev)
-      setHistoryStep(historyStep - 1)
-      setSelectedId(null)
+      if (Array.isArray(prev)) {
+        setElements(prev)
+        setHistoryStep(historyStep - 1)
+        setSelectedId(null)
+      }
     }
   }
 
   const redo = () => {
     if (historyStep < history.length - 1) {
       const next = history[historyStep + 1]
-      setElements(next)
-      setHistoryStep(historyStep + 1)
-      setSelectedId(null)
+      if (Array.isArray(next)) {
+        setElements(next)
+        setHistoryStep(historyStep + 1)
+        setSelectedId(null)
+      }
     }
   }
 
@@ -566,10 +616,20 @@ function EditorPage() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedId, historyStep, history, editingWallId])
 
-  /*
   const submitExport = () => {
     setIsCapturingReport(true)
-    setReportScreenshots({})
+    
+    // Capture high-res 2D Floor Plan directly from 2D Stage
+    let floorplan2D: string | null = null
+    if (typeof window !== 'undefined' && typeof (window as any).export2DCanvasDataURL === 'function') {
+      try {
+        floorplan2D = (window as any).export2DCanvasDataURL()
+      } catch (err) {
+        console.warn('Failed to capture 2D floor plan snapshot:', err)
+      }
+    }
+
+    setReportScreenshots(floorplan2D ? { floorplan_2d: floorplan2D } : {})
 
     // Queue: Top view + standard directional elevations + specific wall elevations
     const queue = ['top', 'north', 'south', 'east', 'west'];
@@ -580,7 +640,6 @@ function EditorPage() {
 
     setCaptureQueue(queue)
   }
-  */
 
   useEffect(() => {
     if (!isCapturingReport) return;
@@ -615,6 +674,31 @@ function EditorPage() {
     }
   }, [isCapturingReport])
 
+  const handleNewProject = () => {
+    setConfirmModalState({
+      isOpen: true,
+      title: 'Create New Design',
+      message: 'Create a new design? Any unsaved changes in this session will be cleared.',
+      confirmText: 'New Design',
+      onConfirm: () => {
+        setBoothConfig(null)
+        setWizardStep(1)
+        setElements([])
+        saveToHistory([])
+        setCurrentDesignId(null)
+        setProjectName('Untitled Design')
+        localStorage.setItem('is-fresh-guest-design', 'true')
+        localStorage.removeItem('stall-config')
+        localStorage.removeItem('stall-elements')
+        localStorage.removeItem('current-design-id')
+        localStorage.removeItem('current-design-name')
+        localStorage.removeItem('current-project-id')
+        setSelectedProjectId('')
+        setConfirmModalState(null)
+      }
+    })
+  }
+
   const clearAll = () => {
     setConfirmModalState({
       isOpen: true,
@@ -643,7 +727,7 @@ function EditorPage() {
 
   if (!boothConfig) {
     return (
-      <div key="setup-screen" suppressHydrationWarning className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] bg-[var(--bg-base)] p-4">
+      <div key="setup-screen" suppressHydrationWarning className="flex flex-col items-center justify-center min-h-screen bg-[var(--bg-base)] p-4">
         <div className="island-shell p-8 rounded-2xl w-full max-w-[500px] flex flex-col gap-6 text-center rise-in">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-2xl font-bold text-[var(--sea-ink)] display-title">Space Setup Wizard</h2>
@@ -655,13 +739,42 @@ function EditorPage() {
                 const T = 0.1 * 100
                 const wallProps = { material: 'White Paint' }
                 
-                setBoothConfig({ width: 6, depth: 5, wallThickness: 0.1, walls: { north: true, south: true, east: true, west: true }, floorType: 'hardwood', floorColor: '#eee' })
-                setElements([
+                const newConfig = { width: 6, depth: 5, wallThickness: 0.1, walls: { north: true, south: true, east: true, west: true }, floorType: 'hardwood', floorColor: '#eee' }
+                const initialWalls = [
                   { id: 'outer-north', type: 'wall', isOuter: true, x: W / 2, y: 0, width: W, thickness: T, rotation: 0, wallElements: [], ...wallProps },
                   { id: 'outer-south', type: 'wall', isOuter: true, x: W / 2, y: D, width: W, thickness: T, rotation: 0, wallElements: [], ...wallProps },
                   { id: 'outer-west', type: 'wall', isOuter: true, x: 0, y: D / 2, width: D, thickness: T, rotation: 90, wallElements: [], ...wallProps },
                   { id: 'outer-east', type: 'wall', isOuter: true, x: W, y: D / 2, width: D, thickness: T, rotation: 90, wallElements: [], ...wallProps }
-                ])
+                ]
+                setBoothConfig(newConfig)
+                setElements(initialWalls)
+                saveToHistory(initialWalls)
+
+                if (sessionUser) {
+                  if (currentDesignId) {
+                    updateDesign(currentDesignId, { config: newConfig, elements: initialWalls }).catch(console.error)
+                  } else {
+                    // Automatically create as standalone design so auto-saving is instantly active
+                    listDesigns().then(async (userDesigns) => {
+                      if (userDesigns.length >= 6) {
+                        showAlert('Account design limit reached (6 maximum). New design will not be auto-saved to cloud.', 'warning', 'Limit Reached')
+                      } else {
+                        try {
+                          const newDesign = await saveDesign(null, projectName || 'Untitled Design', newConfig, initialWalls)
+                          setCurrentDesignId(newDesign.id)
+                          setProjectName(newDesign.name)
+                          localStorage.setItem('current-design-id', newDesign.id)
+                          localStorage.setItem('current-design-name', newDesign.name)
+                          localStorage.removeItem('current-project-id')
+                          setSelectedProjectId('')
+                          setSyncStatus('saved')
+                        } catch (err: any) {
+                          console.error('Auto-create standalone design failed:', err)
+                        }
+                      }
+                    }).catch(console.error)
+                  }
+                }
               }}
               className="text-xs font-bold text-[var(--sea-ink-soft)] hover:text-[var(--brand)] transition px-3 py-1.5 rounded-full bg-[var(--sand)] hover:bg-gray-200"
             >
@@ -899,9 +1012,36 @@ function EditorPage() {
                       }
                     });
 
-                    setBoothConfig({ width: setupWidth, depth: setupDepth, wallThickness: setupWallThickness, walls: setupWalls, floorType: setupFloorType, floorColor: setupFloorColor })
+                    const newConfig = { width: setupWidth, depth: setupDepth, wallThickness: setupWallThickness, walls: setupWalls, floorType: setupFloorType, floorColor: setupFloorColor }
+                    setBoothConfig(newConfig)
                     setElements(initialElements)
                     saveToHistory(initialElements)
+
+                    if (sessionUser) {
+                      if (currentDesignId) {
+                        updateDesign(currentDesignId, { config: newConfig, elements: initialElements }).catch(console.error)
+                      } else {
+                        // Automatically create as standalone design so auto-saving starts right away
+                        listDesigns().then(async (userDesigns) => {
+                          if (userDesigns.length >= 6) {
+                            showAlert('Account design limit reached (6 maximum). New design will not be auto-saved to cloud.', 'warning', 'Limit Reached')
+                          } else {
+                            try {
+                              const newDesign = await saveDesign(null, projectName || 'Untitled Design', newConfig, initialElements)
+                              setCurrentDesignId(newDesign.id)
+                              setProjectName(newDesign.name)
+                              localStorage.setItem('current-design-id', newDesign.id)
+                              localStorage.setItem('current-design-name', newDesign.name)
+                              localStorage.removeItem('current-project-id')
+                              setSelectedProjectId('')
+                              setSyncStatus('saved')
+                            } catch (err: any) {
+                              console.error('Auto-create standalone design failed:', err)
+                            }
+                          }
+                        }).catch(console.error)
+                      }
+                    }
                   }}
                   className="rounded-full bg-[var(--lagoon-deep)] flex-1 text-white font-bold py-3 hover:bg-[var(--palm)] transition flex items-center justify-center gap-2"
                 >
@@ -918,7 +1058,7 @@ function EditorPage() {
 
   // Editor layout using split panels
   return (
-    <div key="editor-workspace" className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-[var(--bg-base)]">
+    <div key="editor-workspace" className="flex flex-col h-screen overflow-hidden bg-[var(--bg-base)]">
       {/* Mobile Experience Notice Banner */}
       {!mobileScreenBannerDismissed && (
         <div className="md:hidden bg-gradient-to-r from-amber-500/15 via-brand/10 to-amber-500/15 border-b border-amber-500/30 px-3 py-2 flex items-center justify-between gap-2 shrink-0 animate-in slide-in-from-top-1 duration-200">
@@ -940,165 +1080,153 @@ function EditorPage() {
       )}
 
       {/* Top Bar */}
-      <div className="h-14 border-b border-[var(--line)] bg-[var(--surface-strong)] flex items-center justify-between px-4 z-20 shadow-sm transition-all shrink-0 overflow-x-auto whitespace-nowrap scrollbar-hide">
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="flex items-center gap-2 pr-4 border-r border-[var(--border)]">
-            <div className="px-2.5 py-1 rounded-md bg-[var(--brand)]/10 text-[var(--brand)] text-[10px] font-bold uppercase tracking-wider">Project</div>
-            <div className="flex items-center gap-2 pr-4 group">
+      <div className="h-14 border-b border-[var(--line)] bg-[var(--surface-strong)] flex items-center justify-between px-4 z-30 shadow-sm transition-all shrink-0 whitespace-nowrap gap-3 relative">
+        {/* Left Section: Logo + Breadcrumb (Project Name + Design Name) */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <Link 
+            to={sessionUser ? "/dashboard" : "/"} 
+            className="flex items-center gap-1.5 hover:opacity-80 transition py-1 pr-2.5 border-r border-[var(--border)] shrink-0" 
+            title={sessionUser ? "Back to Dashboard" : "Back to Home"}
+          >
+            <img src="/krafcfavicon.png" alt="krafc Logo" className="h-6 w-auto" />
+          </Link>
+
+          {/* Project & Design Name Display */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            {activeProjectObj && (
+              <>
+                <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--chip-bg)] border border-[var(--line)] text-xs text-[var(--sea-ink-soft)] font-medium shrink-0 max-w-[150px] truncate" title={`Project: ${activeProjectObj.name}`}>
+                  <Folder className="w-3.5 h-3.5 text-[var(--brand)] shrink-0" />
+                  <span className="truncate">{activeProjectObj.name}</span>
+                </div>
+                <span className="text-[var(--line)] text-sm font-semibold select-none">/</span>
+              </>
+            )}
+
+            {/* Editable Design Name */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--sand)]/80 border border-[var(--line)] group shadow-xs hover:border-[var(--brand)]/40 transition-colors max-w-[220px]">
               <input
                 value={projectName}
                 onChange={e => setProjectName(e.target.value)}
-                className="font-extrabold text-[var(--fg)] tracking-tight bg-transparent border-none outline-none focus:ring-2 focus:ring-[var(--brand)]/50 rounded px-1.5 py-0.5 -ml-1.5 transition-all w-[180px] hover:bg-[var(--chip-bg)]"
-                title="Edit Project Name"
+                onKeyDown={async e => {
+                  if (e.key === 'Enter') {
+                    (e.target as HTMLInputElement).blur()
+                  }
+                }}
+                onBlur={async () => {
+                  const trimmed = projectName.trim() || 'Untitled Design'
+                  setProjectName(trimmed)
+                  if (currentDesignId) {
+                    localStorage.setItem('current-design-name', trimmed)
+                    if (sessionUser) {
+                      try {
+                        setSyncStatus('saving')
+                        await updateDesign(currentDesignId, { name: trimmed })
+                        setSyncStatus('saved')
+                      } catch (err) {
+                        console.error('Failed to sync design rename to cloud:', err)
+                        setSyncStatus('idle')
+                      }
+                    }
+                  }
+                }}
+                className="font-bold text-xs text-[var(--fg)] tracking-tight bg-transparent border-none outline-none focus:ring-1 focus:ring-[var(--brand)]/50 rounded px-1 py-0.5 transition-all flex-1 min-w-0 truncate"
+                title="Click to rename design (press Enter or click away to save)"
+                placeholder="Design Name"
               />
-              <Pencil className="w-3.5 h-3.5 text-[var(--fg-dim)] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" />
+              <Pencil className="w-2.5 h-2.5 text-[var(--fg-dim)] opacity-40 group-hover:opacity-100 transition-opacity shrink-0 pointer-events-none" />
             </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <EditSpaceDimensions boothConfig={boothConfig} setBoothConfig={setBoothConfig} />
-            <div className="w-px h-6 bg-[var(--line)] mx-2" />
-            <button onClick={undo} disabled={historyStep <= 0} className="p-2 rounded-lg hover:bg-[var(--chip-bg)] text-[var(--sea-ink-soft)] disabled:opacity-30 transition" title="Undo (Ctrl+Z)">
-              <RotateCcw className="h-4 w-4" />
-            </button>
-            <button onClick={redo} disabled={historyStep >= history.length - 1} className="p-2 rounded-lg hover:bg-[var(--chip-bg)] text-[var(--sea-ink-soft)] disabled:opacity-30 transition" title="Redo (Ctrl+Shift+Z)">
-              <RotateCw className="h-4 w-4" />
-            </button>
-            <div className="w-px h-6 bg-[var(--line)] mx-1" />
-            <button onClick={clearAll} className="p-2 rounded-lg hover:bg-red-50 text-red-500 transition-colors" title="Clear Workspace">
-              <Trash2 className="h-4 w-4" />
-            </button>
+
+            {/* Cloud Auto-Save Status Indicator */}
+            {sessionUser && currentDesignId && (
+              <div 
+                className="hidden sm:flex items-center gap-1 text-[11px] text-[var(--fg-dim)] px-1 select-none transition-all"
+                title={syncStatus === 'saving' ? 'Saving changes to cloud...' : 'All changes saved to cloud'}
+              >
+                {syncStatus === 'saving' ? (
+                  <>
+                    <Loader2 className="w-3 h-3 text-[var(--brand)] animate-spin" />
+                    <span className="text-[10px] text-[var(--brand)] font-medium">Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <CloudCheck className="w-3.5 h-3.5 text-emerald-500" />
+                    <span className="text-[10px] text-[var(--fg-dim)] font-medium">Saved</span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          {/* View Toggles - desktop only */}
-          <div className="hidden md:flex items-center gap-1 bg-[var(--sand)] p-1 rounded-xl border border-[var(--line)] mr-2">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className={`p-1.5 rounded-lg transition ${sidebarOpen ? 'bg-[var(--brand)] text-white' : 'text-[var(--fg-soft)] hover:bg-[var(--bg-subtle)]'}`}
-              title="Toggle Sidebar"
-            >
-              <PanelLeftClose className="w-4 h-4" />
+        {/* Right Section: Undo/Redo/Clear + View Toggles + User / Auth */}
+        <div className="flex items-center gap-2.5 shrink-0 ml-auto">
+          {/* Undo / Redo / Clear */}
+          <div className="flex items-center gap-0.5">
+            <button onClick={undo} disabled={historyStep <= 0} className="p-1.5 rounded-lg hover:bg-[var(--chip-bg)] text-[var(--sea-ink-soft)] disabled:opacity-30 transition cursor-pointer" title="Undo (Ctrl+Z)">
+              <RotateCcw className="h-3.5 w-3.5" />
             </button>
-            <button
-              onClick={() => setPropertiesOpen(!propertiesOpen)}
-              className={`p-1.5 rounded-lg transition ${propertiesOpen ? 'bg-[var(--brand)] text-white' : 'text-[var(--fg-soft)] hover:bg-[var(--bg-subtle)]'}`}
-              title="Toggle Properties"
-            >
-              <Settings className="w-4 h-4" />
+            <button onClick={redo} disabled={historyStep >= history.length - 1} className="p-1.5 rounded-lg hover:bg-[var(--chip-bg)] text-[var(--sea-ink-soft)] disabled:opacity-30 transition cursor-pointer" title="Redo (Ctrl+Shift+Z)">
+              <RotateCw className="h-3.5 w-3.5" />
             </button>
-            <button
-              onClick={() => setPreviewerOpen(!previewerOpen)}
-              className={`p-1.5 rounded-lg transition ${previewerOpen ? 'bg-[var(--brand)] text-white' : 'text-[var(--fg-soft)] hover:bg-[var(--bg-subtle)]'}`}
-              title="Toggle 3D Preview"
-            >
-              <PanelRightClose className="w-4 h-4" />
+            <button onClick={clearAll} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-colors cursor-pointer" title="Clear Workspace">
+              <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
 
-          {sessionUser ? (
-            <div className="flex items-center gap-2 border-r border-[var(--border)] pr-3 mr-2">
-              <button
-                onClick={() => setCloudDrawerOpen(true)}
-                className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
-                title="My Cloud Projects"
-              >
-                <Folder className="h-4 w-4 text-[var(--brand)]" /> Projects
-              </button>
-            </div>
-          ) : (
+          <div className="w-px h-5 bg-[var(--line)]" />
+
+          {/* View Toggles - desktop only */}
+          <div className="hidden md:flex items-center gap-1 bg-[var(--sand)] p-0.5 rounded-lg border border-[var(--line)]">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className={`p-1.5 rounded-md transition cursor-pointer ${sidebarOpen ? 'bg-[var(--brand)] text-white' : 'text-[var(--fg-soft)] hover:bg-[var(--bg-subtle)]'}`}
+              title="Toggle Sidebar"
+            >
+              <PanelLeftClose className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setPropertiesOpen(!propertiesOpen)}
+              className={`p-1.5 rounded-md transition cursor-pointer ${propertiesOpen ? 'bg-[var(--brand)] text-white' : 'text-[var(--fg-soft)] hover:bg-[var(--bg-subtle)]'}`}
+              title="Toggle Properties"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setPreviewerOpen(!previewerOpen)}
+              className={`p-1.5 rounded-md transition cursor-pointer ${previewerOpen ? 'bg-[var(--brand)] text-white' : 'text-[var(--fg-soft)] hover:bg-[var(--bg-subtle)]'}`}
+              title="Toggle 3D Preview"
+            >
+              <PanelRightClose className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="w-px h-5 bg-[var(--line)]" />
+
+          {/* User & Auth */}
+          {!sessionUser ? (
             <button
               onClick={() => setAuthModalOpen(true)}
-              className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1 mr-1"
+              className="px-3 py-1.5 rounded-lg bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer ml-1"
             >
-              <LogIn className="h-4 w-4 text-[var(--brand)]" /> Login
+              <LogIn className="h-3.5 w-3.5" />
+              <span>Login</span>
             </button>
-          )}
-
-          {sessionUser && currentDesignId && (
-            <div className="flex items-center gap-2 mr-2">
-              <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-[var(--fg-dim)] hover:text-[var(--fg-soft)] transition uppercase tracking-wider">
-                <input
-                  type="checkbox"
-                  checked={autoSaveToCloud}
-                  onChange={(e) => {
-                    setAutoSaveToCloud(e.target.checked)
-                    localStorage.setItem('auto-save-cloud', e.target.checked ? 'true' : 'false')
-                  }}
-                  className="w-3.5 h-3.5 rounded text-[var(--brand)] focus:ring-[var(--brand)] cursor-pointer"
-                />
-                Auto-Sync
-              </label>
-              {autoSaveToCloud && (
-                <span
-                  title={
-                    cloudSyncStatus === 'saving'
-                      ? 'Syncing changes to cloud...'
-                      : cloudSyncStatus === 'saved'
-                      ? 'All changes saved to cloud'
-                      : cloudSyncStatus === 'error'
-                      ? 'Sync error'
-                      : 'Auto-sync active'
-                  }
-                  className="inline-flex items-center justify-center w-4 h-4"
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                      cloudSyncStatus === 'saving'
-                        ? 'bg-amber-400 animate-ping'
-                        : cloudSyncStatus === 'saved'
-                        ? 'bg-emerald-500 scale-110'
-                        : cloudSyncStatus === 'error'
-                        ? 'bg-red-500'
-                        : 'bg-emerald-500/40'
-                    }`}
-                  />
-                </span>
-              )}
+          ) : (
+            <div className="flex items-center pl-1">
+              <UserMenuDropdown
+                user={sessionUser}
+                onSignedOut={() => {
+                  setSessionUser(null)
+                  setCurrentDesignId(null)
+                  localStorage.removeItem('current-design-id')
+                  localStorage.removeItem('current-design-name')
+                  localStorage.removeItem('current-project-id')
+                  setSelectedProjectId('')
+                }}
+              />
             </div>
           )}
-
-
-          <button
-            onClick={() => {
-              setSaveAsMode(false);
-              setShowSavePrompt(true);
-            }}
-            className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
-          >
-            <Cloud className="h-4 w-4" /> Save Project
-          </button>
-          {/* <button
-            onClick={submitExport}
-            className="px-3 py-2 rounded-lg text-[var(--sea-ink-soft)] text-xs font-bold transition hover:bg-[var(--chip-bg)] flex items-center gap-1"
-          >
-            <FileText className="h-4 w-4" /> Report
-          </button> */}
-          <button
-            onClick={() => {
-              if (!sessionUser) {
-                setAuthModalOpen(true)
-                return
-              }
-              setIs3DGenerated(true)
-            }}
-            className={`px-5 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition shadow-md ${
-              !sessionUser
-                ? 'bg-gray-700/80 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-600/50'
-                : 'bg-[var(--lagoon-deep)] text-white hover:bg-[var(--palm)]'
-            }`}
-            title={!sessionUser ? 'Login to generate and view 3D' : ''}
-          >
-            {!sessionUser ? (
-              <>
-                <Lock className="h-4 w-4 text-amber-400" /> Generate 3D
-              </>
-            ) : (
-              <>
-                <Box className="h-4 w-4" /> {is3DGenerated ? 'Live 3D Syncing' : 'Generate 3D'}
-              </>
-            )}
-          </button>
         </div>
       </div>
 
@@ -1115,10 +1243,35 @@ function EditorPage() {
               onViewChange={setBlueprintView}
               backgroundColor={backgroundColor}
               setBackgroundColor={setBackgroundColor}
+              boothConfig={boothConfig}
+              setBoothConfig={setBoothConfig}
               customAssets={customAssets}
               onUploadCustomAsset={handleUploadCustomAsset}
               onDeleteCustomAsset={handleDeleteCustomAsset}
               showAlert={showAlert}
+              onNewProject={handleNewProject}
+              onCopyToProject={() => {
+                if (!sessionUser) {
+                  setPendingSaveTrigger(true)
+                  setAuthModalOpen(true)
+                  return
+                }
+                const currentProj = localStorage.getItem('current-project-id')
+                setSelectedProjectId(currentProj || '')
+                setShowSavePrompt(true)
+              }}
+              onOpenProjects={() => {
+                if (sessionUser) setCloudDrawerOpen(true)
+                else setAuthModalOpen(true)
+              }}
+              onGenerateReport={() => {
+                if (!sessionUser) {
+                  setAuthModalOpen(true)
+                  return
+                }
+                submitExport()
+              }}
+              isCapturingReport={isCapturingReport}
             />
           </div>
         )}
@@ -1237,7 +1390,7 @@ function EditorPage() {
               className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 animate-in fade-in duration-150"
               onClick={() => setMobileTab('canvas')}
             />
-            <div className="fixed inset-x-0 bottom-14 top-0 pt-16 z-40 flex flex-col shadow-xl border-r border-[var(--line)] bg-[var(--surface-strong)]">
+            <div className="fixed inset-x-0 bottom-14 top-0 z-40 flex flex-col shadow-xl border-r border-[var(--line)] bg-[var(--surface-strong)]">
               <Sidebar
                 addElement={(el) => {
                   addElement(el)
@@ -1247,11 +1400,36 @@ function EditorPage() {
                 onViewChange={setBlueprintView}
                 backgroundColor={backgroundColor}
                 setBackgroundColor={setBackgroundColor}
+                boothConfig={boothConfig}
+                setBoothConfig={setBoothConfig}
                 customAssets={customAssets}
                 onUploadCustomAsset={handleUploadCustomAsset}
                 onDeleteCustomAsset={handleDeleteCustomAsset}
                 showAlert={showAlert}
                 onClose={() => setMobileTab('canvas')}
+                onNewProject={handleNewProject}
+                onCopyToProject={() => {
+                  if (!sessionUser) {
+                    setPendingSaveTrigger(true)
+                    setAuthModalOpen(true)
+                    return
+                  }
+                  const currentProj = localStorage.getItem('current-project-id')
+                  setSelectedProjectId(currentProj || '')
+                  setShowSavePrompt(true)
+                }}
+                onOpenProjects={() => {
+                  if (sessionUser) setCloudDrawerOpen(true)
+                  else setAuthModalOpen(true)
+                }}
+                onGenerateReport={() => {
+                  if (!sessionUser) {
+                    setAuthModalOpen(true)
+                    return
+                  }
+                  submitExport()
+                }}
+                isCapturingReport={isCapturingReport}
               />
             </div>
           </div>
@@ -1264,7 +1442,7 @@ function EditorPage() {
               className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 animate-in fade-in duration-150"
               onClick={() => setMobileTab('canvas')}
             />
-            <div className="fixed inset-x-0 bottom-14 top-0 pt-16 z-40 flex flex-col border-l border-[var(--line)] shadow-[-8px_0_20px_rgba(0,0,0,0.05)] bg-[var(--surface-strong)]">
+            <div className="fixed inset-x-0 bottom-14 top-0 z-40 flex flex-col border-l border-[var(--line)] shadow-[-8px_0_20px_rgba(0,0,0,0.05)] bg-[var(--surface-strong)]">
               <Properties
                 selectedElement={selectedElement}
                 onUpdate={handleUpdateElement}
@@ -1456,7 +1634,59 @@ function EditorPage() {
       {/* Supabase Integration Overlays */}
       <AuthModal
         isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
+        onClose={() => {
+          setAuthModalOpen(false)
+          setPendingSaveTrigger(false)
+        }}
+        onSuccess={() => {
+          getCurrentUser().then(async user => {
+            setSessionUser(user)
+            if (user) {
+              try {
+                const projects = await listProjects().catch(() => [])
+                setUserProjects(projects || [])
+
+                // Check user's current designs for limit check
+                const userDesigns = await listDesigns().catch(() => [])
+                const isLimitReached = userDesigns.length >= 6
+
+                // If user was prompted by clicking Save
+                if (pendingSaveTrigger) {
+                  setPendingSaveTrigger(false)
+                  if (isLimitReached) {
+                    showAlert('Account design limit reached (6 maximum). Please delete an existing design to save a new one.', 'warning', 'Limit Reached')
+                  } else {
+                    const currentProj = localStorage.getItem('current-project-id')
+                    setSelectedProjectId(currentProj || '')
+                    setShowSavePrompt(true)
+                  }
+                } else if (!currentDesignId && (elements.length > 0 || boothConfig)) {
+                  // User signed in naturally while having an unsaved design in editor
+                  if (isLimitReached) {
+                    showAlert('Account design limit reached (6 maximum). Your current design was not auto-saved.', 'warning', 'Limit Reached')
+                  } else {
+                    try {
+                      const designNameToSave = projectName?.trim() || 'Untitled Design'
+                      const newDesign = await saveDesign(null, designNameToSave, boothConfig, elements)
+                      setCurrentDesignId(newDesign.id)
+                      setProjectName(newDesign.name)
+                      localStorage.setItem('current-design-id', newDesign.id)
+                      localStorage.setItem('current-design-name', newDesign.name)
+                      localStorage.removeItem('current-project-id')
+                      setSelectedProjectId('')
+                      showAlert('Your design was saved as a standalone design and auto-sync is now active.', 'success', 'Design Saved')
+                    } catch (saveErr: any) {
+                      console.error('Auto-save guest design failed:', saveErr)
+                      showAlert(saveErr.message || 'Could not auto-save design.', 'error', 'Save Failed')
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error('Post-login initialization error:', err)
+              }
+            }
+          }).catch(console.error)
+        }}
       />
 
       <CloudProjectsDrawer
@@ -1464,95 +1694,90 @@ function EditorPage() {
         onClose={() => setCloudDrawerOpen(false)}
         onLoadProject={loadCloudDesign}
         userId={sessionUser?.id || null}
+        onDesignDeleted={({ designId, projectId }) => {
+          if (!sessionUser) return
+          const deletedOpenDesign = designId
+            ? currentDesignId === designId
+            : selectedProjectId === projectId
+          if (deletedOpenDesign) {
+            setCurrentDesignId(null)
+            setSyncStatus('idle')
+            setSelectedProjectId('')
+            localStorage.removeItem('current-design-id')
+            localStorage.removeItem('current-design-name')
+            localStorage.removeItem('current-project-id')
+            showAlert('This design was deleted from the cloud. Your work stays on screen as an unsaved copy and will not auto-save until you save it again.', 'info', 'Design Deleted')
+          } else {
+            syncCurrentDesignToProfile(sessionUser, 'space_cleared')
+          }
+        }}
       />
 
       {/* Sleek Save Project Dialog */}
       {showSavePrompt && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl p-6 shadow-2xl transition-all">
+          <div className="relative w-full max-w-[560px] overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/15 bg-[var(--bg-card)] dark:bg-[#16181d] backdrop-blur-2xl p-8 sm:p-9 shadow-2xl transition-all text-[var(--fg)] dark:text-white"
+            style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.45)' }}
+          >
             <button
               onClick={() => setShowSavePrompt(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition"
+              className="absolute top-5 right-5 p-2 rounded-full text-[var(--fg-soft)] dark:text-white/80 hover:text-[var(--fg)] dark:hover:text-white hover:bg-[var(--bg-subtle)] dark:hover:bg-white/10 transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-lg font-bold font-[Outfit] text-white mb-4">Save Your Design</h3>
+            <h3 className="text-2xl font-bold font-[Outfit] text-[var(--fg)] dark:text-white mb-6 tracking-tight">
+              Copy Design To...
+            </h3>
 
-            {currentDesignId && !saveAsMode ? (
-              <div className="space-y-3">
-                <button
-                  onClick={handleCloudSave}
-                  disabled={isCloudSaving}
-                  className="w-full bg-[var(--lagoon-deep)] hover:bg-[var(--palm)] text-white text-xs font-bold py-3.5 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-xs font-bold tracking-wider uppercase text-[var(--fg-soft)] dark:text-white/85 block">
+                  Target Project
+                </label>
+                <select
+                  value={selectedProjectId}
+                  onChange={(e) => setSelectedProjectId(e.target.value)}
+                  className="w-full bg-[var(--surface-light)] dark:bg-white/5 border border-[var(--border)] dark:border-white/15 text-[var(--fg)] dark:text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-[var(--brand)] transition appearance-none cursor-pointer"
                 >
-                  <Cloud className="w-5 h-5" />
-                  {isCloudSaving ? 'Saving...' : 'Update Current Design'}
+                  <option value="" className="bg-[var(--bg-card)] dark:bg-[#16181d] text-[var(--fg)] dark:text-white">None (Standalone Design)</option>
+                  {userProjects.map(p => (
+                    <option key={p.id} value={p.id} className="bg-[var(--bg-card)] dark:bg-[#16181d] text-[var(--fg)] dark:text-white">{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold tracking-wider uppercase text-[var(--fg-soft)] dark:text-white/70 block">
+                  New Copy Name
+                </label>
+                <input
+                  type="text"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  className="w-full bg-[var(--surface-light)] dark:bg-white/5 border border-[var(--border)] dark:border-white/15 text-[var(--fg)] dark:text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-[var(--brand)] transition"
+                  placeholder="E.g., Tech Summit 2026 Stand"
+                />
+              </div>
+
+              <div className="space-y-3 pt-3">
+                <button
+                  onClick={handleCloudSaveAs}
+                  disabled={isCloudSaving}
+                  className="w-full bg-[#4f46e5] hover:bg-[#4338ca] active:bg-[#3730a3] text-white text-base font-bold py-3.5 px-5 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-[0_4px_16px_rgba(79,70,229,0.35)] disabled:opacity-50"
+                >
+                  <Copy className="w-5 h-5 text-white" />
+                  <span className="text-white">{isCloudSaving ? 'Copying...' : sessionUser ? 'Copy Design' : 'Login to Copy'}</span>
                 </button>
+                
                 <button
-                  onClick={() => setSaveAsMode(true)}
+                  onClick={() => setShowSavePrompt(false)}
                   disabled={isCloudSaving}
-                  className="w-full bg-white/5 hover:bg-white/10 text-white text-xs font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer border border-white/10 disabled:opacity-50"
+                  className="w-full bg-transparent text-[var(--fg-dim)] dark:text-white/60 hover:text-[var(--fg)] dark:hover:text-white text-sm font-semibold py-2.5 px-4 transition cursor-pointer"
                 >
-                  Save as New Design
+                  Cancel
                 </button>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black tracking-wider uppercase text-white/70 block">
-                    Project Name
-                  </label>
-                  <select
-                    value={selectedProjectId}
-                    onChange={(e) => setSelectedProjectId(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] transition appearance-none cursor-pointer"
-                    disabled={userProjects.length === 0}
-                  >
-                    {userProjects.length === 0 ? (
-                      <option value="" disabled>Loading projects...</option>
-                    ) : (
-                      userProjects.map(p => (
-                        <option key={p.id} value={p.id} className="bg-black/90 text-white">{p.name}</option>
-                      ))
-                    )}
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black tracking-wider uppercase text-white/70 block">
-                    Design Name
-                  </label>
-                  <input
-                    type="text"
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)] transition"
-                    placeholder="E.g., Tech Summit 2026 Stand"
-                  />
-                </div>
-
-                <div className="space-y-3 pt-2">
-                  <button
-                    onClick={currentDesignId ? handleCloudSaveAs : handleCloudSave}
-                    disabled={isCloudSaving}
-                    className="w-full bg-[var(--lagoon-deep)] hover:bg-[var(--palm)] text-white text-xs font-bold py-3.5 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
-                  >
-                    <Cloud className="w-5 h-5" />
-                    {isCloudSaving ? 'Saving...' : sessionUser ? (currentDesignId ? 'Save as New Design' : 'Save to Cloud') : 'Login to Cloud Save'}
-                  </button>
-                  
-                  {currentDesignId && (
-                    <button
-                      onClick={() => setSaveAsMode(false)}
-                      disabled={isCloudSaving}
-                      className="w-full bg-transparent text-white/50 hover:text-white text-[10px] font-bold py-2 px-4 transition uppercase tracking-wider"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
+            </div>
                 {/* 
                 <div className="text-[10px] font-black tracking-wider uppercase text-white/50 pt-3 block border-t border-white/10">
                   Export 3D Model Formats
@@ -1571,7 +1796,7 @@ function EditorPage() {
                         const url = URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
-                        link.download = `${projectName.replace(/\\s+/g, '_')}_booth.glb`;
+                        link.download = `${projectName.replace(/\\s+/g, '_')}_space.glb`;
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
@@ -1601,7 +1826,7 @@ function EditorPage() {
                         const url = URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
-                        link.download = `${projectName.replace(/\\s+/g, '_')}_booth.obj`;
+                        link.download = `${projectName.replace(/\\s+/g, '_')}_space.obj`;
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
@@ -1625,36 +1850,40 @@ function EditorPage() {
       )}
       {/* Custom Alert/Notification Modal */}
       {toastModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div 
+          className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={() => setToastModal(null)}
+        >
           <div 
-            className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-[#181a1d]/95 backdrop-blur-xl p-6 shadow-2xl transition-all text-center flex flex-col items-center"
-            style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.5)' }}
+            className="relative w-full max-w-[480px] overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/15 bg-[var(--bg-card)] dark:bg-[#181a1d] backdrop-blur-2xl p-8 sm:p-9 shadow-2xl transition-all text-center flex flex-col items-center text-[var(--fg)] dark:text-white"
+            style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.45)' }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3 shadow-lg ${
-              toastModal.type === 'error' ? 'bg-red-500/10 border border-red-500/20 text-red-400' :
-              toastModal.type === 'success' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' :
-              toastModal.type === 'warning' ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400' :
-              'bg-[var(--brand)]/10 border border-[var(--brand)]/20 text-[var(--brand)]'
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg ${
+              toastModal.type === 'error' ? 'bg-red-500/15 border border-red-500/25 text-red-500 dark:text-red-400' :
+              toastModal.type === 'success' ? 'bg-emerald-500/15 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400' :
+              toastModal.type === 'warning' ? 'bg-amber-500/15 border border-amber-500/25 text-amber-600 dark:text-amber-400' :
+              'bg-[var(--brand)]/15 border border-[var(--brand)]/25 text-[var(--brand)]'
             }`}>
-              {toastModal.type === 'error' ? <AlertCircle className="w-6 h-6" /> :
-               toastModal.type === 'success' ? <CheckCircle className="w-6 h-6" /> :
-               toastModal.type === 'warning' ? <AlertTriangle className="w-6 h-6" /> :
-               <Info className="w-6 h-6" />}
+              {toastModal.type === 'error' ? <AlertCircle className="w-8 h-8" /> :
+               toastModal.type === 'success' ? <CheckCircle className="w-8 h-8" /> :
+               toastModal.type === 'warning' ? <AlertTriangle className="w-8 h-8" /> :
+               <Info className="w-8 h-8" />}
             </div>
 
-            <h3 className="text-base font-bold font-[Outfit] text-white mb-1">
+            <h3 className="text-2xl font-bold font-[Outfit] text-[var(--fg)] dark:text-white mb-2 tracking-tight">
               {toastModal.title || (toastModal.type === 'error' ? 'Error' : toastModal.type === 'success' ? 'Success' : toastModal.type === 'warning' ? 'Notice' : 'Information')}
             </h3>
 
-            <p className="text-xs text-gray-300 mb-5 leading-relaxed">
+            <p className="text-base text-[var(--fg-soft)] dark:text-white/80 mb-7 leading-relaxed px-2">
               {toastModal.message}
             </p>
 
             <button
               onClick={() => setToastModal(null)}
-              className="w-full py-2.5 px-4 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
+              className="w-full py-3.5 px-5 bg-[#4f46e5] hover:bg-[#4338ca] active:bg-[#3730a3] text-white font-bold text-base rounded-xl shadow-[0_4px_16px_rgba(79,70,229,0.35)] transition cursor-pointer"
             >
-              Got it
+              <span className="text-white font-bold">Got it</span>
             </button>
           </div>
         </div>

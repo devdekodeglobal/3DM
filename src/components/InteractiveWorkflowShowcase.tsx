@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { BoothIllustration } from "./editor/BoothIllustration";
+import { AfterglowBlueprint } from "./AfterglowBlueprint";
 import Preview3D from "./editor/Preview3D";
 import { Check, Cloud } from "lucide-react";
+import { HERO_AFTERGLOW_BOOTH_CONFIG, HERO_AFTERGLOW_ELEMENTS } from "./heroAfterglowData";
 
 export function InteractiveWorkflowShowcase() {
   const [activeStep, setActiveStep] = useState<0 | 1 | 2 | 3>(0);
@@ -140,26 +141,8 @@ export function InteractiveWorkflowShowcase() {
             <div
               className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-in-out transform ${activeStep === 0 ? "opacity-100 scale-100 z-10" : "opacity-0 scale-95 pointer-events-none z-0"}`}
             >
-              <div className="w-full max-w-[280px] h-[220px] relative border-2 border-dashed border-[var(--brand)] rounded-xl flex items-center justify-center bg-[var(--brand-bg)]/20">
-                <div
-                  className="absolute inset-0 opacity-30"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle at 3px 3px, var(--brand) 1px, transparent 0)",
-                    backgroundSize: "20px 20px",
-                  }}
-                />
-                <div className="w-48 h-36 border-4 border-[var(--brand)] bg-[var(--bg-card)]/80 rounded-lg shadow-xl relative flex items-center justify-center transition-all duration-700">
-                  <span className="text-xs font-mono font-bold text-[var(--brand)] bg-[var(--bg-card)] px-2 py-1 rounded border border-[var(--border-brand)]">
-                    6.0m × 5.0m SPACE
-                  </span>
-                  <div className="absolute -top-6 left-0 right-0 border-b border-sky-500 text-[9px] font-mono text-sky-500 text-center font-bold">
-                    6.00m
-                  </div>
-                  <div className="absolute -left-6 top-0 bottom-0 border-r border-sky-500 text-[9px] font-mono text-sky-500 text-center font-bold flex items-center">
-                    5.0m
-                  </div>
-                </div>
+              <div className="w-full max-w-[440px] h-[260px] rounded-xl overflow-hidden border border-[var(--brand)]/30 shadow-2xl bg-[var(--bg-card)] p-3">
+                <AfterglowBlueprint mode="space" />
               </div>
             </div>
 
@@ -168,11 +151,11 @@ export function InteractiveWorkflowShowcase() {
               className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-in-out transform ${activeStep === 1 ? "opacity-100 scale-100 z-10" : "opacity-0 scale-95 pointer-events-none z-0"}`}
             >
               <div className="w-full max-w-[440px] h-[260px] rounded-xl overflow-hidden border border-[var(--brand)]/30 shadow-2xl relative bg-[var(--bg-card)] flex items-center justify-center p-4">
-                <BoothIllustration />
+                <AfterglowBlueprint mode="assets" />
               </div>
             </div>
 
-            {/* Step 2: 3D Viewport Room Showcase with 2 Clean Architectural Walls, 1 Table, 4 Chairs */}
+            {/* Step 2: 3D Viewport Room Showcase - AFTERGLOW Chill & Social Club */}
             <div
               className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-in-out transform ${activeStep === 2 ? "opacity-100 scale-100 z-10" : "opacity-0 scale-95 pointer-events-none z-0"}`}
             >
@@ -180,280 +163,11 @@ export function InteractiveWorkflowShowcase() {
                 <Preview3D
                   autoRotate={true}
                   hideControls={true}
-                  boothConfig={{
-                    width: 6,
-                    depth: 5,
-                    wallThickness: 0.15,
-                    walls: {
-                      north: false,
-                      south: false,
-                      east: false,
-                      west: false,
-                    },
-                    floorType: "marble",
-                    floorColor: "#e0a96d",
-                    roof: {
-                      enabled: true,
-                      color: "#4294FF",
-                      thickness: 0.1,
-                      height: 2.5,
-                      panels: [
-                        {
-                          id: "panel-2df8twfbu",
-                          x: 0,
-                          y: 0,
-                          width: 600,
-                          height: 500,
-                        },
-                      ],
-                      lights: [
-                        {
-                          id: "light-8x9ulqy95",
-                          type: "circular",
-                          x: 280,
-                          y: 210,
-                          width: 40,
-                          height: 40,
-                          color: "#FFFFFF",
-                          intensity: 1.7,
-                        },
-                      ],
-                    },
-                  }}
-                  elements={[
-                    {
-                      id: "wall-south",
-                      type: "wall",
-                      x: 300,
-                      y: 490,
-                      width: 580,
-                      height: 20,
-                      thickness: 15,
-                      rotation: 0,
-                      realWidth: 5.76,
-                      realHeight: 2.5,
-                      realDepth: 0.15,
-                      fill: "#38bdf8",
-                      opacity: 0.4,
-                      material: "Glass Wall",
-                      name: "wall-south",
-                      wallElements: [],
-                    },
-                    {
-                      id: "wall-east",
-                      type: "wall",
-                      x: 590,
-                      y: 250,
-                      width: 500,
-                      height: 20,
-                      thickness: 15,
-                      rotation: 90,
-                      realWidth: 4.97,
-                      realHeight: 2.5,
-                      realDepth: 0.15,
-                      fill: "#38bdf8",
-                      opacity: 0.4,
-                      material: "Glass Wall",
-                      name: "wall-east",
-                      wallElements: [],
-                    },
-                    {
-                      id: "demo-table-1",
-                      type: "asset",
-                      assetName: "medola_conference",
-                      categoryFolder: "tables-and-bar-tables",
-                      x: 300,
-                      y: 250,
-                      width: 140,
-                      depth: 85,
-                      height: 75,
-                      rotation: 0,
-                    },
-                    {
-                      id: "demo-chair-1",
-                      type: "asset",
-                      assetName: "catifa",
-                      categoryFolder: "chairs",
-                      x: 300,
-                      y: 175,
-                      width: 55,
-                      depth: 55,
-                      height: 80,
-                      rotation: 180,
-                    },
-                    {
-                      id: "demo-chair-2",
-                      type: "asset",
-                      assetName: "catifa",
-                      categoryFolder: "chairs",
-                      x: 300,
-                      y: 325,
-                      width: 55,
-                      depth: 55,
-                      height: 80,
-                      rotation: 0,
-                    },
-                    {
-                      id: "demo-chair-3",
-                      type: "asset",
-                      assetName: "catifa",
-                      categoryFolder: "chairs",
-                      x: 225,
-                      y: 250,
-                      width: 55,
-                      depth: 55,
-                      height: 80,
-                      rotation: 90,
-                    },
-                    {
-                      id: "demo-chair-4",
-                      type: "asset",
-                      assetName: "catifa",
-                      categoryFolder: "chairs",
-                      x: 375,
-                      y: 250,
-                      width: 55,
-                      depth: 55,
-                      height: 80,
-                      rotation: 270,
-                    },
-                    {
-                      id: "7689ad8b-69ed-4c6e-82cf-16e095b942cc",
-                      type: "asset",
-                      assetName: "bardolino",
-                      categoryFolder: "counters-and-showcases",
-                      label: "BARDOLINO",
-                      details:
-                        "Length/dept: 45 cm; Width: 45 cm; Height: 160 cm; Lockable: Yes; Illuminated: Yes; Frame: Aluminium; LED: No; Sustainable: No; Has plug: Yes",
-                      x: 40,
-                      y: 50,
-                      rotation: -89.46929278643506,
-                      width: 40,
-                      height: 50,
-                      specH: 1.6,
-                      realWidth: 0.45,
-                      realHeight: 1.6,
-                      realDepth: 0.45,
-                      yOffset: 0,
-                      verticalScale: 1,
-                      facingOffset: 0,
-                      name: "7689ad8b-69ed-4c6e-82cf-16e095b942cc",
-                    },
-                    {
-                      id: "574ab833-3235-4a1b-9915-3747a2c537dc",
-                      type: "wall",
-                      x: 300,
-                      y: 10,
-                      width: 590,
-                      height: 20,
-                      thickness: 10,
-                      rotation: 0,
-                      realWidth: 5.86,
-                      realHeight: 2.5,
-                      realDepth: 0.1,
-                      fill: "#333333",
-                      opacity: 1,
-                      material: "Solid Wall",
-                      name: "574ab833-3235-4a1b-9915-3747a2c537dc",
-                      wallElements: [
-                        {
-                          id: "4go0wivax",
-                          type: "window",
-                          x: 90,
-                          y: 50,
-                          width: 410,
-                          height: 100,
-                          shape: "square",
-                          color: "#FFFFFF",
-                        },
-                      ],
-                    },
-                    {
-                      id: "afdefe69-a5fd-4d94-b7c6-e99a4aaa9fc7",
-                      type: "wall",
-                      x: 0,
-                      y: 250,
-                      width: 490,
-                      height: 20,
-                      thickness: 10,
-                      rotation: 90,
-                      realWidth: 4.94,
-                      realHeight: 2.5,
-                      realDepth: 0.1,
-                      fill: "#333333",
-                      opacity: 1,
-                      material: "Solid Wall",
-                      name: "afdefe69-a5fd-4d94-b7c6-e99a4aaa9fc7",
-                      wallElements: [
-                        {
-                          id: "ec9tw6jbs",
-                          type: "door",
-                          x: 200,
-                          y: 50,
-                          width: 90,
-                          height: 200,
-                          shape: "square",
-                          color: "#358EED",
-                        },
-                        {
-                          id: "nlc11il5l",
-                          type: "banner",
-                          x: 20,
-                          y: 90,
-                          width: 150,
-                          height: 80,
-                          shape: "square",
-                          url: "/krafclogo.png",
-                        },
-                      ],
-                    },
-                    {
-                      id: "97cb4a9f-e143-4dd3-9f02-b95b0683c36c",
-                      type: "asset",
-                      assetName: "brio_70",
-                      categoryFolder: "tables-and-bar-tables",
-                      label: "BRIO 70 Ø 70",
-                      details:
-                        "Height: 70 cm; Diameter: 70 cm; Frame: Stainless steel; Table top: Wood; Table top color: Wood; Sustainable: No; Has plug: No; Designer: Romano Marcato",
-                      x: 530,
-                      y: 420,
-                      rotation: 0,
-                      width: 70,
-                      height: 70,
-                      specH: 0.7,
-                      realWidth: 0.7,
-                      realHeight: 0.7,
-                      realDepth: 0.7,
-                      yOffset: 0,
-                      verticalScale: 1,
-                      facingOffset: 0,
-                      name: "97cb4a9f-e143-4dd3-9f02-b95b0683c36c",
-                    },
-                    {
-                      id: "182f430d-2c2b-4aaf-9c7c-89a808762a7a",
-                      type: "asset",
-                      assetName: "infocounter",
-                      categoryFolder: "counters-and-showcases",
-                      label: "INFOCOUNTER",
-                      details:
-                        "Length/dept: 51 cm; Width: 95 cm; Height: 110 cm; Lockable: Yes; Illuminated: No; Frame: Wood; LED: No; Sustainable: No; Has plug: No",
-                      x: 520,
-                      y: 270,
-                      rotation: -91.57116563009933,
-                      width: 100,
-                      height: 50,
-                      specH: 1.1,
-                      realWidth: 0.95,
-                      realHeight: 1.1,
-                      realDepth: 0.51,
-                      yOffset: 0,
-                      verticalScale: 1,
-                      facingOffset: 0,
-                      name: "182f430d-2c2b-4aaf-9c7c-89a808762a7a",
-                    },
-                  ]}
+                  boothConfig={HERO_AFTERGLOW_BOOTH_CONFIG}
+                  elements={HERO_AFTERGLOW_ELEMENTS as any}
                   activeView="perspective"
                   backgroundColor="#1e293b"
+                  cameraDistanceScale={0.68}
                 />
               </div>
             </div>

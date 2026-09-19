@@ -30,8 +30,7 @@ export function secure<Env>(handler: PagesFunction<Env>): PagesFunction<Env> {
       return new Response(response.body, { status: response.status, headers })
     } catch (error) {
       const status = error instanceof HttpError ? error.status : 500
-      // Do not log request bodies, OTPs, identity-provider tokens or DB bindings.
-      if (status === 500) console.error('API operation failed')
+      if (status === 500) console.error('API operation failed:', error)
       const headers: Record<string, string> = { ...API_HEADERS }
       if (status === 429) headers['Retry-After'] = String((error as HttpError).retryAfter || 60)
       return new Response(JSON.stringify({ error: error instanceof HttpError ? error.message : 'Request could not be completed' }), { status, headers })

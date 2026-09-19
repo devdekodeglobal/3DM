@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
+import { getCurrentUser } from '../lib/authClient'
 import { ScrollReveal } from '../components/ScrollReveal'
 import { InteractiveWorkflowShowcase } from '../components/InteractiveWorkflowShowcase'
 
@@ -68,13 +69,20 @@ const features = [
 
 
 function LandingPage() {
+  const navigate = useNavigate()
   const [hasDraft, setHasDraft] = useState(false)
 
   useEffect(() => {
     if (localStorage.getItem('stall-config')) {
       setHasDraft(true)
     }
-  }, [])
+
+    getCurrentUser().then(user => {
+      if (user) {
+        navigate({ to: '/dashboard', replace: true })
+      }
+    }).catch(console.error)
+  }, [navigate])
 
   return (
     <>
@@ -94,6 +102,9 @@ function LandingPage() {
                   onClick={() => {
                     localStorage.removeItem('stall-config')
                     localStorage.removeItem('stall-elements')
+                    localStorage.removeItem('current-design-id')
+                    localStorage.removeItem('current-project-id')
+                    localStorage.setItem('current-design-name', 'Untitled Design')
                   }}
                   className="btn btn-outline"
                   style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
@@ -105,6 +116,13 @@ function LandingPage() {
               <Link
                 to="/editor"
                 id="hero-start-designing"
+                onClick={() => {
+                  localStorage.removeItem('stall-config')
+                  localStorage.removeItem('stall-elements')
+                  localStorage.removeItem('current-design-id')
+                  localStorage.removeItem('current-project-id')
+                  localStorage.setItem('current-design-name', 'Untitled Design')
+                }}
                 className="btn btn-primary"
                 style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
               >

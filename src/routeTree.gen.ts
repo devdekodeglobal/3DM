@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TestFridgeRouteImport } from './routes/test-fridge'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SysControl889RouteImport } from './routes/sys-control-889'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -19,11 +18,6 @@ import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 
-const TestFridgeRoute = TestFridgeRouteImport.update({
-  id: '/test-fridge',
-  path: '/test-fridge',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -74,7 +68,6 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/sys-control-889': typeof SysControl889Route
   '/terms': typeof TermsRoute
-  '/test-fridge': typeof TestFridgeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -85,7 +78,6 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/sys-control-889': typeof SysControl889Route
   '/terms': typeof TermsRoute
-  '/test-fridge': typeof TestFridgeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -97,7 +89,6 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/sys-control-889': typeof SysControl889Route
   '/terms': typeof TermsRoute
-  '/test-fridge': typeof TestFridgeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -110,7 +101,6 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/sys-control-889'
     | '/terms'
-    | '/test-fridge'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -121,7 +111,6 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/sys-control-889'
     | '/terms'
-    | '/test-fridge'
   id:
     | '__root__'
     | '/'
@@ -132,7 +121,6 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/sys-control-889'
     | '/terms'
-    | '/test-fridge'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -144,18 +132,10 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   SysControl889Route: typeof SysControl889Route
   TermsRoute: typeof TermsRoute
-  TestFridgeRoute: typeof TestFridgeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/test-fridge': {
-      id: '/test-fridge'
-      path: '/test-fridge'
-      fullPath: '/test-fridge'
-      preLoaderRoute: typeof TestFridgeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -224,7 +204,6 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   SysControl889Route: SysControl889Route,
   TermsRoute: TermsRoute,
-  TestFridgeRoute: TestFridgeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

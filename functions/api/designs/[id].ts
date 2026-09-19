@@ -66,8 +66,9 @@ export const onRequestPut: PagesFunction<Env> = async ({ request, env, params })
   let bindings: any[] = []
 
   if (project_id !== undefined) {
+    const assignedProjectId = (typeof project_id === 'string' && project_id.trim().length > 0) ? project_id.trim() : null
     updateParts.push('project_id = ?')
-    bindings.push(project_id)
+    bindings.push(assignedProjectId)
   }
   if (name !== undefined) {
     updateParts.push('name = ?')

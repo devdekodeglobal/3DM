@@ -1,4 +1,6 @@
 import {
+  createSession,
+  setSessionCookie,
   checkRateLimit,
   getClientIp,
   json,
@@ -12,7 +14,7 @@ interface Env {
   GOOGLE_CLIENT_ID: string
 }
 
-// Step 1: GET /api/auth/verify-otp?email=&code= → verify the OTP
+// Step 1: GET /api/auth/verify-otp?email=&code= → verify the OTP and auto-login
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   try {
     const ip = getClientIp(request)
@@ -43,13 +45,27 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
 
     if (!otp) return jsonError('Invalid or expired code', 400)
 
+    // Look up the user to create a session for auto-login
+    const user = await env.DB.prepare(
+      'SELECT id FROM users WHERE email = ?'
+    ).bind(email).first<{ id: string }>()
+
+    if (!user) return jsonError('User not found', 404)
+
     // Mark OTP used and verify user's email
     await env.DB.batch([
       env.DB.prepare('UPDATE otp_codes SET used = 1 WHERE id = ?').bind(otp.id),
       env.DB.prepare('UPDATE users SET email_verified = 1 WHERE email = ?').bind(email),
     ])
 
-    return json({ message: 'Email verified successfully. You can now sign in.' })
+    // Auto-login: create a session so the user doesn't need to sign in again after OTP
+    const sessionId = await createSession(env.DB, user.id)
+
+    return json(
+      { message: 'Email verified successfully. You are now signed in.' },
+      200,
+      { 'Set-Cookie': setSessionCookie(sessionId) }
+    )
   } catch (err) {
     console.error('Verify OTP error:', err)
     return jsonError('Internal server error', 500)

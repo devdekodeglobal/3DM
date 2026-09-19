@@ -127,6 +127,23 @@ export default function CookieConsent() {
     setSettingsOpen(false);
   };
 
+  const closeSettings = () => {
+    // Revert uncommitted toggle selection back to existing consent
+    setAnalyticsSelected(consent?.analytics ?? false);
+    setSettingsOpen(false);
+  };
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeSettings();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [settingsOpen, consent]);
+
   if (!hasCheckedConsent) return null;
 
   return (
@@ -143,13 +160,13 @@ export default function CookieConsent() {
           <div className="cookie-banner__copy">
             <h2>We use cookies to improve your krafc experience.</h2>
             <p>
-              krafc uses necessary cookies to keep the platform secure, remember
-              your preferences, and provide a smooth experience. With your
-              permission, we also use optional Google Analytics cookies to
-              understand how the platform is used and improve krafc. Necessary
-              cookies remain enabled because they are required for the platform
-              to function properly. To learn more, read our{" "}
-              <Link to="/cookie-policy">Cookie Policy</Link>.
+              krafc uses cookies to keep the platform secure, remember your
+              preferences, and provide a smooth experience. We may also use
+              optional analytics cookies to understand how the platform is used
+              and improve krafc. You can choose whether to allow optional
+              cookies. Essential cookies remain enabled because they are
+              required for the platform to function properly. To learn more,
+              read our <Link to="/cookie-policy">Cookie Policy</Link>.
             </p>
           </div>
           <div className="cookie-banner__actions">
@@ -170,7 +187,10 @@ export default function CookieConsent() {
             <button
               type="button"
               className="cookie-manage"
-              onClick={() => setSettingsOpen(true)}
+              onClick={() => {
+                setAnalyticsSelected(false);
+                setSettingsOpen(true);
+              }}
             >
               Cookie Settings
             </button>
@@ -183,8 +203,9 @@ export default function CookieConsent() {
           className="cookie-modal-backdrop"
           role="presentation"
           onMouseDown={(event) => {
-            if (event.currentTarget === event.target && consent)
-              setSettingsOpen(false);
+            if (event.currentTarget === event.target) {
+              closeSettings();
+            }
           }}
         >
           <section
@@ -203,7 +224,7 @@ export default function CookieConsent() {
               <button
                 type="button"
                 className="cookie-modal__close"
-                onClick={() => setSettingsOpen(false)}
+                onClick={closeSettings}
                 aria-label="Close cookie settings"
               >
                 <X size={20} />
@@ -221,8 +242,8 @@ export default function CookieConsent() {
                 <h3>Necessary cookies</h3>
                 <p>
                   Required for core site functions, security, and remembering
-                  your cookie choice. Sign-in/session cookies are used only when
-                  needed, such as after you sign in.
+                  your cookie choices. Sign-in and session cookies are used only
+                  when needed, such as when you sign in.
                 </p>
               </div>
               <span className="cookie-always-on">Always active</span>
@@ -232,8 +253,9 @@ export default function CookieConsent() {
               <div>
                 <h3>Analytics cookies</h3>
                 <p>
-                  Google Analytics helps us measure visits and improve the
-                  experience. Off by default until you consent.
+                  Google Analytics helps us understand how krafc is used,
+                  measure visits, and improve the experience. Off by default
+                  until you consent.
                 </p>
               </div>
               <span className="cookie-switch">
@@ -249,11 +271,10 @@ export default function CookieConsent() {
             </label>
 
             <p className="cookie-modal__policy">
-              See providers, expiry periods, and data sharing in our{" "}
-              <Link to="/cookie-policy" onClick={() => setSettingsOpen(false)}>
-                cookie policy
-              </Link>
-              .
+              See providers, expiry periods, and data use and sharing in our{" "}
+              <Link to="/cookie-policy" onClick={closeSettings}>
+                Cookie Policy
+              </Link>.
             </p>
 
             <div className="cookie-modal__actions">

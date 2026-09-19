@@ -63,11 +63,20 @@ function OverviewPage() {
               {/* Sidebar Diagram */}
               <div className="col-span-3 bg-[var(--surface-strong)] rounded-lg border border-[var(--line)] p-1 md:p-4 flex flex-col gap-1 md:gap-4 group hover:border-[var(--lagoon)] transition-colors relative overflow-hidden">
                 <div className="flex items-center gap-1 md:gap-2 text-[var(--fg)] font-bold mb-1 md:mb-2 text-[6px] md:text-base leading-tight"><FolderOpen className="w-2 h-2 md:w-4 md:h-4 text-[var(--lagoon)]" /> Asset Lib</div>
-                <div className="h-8 bg-[var(--bg-base)] rounded-md w-full border border-[var(--line)]" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-12 bg-[var(--bg-base)] rounded-md w-full border border-[var(--line)]" />
-                  <div className="h-12 bg-[var(--bg-base)] rounded-md w-full border border-[var(--line)]" />
-                  <div className="h-12 bg-[var(--bg-base)] rounded-md w-full border border-[var(--line)]" />
+                <div className="h-8 bg-[var(--bg-base)] rounded-md w-full border border-[var(--line)] px-2 flex items-center text-[5px] md:text-[9px] text-[var(--fg-dim)]">Search lounge assets</div>
+                <div className="flex-1 space-y-1.5 md:space-y-2">
+                  {[
+                    { category: 'lounge', assetName: 'soft', label: 'Soft II Sofa' },
+                    { category: 'lounge', assetName: 'egg', label: 'Egg Chair' },
+                    { category: 'counter', assetName: 'buffet', label: 'Lumino Buffet' },
+                  ].map((asset, index) => (
+                    <div key={asset.label} className={`h-10 md:h-14 rounded-md w-full border px-1.5 md:px-2 flex items-center gap-1.5 md:gap-2 ${index === 2 ? 'bg-[var(--brand)]/10 border-[var(--brand)]' : 'bg-[var(--bg-base)] border-[var(--line)]'}`}>
+                      <div className="w-6 h-6 md:w-9 md:h-9 rounded bg-[var(--surface)] p-0.5 md:p-1 shrink-0">
+                        <ArchitecturalSymbolSVG category={asset.category} assetName={asset.assetName} className="w-full h-full text-[var(--brand)]" />
+                      </div>
+                      <span className="text-[5px] md:text-[9px] font-bold text-[var(--fg)] truncate">{asset.label}</span>
+                    </div>
+                  ))}
                 </div>
                 <div className="absolute inset-0 bg-[var(--lagoon)]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
@@ -76,35 +85,52 @@ function OverviewPage() {
               <div className="col-span-3 bg-[#2a2c2e] rounded-lg border border-[var(--line)] relative group hover:border-[var(--brand)] transition-colors overflow-hidden">
                  {/* Grid Pattern */}
                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '10px 10px md:20px md:20px' }}></div>
-                 <div className="absolute inset-0 flex items-center justify-center">
-                   <div className="w-10 h-10 md:w-32 md:h-32 border-2 md:border-4 border-orange-500/50 bg-orange-500/10 flex items-center justify-center">
-                      <div className="w-2 h-2 md:w-8 md:h-8 bg-[var(--brand)] rounded-sm" />
+                 <div className="absolute inset-0 flex items-center justify-center p-3 md:p-7 pt-7 md:pt-14">
+                   <div className="w-full aspect-[10/7] border-t-2 border-l-2 border-[#9f7aea] bg-[#514A68]/35 relative shadow-inner overflow-hidden">
+                      <div className="absolute left-[3%] top-[12%] w-[40%] h-[57%] border border-[#B47AD4]/80 bg-[repeating-linear-gradient(0deg,transparent_0,transparent_7%,rgba(180,122,212,.75)_8%,rgba(180,122,212,.75)_10%)]" />
+                      <div className="absolute left-[8%] top-[25%] w-[8%] h-[24%] rounded-sm bg-slate-300/80" />
+                      <div className="absolute left-[8%] top-[53%] w-[8%] h-[24%] rounded-sm bg-slate-300/80" />
+                      <div className="absolute left-[29%] top-[29%] w-[9%] h-[13%] rounded-full bg-slate-800" />
+                      <div className="absolute left-[29%] top-[54%] w-[9%] h-[13%] rounded-full bg-slate-800" />
+                      <div className="absolute left-[65%] top-[17%] w-[22%] h-[11%] rounded-sm bg-cyan-400/70" />
+                      {[66, 75, 84].map((left) => <div key={left} className="absolute top-[36%] w-[4%] aspect-square rounded-full border border-slate-200" style={{ left: `${left}%` }} />)}
+                      {[63, 82].map((left) => <div key={left} className="absolute top-[69%] w-[10%] aspect-square rounded-full border border-slate-300" style={{ left: `${left}%` }} />)}
+                      <div className="absolute right-[13%] top-[18%] text-white text-[4px] md:text-[7px] font-black drop-shadow">krafc<span className="text-fuchsia-400">.</span></div>
                    </div>
                  </div>
-                 <div className="absolute top-1 left-1 md:top-4 md:left-4 flex items-center gap-1 md:gap-2 text-white font-bold text-[6px] md:text-base leading-tight"><Layers className="w-2 h-2 md:w-4 md:h-4 text-[var(--brand)]" /> 2D Blue</div>
+                 <div className="absolute top-1 left-1 md:top-4 md:left-4 flex items-center gap-1 md:gap-2 text-white font-bold text-[6px] md:text-base leading-tight"><Layers className="w-2 h-2 md:w-4 md:h-4 text-[var(--brand)]" /> 2D Blueprint</div>
                  <div className="absolute inset-0 bg-[var(--brand)]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               </div>
 
               {/* Properties Diagram */}
               <div className="col-span-3 bg-[var(--surface-strong)] rounded-lg border border-[var(--line)] p-1 md:p-4 flex flex-col gap-1 md:gap-4 group hover:border-[var(--cta)] transition-colors relative overflow-hidden">
                 <div className="flex items-center gap-1 md:gap-2 text-[var(--fg)] font-bold mb-1 md:mb-2 text-[6px] md:text-base leading-tight"><Palette className="w-2 h-2 md:w-4 md:h-4 text-[var(--cta)]" /> Props</div>
-                <div className="w-2/3 h-4 bg-[var(--bg-base)] rounded-sm" />
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="h-16 bg-[var(--bg-base)] rounded-md border border-[var(--line)]" />
-                  <div className="h-16 bg-[var(--brand)]/10 rounded-md border border-[var(--brand)]" />
-                  <div className="h-16 bg-[var(--bg-base)] rounded-md border border-[var(--line)]" />
-                  <div className="h-16 bg-[var(--bg-base)] rounded-md border border-[var(--line)]" />
+                <div className="w-2/3 h-4 bg-[var(--bg-base)] rounded-sm px-1 flex items-center text-[5px] md:text-[8px] font-bold text-[var(--fg-dim)]">SPACE</div>
+                <div className="grid grid-cols-2 gap-1 md:gap-2">
+                  {[
+                    { label: 'Tile floor', color: '#514A68' },
+                    { label: 'Plum wall', color: '#30254F' },
+                    { label: 'Neon lights', color: '#00EEFF' },
+                    { label: 'Caged roof', color: '#B47AD4' },
+                  ].map((material, index) => (
+                    <div key={material.label} className={`h-12 md:h-16 rounded-md border p-1 md:p-2 flex flex-col justify-between ${index === 3 ? 'bg-[var(--brand)]/10 border-[var(--brand)]' : 'bg-[var(--bg-base)] border-[var(--line)]'}`}>
+                      <div className="w-full h-5 md:h-7 rounded-sm shadow-inner" style={{ backgroundColor: material.color }} />
+                      <span className="text-[4px] md:text-[8px] font-bold text-[var(--fg)] truncate">{material.label}</span>
+                    </div>
+                  ))}
                 </div>
                 <div className="absolute inset-0 bg-[var(--cta)]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
 
-              {/* 3D View Diagram */}
-              <div className="col-span-3 bg-gradient-to-b from-[#87CEEB] to-[#E0E7FF] rounded-lg border border-[var(--line)] relative group hover:border-[var(--brand-dark)] transition-colors overflow-hidden shadow-inner flex flex-col justify-end p-2 md:p-8">
-                <div className="absolute top-1 left-1 md:top-4 md:left-4 flex items-center gap-1 md:gap-2 text-[var(--fg)] font-bold text-[6px] md:text-base leading-tight"><Box className="w-2 h-2 md:w-4 md:h-4 text-[var(--brand-dark)]" /> 3D View</div>
-                
-                {/* Fake 3D Box via CSS */}
-                <div className="w-full h-8 md:h-24 bg-orange-200 border-t-4 md:border-t-8 border-orange-300 transform perspective-1000 rotateX-45 shadow-lg md:shadow-2xl relative">
-                   <div className="absolute bottom-1 md:bottom-4 left-1/2 -translate-x-1/2 w-2 h-2 md:w-8 md:h-8 bg-gray-700 rounded-sm shadow-md md:shadow-xl" />
+              {/* 3D View Render */}
+              <div className="col-span-3 bg-[#5d6163] rounded-lg border border-[var(--line)] relative group hover:border-[var(--brand-dark)] transition-colors overflow-hidden shadow-inner">
+                <img
+                  src="/afterglow-3d-preview.png"
+                  alt="3D view of the furnished social space"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="absolute top-1 left-1 md:top-3 md:left-3 z-10 flex items-center gap-1 md:gap-2 rounded-md bg-slate-950/80 px-1.5 py-1 md:px-2.5 md:py-1.5 text-white font-bold text-[6px] md:text-sm leading-tight shadow-lg backdrop-blur-sm ring-1 ring-white/15">
+                  <Box className="w-2 h-2 md:w-4 md:h-4 text-cyan-300" /> 3D View
                 </div>
               </div>
 

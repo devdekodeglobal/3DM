@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Stage, Layer, Rect, Line, Transformer, Group, Text, Arc, Circle } from 'react-konva'
 import { ArchitecturalSymbol2D } from './ArchitecturalSymbol2D'
 
+const PPM = 100 // 100px = 1 Metre
+
 export interface BoothConfig {
   width: number;
   depth: number;
@@ -683,7 +685,63 @@ const WallShape = ({ shapeProps, isSelected, onSelect, onChange, isDarkMode }: a
 const ParametricStructureShape = ({ shapeProps, onSelect, onChange }: any) => {
   const isCaged = shapeProps.type === 'caged-wall' || shapeProps.type === 'caged-panel';
   const isRound = shapeProps.profile === 'round';
-  
+
+  // Draw the actual cage plates in the plan view, mirroring the Preview3D geometry
+  // (offsets step by plateThickness + plateGap so 2D and 3D always match).
+  const renderCagedPlates = () => {
+    if (!isCaged) return null
+    const platesCount = shapeProps.platesCount || 5
+    const plateThickness = shapeProps.plateThickness || 0.05
+    const plateGap = shapeProps.plateGap != null ? shapeProps.plateGap : (shapeProps.type === 'caged-wall' ? 0.2 : 0.3)
+    const orientation = shapeProps.orientation || 'horizontal'
+    const w = shapeProps.width
+    const d = shapeProps.height
+    const step = plateThickness * PPM + plateGap * PPM
+    const strokeWidth = Math.max(2, Math.round(plateThickness * PPM))
+    const plateLines = []
+
+    if (shapeProps.type === 'caged-wall') {
+      // Plates are stacked vertically (height), so a top-down view only reveals the footprint
+      return null
+    }
+
+    if (orientation === 'horizontal') {
+      // Plates span the width and are spaced along the depth (Z -> 2D Y), centered so they fit evenly inside [ -d/2, d/2 ]
+      const totalSpan = (platesCount - 1) * step;
+      let offset = -totalSpan / 2;
+      for (let i = 0; i < platesCount; i++) {
+        plateLines.push(
+          <Line
+            key={`plate-${i}`}
+            points={[-w / 2, offset, w / 2, offset]}
+            stroke={shapeProps.fill || '#444'}
+            strokeWidth={strokeWidth}
+            lineCap="round"
+          />
+        )
+        offset += step
+      }
+    } else {
+      // Plates span the depth and are spaced along the width (X)
+      const totalSpan = (platesCount - 1) * step;
+      let offset = -totalSpan / 2;
+      for (let i = 0; i < platesCount; i++) {
+        plateLines.push(
+          <Line
+            key={`plate-${i}`}
+            points={[offset, -d / 2, offset, d / 2]}
+            stroke={shapeProps.fill || '#444'}
+            strokeWidth={strokeWidth}
+            lineCap="round"
+          />
+        )
+        offset += step
+      }
+    }
+
+    return <>{plateLines}</>
+  }
+
   return (
     <Group
       name={shapeProps.name}
@@ -743,17 +801,8 @@ const ParametricStructureShape = ({ shapeProps, onSelect, onChange }: any) => {
         dash={isCaged ? [5, 5] : undefined}
         cornerRadius={isRound ? Math.max(shapeProps.width, shapeProps.height) : 0}
       />
-      {/* Pattern for caged wall */}
-      {isCaged && (
-        <Rect
-          x={-shapeProps.width / 2 + 2}
-          y={-shapeProps.height / 2 + 2}
-          width={shapeProps.width - 4}
-          height={shapeProps.height - 4}
-          fill={shapeProps.fill || '#444'}
-          opacity={0.3}
-        />
-      )}
+      {/* Cage plate pattern */}
+      {renderCagedPlates()}
     </Group>
   )
 }
@@ -841,6 +890,7 @@ const Logo3DShape = ({ shapeProps, onSelect, onChange }: any) => {
 
 export default function Canvas({ elements, setElements, selectedId, onSelect, boothConfig, gridVisible }: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<any>(null)
   const transformerRef = useRef<any>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const [stageScale, setStageScale] = useState(1)
@@ -849,7 +899,66 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
   const [hasMounted, setHasMounted] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
 
-  const PPM = 100 // 100px = 1 Metre
+  // Expose clean, high-contrast architectural 2D floorplan snapshot for technical reports
+  useEffect(() => {
+    (window as any).export2DCanvasDataURL = () => {
+      if (!stageRef.current) return null
+      
+      // Temporarily deselect items so transformation gizmos don't appear in export
+      if (transformerRef.current) {
+        transformerRef.current.nodes([])
+      }
+
+      const stage = stageRef.current
+      const boothPixelW = boothConfig.width * PPM
+      const boothPixelH = boothConfig.depth * PPM
+      const padding = 80 // Include dimensions and annotations
+
+      // Create an offscreen canvas to render a crisp, high-contrast light architectural blueprint
+      const exportCanvas = document.createElement('canvas')
+      const targetW = (boothPixelW + padding * 2) * 2
+      const targetH = (boothPixelH + padding * 2) * 2
+      exportCanvas.width = targetW
+      exportCanvas.height = targetH
+
+      const ctx = exportCanvas.getContext('2d')
+      if (!ctx) return stage.toDataURL({ pixelRatio: 2.0 })
+
+      // 1. Crisp white architectural background
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, targetW, targetH)
+
+      // 2. Technical blueprint grid (Light grey/blue CAD style)
+      ctx.strokeStyle = '#e2e8f0'
+      ctx.lineWidth = 1
+      const step = 20 * 2 // 20px grid
+      for (let x = 0; x < targetW; x += step) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, targetH); ctx.stroke();
+      }
+      for (let y = 0; y < targetH; y += step) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(targetW, y); ctx.stroke();
+      }
+
+      // 3. Draw stage layer tightly cropped to the booth bounds
+      const cropX = stagePos.x - padding * stageScale
+      const cropY = stagePos.y - padding * stageScale
+      const cropW = (boothPixelW + padding * 2) * stageScale
+      const cropH = (boothPixelH + padding * 2) * stageScale
+
+      const stageCanvas = stage.toCanvas()
+      ctx.drawImage(
+        stageCanvas,
+        cropX, cropY, cropW, cropH,
+        0, 0, targetW, targetH
+      )
+
+      return exportCanvas.toDataURL('image/png')
+    }
+    return () => {
+      delete (window as any).export2DCanvasDataURL
+    }
+  }, [boothConfig, stagePos, stageScale])
+
   const gridSnapSize = 50 // 0.5m visual grid (50px)
   const fineSnapSize = 10 // 0.1m snapping interval (10px)
 
@@ -1019,6 +1128,7 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
     <div ref={containerRef} className="flex-1 bg-[var(--bg-base)] overflow-hidden relative cursor-crosshair">
       {hasMounted && dimensions.width > 0 && dimensions.height > 0 && (
         <Stage
+          ref={stageRef}
           width={dimensions.width}
           height={dimensions.height}
           scaleX={stageScale}
@@ -1316,8 +1426,8 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
               enabledAnchors={
                 selectedElement?.type === 'wall'
                   ? ['middle-left', 'middle-right']
-                  : selectedElement?.type === 'asset'
-                  ? [] // Furniture assets cannot be resized
+                  : selectedElement?.type === 'asset' || ['caged-wall', 'caged-panel'].includes(selectedElement?.type)
+                  ? [] // Resized via Properties panel only
                   : ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']
               }
               keepRatio={selectedElement?.type === 'asset'}

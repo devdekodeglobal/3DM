@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS projects (
 -- Designs table (replaces Supabase public.designs)
 CREATE TABLE IF NOT EXISTS designs (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-  project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL DEFAULT 'Untitled Design',
   config TEXT NOT NULL DEFAULT '{}',
