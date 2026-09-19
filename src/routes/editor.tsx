@@ -617,11 +617,43 @@ function EditorPage() {
   }, [selectedId, historyStep, history, editingWallId])
 
   const reportScreenshotsRef = useRef<Record<string, string>>({})
+  const preOpenedReportWindowRef = useRef<Window | null>(null)
 
   const submitExport = () => {
     if (!is3DGenerated) {
       setIs3DGenerated(true)
     }
+
+    // Pre-open window immediately during direct user click event to prevent popup blockers
+    try {
+      const w = window.open('', '_blank')
+      if (w) {
+        w.document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Generating Architectural Report - KRAFC</title>
+  <style>
+    body { background: #0f172a; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; text-align: center; }
+    .spinner { width: 44px; height: 44px; border: 3.5px solid rgba(255,255,255,0.1); border-top-color: #6366f1; border-radius: 50%; animation: spin 0.9s linear infinite; margin-bottom: 24px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    h2 { font-size: 22px; margin: 0 0 10px 0; font-weight: 700; letter-spacing: -0.01em; color: #ffffff; }
+    p { color: #94a3b8; font-size: 14px; margin: 0; max-width: 420px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="spinner"></div>
+  <h2>Preparing Architectural Specification</h2>
+  <p>Rendering high-precision 2D floor plans, orthographic elevations, and procurement schedule...</p>
+</body>
+</html>`)
+        w.document.close()
+        preOpenedReportWindowRef.current = w
+      }
+    } catch (e) {
+      console.warn('Could not pre-open popup window:', e)
+    }
+
     setIsCapturingReport(true)
     reportScreenshotsRef.current = {}
     
@@ -673,7 +705,10 @@ function EditorPage() {
       // Allow final states to settle before rendering PDF
       setTimeout(() => {
         const finalScreenshots = { ...reportScreenshotsRef.current };
-        generateReport(boothConfig, elements, finalScreenshots).then(() => {
+        const targetWindow = preOpenedReportWindowRef.current;
+        preOpenedReportWindowRef.current = null;
+
+        generateReport(boothConfig, elements, finalScreenshots, targetWindow).then(() => {
           console.log('[Report] Document generated.');
         }).catch(err => {
           console.error('[Report] Generation failed:', err);

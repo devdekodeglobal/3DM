@@ -1,7 +1,12 @@
 import { ASSET_REGISTRY } from './assetRegistry';
 import { getArchitecturalSymbolSvgString } from '../components/editor/ArchitecturalSymbolSVG';
 
-export async function generateReport(boothConfig: any, elements: any[], screenshots: Record<string, string>) {
+export async function generateReport(
+  boothConfig: any, 
+  elements: any[], 
+  screenshots: Record<string, string>, 
+  targetWindow?: Window | null
+) {
   const docId = `KRAFC-${Date.now().toString(36).toUpperCase()}`;
   const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -1032,10 +1037,20 @@ ${blueprintSheetsHtml}
   // Open formatted document via high-reliability Blob URL
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const blobUrl = URL.createObjectURL(blob);
+
+  let win = targetWindow;
+  if (win && !win.closed) {
+    try {
+      win.location.href = blobUrl;
+      return blobUrl;
+    } catch (e) {
+      console.warn('Could not redirect pre-opened window:', e);
+    }
+  }
+
+  // If no pre-opened window or it was closed, open fresh or trigger fallback
   const printWindow = window.open(blobUrl, '_blank');
-  
   if (!printWindow) {
-    // Fallback if popup blocked: navigate or download
     const link = document.createElement('a');
     link.href = blobUrl;
     link.target = '_blank';
@@ -1044,4 +1059,6 @@ ${blueprintSheetsHtml}
     link.click();
     document.body.removeChild(link);
   }
+
+  return blobUrl;
 }
