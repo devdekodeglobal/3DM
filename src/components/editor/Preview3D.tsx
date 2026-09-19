@@ -955,7 +955,7 @@ export default function Preview3D({
         const mid = BABYLON.Vector3.Center(p1, p2);
 
         const rect = new GUI.Rectangle();
-        rect.width = "72px";
+        rect.width = "88px";
         rect.height = "26px";
         rect.cornerRadius = 6;
         rect.thickness = 1.5;
