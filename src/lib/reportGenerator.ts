@@ -343,53 +343,6 @@ export async function generateReport(
     padding: 20px 0;
   }
 
-  /* ── PRINT & ACTION BUTTONS ── */
-  .action-bar { 
-    position: fixed; 
-    top: 20px; 
-    right: 20px; 
-    display: flex; 
-    gap: 12px; 
-    z-index: 9999; 
-  }
-  .btn-print { 
-    background: var(--brand); 
-    color: #fff; 
-    border: none; 
-    padding: 10px 22px; 
-    border-radius: 99px; 
-    font-weight: 700; 
-    font-size: 13px; 
-    cursor: pointer; 
-    box-shadow: 0 4px 20px rgba(79,70,229,.4); 
-    transition: all .2s; 
-    display: flex; 
-    align-items: center; 
-    gap: 8px; 
-    font-family: 'Outfit', sans-serif;
-  }
-  .btn-print:hover { 
-    transform: translateY(-2px); 
-    box-shadow: 0 8px 28px rgba(79,70,229,.5); 
-    background: #4338ca;
-  }
-  .btn-close {
-    background: #ffffff;
-    color: var(--text);
-    border: 1px solid var(--border);
-    padding: 10px 18px;
-    border-radius: 99px;
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-    transition: all .2s;
-    font-family: 'Outfit', sans-serif;
-  }
-  .btn-close:hover {
-    background: #f1f5f9;
-  }
-
   /* ── FULL-PAGE SHEETS (A4 LANDSCAPE: 297mm × 210mm RATIO) ── */
   .sheet {
     width: 1080px;
@@ -880,14 +833,6 @@ export async function generateReport(
 </style>
 </head>
 <body>
-
-<div class="action-bar no-print">
-  <button class="btn-print" onclick="window.print()">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-    Print / Save as PDF
-  </button>
-  <button class="btn-close" onclick="window.close()">Close</button>
-</div>
 
 <!-- 1. COVER SHEET -->
 <div class="sheet cover-sheet full-page">
