@@ -1956,16 +1956,9 @@ export default function Preview3D({
       >
         <canvas ref={canvasRef} className="w-full h-full block outline-none touch-none" />
 
-        {/* Top-right overlay: Export GLB + Screenshot + Fullscreen */}
+        {/* Top-right overlay: Screenshot + Fullscreen */}
         {!hideControls && (
           <div className="absolute top-4 right-4 flex gap-2">
-            <button
-              onClick={exportGLB}
-              className="p-3 rounded-xl bg-black/40 hover:bg-black/60 border border-white/10 text-white backdrop-blur-md transition-all shadow-lg group flex items-center justify-center cursor-pointer"
-              title="Download 3D Scene (.GLB)"
-            >
-              <Download className="w-5 h-5 group-hover:scale-110 transition-transform text-emerald-400" />
-            </button>
             <button
               onClick={takeScreenshot}
               className="p-3 rounded-xl bg-black/40 hover:bg-black/60 border border-white/10 text-white backdrop-blur-md transition-all shadow-lg group flex items-center justify-center cursor-pointer"
