@@ -1149,55 +1149,67 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
     (window as any).export2DCanvasDataURL = () => {
       if (!stageRef.current) return null
       
-      // Temporarily deselect items so transformation gizmos don't appear in export
-      if (transformerRef.current) {
-        transformerRef.current.nodes([])
+      try {
+        // Temporarily deselect items so transformation gizmos don't appear in export
+        if (transformerRef.current) {
+          transformerRef.current.nodes([])
+        }
+
+        const stage = stageRef.current
+        const boothPixelW = boothConfig.width * PPM
+        const boothPixelH = boothConfig.depth * PPM
+        const padding = 80
+
+        const stageCanvas = stage.toCanvas()
+        if (!stageCanvas || !stageCanvas.width || !stageCanvas.height) {
+          return stage.toDataURL({ pixelRatio: 2.0 })
+        }
+
+        const exportCanvas = document.createElement('canvas')
+        const targetW = (boothPixelW + padding * 2) * 2
+        const targetH = (boothPixelH + padding * 2) * 2
+        exportCanvas.width = targetW
+        exportCanvas.height = targetH
+
+        const ctx = exportCanvas.getContext('2d')
+        if (!ctx) return stage.toDataURL({ pixelRatio: 2.0 })
+
+        // 1. Crisp white architectural background
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, targetW, targetH)
+
+        // 2. Technical blueprint grid (Light grey CAD style)
+        ctx.strokeStyle = '#e2e8f0'
+        ctx.lineWidth = 1
+        const step = 20 * 2
+        for (let x = 0; x < targetW; x += step) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, targetH); ctx.stroke();
+        }
+        for (let y = 0; y < targetH; y += step) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(targetW, y); ctx.stroke();
+        }
+
+        // 3. Draw stage layer safely clamped
+        const cropX = Math.max(0, stagePos.x - padding * stageScale)
+        const cropY = Math.max(0, stagePos.y - padding * stageScale)
+        const cropW = Math.min(stageCanvas.width - cropX, (boothPixelW + padding * 2) * stageScale)
+        const cropH = Math.min(stageCanvas.height - cropY, (boothPixelH + padding * 2) * stageScale)
+
+        if (cropW > 0 && cropH > 0) {
+          ctx.drawImage(
+            stageCanvas,
+            cropX, cropY, cropW, cropH,
+            0, 0, targetW, targetH
+          )
+        } else {
+          ctx.drawImage(stageCanvas, 0, 0, stageCanvas.width, stageCanvas.height, 0, 0, targetW, targetH)
+        }
+
+        return exportCanvas.toDataURL('image/png')
+      } catch (err) {
+        console.warn('Fallback standard 2D capture due to canvas error:', err)
+        return stageRef.current ? stageRef.current.toDataURL({ pixelRatio: 2.0 }) : null
       }
-
-      const stage = stageRef.current
-      const boothPixelW = boothConfig.width * PPM
-      const boothPixelH = boothConfig.depth * PPM
-      const padding = 80 // Include dimensions and annotations
-
-      // Create an offscreen canvas to render a crisp, high-contrast light architectural blueprint
-      const exportCanvas = document.createElement('canvas')
-      const targetW = (boothPixelW + padding * 2) * 2
-      const targetH = (boothPixelH + padding * 2) * 2
-      exportCanvas.width = targetW
-      exportCanvas.height = targetH
-
-      const ctx = exportCanvas.getContext('2d')
-      if (!ctx) return stage.toDataURL({ pixelRatio: 2.0 })
-
-      // 1. Crisp white architectural background
-      ctx.fillStyle = '#ffffff'
-      ctx.fillRect(0, 0, targetW, targetH)
-
-      // 2. Technical blueprint grid (Light grey/blue CAD style)
-      ctx.strokeStyle = '#e2e8f0'
-      ctx.lineWidth = 1
-      const step = 20 * 2 // 20px grid
-      for (let x = 0; x < targetW; x += step) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, targetH); ctx.stroke();
-      }
-      for (let y = 0; y < targetH; y += step) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(targetW, y); ctx.stroke();
-      }
-
-      // 3. Draw stage layer tightly cropped to the booth bounds
-      const cropX = stagePos.x - padding * stageScale
-      const cropY = stagePos.y - padding * stageScale
-      const cropW = (boothPixelW + padding * 2) * stageScale
-      const cropH = (boothPixelH + padding * 2) * stageScale
-
-      const stageCanvas = stage.toCanvas()
-      ctx.drawImage(
-        stageCanvas,
-        cropX, cropY, cropW, cropH,
-        0, 0, targetW, targetH
-      )
-
-      return exportCanvas.toDataURL('image/png')
     }
     return () => {
       delete (window as any).export2DCanvasDataURL

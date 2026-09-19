@@ -619,6 +619,9 @@ function EditorPage() {
   const reportScreenshotsRef = useRef<Record<string, string>>({})
 
   const submitExport = () => {
+    if (!is3DGenerated) {
+      setIs3DGenerated(true)
+    }
     setIsCapturingReport(true)
     reportScreenshotsRef.current = {}
     
@@ -654,21 +657,29 @@ function EditorPage() {
       const nextView = captureQueue[0];
       console.log(`[Report] Switching to view: ${nextView}`);
       setBlueprintView(nextView + '_capture' as any);
+
+      // Watchdog timeout to prevent queue stalling if screenshot hangs
+      const watchdog = setTimeout(() => {
+        console.warn(`[Report] Capture watchdog timeout for ${nextView}, advancing queue...`);
+        setCaptureQueue(prev => prev.slice(1));
+      }, 4500);
+
+      return () => clearTimeout(watchdog);
     } else {
       console.log('[Report] All captures complete. Generating document...');
       setIsCapturingReport(false);
       setBlueprintView('perspective');
 
-      // Small timeout to ensure state has settled
+      // Allow final states to settle before rendering PDF
       setTimeout(() => {
         const finalScreenshots = { ...reportScreenshotsRef.current };
         generateReport(boothConfig, elements, finalScreenshots).then(() => {
-          console.log('[Report] Document generated and downloaded.');
+          console.log('[Report] Document generated.');
         }).catch(err => {
           console.error('[Report] Generation failed:', err);
           showAlert('Failed to generate report.', 'error', 'Report Failed');
         });
-      }, 600);
+      }, 400);
     }
   }, [captureQueue.length, isCapturingReport]);
 

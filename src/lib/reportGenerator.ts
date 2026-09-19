@@ -1,8 +1,6 @@
 import { ASSET_REGISTRY } from './assetRegistry';
 import { getArchitecturalSymbolSvgString } from '../components/editor/ArchitecturalSymbolSVG';
 
-
-
 export async function generateReport(boothConfig: any, elements: any[], screenshots: Record<string, string>) {
   const docId = `KRAFC-${Date.now().toString(36).toUpperCase()}`;
   const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -41,7 +39,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     id: string;
     count: number; 
     label: string; 
-    category: string;
+    category: string; 
     dims: string; 
     specs: string;
     svgSymbol?: string;
@@ -162,7 +160,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
         <div><label>Floor Size</label><span>${boothConfig.width}m × ${boothConfig.depth}m</span></div>
       </div>
     </div>
-    <div class="drawing-frame">
+    <div class="drawing-frame drawing-frame-light">
       <div class="drawing-canvas-wrap">
         <img src="${floorplan2D}" alt="2D Floor Plan" class="blueprint-img" />
       </div>
@@ -290,12 +288,16 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     ...allLights.map(e => `<tr><td><span class="tag warm">Lighting Fixture</span></td><td><code>${e.id.substring(0, 10)}</code></td><td>${e.width || '-'}px × ${e.height || '-'}px</td><td>Spotlight / Downlight</td><td>${e.color || '#fff8e7'}</td></tr>`),
   ].join('');
 
+  const totalSheets = drawingSheetNumber + 1; // Cover (1) + Summary (1) + Drawings + BOM (1)
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Architectural Space Specification - ${projectName} - ${docId}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   @page {
@@ -318,13 +320,22 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     --bg: #f8fafc;
     --white: #ffffff;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
   body { 
     font-family: 'Inter', system-ui, -apple-system, sans-serif; 
     color: var(--text); 
-    background: #cbd5e1; 
+    background: #e2e8f0; 
     font-size: 12px; 
     line-height: 1.4; 
+    margin: 0;
+    padding: 20px 0;
   }
 
   /* ── PRINT & ACTION BUTTONS ── */
@@ -340,7 +351,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     background: var(--brand); 
     color: #fff; 
     border: none; 
-    padding: 10px 20px; 
+    padding: 10px 22px; 
     border-radius: 99px; 
     font-weight: 700; 
     font-size: 13px; 
@@ -357,12 +368,29 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     box-shadow: 0 8px 28px rgba(79,70,229,.5); 
     background: #4338ca;
   }
+  .btn-close {
+    background: #ffffff;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 10px 18px;
+    border-radius: 99px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    transition: all .2s;
+    font-family: 'Outfit', sans-serif;
+  }
+  .btn-close:hover {
+    background: #f1f5f9;
+  }
 
-  /* ── FULL-PAGE SHEETS (EXACT A4 LANDSCAPE RATIO: 1080px × 720px) ── */
+  /* ── FULL-PAGE SHEETS (A4 LANDSCAPE: 297mm × 210mm RATIO) ── */
   .sheet {
     width: 1080px;
     height: 720px;
     max-height: 720px;
+    min-height: 720px;
     margin: 24px auto;
     background: var(--white);
     box-shadow: 0 10px 30px rgba(0,0,0,0.12);
@@ -383,7 +411,8 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     width: 1080px;
     height: 720px;
     max-height: 720px;
-    background: #0f172a;
+    min-height: 720px;
+    background: #0f172a !important;
     color: white;
     padding: 0;
     overflow: hidden;
@@ -391,12 +420,13 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     flex-direction: column;
     justify-content: space-between;
     border: 1px solid #1e293b;
+    position: relative;
   }
   .cover-accent { 
     position: absolute; 
     top: 0; 
     left: 0; 
-    width: 6px; 
+    width: 8px; 
     height: 100%; 
     background: linear-gradient(180deg, var(--brand), var(--cyan)); 
   }
@@ -404,8 +434,8 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     position: absolute; 
     inset: 0; 
     background-image: 
-      linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), 
-      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); 
+      linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), 
+      linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); 
     background-size: 32px 32px; 
     pointer-events: none; 
   }
@@ -423,13 +453,13 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     text-transform: uppercase; 
     margin-bottom: 16px; 
     font-family: 'JetBrains Mono', monospace;
-    background: rgba(99, 102, 241, 0.15);
+    background: rgba(99, 102, 241, 0.2);
     padding: 4px 12px;
     border-radius: 4px;
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    border: 1px solid rgba(99, 102, 241, 0.4);
   }
   .cover-body h1 { 
-    font-size: 40px; 
+    font-size: 42px; 
     font-weight: 800; 
     letter-spacing: -0.02em; 
     line-height: 1.15; 
@@ -441,10 +471,11 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     background: linear-gradient(135deg, #38bdf8, #818cf8);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    color: #818cf8;
   }
   .cover-project-title {
     font-size: 20px;
-    color: #94a3b8;
+    color: #cbd5e1;
     font-weight: 500;
     margin-bottom: 36px;
   }
@@ -452,14 +483,14 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     display: grid; 
     grid-template-columns: repeat(4, 1fr); 
     gap: 20px; 
-    border-top: 1px solid rgba(255,255,255,0.12);
+    border-top: 1px solid rgba(255,255,255,0.15);
     padding-top: 24px;
   }
   .cover-meta-item label { 
     font-size: 9px; 
     text-transform: uppercase; 
     letter-spacing: 0.12em; 
-    color: rgba(255,255,255,.5); 
+    color: rgba(255,255,255,.6); 
     display: block; 
     margin-bottom: 4px; 
   }
@@ -470,19 +501,19 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     color: #f8fafc; 
   }
   .cover-footer { 
-    background: #090d16; 
+    background: #090d16 !important; 
     padding: 16px 56px; 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    font-size: 10.5px; 
-    color: rgba(255,255,255,.45); 
+    font-size: 11px; 
+    color: rgba(255,255,255,.6); 
     letter-spacing: 0.05em; 
     position: relative; 
     z-index: 1; 
-    border-top: 1px solid rgba(255,255,255,0.08);
+    border-top: 1px solid rgba(255,255,255,0.1);
   }
-  .cover-footer strong { color: rgba(255,255,255,.8); }
+  .cover-footer strong { color: #ffffff; }
 
   /* ── STATS ROW ── */
   .stats-grid { 
@@ -601,6 +632,9 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     justify-content: center;
     position: relative;
   }
+  .drawing-frame-light {
+    background: #f8fafc;
+  }
   .drawing-canvas-wrap {
     width: 100%;
     height: 100%;
@@ -642,8 +676,8 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     margin-top: 6px;
   }
   thead tr { 
-    background: var(--navy); 
-    color: white; 
+    background: var(--navy) !important; 
+    color: white !important; 
   }
   thead th { 
     padding: 6px 10px; 
@@ -653,6 +687,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     letter-spacing: 0.08em; 
     text-transform: uppercase; 
     font-family: 'Outfit', sans-serif;
+    color: #ffffff !important;
   }
   tbody tr { 
     border-bottom: 1px solid var(--border-light); 
@@ -685,7 +720,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     text-transform: uppercase; 
   }
   .tag.inner { background: var(--cyan); color: var(--navy); }
-  .tag.brand { background: var(--brand); }
+  .tag.brand { background: var(--brand); color: white; }
   .tag.warm { background: var(--amber); color: var(--navy); }
 
   /* ── BOM VISUAL CARDS GRID ── */
@@ -776,13 +811,15 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
       margin: 0;
     }
     html, body {
-      width: 297mm;
-      height: 210mm;
+      width: 297mm !important;
+      height: auto !important;
+      min-height: 100% !important;
       margin: 0 !important;
       padding: 0 !important;
       background: #ffffff !important;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
     }
     .no-print, .action-bar {
       display: none !important;
@@ -791,11 +828,12 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
       width: 297mm !important;
       height: 210mm !important;
       max-height: 210mm !important;
+      min-height: 210mm !important;
       box-sizing: border-box !important;
       margin: 0 !important;
-      padding: 12mm 16mm !important;
+      padding: 10mm 14mm !important;
       box-shadow: none !important;
-      border-radius: 0 !important;
+      border: none !important;
       page-break-after: always !important;
       break-after: page !important;
       page-break-inside: avoid !important;
@@ -807,22 +845,31 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     }
     .cover-sheet {
       padding: 0 !important;
+      background: #0f172a !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
     .cover-body {
       padding: 16mm 20mm !important;
     }
     .cover-footer {
       padding: 6mm 20mm !important;
+      background: #090d16 !important;
     }
     .drawing-frame {
       flex: 1 1 auto !important;
-      height: 128mm !important;
-      max-height: 128mm !important;
-      min-height: 128mm !important;
+      height: 135mm !important;
+      max-height: 135mm !important;
+      min-height: 135mm !important;
+      background: #0b0f19 !important;
+    }
+    .drawing-frame-light {
+      background: #ffffff !important;
     }
     .blueprint-img {
       max-width: 100% !important;
-      max-height: 124mm !important;
+      max-height: 130mm !important;
+      object-fit: contain !important;
     }
   }
 </style>
@@ -834,6 +881,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
     Print / Save as PDF
   </button>
+  <button class="btn-close" onclick="window.close()">Close</button>
 </div>
 
 <!-- 1. COVER SHEET -->
@@ -855,7 +903,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
   <div class="cover-footer">
     <span>OFFICIAL SPECIFICATION DOCUMENT</span>
     <strong>krafc</strong>
-    <span>PAGE 1 OF ${drawingSheetNumber}</span>
+    <span>PAGE 1 OF ${totalSheets}</span>
   </div>
 </div>
 
@@ -953,18 +1001,47 @@ ${blueprintSheetsHtml}
   </div>
 </div>
 
+<script>
+  window.addEventListener('load', async () => {
+    try {
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+      const imgs = Array.from(document.images);
+      await Promise.all(imgs.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(res => {
+          img.onload = res;
+          img.onerror = res;
+        });
+      }));
+    } catch (e) {
+      console.warn('Document asset preparation note:', e);
+    }
+    // Auto-trigger print preview once layout & assets are fully ready
+    setTimeout(() => {
+      window.focus();
+      window.print();
+    }, 400);
+  });
+</script>
+
 </body>
 </html>`;
 
-  // Open high-fidelity formatted document and trigger native PDF export
-  const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.open();
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 600);
+  // Open formatted document via high-reliability Blob URL
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
+  const printWindow = window.open(blobUrl, '_blank');
+  
+  if (!printWindow) {
+    // Fallback if popup blocked: navigate or download
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }
