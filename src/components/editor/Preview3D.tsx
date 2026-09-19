@@ -21,6 +21,7 @@ interface Preview3DProps {
   setBackgroundColor?: (color: string) => void;
   autoRotate?: boolean;
   hideControls?: boolean;
+  cameraDistanceScale?: number;
 }
 
 const PPM = 100;
@@ -36,6 +37,7 @@ export default function Preview3D({
   backgroundColor = '#1d1f21',
   autoRotate = false,
   hideControls = false,
+  cameraDistanceScale = 1,
 }: Preview3DProps) {
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [cameraMode, setCameraMode] = useState<'orbit' | 'flight'>('orbit');
@@ -301,7 +303,7 @@ export default function Preview3D({
       const orbitCam = scene.getCameraByName("orbitCam") as BABYLON.ArcRotateCamera;
       if (orbitCam) {
         orbitCam.setTarget(new BABYLON.Vector3(centerX, 0.5, centerZ));
-        orbitCam.radius = Math.max(boothConfig.width, boothConfig.depth) * 1.5 + 2;
+        orbitCam.radius = (Math.max(boothConfig.width, boothConfig.depth) * 1.5 + 2) * cameraDistanceScale;
       }
       lastBoothDimRef.current = { w: boothConfig.width, d: boothConfig.depth };
     }
@@ -461,7 +463,7 @@ export default function Preview3D({
       });
     }
 
-  }, [boothConfig, isSceneReady]);
+  }, [boothConfig, isSceneReady, cameraDistanceScale]);
 
   // 2.1 Camera View & Wall Masking Sync
   useEffect(() => {

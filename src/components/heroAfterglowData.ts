@@ -572,5 +572,37 @@ export const HERO_AFTERGLOW_ELEMENTS = [
     "yOffset": 0,
     "verticalScale": 1,
     "facingOffset": 0
+  },
+  {
+    "id": "afterglow-lounge-canopy",
+    "type": "caged-panel",
+    "x": 230,
+    "y": 320,
+    "width": 420,
+    "height": 440,
+    "rotation": 0,
+    "realWidth": 4.2,
+    "realHeight": 0.2,
+    "realDepth": 4.4,
+    "yOffset": 2.5,
+    "platesCount": 11,
+    "plateThickness": 0.07,
+    "plateGap": 0.18,
+    "orientation": "horizontal",
+    "fill": "#B47AD4"
+  },
+  {
+    "id": "afterglow-counter-logo",
+    "type": "3d_logo",
+    "x": 750,
+    "y": 215,
+    "width": 130,
+    "height": 55,
+    "rotation": 0,
+    "yOffset": 0.1,
+    "depth": 4,
+    "logoStyle": "glowing",
+    "logoColor": "#ffffff",
+    "svgData": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 320'><text x='24' y='246' fill='#f8fafc' font-family='Arial Black, Arial, Helvetica, sans-serif' font-size='264' font-weight='900' letter-spacing='-18'>krafc</text><circle cx='792' cy='226' r='30' fill='#ff2bc2'/></svg>"
   }
 ];

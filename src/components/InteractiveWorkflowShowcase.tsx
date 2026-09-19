@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BoothIllustration } from "./editor/BoothIllustration";
+import { AfterglowBlueprint } from "./AfterglowBlueprint";
 import Preview3D from "./editor/Preview3D";
 import { Check, Cloud } from "lucide-react";
 import { HERO_AFTERGLOW_BOOTH_CONFIG, HERO_AFTERGLOW_ELEMENTS } from "./heroAfterglowData";
@@ -141,26 +141,8 @@ export function InteractiveWorkflowShowcase() {
             <div
               className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-in-out transform ${activeStep === 0 ? "opacity-100 scale-100 z-10" : "opacity-0 scale-95 pointer-events-none z-0"}`}
             >
-              <div className="w-full max-w-[280px] h-[220px] relative border-2 border-dashed border-[var(--brand)] rounded-xl flex items-center justify-center bg-[var(--brand-bg)]/20">
-                <div
-                  className="absolute inset-0 opacity-30"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle at 3px 3px, var(--brand) 1px, transparent 0)",
-                    backgroundSize: "20px 20px",
-                  }}
-                />
-                <div className="w-48 h-36 border-4 border-[var(--brand)] bg-[var(--bg-card)]/80 rounded-lg shadow-xl relative flex items-center justify-center transition-all duration-700">
-                  <span className="text-xs font-mono font-bold text-[var(--brand)] bg-[var(--bg-card)] px-2 py-1 rounded border border-[var(--border-brand)]">
-                    6.0m × 5.0m SPACE
-                  </span>
-                  <div className="absolute -top-6 left-0 right-0 border-b border-sky-500 text-[9px] font-mono text-sky-500 text-center font-bold">
-                    6.00m
-                  </div>
-                  <div className="absolute -left-6 top-0 bottom-0 border-r border-sky-500 text-[9px] font-mono text-sky-500 text-center font-bold flex items-center">
-                    5.0m
-                  </div>
-                </div>
+              <div className="w-full max-w-[440px] h-[260px] rounded-xl overflow-hidden border border-[var(--brand)]/30 shadow-2xl bg-[var(--bg-card)] p-3">
+                <AfterglowBlueprint mode="space" />
               </div>
             </div>
 
@@ -169,7 +151,7 @@ export function InteractiveWorkflowShowcase() {
               className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-in-out transform ${activeStep === 1 ? "opacity-100 scale-100 z-10" : "opacity-0 scale-95 pointer-events-none z-0"}`}
             >
               <div className="w-full max-w-[440px] h-[260px] rounded-xl overflow-hidden border border-[var(--brand)]/30 shadow-2xl relative bg-[var(--bg-card)] flex items-center justify-center p-4">
-                <BoothIllustration />
+                <AfterglowBlueprint mode="assets" />
               </div>
             </div>
 
@@ -185,6 +167,7 @@ export function InteractiveWorkflowShowcase() {
                   elements={HERO_AFTERGLOW_ELEMENTS as any}
                   activeView="perspective"
                   backgroundColor="#1e293b"
+                  cameraDistanceScale={0.68}
                 />
               </div>
             </div>
