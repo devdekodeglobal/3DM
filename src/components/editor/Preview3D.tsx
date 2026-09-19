@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Camera, Maximize, Minimize, Download } from 'lucide-react'
+import { Camera, Maximize, Minimize } from 'lucide-react'
 import * as BABYLON from '@babylonjs/core'
 import '@babylonjs/loaders/glTF'
 import { GLTF2Export } from '@babylonjs/serializers/glTF/2.0/glTFSerializer'
@@ -1855,30 +1855,6 @@ export default function Preview3D({
       link.download = `3d-snapshot-${Date.now()}.png`;
       link.click();
     });
-  };
-
-  const exportGLB = async () => {
-    const scene = sceneRef.current;
-    if (!scene) return;
-    try {
-      const shouldExportNode = (node: BABYLON.Node) => {
-        if (node.name === "blueprintGrid" || node.name === "background" || node.name === "shadowCatcher" || node instanceof BABYLON.Camera) {
-          return false;
-        }
-        return true;
-      };
-      const glbData = await GLTF2Export.GLBAsync(scene, "design.glb", { shouldExportNode });
-      const rawFile = glbData.glTFFiles["design.glb"];
-      const blob = rawFile instanceof Blob ? rawFile : new Blob([rawFile], { type: 'model/gltf-binary' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `trial3-${Date.now()}.glb`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error("Failed to export GLB:", e);
-    }
   };
 
   // Fullscreen listener
