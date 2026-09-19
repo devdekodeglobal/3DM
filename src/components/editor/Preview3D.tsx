@@ -2527,15 +2527,15 @@ export default function Preview3D({
     const scene = sceneRef.current;
     if (!scene) return;
 
-    // Exact angles from Preview3D presets: Front, Right, Back, Left, Top Left, Top Right, Top
+    // Circular order: Front -> Top Right -> Right -> Back -> Left -> Top Left -> Top
     const tourWaypoints = [
-      { alpha: -Math.PI / 2, beta: Math.PI / 3 },      // Front
-      { alpha: 0, beta: Math.PI / 3 },                 // Right
-      { alpha: Math.PI / 2, beta: Math.PI / 3 },       // Back
-      { alpha: Math.PI, beta: Math.PI / 3 },           // Left
-      { alpha: -Math.PI * 0.75, beta: Math.PI / 3.5 }, // Top Left
-      { alpha: -Math.PI * 0.25, beta: Math.PI / 3.5 }, // Top Right
-      { alpha: -Math.PI / 2, beta: 0.01 },             // Top
+      { alpha: -Math.PI / 2, beta: Math.PI / 3 },      // 1. Front
+      { alpha: -Math.PI * 0.25, beta: Math.PI / 3.5 }, // 2. Top Right
+      { alpha: 0, beta: Math.PI / 3 },                 // 3. Right
+      { alpha: Math.PI / 2, beta: Math.PI / 3 },       // 4. Back
+      { alpha: Math.PI, beta: Math.PI / 3 },           // 5. Left
+      { alpha: -Math.PI * 0.75, beta: Math.PI / 3.5 }, // 6. Top Left
+      { alpha: -Math.PI / 2, beta: 0.01 },             // 7. Top
     ];
 
     let currentIndex = 0;
