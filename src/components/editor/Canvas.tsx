@@ -815,11 +815,20 @@ const Logo3DShape = ({ shapeProps, onSelect, onChange }: any) => {
   useEffect(() => {
     if (shapeProps.svgData) {
       const img = new window.Image()
-      const blob = new Blob([shapeProps.svgData], { type: 'image/svg+xml' })
-      const url = URL.createObjectURL(blob)
+      let url = ''
+      let isBlob = false
+      if (shapeProps.svgData.startsWith('data:')) {
+        url = shapeProps.svgData
+      } else {
+        const blob = new Blob([shapeProps.svgData], { type: 'image/svg+xml' })
+        url = URL.createObjectURL(blob)
+        isBlob = true
+      }
       img.src = url
-      img.onload = () => setSvgImg(img)
-      return () => URL.revokeObjectURL(url)
+      img.onload = () => {
+        setSvgImg(img)
+        if (isBlob) URL.revokeObjectURL(url)
+      }
     } else {
       setSvgImg(null)
     }

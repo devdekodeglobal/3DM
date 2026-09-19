@@ -68,6 +68,10 @@ export default function Preview3D({
       shadowMat.useRGBColor = false;
       shadowMat.zOffset = 10; // Push behind floor mesh in depth buffer
       catcher.material = shadowMat;
+
+      if (sceneRef.current.prePassRenderer && !sceneRef.current.prePassRenderer.excludedMaterials.includes(shadowMat)) {
+        sceneRef.current.prePassRenderer.excludedMaterials.push(shadowMat);
+      }
     }
 
     if (catcher.material && catcher.material instanceof BABYLON.BackgroundMaterial) {
@@ -208,13 +212,12 @@ export default function Preview3D({
       pipeline.bloomWeight = 0.3;
       pipeline.bloomKernel = 64;
 
-      // SSAO uses its own pipeline in BabylonJS
-      const ssao = new BABYLON.SSAO2RenderingPipeline("ssao", scene, { ssaoRatio: 0.5, blurRatio: 1 });
+      // SSAO uses its own pipeline in BabylonJS (forceGeometryBuffer = true prevents WebGL2 MRT draw buffers conflict on custom materials)
+      const ssao = new BABYLON.SSAO2RenderingPipeline("ssao", scene, { ssaoRatio: 0.5, blurRatio: 1 }, [orbitCam], true);
       ssao.radius = 3.5;
       ssao.totalStrength = 1.2;
       ssao.expensiveBlur = true;
       ssao.samples = 16;
-      scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline("ssao", orbitCam);
     }
 
     const gui = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
@@ -363,6 +366,10 @@ export default function Preview3D({
     grid.material = gridMat as BABYLON.Material;
     grid.isVisible = activeView !== 'perspective';
     structureRegistryRef.current.push(grid);
+
+    if (scene.prePassRenderer && !scene.prePassRenderer.excludedMaterials.includes(gridMat)) {
+      scene.prePassRenderer.excludedMaterials.push(gridMat);
+    }
 
     // --- 2.2 ROOF & CEILING LIGHTS RENDERING ---
     if (ceilingLightsRef.current) {
@@ -1163,7 +1170,16 @@ export default function Preview3D({
             needsRecreate = true;
           }
         } else if (el.type === '3d_logo') {
-          if (!mesh.metadata || mesh.metadata.svgData !== el.svgData || mesh.metadata.depth !== el.depth || mesh.metadata.logoStyle !== el.logoStyle || mesh.metadata.width !== el.width || mesh.metadata.height !== el.height) {
+          if (
+            !mesh.metadata ||
+            mesh.metadata.svgData !== el.svgData ||
+            mesh.metadata.depth !== el.depth ||
+            mesh.metadata.logoStyle !== el.logoStyle ||
+            mesh.metadata.width !== el.width ||
+            mesh.metadata.height !== el.height ||
+            mesh.metadata.verticalScale !== el.verticalScale ||
+            mesh.metadata.yOffset !== el.yOffset
+          ) {
             needsRecreate = true;
           }
         } else if (['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(el.type)) {
@@ -1180,7 +1196,9 @@ export default function Preview3D({
       if (registry.has(el.id) && !needsRecreate) {
         const mesh = registry.get(el.id)!;
         const vScale = el.verticalScale || 1;
-        const hActual = ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(el.type) ? (el.realHeight || 2.5) : (el.type === 'wall' ? 2.5 : 1);
+        const hActual = ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(el.type)
+          ? (el.realHeight || 2.5)
+          : (el.type === 'wall' ? 2.5 : (el.type === '3d_logo' ? (el.height / PPM) : 1));
         
         mesh.position.x = x;
         mesh.position.z = z;
@@ -1517,11 +1535,13 @@ export default function Preview3D({
           const depth = (el.depth || 5) / PPM;
           const w = el.width / PPM;
           const h = el.height / PPM;
+          const vScale = el.verticalScale || 1;
           const baseColor = BABYLON.Color3.FromHexString(el.logoColor || '#ffffff');
 
           const pivot = new BABYLON.Mesh(el.id, scene);
-          pivot.position.set(x, (h / 2) + (el.yOffset || 0), z);
+          pivot.position.set(x, ((h * vScale) / 2) + (el.yOffset || 0), z);
           pivot.rotation.y = rotY;
+          pivot.scaling.y = vScale;
 
           // Helper to create a plane layer at a given z offset
           const makeLayer = (zOffset: number, mat: BABYLON.StandardMaterial) => {
@@ -1609,7 +1629,9 @@ export default function Preview3D({
             depth: el.depth, 
             logoStyle: el.logoStyle,
             width: el.width,
-            height: el.height
+            height: el.height,
+            verticalScale: el.verticalScale,
+            yOffset: el.yOffset
           };
           registry.set(el.id, pivot);
           attachDragBehavior(pivot, el.id);

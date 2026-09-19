@@ -1,123 +1,240 @@
-import { ArchitecturalSymbolSVG } from './editor/ArchitecturalSymbolSVG'
-
 interface AfterglowBlueprintProps {
   mode: 'space' | 'assets'
 }
-
-const Symbol = ({
-  x,
-  y,
-  width,
-  height,
-  rotation = 0,
-  category,
-  assetName,
-  className = 'text-slate-700',
-}: {
-  x: number
-  y: number
-  width: number
-  height: number
-  rotation?: number
-  category: string
-  assetName: string
-  className?: string
-}) => (
-  <g transform={`translate(${x} ${y}) rotate(${rotation})`}>
-    <svg x={-width / 2} y={-height / 2} width={width} height={height}>
-      <ArchitecturalSymbolSVG category={category} assetName={assetName} className={`w-full h-full ${className}`} />
-    </svg>
-  </g>
-)
 
 export function AfterglowBlueprint({ mode }: AfterglowBlueprintProps) {
   const showAssets = mode === 'assets'
 
   return (
-    <svg viewBox="0 0 520 340" className="w-full h-full" role="img" aria-label={showAssets ? 'Furnished 2D space blueprint' : '10 by 7 metre space blueprint'}>
+    <svg viewBox="0 0 520 340" className="w-full h-full select-none" role="img" aria-label={showAssets ? 'Furnished 2D space blueprint - trial2' : '10.0m by 7.0m space blueprint'}>
       <defs>
-        <pattern id={`afterglow-grid-${mode}`} width="18" height="18" patternUnits="userSpaceOnUse">
-          <path d="M18 0H0V18" fill="none" stroke="#cbd5e1" strokeWidth="0.65" opacity="0.55" />
+        <pattern id={`trial2-grid-${mode}`} width="14" height="14" patternUnits="userSpaceOnUse">
+          <path d="M14 0H0V14" fill="none" stroke="#e0e7ff" strokeWidth="0.7" opacity="0.8" />
         </pattern>
-        <linearGradient id={`afterglow-floor-${mode}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#faf9ff" />
-          <stop offset="1" stopColor="#f1eff9" />
-        </linearGradient>
+        <pattern id={`trial2-grid-major-${mode}`} width="70" height="70" patternUnits="userSpaceOnUse">
+          <path d="M70 0H0V70" fill="none" stroke="#c7d2fe" strokeWidth="1" opacity="0.6" />
+        </pattern>
       </defs>
 
-      <rect width="520" height="340" rx="18" fill="#f8fafc" />
-      <rect x="44" y="42" width="432" height="252" rx="4" fill={`url(#afterglow-floor-${mode})`} />
-      <rect x="44" y="42" width="432" height="252" rx="4" fill={`url(#afterglow-grid-${mode})`} />
+      {/* Blueprint Grid Canvas */}
+      <rect width="520" height="340" rx="16" fill="#f8fafc" />
+      <rect x="36" y="32" width="448" height="268" rx="2" fill={`url(#trial2-grid-${mode})`} />
+      <rect x="36" y="32" width="448" height="268" rx="2" fill={`url(#trial2-grid-major-${mode})`} />
 
-      <g fill="#0ea5e9" stroke="#0ea5e9" fontFamily="ui-monospace, SFMono-Regular, monospace" fontSize="9" fontWeight="700">
-        <line x1="44" y1="24" x2="476" y2="24" strokeWidth="1.3" />
-        <line x1="44" y1="19" x2="44" y2="29" strokeWidth="1.3" />
-        <line x1="476" y1="19" x2="476" y2="29" strokeWidth="1.3" />
-        <rect x="234" y="14" width="52" height="19" rx="8" fill="#f8fafc" />
-        <text x="260" y="27" textAnchor="middle" stroke="none">10.0m</text>
-        <line x1="25" y1="42" x2="25" y2="294" strokeWidth="1.3" />
-        <line x1="20" y1="42" x2="30" y2="42" strokeWidth="1.3" />
-        <line x1="20" y1="294" x2="30" y2="294" strokeWidth="1.3" />
-        <rect x="8" y="145" width="34" height="19" rx="8" fill="#f8fafc" transform="rotate(-90 25 154.5)" />
-        <text x="25" y="158" textAnchor="middle" stroke="none" transform="rotate(-90 25 158)">7.0m</text>
+      {/* Compass Directions (N, S, E, W) */}
+      <text x="260" y="30" textAnchor="middle" fill="#cbd5e1" fontSize="13" fontWeight="900" fontFamily="sans-serif">N</text>
+      <text x="260" y="318" textAnchor="middle" fill="#cbd5e1" fontSize="13" fontWeight="900" fontFamily="sans-serif">S</text>
+      <text x="20" y="172" textAnchor="middle" fill="#cbd5e1" fontSize="13" fontWeight="900" fontFamily="sans-serif">W</text>
+      <text x="500" y="172" textAnchor="middle" fill="#cbd5e1" fontSize="13" fontWeight="900" fontFamily="sans-serif">E</text>
+
+      {/* Blue Technical Dimension Lines with Tick Arrows */}
+      <g fill="#0284c7" stroke="#0284c7" fontFamily="ui-monospace, SFMono-Regular, monospace" fontSize="8.5" fontWeight="700">
+        {/* Top 10.00m */}
+        <line x1="44" y1="20" x2="476" y2="20" strokeWidth="1.2" />
+        <line x1="44" y1="15" x2="44" y2="25" strokeWidth="1.2" />
+        <line x1="476" y1="15" x2="476" y2="25" strokeWidth="1.2" />
+        <rect x="234" y="11" width="52" height="18" rx="5" fill="#f8fafc" stroke="#0284c7" strokeWidth="1" />
+        <text x="260" y="23" textAnchor="middle" stroke="none">10.00m</text>
+
+        {/* Bottom 10.00m */}
+        <line x1="44" y1="305" x2="476" y2="305" strokeWidth="1.2" />
+        <line x1="44" y1="300" x2="44" y2="310" strokeWidth="1.2" />
+        <line x1="476" y1="300" x2="476" y2="310" strokeWidth="1.2" />
+        <rect x="234" y="296" width="52" height="18" rx="5" fill="#f8fafc" stroke="#0284c7" strokeWidth="1" />
+        <text x="260" y="308" textAnchor="middle" stroke="none">10.00m</text>
+
+        {/* Left 7.00m */}
+        <line x1="28" y1="42" x2="28" y2="294" strokeWidth="1.2" />
+        <line x1="23" y1="42" x2="33" y2="42" strokeWidth="1.2" />
+        <line x1="23" y1="294" x2="33" y2="294" strokeWidth="1.2" />
+        <rect x="10" y="158" width="36" height="18" rx="5" fill="#f8fafc" stroke="#0284c7" strokeWidth="1" transform="rotate(-90 28 167)" />
+        <text x="28" y="170" textAnchor="middle" stroke="none" transform="rotate(-90 28 170)">7.00m</text>
+
+        {/* Right 7.00m */}
+        <line x1="492" y1="42" x2="492" y2="294" strokeWidth="1.2" />
+        <line x1="487" y1="42" x2="497" y2="42" strokeWidth="1.2" />
+        <line x1="487" y1="294" x2="497" y2="294" strokeWidth="1.2" />
+        <rect x="474" y="158" width="36" height="18" rx="5" fill="#f8fafc" stroke="#0284c7" strokeWidth="1" transform="rotate(-90 492 167)" />
+        <text x="492" y="170" textAnchor="middle" stroke="none" transform="rotate(-90 492 170)">7.00m</text>
       </g>
 
-      <rect x="41" y="38" width="438" height="13" rx="3" fill="#30254f" />
-      <rect x="41" y="51" width="6" height="243" rx="3" fill="#794b8d" opacity="0.9" />
-      <rect x="473" y="110" width="6" height="135" rx="3" fill="#367785" opacity="0.9" />
-      <text x="260" y="47" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="800" letterSpacing="1.4">SPACE FEATURE WALL</text>
+      {/* Walls */}
+      {/* North Wall: Solid White with Outline */}
+      <rect x="44" y="40" width="432" height="5" fill="#ffffff" stroke="#334155" strokeWidth="1.2" />
+      {/* West Boundary: Dashed */}
+      <line x1="44" y1="45" x2="44" y2="294" stroke="#94a3b8" strokeWidth="1.2" strokeDasharray="3 3" />
+      {/* East Caged-Wall: Slatted / Dashed partition */}
+      <rect x="471" y="44" width="8" height="248" fill="none" stroke="#334155" strokeWidth="1.2" strokeDasharray="3 3" />
 
+      {/* Top 3D Logo Overlay across North Wall */}
+      <g>
+        <rect x="145" y="8" width="238" height="74" rx="4" fill="#0d9488" fillOpacity="0.07" stroke="#0d9488" strokeWidth="1.2" />
+        <text x="264" y="6" textAnchor="middle" fill="#0d9488" fontSize="7.5" fontWeight="800" letterSpacing="0.8">3D LOGO</text>
+      </g>
+
+      {/* STEP 0: Space Dimensions Outline Card */}
       {!showAssets && (
         <g>
-          <rect x="128" y="104" width="264" height="128" rx="16" fill="#ffffff" opacity="0.78" stroke="#8b5cf6" strokeDasharray="6 5" />
-          <text x="260" y="156" textAnchor="middle" fill="#312e81" fontSize="16" fontWeight="900">SPACE</text>
-          <text x="260" y="181" textAnchor="middle" fill="#6366f1" fontSize="12" fontFamily="ui-monospace, SFMono-Regular, monospace" fontWeight="700">10.0m × 7.0m SPACE</text>
-          <text x="260" y="204" textAnchor="middle" fill="#64748b" fontSize="9" letterSpacing="1.1">OPEN SOCIAL FLOOR PLAN</text>
+          <rect x="135" y="105" width="250" height="126" rx="14" fill="#ffffff" opacity="0.85" stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="6 4" />
+          <text x="260" y="152" textAnchor="middle" fill="#1e3a8a" fontSize="15" fontWeight="900">10.0m × 7.0m SPACE</text>
+          <text x="260" y="176" textAnchor="middle" fill="#0284c7" fontSize="11" fontFamily="ui-monospace, SFMono-Regular, monospace" fontWeight="700">TRIAL 2 FLOOR PLAN</text>
+          <text x="260" y="198" textAnchor="middle" fill="#64748b" fontSize="8.5" letterSpacing="1">NORTH FEATURE WALL &amp; OPEN SOCIAL LAYOUT</text>
         </g>
       )}
 
+      {/* STEP 1: Furnished Assets Blueprint matching trial2 exact layout */}
       {showAssets && (
-        <g>
-          <g opacity="0.9">
-            <rect x="60" y="66" width="178" height="158" rx="5" fill="#b47ad4" fillOpacity="0.07" stroke="#b47ad4" strokeWidth="1.3" />
-            {[78, 92, 106, 120, 134, 148, 162, 176, 190, 204].map((y) => (
-              <line key={y} x1="68" y1={y} x2="230" y2={y} stroke="#b47ad4" strokeWidth="2" />
-            ))}
+        <g stroke="#334155" strokeWidth="1.1" fill="none">
+          {/* 1. Top Right Fridge (FRIGARO GROß GLASTÜR) */}
+          <g>
+            <rect x="432" y="48" width="26" height="26" rx="1.5" fill="#f8fafc" />
+            <line x1="432" y1="70" x2="458" y2="70" strokeWidth="1.2" />
+            <rect x="434" y="71.5" width="7" height="1.5" rx="0.5" fill="#334155" stroke="none" />
+            <text x="445" y="44" textAnchor="middle" fill="#475569" fontSize="5.5" fontWeight="700" stroke="none" fontFamily="sans-serif">FRIGARO GROß<tspan x="445" dy="6">GLASTÜR</tspan></text>
           </g>
 
-          <Symbol x={83} y={111} width={34} height={58} rotation={90} category="sofas-and-lounges" assetName="soft_ii" />
-          <Symbol x={83} y={177} width={34} height={58} rotation={90} category="sofas-and-lounges" assetName="soft_ii" />
-          <Symbol x={186} y={112} width={37} height={37} rotation={-90} category="chairs" assetName="egg_chair" className="text-slate-900" />
-          <Symbol x={186} y={179} width={37} height={37} rotation={-90} category="chairs" assetName="egg_chair" className="text-slate-900" />
-          <Symbol x={135} y={112} width={24} height={24} category="tables-and-bar-tables" assetName="round" />
-          <Symbol x={135} y={179} width={24} height={24} category="tables-and-bar-tables" assetName="round" />
+          {/* 2. Left Lounge Area */}
+          {/* Top POMP SQUARE */}
+          <g>
+            <rect x="115" y="66" width="43" height="36" rx="2" fill="#f8fafc" />
+            <rect x="121" y="70" width="31" height="28" rx="1" fill="#f1f5f9" />
+            <text x="136.5" y="112" textAnchor="middle" fill="#475569" fontSize="6" fontWeight="700" stroke="none" fontFamily="sans-serif">POMP SQUARE</text>
+          </g>
 
-          {[330, 365, 400].map((x) => (
-            <Symbol key={`buffet-${x}`} x={x} y={92} width={42} height={31} rotation={90} category="counters-and-showcases" assetName="lumino_buffet" className="text-cyan-700" />
-          ))}
-          {[330, 365, 400].map((x) => (
-            <Symbol key={`barstool-${x}`} x={x} y={139} width={22} height={22} category="barstools-and-stools" assetName="petilia" />
-          ))}
-          <Symbol x={450} y={72} width={28} height={37} rotation={180} category="kitchen-and-miscellaneous" assetName="frigaro" />
+          {/* Bottom POMP SQUARE */}
+          <g>
+            <rect x="115" y="222" width="43" height="36" rx="2" fill="#f8fafc" />
+            <rect x="121" y="226" width="31" height="28" rx="1" fill="#f1f5f9" />
+            <text x="136.5" y="268" textAnchor="middle" fill="#475569" fontSize="6" fontWeight="700" stroke="none" fontFamily="sans-serif">POMP SQUARE</text>
+          </g>
 
-          {[326, 414].map((x) => (
-            <Symbol key={`cocktail-${x}`} x={x} y={238} width={39} height={39} category="tables-and-bar-tables" assetName="round" />
-          ))}
-          {[292, 354, 386, 450].map((x, index) => (
-            <Symbol key={`social-stool-${x}`} x={x} y={269 + (index % 2) * 8} width={20} height={20} category="barstools-and-stools" assetName="petilia" />
+          {/* Top Soft II Sofa */}
+          <g>
+            <rect x="72" y="113" width="34" height="48" rx="2" fill="#f8fafc" />
+            <rect x="72" y="113" width="9" height="48" rx="1.5" fill="#e2e8f0" />
+            <rect x="72" y="113" width="34" height="6" rx="1" fill="#e2e8f0" />
+            <rect x="72" y="155" width="34" height="6" rx="1" fill="#e2e8f0" />
+            <line x1="81" y1="137" x2="106" y2="137" stroke="#94a3b8" strokeWidth="0.9" />
+            <text x="67" y="140" textAnchor="middle" fill="#475569" fontSize="6" fontWeight="700" stroke="none" transform="rotate(-90 67 140)" fontFamily="sans-serif">Soft II</text>
+          </g>
+
+          {/* Bottom Soft II Sofa */}
+          <g>
+            <rect x="76" y="172" width="34" height="48" rx="2" fill="#f8fafc" />
+            <rect x="76" y="172" width="9" height="48" rx="1.5" fill="#e2e8f0" />
+            <rect x="76" y="172" width="34" height="6" rx="1" fill="#e2e8f0" />
+            <rect x="76" y="214" width="34" height="6" rx="1" fill="#e2e8f0" />
+            <line x1="85" y1="196" x2="110" y2="196" stroke="#94a3b8" strokeWidth="0.9" />
+            <text x="71" y="199" textAnchor="middle" fill="#475569" fontSize="6" fontWeight="700" stroke="none" transform="rotate(-90 71 199)" fontFamily="sans-serif">Soft II</text>
+          </g>
+
+          {/* 2x Little Friend Side Tables */}
+          <g>
+            <circle cx="140" cy="137" r="9.5" fill="#f8fafc" />
+            <circle cx="140" cy="137" r="7.5" stroke="#94a3b8" strokeWidth="0.7" strokeDasharray="1.5 1.5" />
+            <circle cx="140" cy="137" r="1.8" fill="#334155" stroke="none" />
+            <text x="140" y="153" textAnchor="middle" fill="#475569" fontSize="5.5" fontWeight="700" stroke="none" fontFamily="sans-serif">Little Friend</text>
+          </g>
+          <g>
+            <circle cx="140" cy="186" r="9.5" fill="#f8fafc" />
+            <circle cx="140" cy="186" r="7.5" stroke="#94a3b8" strokeWidth="0.7" strokeDasharray="1.5 1.5" />
+            <circle cx="140" cy="186" r="1.8" fill="#334155" stroke="none" />
+            <text x="140" y="202" textAnchor="middle" fill="#475569" fontSize="5.5" fontWeight="700" stroke="none" fontFamily="sans-serif">Little Friend</text>
+          </g>
+
+          {/* 2x Egg Chairs (facing left) */}
+          <g>
+            <rect x="171" y="117" width="41" height="34" rx="2" fill="#f8fafc" />
+            <path d="M 207 122 C 176 122, 176 146, 207 146" stroke="#334155" strokeWidth="1.3" fill="none" />
+            <line x1="184" y1="134" x2="204" y2="134" stroke="#94a3b8" strokeWidth="0.8" />
+            <text x="216" y="137" textAnchor="middle" fill="#475569" fontSize="6" fontWeight="700" stroke="none" transform="rotate(90 216 137)" fontFamily="sans-serif">Egg Chair</text>
+          </g>
+          <g>
+            <rect x="171" y="174" width="41" height="34" rx="2" fill="#f8fafc" />
+            <path d="M 207 179 C 176 179, 176 203, 207 203" stroke="#334155" strokeWidth="1.3" fill="none" />
+            <line x1="184" y1="191" x2="204" y2="191" stroke="#94a3b8" strokeWidth="0.8" />
+            <text x="216" y="194" textAnchor="middle" fill="#475569" fontSize="6" fontWeight="700" stroke="none" transform="rotate(90 216 194)" fontFamily="sans-serif">Egg Chair</text>
+          </g>
+
+          {/* 3. Bar / Buffet Area (Right) */}
+          {/* 3x Lumino Buffet Counters */}
+          {[323, 353, 383].map((bx) => (
+            <g key={`buffet-${bx}`}>
+              <rect x={bx} y="96" width="30" height="42" rx="1.5" fill="#f8fafc" />
+              <rect x={bx} y="96" width="8" height="42" fill="#e2e8f0" />
+              <line x1={bx + 3} y1="102" x2={bx + 6} y2="105" stroke="#94a3b8" strokeWidth="0.8" />
+              <text x={bx + 4} y="117" textAnchor="middle" fill="#475569" fontSize="5.5" fontWeight="700" stroke="none" transform={`rotate(90 ${bx + 4} 117)`} fontFamily="sans-serif">Lumino Buffet</text>
+            </g>
           ))}
 
-          <rect x="348" y="83" width="68" height="16" rx="3" fill="#22b8bd" />
-          <text x="382" y="94" textAnchor="middle" fill="white" fontSize="8" fontWeight="900">krafc<tspan fill="#ff2bc2">.</tspan></text>
+          {/* 3D LOGO Over Buffets */}
+          <g>
+            <rect x="331" y="116" width="63" height="34" rx="2.5" fill="#0d9488" fillOpacity="0.08" stroke="#0d9488" strokeWidth="1.2" />
+            <text x="362.5" y="136" textAnchor="middle" fill="#0d9488" fontSize="6.5" fontWeight="800" stroke="none">3D LOGO</text>
+          </g>
 
-          <g fill="#64748b" fontSize="8" fontWeight="800" letterSpacing="1">
-            <text x="149" y="239" textAnchor="middle">LOUNGE</text>
-            <text x="366" y="167" textAnchor="middle">SOCIAL BAR</text>
-            <text x="369" y="298" textAnchor="middle">COCKTAIL</text>
+          {/* 2x Bombo Barstools in front of Buffets */}
+          <g>
+            <circle cx="342" cy="154" r="8" fill="#f8fafc" />
+            <circle cx="342" cy="154" r="5" stroke="#64748b" strokeWidth="0.8" />
+            <line x1="337" y1="149" x2="347" y2="149" stroke="#334155" strokeWidth="1.4" />
+            <text x="342" y="169" textAnchor="middle" fill="#475569" fontSize="5.5" fontWeight="700" stroke="none" fontFamily="sans-serif">Bombo</text>
+          </g>
+          <g>
+            <circle cx="389" cy="154" r="8" fill="#f8fafc" />
+            <circle cx="389" cy="154" r="5" stroke="#64748b" strokeWidth="0.8" />
+            <line x1="384" y1="149" x2="394" y2="149" stroke="#334155" strokeWidth="1.4" />
+            <text x="389" y="169" textAnchor="middle" fill="#475569" fontSize="5.5" fontWeight="700" stroke="none" fontFamily="sans-serif">Bombo</text>
+          </g>
+
+          {/* 4. Bottom Right Cocktail Tables (FERMO 110 ALUFARBEN Ø 70) */}
+          {/* Left Cocktail Table */}
+          <g>
+            <circle cx="325" cy="231" r="14.5" fill="#f8fafc" />
+            <circle cx="325" cy="231" r="11" stroke="#94a3b8" strokeWidth="0.7" strokeDasharray="2 2" />
+            <circle cx="325" cy="231" r="2.5" fill="#334155" stroke="none" />
+            <text x="325" y="254" textAnchor="middle" fill="#475569" fontSize="5" fontWeight="700" stroke="none" fontFamily="sans-serif">FERMO 110<tspan x="325" dy="5.5">ALUFARBEN Ø 70</tspan></text>
+          </g>
+
+          {/* Left Table Stools (Angled) */}
+          <g transform="translate(299 248) rotate(35)">
+            <circle cx="0" cy="0" r="7.5" fill="#f8fafc" />
+            <circle cx="0" cy="0" r="4.8" stroke="#64748b" strokeWidth="0.8" />
+            <line x1="-5" y1="-5" x2="5" y2="-5" stroke="#334155" strokeWidth="1.3" />
+            <text x="0" y="13" textAnchor="middle" fill="#475569" fontSize="5" fontWeight="700" stroke="none" fontFamily="sans-serif">Bombo</text>
+          </g>
+          <g transform="translate(351 248) rotate(-35)">
+            <circle cx="0" cy="0" r="7.5" fill="#f8fafc" />
+            <circle cx="0" cy="0" r="4.8" stroke="#64748b" strokeWidth="0.8" />
+            <line x1="-5" y1="-5" x2="5" y2="-5" stroke="#334155" strokeWidth="1.3" />
+            <text x="0" y="13" textAnchor="middle" fill="#475569" fontSize="5" fontWeight="700" stroke="none" fontFamily="sans-serif">Bombo</text>
+          </g>
+
+          {/* Right Cocktail Table */}
+          <g>
+            <circle cx="418" cy="231" r="14.5" fill="#f8fafc" />
+            <circle cx="418" cy="231" r="11" stroke="#94a3b8" strokeWidth="0.7" strokeDasharray="2 2" />
+            <circle cx="418" cy="231" r="2.5" fill="#334155" stroke="none" />
+            <text x="418" y="254" textAnchor="middle" fill="#475569" fontSize="5" fontWeight="700" stroke="none" fontFamily="sans-serif">FERMO 110<tspan x="418" dy="5.5">ALUFARBEN Ø 70</tspan></text>
+          </g>
+
+          {/* Right Table Stools (Angled) */}
+          <g transform="translate(394 248) rotate(35)">
+            <circle cx="0" cy="0" r="7.5" fill="#f8fafc" />
+            <circle cx="0" cy="0" r="4.8" stroke="#64748b" strokeWidth="0.8" />
+            <line x1="-5" y1="-5" x2="5" y2="-5" stroke="#334155" strokeWidth="1.3" />
+            <text x="0" y="13" textAnchor="middle" fill="#475569" fontSize="5" fontWeight="700" stroke="none" fontFamily="sans-serif">Bombo</text>
+          </g>
+          <g transform="translate(441 248) rotate(-35)">
+            <circle cx="0" cy="0" r="7.5" fill="#f8fafc" />
+            <circle cx="0" cy="0" r="4.8" stroke="#64748b" strokeWidth="0.8" />
+            <line x1="-5" y1="-5" x2="5" y2="-5" stroke="#334155" strokeWidth="1.3" />
+            <text x="0" y="13" textAnchor="middle" fill="#475569" fontSize="5" fontWeight="700" stroke="none" fontFamily="sans-serif">Bombo</text>
           </g>
         </g>
       )}
 
+      {/* Live Sync Badge */}
       <g transform="translate(393 310)">
         <rect width="83" height="18" rx="9" fill="#06b6d4" opacity="0.13" />
         <circle cx="10" cy="9" r="3" fill="#06b6d4" />
@@ -126,3 +243,4 @@ export function AfterglowBlueprint({ mode }: AfterglowBlueprintProps) {
     </svg>
   )
 }
+
