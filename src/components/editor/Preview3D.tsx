@@ -1615,38 +1615,26 @@ export default function Preview3D({
               isBlobUrl = true;
             }
 
-            const img = new Image();
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              canvas.width = PX_W;
-              canvas.height = PX_H;
-              const ctx = canvas.getContext('2d')!;
-              ctx.clearRect(0, 0, PX_W, PX_H);
-              
-              // BabylonJS applies textures upside down on CreatePlane
-              ctx.translate(0, PX_H);
-              ctx.scale(1, -1);
-              
-              ctx.drawImage(img, 0, 0, PX_W, PX_H);
-              if (isBlobUrl) URL.revokeObjectURL(url);
+            const isDataPng = el.svgData.startsWith('data:image/png');
+            let textureUrl = url;
+            if (!isBlobUrl && !isDataPng && el.svgData.startsWith('<svg')) {
+              const blob = new Blob([el.svgData], { type: 'image/svg+xml;charset=utf-8' });
+              textureUrl = URL.createObjectURL(blob);
+            }
 
-              const dynTex = new BABYLON.DynamicTexture(el.id + "_tex", { width: PX_W, height: PX_H }, scene, false);
-              dynTex.getContext().drawImage(canvas, 0, 0);
-              dynTex.update(false);
-              dynTex.hasAlpha = true;
+            const logoTex = new BABYLON.Texture(textureUrl, scene, false, false);
+            logoTex.hasAlpha = true;
 
-              faceMat.diffuseTexture = dynTex;
-              faceMat.opacityTexture = dynTex;
-              faceMat.useAlphaFromDiffuseTexture = true;
-              
-              // Self-illuminate slightly so the logo stays bright in GLB regardless of shadow/light angles
-              faceMat.emissiveTexture = dynTex;
-              faceMat.emissiveColor = el.logoStyle === 'glowing' ? new BABYLON.Color3(1, 1, 1) : new BABYLON.Color3(0.5, 0.5, 0.5);
+            faceMat.diffuseTexture = logoTex;
+            faceMat.opacityTexture = logoTex;
+            faceMat.useAlphaFromDiffuseTexture = true;
+            
+            // Self-illuminate slightly so the logo stays bright in GLB regardless of shadow/light angles
+            faceMat.emissiveTexture = logoTex;
+            faceMat.emissiveColor = el.logoStyle === 'glowing' ? new BABYLON.Color3(1, 1, 1) : new BABYLON.Color3(0.5, 0.5, 0.5);
 
-              // Apply same opacity mask to depth layers so they clip to logo shape
-              sideMat.opacityTexture = dynTex;
-            };
-            img.src = url;
+            // Apply same opacity mask to depth layers so they clip to logo shape
+            sideMat.opacityTexture = logoTex;
           } else {
             faceMat.diffuseColor = baseColor;
           }
