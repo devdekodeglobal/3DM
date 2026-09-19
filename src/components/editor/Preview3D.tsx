@@ -1576,11 +1576,15 @@ export default function Preview3D({
 
           // ---- FRONT FACE PLANE: SVG via Canvas ----
           const faceMat = new BABYLON.StandardMaterial(el.id + "_face_mat", scene);
+          faceMat.diffuseColor = BABYLON.Color3.White();
+          faceMat.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+          faceMat.ambientColor = new BABYLON.Color3(0.5, 0.5, 0.5);
           faceMat.backFaceCulling = true; // Don't render the back
 
           // ---- DEPTH LAYERS: stack of solid-color planes behind the front ----
           const sideMat = new BABYLON.StandardMaterial(el.id + "_side_mat", scene);
           sideMat.diffuseColor = baseColor;
+          sideMat.ambientColor = baseColor.scale(0.5);
           sideMat.backFaceCulling = false; // Sides visible from all angles
           if (el.logoStyle === 'chrome') { sideMat.specularColor = new BABYLON.Color3(1, 1, 1); sideMat.specularPower = 128; }
           if (el.logoStyle === 'glowing') { sideMat.emissiveColor = baseColor; }
@@ -1632,14 +1636,13 @@ export default function Preview3D({
               faceMat.diffuseTexture = dynTex;
               faceMat.opacityTexture = dynTex;
               faceMat.useAlphaFromDiffuseTexture = true;
+              
+              // Self-illuminate slightly so the logo stays bright in GLB regardless of shadow/light angles
+              faceMat.emissiveTexture = dynTex;
+              faceMat.emissiveColor = el.logoStyle === 'glowing' ? new BABYLON.Color3(1, 1, 1) : new BABYLON.Color3(0.5, 0.5, 0.5);
 
               // Apply same opacity mask to depth layers so they clip to logo shape
               sideMat.opacityTexture = dynTex;
-
-              if (el.logoStyle === 'glowing') {
-                faceMat.emissiveTexture = dynTex;
-                faceMat.emissiveColor = new BABYLON.Color3(1, 1, 1);
-              }
             };
             img.src = url;
           } else {
