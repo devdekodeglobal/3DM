@@ -14,11 +14,14 @@ export default defineConfig({
     viteReact(),
   ],
   optimizeDeps: {
-    include: [
+    exclude: [
       '@babylonjs/core',
       '@babylonjs/loaders',
       '@babylonjs/materials',
       '@babylonjs/gui',
+      '@babylonjs/serializers',
+    ],
+    include: [
       'konva',
       'react-konva',
       'lucide-react',

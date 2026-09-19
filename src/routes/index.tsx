@@ -143,7 +143,7 @@ function LandingPage() {
               color: 'var(--fg)',
               margin: '0',
             }}>
-              Design 3D <span style={{ color: 'var(--brand)' }}>Spaces</span><br/> with Precision
+              Bring Your Space to Life
             </h1>
 
             {/* 2. Interactive Showcase */}
@@ -159,8 +159,7 @@ function LandingPage() {
               margin: '0',
               maxWidth: 600,
             }}>
-              Professional 2D floor planning with snap-to-grid mechanics and
-              a real-time 3D preview, all in your browser.
+              Design your space, place your assets, and see it come to life in 3D - in real time.
             </p>
 
           </div>

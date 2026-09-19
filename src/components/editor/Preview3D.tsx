@@ -2549,7 +2549,7 @@ export default function Preview3D({
         baseLap += 2 * Math.PI;
       }
       const wp = tourWaypoints[tourIndex];
-      setCameraAngle(baseLap + wp.alpha, wp.beta, 55); // Slower, smoother camera glide
+      setCameraAngle(baseLap + wp.alpha, wp.beta, 42); // Slightly faster, crisp camera glide
     }, 2000);
 
     return () => clearInterval(interval);
