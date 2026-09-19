@@ -2470,7 +2470,11 @@ export default function Preview3D({
     }
   };
 
-  const setCameraAngle = (alpha: number, beta: number) => {
+  const setCameraAngle = (
+    alpha: number,
+    beta: number,
+    durationFrames = 30,
+  ) => {
     const scene = sceneRef.current;
     if (!scene) return;
     const orbitCam = scene.getCameraByName(
@@ -2485,7 +2489,7 @@ export default function Preview3D({
       orbitCam,
       "alpha",
       60,
-      30,
+      durationFrames,
       orbitCam.alpha,
       alpha,
       2,
@@ -2496,7 +2500,7 @@ export default function Preview3D({
       orbitCam,
       "beta",
       60,
-      30,
+      durationFrames,
       orbitCam.beta,
       beta,
       2,
@@ -2509,7 +2513,7 @@ export default function Preview3D({
       orbitCam,
       "target",
       60,
-      30,
+      durationFrames,
       orbitCam.getTarget(),
       new BABYLON.Vector3(centerX, 0.5, centerZ),
       2,
@@ -2540,8 +2544,8 @@ export default function Preview3D({
     const interval = setInterval(() => {
       currentIndex = (currentIndex + 1) % tourWaypoints.length;
       const wp = tourWaypoints[currentIndex];
-      setCameraAngle(wp.alpha, wp.beta, 60);
-    }, 3200);
+      setCameraAngle(wp.alpha, wp.beta, 55); // Slower, smoother camera gliding animation
+    }, 2000); // Faster interval between perspective changes
 
     return () => clearInterval(interval);
   }, [cinematicTour, isSceneReady, activeView, boothConfig]);
