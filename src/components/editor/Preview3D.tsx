@@ -30,6 +30,7 @@ interface Preview3DProps {
   hideControls?: boolean;
   cameraDistanceScale?: number;
   modelUrl?: string;
+  cinematicTour?: boolean;
 }
 
 const PPM = 100;
@@ -47,6 +48,7 @@ export default function Preview3D({
   hideControls = false,
   cameraDistanceScale = 1,
   modelUrl,
+  cinematicTour = false,
 }: Preview3DProps) {
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [cameraMode, setCameraMode] = useState<"orbit" | "flight">("orbit");
@@ -2468,7 +2470,11 @@ export default function Preview3D({
     }
   };
 
-  const setCameraAngle = (alpha: number, beta: number) => {
+  const setCameraAngle = (
+    alpha: number,
+    beta: number,
+    durationFrames = 30,
+  ) => {
     const scene = sceneRef.current;
     if (!scene) return;
     const orbitCam = scene.getCameraByName(
@@ -2476,6 +2482,12 @@ export default function Preview3D({
     ) as BABYLON.ArcRotateCamera;
     if (!orbitCam) return;
     if (cameraMode !== "orbit") setCameraMode("orbit");
+
+    // Shortest-path angular wrapping for alpha
+    let targetAlpha = alpha;
+    while (targetAlpha - orbitCam.alpha > Math.PI) targetAlpha -= 2 * Math.PI;
+    while (targetAlpha - orbitCam.alpha < -Math.PI) targetAlpha += 2 * Math.PI;
+
     const ease = new BABYLON.CubicEase();
     ease.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
     BABYLON.Animation.CreateAndStartAnimation(
@@ -2483,10 +2495,10 @@ export default function Preview3D({
       orbitCam,
       "alpha",
       60,
-      30,
+      durationFrames,
       orbitCam.alpha,
-      alpha,
-      2,
+      targetAlpha,
+      0,
       ease,
     );
     BABYLON.Animation.CreateAndStartAnimation(
@@ -2494,10 +2506,10 @@ export default function Preview3D({
       orbitCam,
       "beta",
       60,
-      30,
+      durationFrames,
       orbitCam.beta,
       beta,
-      2,
+      0,
       ease,
     );
     const centerX = boothConfig?.width / 2 || 0;
@@ -2507,13 +2519,41 @@ export default function Preview3D({
       orbitCam,
       "target",
       60,
-      30,
+      durationFrames,
       orbitCam.getTarget(),
       new BABYLON.Vector3(centerX, 0.5, centerZ),
-      2,
+      0,
       ease,
     );
   };
+
+  // 5. Automatic Cinematic Tour between Key Perspectives (Front, Top Right, Right, Back, Top Left, Left, Front)
+  useEffect(() => {
+    if (!cinematicTour || !isSceneReady || activeView !== "perspective") return;
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    const tourWaypoints = [
+      { alpha: -Math.PI * 0.28, beta: Math.PI / 3.2 }, // Front Right / Isometric
+      { alpha: -Math.PI * 0.2, beta: Math.PI / 3.8 },  // Top Right
+      { alpha: 0, beta: Math.PI / 3.0 },              // Right View
+      { alpha: Math.PI / 2, beta: Math.PI / 3.2 },    // Back View
+      { alpha: -Math.PI * 0.75, beta: Math.PI / 3.6 }, // Top Left
+      { alpha: -Math.PI, beta: Math.PI / 3.0 },       // Left View
+      { alpha: -Math.PI / 2, beta: Math.PI / 3.2 },   // Front View
+    ];
+
+    let currentIndex = 0;
+    setCameraAngle(tourWaypoints[0].alpha, tourWaypoints[0].beta, 40);
+
+    const interval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % tourWaypoints.length;
+      const wp = tourWaypoints[currentIndex];
+      setCameraAngle(wp.alpha, wp.beta, 75); // ~1.25s smooth gliding transition
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [cinematicTour, isSceneReady, activeView, boothConfig]);
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--bg-base)] p-4 gap-4">

@@ -161,7 +161,8 @@ export function InteractiveWorkflowShowcase() {
             >
               <div className="w-full max-w-[440px] h-[260px] rounded-xl overflow-hidden border border-indigo-500/30 shadow-2xl relative bg-[var(--bg-card)] pointer-events-none">
                 <Preview3D
-                  autoRotate={true}
+                  cinematicTour={true}
+                  autoRotate={false}
                   hideControls={true}
                   boothConfig={HERO_AFTERGLOW_BOOTH_CONFIG}
                   elements={HERO_AFTERGLOW_ELEMENTS as any}
