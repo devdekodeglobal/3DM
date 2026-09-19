@@ -727,7 +727,7 @@ export default function Preview3D({
           }
         }
       } else {
-        if (baseView === "top") {
+        if (baseView === "top" || baseView === "grid_top") {
           zoom = maxDim * 0.55;
         } else {
           // North/South/East/West elevations
@@ -740,6 +740,7 @@ export default function Preview3D({
         }
         switch (baseView) {
           case "top":
+          case "grid_top":
             camPos = new BABYLON.Vector3(centerX, 10, centerZ);
             targetPos = new BABYLON.Vector3(centerX, 0, centerZ);
             break;
@@ -875,115 +876,119 @@ export default function Preview3D({
     const baseView = activeView
       .replace("_download", "")
       .replace("_capture", "");
-    const chains = calculateBlueprintMeasurements(
-      baseView,
-      elements,
-      boothConfig,
-    );
+    const isGridOnly = baseView === "grid_top";
 
     // --- BLUEPRINT VISUAL POLISH ---
     const grid = scene.getMeshByName("blueprintGrid");
     if (grid && grid.material) {
-      grid.material.alpha = 0.15; // Fade the grid significantly
+      grid.material.alpha = isGridOnly ? 0.45 : 0.15; // Crisp grid for grid view, subtle for dimensioned views
     }
 
-    chains.forEach((chain) => {
-      // 1. Render Extension Lines (Whiskers)
-      chain.extensionLines.forEach((pointsArr) => {
-        const p = pointsArr.map((pt) => new BABYLON.Vector3(pt.x, pt.y, pt.z));
-        const extMesh = BABYLON.MeshBuilder.CreateLines(
-          "ext",
-          { points: p },
-          scene,
-        );
-        extMesh.color = new BABYLON.Color3(0.3, 0.3, 0.3); // Faded grey
-        extMesh.alpha = 0.5;
-        measurementLinesRef.current.push(extMesh);
-      });
-
-      // 2. Render Main Dimension Line
-      const points = chain.mainLine.map(
-        (p) => new BABYLON.Vector3(p.x, p.y, p.z),
+    if (!isGridOnly) {
+      const chains = calculateBlueprintMeasurements(
+        baseView,
+        elements,
+        boothConfig,
       );
-      const lineMesh = BABYLON.MeshBuilder.CreateLines("ml", { points }, scene);
 
-      let color = new BABYLON.Color3(0.3, 0.3, 0.3); // Default Grey
-      if (chain.type === "asset") color = new BABYLON.Color3(0, 0.7, 1); // Blue
-      if (chain.type === "neighbor") color = new BABYLON.Color3(0, 1, 0.5); // Green
-
-      lineMesh.color = color;
-      lineMesh.isPickable = false;
-      measurementLinesRef.current.push(lineMesh);
-
-      // --- ADD ARROWS ---
-      if (
-        (chain.type === "asset" || chain.type === "neighbor") &&
-        points.length >= 2
-      ) {
-        const p1 = points[0];
-        const p2 = points[points.length - 1];
-        const dir = p2.subtract(p1).normalize();
-
-        let up = BABYLON.Vector3.Up();
-        if (Math.abs(BABYLON.Vector3.Dot(dir, up)) > 0.9)
-          up = BABYLON.Vector3.Right();
-        const perp = BABYLON.Vector3.Cross(dir, up).normalize().scale(0.05);
-
-        const addArrow = (tip: BABYLON.Vector3, d: BABYLON.Vector3) => {
-          const arrowPoints = [
-            tip.subtract(d.scale(0.1)).add(perp),
-            tip,
-            tip.subtract(d.scale(0.1)).subtract(perp),
-          ];
-          const arrowMesh = BABYLON.MeshBuilder.CreateLines(
-            "arrow",
-            { points: arrowPoints },
+      chains.forEach((chain) => {
+        // 1. Render Extension Lines (Whiskers)
+        chain.extensionLines.forEach((pointsArr) => {
+          const p = pointsArr.map((pt) => new BABYLON.Vector3(pt.x, pt.y, pt.z));
+          const extMesh = BABYLON.MeshBuilder.CreateLines(
+            "ext",
+            { points: p },
             scene,
           );
-          arrowMesh.color = lineMesh.color;
-          measurementLinesRef.current.push(arrowMesh);
-        };
+          extMesh.color = new BABYLON.Color3(0.3, 0.3, 0.3); // Faded grey
+          extMesh.alpha = 0.5;
+          measurementLinesRef.current.push(extMesh);
+        });
 
-        addArrow(p1, dir.scale(-1));
-        addArrow(p2, dir);
-      }
+        // 2. Render Main Dimension Line
+        const points = chain.mainLine.map(
+          (p) => new BABYLON.Vector3(p.x, p.y, p.z),
+        );
+        const lineMesh = BABYLON.MeshBuilder.CreateLines("ml", { points }, scene);
 
-      // Add labels (centered on lines with high-contrast, scalable pills)
-      if (points.length >= 2) {
-        const p1 = points[0];
-        const p2 = points[points.length - 1];
-        const mid = BABYLON.Vector3.Center(p1, p2);
+        let color = new BABYLON.Color3(0.3, 0.3, 0.3); // Default Grey
+        if (chain.type === "asset") color = new BABYLON.Color3(0, 0.7, 1); // Blue
+        if (chain.type === "neighbor") color = new BABYLON.Color3(0, 1, 0.5); // Green
 
-        const rect = new GUI.Rectangle();
-        rect.width = "88px";
-        rect.height = "26px";
-        rect.cornerRadius = 6;
-        rect.thickness = 1.5;
-        rect.color =
-          chain.type === "neighbor"
-            ? "#10b981"
-            : chain.type === "asset"
-              ? "#38bdf8"
-              : "#94a3b8";
-        rect.background = "rgba(15, 23, 42, 0.92)";
-        gui.addControl(rect);
+        lineMesh.color = color;
+        lineMesh.isPickable = false;
+        measurementLinesRef.current.push(lineMesh);
 
-        const labelText = new GUI.TextBlock();
-        labelText.text = chain.label;
-        labelText.color = chain.type === "gap" ? "#e2e8f0" : "#ffffff";
-        labelText.fontSize = 13;
-        labelText.fontWeight = "bold";
-        rect.addControl(labelText);
+        // --- ADD ARROWS ---
+        if (
+          (chain.type === "asset" || chain.type === "neighbor") &&
+          points.length >= 2
+        ) {
+          const p1 = points[0];
+          const p2 = points[points.length - 1];
+          const dir = p2.subtract(p1).normalize();
 
-        const node = new BABYLON.TransformNode("ln", scene);
-        node.position = mid;
-        rect.linkWithMesh(node);
-        measurementLinesRef.current.push(node as any);
-      }
-    });
+          let up = BABYLON.Vector3.Up();
+          if (Math.abs(BABYLON.Vector3.Dot(dir, up)) > 0.9)
+            up = BABYLON.Vector3.Right();
+          const perp = BABYLON.Vector3.Cross(dir, up).normalize().scale(0.05);
+
+          const addArrow = (tip: BABYLON.Vector3, d: BABYLON.Vector3) => {
+            const arrowPoints = [
+              tip.subtract(d.scale(0.1)).add(perp),
+              tip,
+              tip.subtract(d.scale(0.1)).subtract(perp),
+            ];
+            const arrowMesh = BABYLON.MeshBuilder.CreateLines(
+              "arrow",
+              { points: arrowPoints },
+              scene,
+            );
+            arrowMesh.color = lineMesh.color;
+            measurementLinesRef.current.push(arrowMesh);
+          };
+
+          addArrow(p1, dir.scale(-1));
+          addArrow(p2, dir);
+        }
+
+        // Add labels (centered on lines with high-contrast, scalable pills)
+        if (points.length >= 2) {
+          const p1 = points[0];
+          const p2 = points[points.length - 1];
+          const mid = BABYLON.Vector3.Center(p1, p2);
+
+          const rect = new GUI.Rectangle();
+          rect.width = "88px";
+          rect.height = "26px";
+          rect.cornerRadius = 6;
+          rect.thickness = 1.5;
+          rect.color =
+            chain.type === "neighbor"
+              ? "#10b981"
+              : chain.type === "asset"
+                ? "#38bdf8"
+                : "#94a3b8";
+          rect.background = "rgba(15, 23, 42, 0.92)";
+          gui.addControl(rect);
+
+          const labelText = new GUI.TextBlock();
+          labelText.text = chain.label;
+          labelText.color = chain.type === "gap" ? "#e2e8f0" : "#ffffff";
+          labelText.fontSize = 13;
+          labelText.fontWeight = "bold";
+          rect.addControl(labelText);
+
+          const node = new BABYLON.TransformNode("ln", scene);
+          node.position = mid;
+          rect.linkWithMesh(node);
+          measurementLinesRef.current.push(node as any);
+        }
+      });
+    }
 
     // Add Rulers (Clear, bold for blueprint mode)
-    const isTop = baseView === "top";
+    const isTop = baseView === "top" || baseView === "grid_top";
     const maxDim = Math.max(boothConfig.width, boothConfig.depth);
     for (let i = 0; i <= maxDim; i++) {
       // X-Axis Marker (Top or Bottom edge)

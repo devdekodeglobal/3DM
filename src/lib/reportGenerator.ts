@@ -115,13 +115,14 @@ export async function generateReport(
   const floorplan2D = screenshots['floorplan_2d'];
 
   // Filter 3D blueprint views
-  const standardViews = ['top', 'north', 'south', 'east', 'west'];
+  const standardViews = ['grid_top', 'top', 'north', 'south', 'east', 'west'];
   const elevationViews = Object.keys(screenshots).filter(k => k.startsWith('elevation_'));
   const otherViews = Object.keys(screenshots).filter(k => !standardViews.includes(k) && !k.startsWith('elevation_') && k !== 'floorplan_2d');
 
   const getSheetTitle = (viewKey: string) => {
     switch (viewKey) {
-      case 'top': return '3D Orthographic Top Plan';
+      case 'grid_top': return '1-Meter Spatial Metric Grid Reference';
+      case 'top': return '3D Orthographic Top Plan (Dimensioned)';
       case 'north': return 'North Elevation (Front/Rear)';
       case 'south': return 'South Elevation (Front/Rear)';
       case 'east': return 'East Elevation (Side View)';
@@ -137,7 +138,8 @@ export async function generateReport(
 
   const getSheetSubtitle = (viewKey: string) => {
     switch (viewKey) {
-      case 'top': return 'Spatial layout, boundary clearance, and asset footprint';
+      case 'grid_top': return 'Unobstructed 1.0m spatial grid layout without internal dimension lines for visual clearance';
+      case 'top': return 'Spatial layout, boundary clearance, and asset footprint with dimension strings';
       case 'north': return 'Exterior/interior vertical elevation with height and opening markers';
       case 'south': return 'Exterior/interior vertical elevation with height and opening markers';
       case 'east': return 'Side perspective with architectural wall dimensions';

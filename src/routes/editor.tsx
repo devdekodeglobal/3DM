@@ -653,8 +653,8 @@ function EditorPage() {
     }
     setReportScreenshots(reportScreenshotsRef.current)
 
-    // Queue: Top view + standard directional elevations + specific wall elevations
-    const queue = ['top', 'north', 'south', 'east', 'west'];
+    // Queue: 1m metric grid top view + standard top view + standard directional elevations + specific wall elevations
+    const queue = ['grid_top', 'top', 'north', 'south', 'east', 'west'];
 
     // Find walls with customizations and append their specific elevations
     const customWalls = elements.filter(el => el.type === 'wall' && el.wallElements && el.wallElements.length > 0);
