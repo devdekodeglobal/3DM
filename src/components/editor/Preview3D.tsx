@@ -2470,11 +2470,7 @@ export default function Preview3D({
     }
   };
 
-  const setCameraAngle = (
-    alpha: number,
-    beta: number,
-    durationFrames = 30,
-  ) => {
+  const setCameraAngle = (alpha: number, beta: number) => {
     const scene = sceneRef.current;
     if (!scene) return;
     const orbitCam = scene.getCameraByName(
@@ -2482,12 +2478,6 @@ export default function Preview3D({
     ) as BABYLON.ArcRotateCamera;
     if (!orbitCam) return;
     if (cameraMode !== "orbit") setCameraMode("orbit");
-
-    // Shortest-path angular wrapping for alpha
-    let targetAlpha = alpha;
-    while (targetAlpha - orbitCam.alpha > Math.PI) targetAlpha -= 2 * Math.PI;
-    while (targetAlpha - orbitCam.alpha < -Math.PI) targetAlpha += 2 * Math.PI;
-
     const ease = new BABYLON.CubicEase();
     ease.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
     BABYLON.Animation.CreateAndStartAnimation(
@@ -2495,10 +2485,10 @@ export default function Preview3D({
       orbitCam,
       "alpha",
       60,
-      durationFrames,
+      30,
       orbitCam.alpha,
-      targetAlpha,
-      0,
+      alpha,
+      2,
       ease,
     );
     BABYLON.Animation.CreateAndStartAnimation(
@@ -2506,10 +2496,10 @@ export default function Preview3D({
       orbitCam,
       "beta",
       60,
-      durationFrames,
+      30,
       orbitCam.beta,
       beta,
-      0,
+      2,
       ease,
     );
     const centerX = boothConfig?.width / 2 || 0;
@@ -2519,10 +2509,10 @@ export default function Preview3D({
       orbitCam,
       "target",
       60,
-      durationFrames,
+      30,
       orbitCam.getTarget(),
       new BABYLON.Vector3(centerX, 0.5, centerZ),
-      0,
+      2,
       ease,
     );
   };
