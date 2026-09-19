@@ -2529,21 +2529,23 @@ export default function Preview3D({
     );
   };
 
-  // 5. Automatic Cinematic Tour between Key Perspectives (Front, Top Right, Right, Back, Top Left, Left, Front)
+  // 5. Continuous Smooth Orbit Tour with subtle 5-8° elevation transitions
   useEffect(() => {
     if (!cinematicTour || !isSceneReady || activeView !== "perspective") return;
     const scene = sceneRef.current;
     if (!scene) return;
 
-    // Tour sequence: South Side, East Side, North Side, West Side, Top-Left, Top-Right, Bird's Eye Top Center
+    // Continuous unidirectional orbit with gentle 5°-8° elevation wave
     const tourWaypoints = [
-      { alpha: -Math.PI / 2, beta: Math.PI / 3.0 },    // South Side (Front)
-      { alpha: 0, beta: Math.PI / 3.0 },              // East Side (Right)
-      { alpha: Math.PI / 2, beta: Math.PI / 3.4 },    // North Side (Back)
-      { alpha: -Math.PI, beta: Math.PI / 3.0 },       // West Side (Left)
-      { alpha: -Math.PI * 0.75, beta: Math.PI / 3.5 }, // Top-Left View
-      { alpha: -Math.PI * 0.25, beta: Math.PI / 3.5 }, // Top-Right View
-      { alpha: -Math.PI / 2, beta: 0.2 },             // Bird's Eye Top Center
+      { alpha: -Math.PI * 0.50, beta: Math.PI / 3.10 }, // 1. South Side (Front) - 58° elevation
+      { alpha: -Math.PI * 0.25, beta: Math.PI / 3.60 }, // 2. Top-Right / South-East - 50° elevation (~8° lift)
+      { alpha: 0,               beta: Math.PI / 3.20 }, // 3. East Side (Right Profile) - 56° elevation
+      { alpha: Math.PI * 0.25,  beta: Math.PI / 3.55 }, // 4. North-East Angle - 51° elevation
+      { alpha: Math.PI * 0.50,  beta: Math.PI / 3.25 }, // 5. North Side (Back) - 55° elevation
+      { alpha: Math.PI * 0.75,  beta: Math.PI / 3.70 }, // 6. North-West Angle - 49° elevation
+      { alpha: Math.PI * 1.00,  beta: Math.PI / 3.20 }, // 7. West Side (Left Profile) - 56° elevation
+      { alpha: Math.PI * 1.25,  beta: Math.PI / 3.60 }, // 8. Top-Left / South-West - 50° elevation
+      { alpha: Math.PI * 1.50,  beta: Math.PI / 4.25 }, // 9. Bird's Eye Top Center - 42° elevation (~8° overhead)
     ];
 
     let currentIndex = 0;
@@ -2552,8 +2554,8 @@ export default function Preview3D({
     const interval = setInterval(() => {
       currentIndex = (currentIndex + 1) % tourWaypoints.length;
       const wp = tourWaypoints[currentIndex];
-      setCameraAngle(wp.alpha, wp.beta, 75); // ~1.25s smooth gliding transition
-    }, 3500);
+      setCameraAngle(wp.alpha, wp.beta, 80); // ~1.33s ultra-smooth transition
+    }, 3200);
 
     return () => clearInterval(interval);
   }, [cinematicTour, isSceneReady, activeView, boothConfig]);
