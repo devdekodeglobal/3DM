@@ -1,3 +1,17 @@
+export const HERO_AFTERGLOW_BOOTH_CONFIG = {
+  "width": 10,
+  "depth": 7,
+  "wallThickness": 0.1,
+  "walls": {
+    "north": true,
+    "south": false,
+    "east": false,
+    "west": false
+  },
+  "floorType": "tile",
+  "floorColor": "#514A68"
+};
+
 export const HERO_AFTERGLOW_ELEMENTS = [
   {
     "id": "outer-north",
@@ -444,7 +458,7 @@ export const HERO_AFTERGLOW_ELEMENTS = [
     "realDepth": 0.79,
     "yOffset": 0,
     "verticalScale": 1,
-    "facingOffset": -90,
+    "facingOffset": 90,
     "name": "9b4871fe-7c30-4793-a1ad-869d120c26ff"
   },
   {
@@ -465,7 +479,7 @@ export const HERO_AFTERGLOW_ELEMENTS = [
     "realDepth": 0.79,
     "yOffset": 0,
     "verticalScale": 1,
-    "facingOffset": -90,
+    "facingOffset": 90,
     "name": "616e9155-0417-4371-839a-b98c617684e5"
   }
 ];

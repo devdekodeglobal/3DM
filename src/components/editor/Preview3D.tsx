@@ -1211,7 +1211,7 @@ export default function Preview3D({
         
         if (mesh.rotationQuaternion) mesh.rotationQuaternion = null;
         const regEntry = ASSET_REGISTRY.find(a => a.id === el.assetName) as any;
-        const facingOffset = (regEntry?.facingOffset) ?? el.facingOffset ?? 0;
+        const facingOffset = el.facingOffset !== undefined ? el.facingOffset : (regEntry?.facingOffset ?? 0);
         mesh.rotation.y = rotY + (mesh.metadata?.nativeOffset || 0) + BABYLON.Tools.ToRadians(facingOffset);
         if (el.type !== 'asset') {
           mesh.scaling.y = vScale;
@@ -1743,7 +1743,7 @@ export default function Preview3D({
           pivot.position.set(x, el.yOffset || 0, z);
           
           const regEntry = ASSET_REGISTRY.find(a => a.id === el.assetName) as any;
-          const facingOffset = (regEntry?.facingOffset) ?? el.facingOffset ?? 0;
+          const facingOffset = el.facingOffset !== undefined ? el.facingOffset : (regEntry?.facingOffset ?? 0);
           
           // Original git orientation: no nativeOffset applied - models load in their native .glb orientation
           pivot.rotation.y = rotY + BABYLON.Tools.ToRadians(facingOffset);
