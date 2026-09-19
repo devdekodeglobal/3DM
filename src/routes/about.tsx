@@ -3,6 +3,9 @@ import { ArrowRight, Monitor, Layers, Box, Palette, FolderOpen, Save, FileText, 
 import { useEffect } from 'react'
 import { ArchitecturalSymbolSVG } from '../components/editor/ArchitecturalSymbolSVG'
 import { ScrollReveal } from '../components/ScrollReveal'
+import { AfterglowBlueprint } from '../components/AfterglowBlueprint'
+import Preview3D from '../components/editor/Preview3D'
+import { HERO_AFTERGLOW_BOOTH_CONFIG, HERO_AFTERGLOW_ELEMENTS } from '../components/heroAfterglowData'
 
 export const Route = createFileRoute('/about')({
   component: OverviewPage,
@@ -34,7 +37,7 @@ function OverviewPage() {
         </div>
       </section>
 
-      {/* The Interface Diagram */}
+      {/* Abstract Diagram: The 4-Panel Workspace */}
       <section className="space-y-12">
         <ScrollReveal animation="fade-up">
           <div className="text-center">
@@ -82,23 +85,11 @@ function OverviewPage() {
               </div>
 
               {/* Canvas Diagram */}
-              <div className="col-span-3 bg-[#2a2c2e] rounded-lg border border-[var(--line)] relative group hover:border-[var(--brand)] transition-colors overflow-hidden">
-                 {/* Grid Pattern */}
-                 <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '10px 10px md:20px md:20px' }}></div>
-                 <div className="absolute inset-0 flex items-center justify-center p-3 md:p-7 pt-7 md:pt-14">
-                   <div className="w-full aspect-[10/7] border-t-2 border-l-2 border-[#9f7aea] bg-[#514A68]/35 relative shadow-inner overflow-hidden">
-                      <div className="absolute left-[3%] top-[12%] w-[40%] h-[57%] border border-[#B47AD4]/80 bg-[repeating-linear-gradient(0deg,transparent_0,transparent_7%,rgba(180,122,212,.75)_8%,rgba(180,122,212,.75)_10%)]" />
-                      <div className="absolute left-[8%] top-[25%] w-[8%] h-[24%] rounded-sm bg-slate-300/80" />
-                      <div className="absolute left-[8%] top-[53%] w-[8%] h-[24%] rounded-sm bg-slate-300/80" />
-                      <div className="absolute left-[29%] top-[29%] w-[9%] h-[13%] rounded-full bg-slate-800" />
-                      <div className="absolute left-[29%] top-[54%] w-[9%] h-[13%] rounded-full bg-slate-800" />
-                      <div className="absolute left-[65%] top-[17%] w-[22%] h-[11%] rounded-sm bg-cyan-400/70" />
-                      {[66, 75, 84].map((left) => <div key={left} className="absolute top-[36%] w-[4%] aspect-square rounded-full border border-slate-200" style={{ left: `${left}%` }} />)}
-                      {[63, 82].map((left) => <div key={left} className="absolute top-[69%] w-[10%] aspect-square rounded-full border border-slate-300" style={{ left: `${left}%` }} />)}
-                      <div className="absolute right-[13%] top-[18%] text-white text-[4px] md:text-[7px] font-black drop-shadow">krafc<span className="text-fuchsia-400">.</span></div>
-                   </div>
+              <div className="col-span-3 bg-[var(--surface-strong)] rounded-lg border border-[var(--line)] relative group hover:border-[var(--brand)] transition-colors overflow-hidden flex flex-col p-1 md:p-3">
+                 <div className="flex items-center gap-1 md:gap-2 text-[var(--fg)] font-bold mb-1 md:mb-2 text-[6px] md:text-base leading-tight"><Layers className="w-2 h-2 md:w-4 md:h-4 text-[var(--brand)]" /> 2D Blueprint</div>
+                 <div className="flex-1 rounded-md overflow-hidden border border-[var(--line)] bg-[var(--bg-card)] flex items-center justify-center p-1">
+                   <AfterglowBlueprint mode="assets" />
                  </div>
-                 <div className="absolute top-1 left-1 md:top-4 md:left-4 flex items-center gap-1 md:gap-2 text-white font-bold text-[6px] md:text-base leading-tight"><Layers className="w-2 h-2 md:w-4 md:h-4 text-[var(--brand)]" /> 2D Blueprint</div>
                  <div className="absolute inset-0 bg-[var(--brand)]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               </div>
 
@@ -109,12 +100,12 @@ function OverviewPage() {
                 <div className="grid grid-cols-2 gap-1 md:gap-2">
                   {[
                     { label: 'Tile floor', color: '#514A68' },
-                    { label: 'Plum wall', color: '#30254F' },
+                    { label: 'White wall', color: '#FFFFFF' },
                     { label: 'Neon lights', color: '#00EEFF' },
-                    { label: 'Caged roof', color: '#B47AD4' },
+                    { label: '3D Logo', color: '#0D9488' },
                   ].map((material, index) => (
                     <div key={material.label} className={`h-12 md:h-16 rounded-md border p-1 md:p-2 flex flex-col justify-between ${index === 3 ? 'bg-[var(--brand)]/10 border-[var(--brand)]' : 'bg-[var(--bg-base)] border-[var(--line)]'}`}>
-                      <div className="w-full h-5 md:h-7 rounded-sm shadow-inner" style={{ backgroundColor: material.color }} />
+                      <div className="w-full h-5 md:h-7 rounded-sm shadow-inner border border-black/10" style={{ backgroundColor: material.color }} />
                       <span className="text-[4px] md:text-[8px] font-bold text-[var(--fg)] truncate">{material.label}</span>
                     </div>
                   ))}
@@ -123,14 +114,20 @@ function OverviewPage() {
               </div>
 
               {/* 3D View Render */}
-              <div className="col-span-3 bg-[#5d6163] rounded-lg border border-[var(--line)] relative group hover:border-[var(--brand-dark)] transition-colors overflow-hidden shadow-inner">
-                <img
-                  src="/afterglow-3d-preview.png"
-                  alt="3D view of the furnished social space"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
+              <div className="col-span-3 bg-[#1e293b] rounded-lg border border-[var(--line)] relative group hover:border-[var(--brand-dark)] transition-colors overflow-hidden shadow-inner flex flex-col">
                 <div className="absolute top-1 left-1 md:top-3 md:left-3 z-10 flex items-center gap-1 md:gap-2 rounded-md bg-slate-950/80 px-1.5 py-1 md:px-2.5 md:py-1.5 text-white font-bold text-[6px] md:text-sm leading-tight shadow-lg backdrop-blur-sm ring-1 ring-white/15">
                   <Box className="w-2 h-2 md:w-4 md:h-4 text-cyan-300" /> 3D View
+                </div>
+                <div className="flex-1 w-full h-full pointer-events-none">
+                  <Preview3D
+                    autoRotate={true}
+                    hideControls={true}
+                    boothConfig={HERO_AFTERGLOW_BOOTH_CONFIG}
+                    elements={HERO_AFTERGLOW_ELEMENTS as any}
+                    activeView="perspective"
+                    backgroundColor="#1e293b"
+                    cameraDistanceScale={0.7}
+                  />
                 </div>
               </div>
 
