@@ -2527,25 +2527,30 @@ export default function Preview3D({
     const scene = sceneRef.current;
     if (!scene) return;
 
-    // Circular order: Front -> Top Right -> Right -> Back -> Left -> Top Left -> Top
+    // Ordered continuous forward progression (225° for Top Left and 270° for Top prevent 315° reverse spin)
     const tourWaypoints = [
-      { alpha: -Math.PI / 2, beta: Math.PI / 3 },      // 1. Front
-      { alpha: -Math.PI * 0.25, beta: Math.PI / 3.5 }, // 2. Top Right
-      { alpha: 0, beta: Math.PI / 3 },                 // 3. Right
-      { alpha: Math.PI / 2, beta: Math.PI / 3 },       // 4. Back
-      { alpha: Math.PI, beta: Math.PI / 3 },           // 5. Left
-      { alpha: -Math.PI * 0.75, beta: Math.PI / 3.5 }, // 6. Top Left
-      { alpha: -Math.PI / 2, beta: 0.01 },             // 7. Top
+      { alpha: -Math.PI * 0.50, beta: Math.PI / 3.0 }, // 1. Front (-90°)
+      { alpha: -Math.PI * 0.25, beta: Math.PI / 3.5 }, // 2. Top Right (-45°)
+      { alpha: 0,               beta: Math.PI / 3.0 }, // 3. Right (0°)
+      { alpha: Math.PI * 0.50,  beta: Math.PI / 3.0 }, // 4. Back (90°)
+      { alpha: Math.PI * 1.00,  beta: Math.PI / 3.0 }, // 5. Left (180°)
+      { alpha: Math.PI * 1.25,  beta: Math.PI / 3.5 }, // 6. Top Left (225° = 45° forward from Left)
+      { alpha: Math.PI * 1.50,  beta: 0.01 },          // 7. Top (270° overhead)
     ];
 
-    let currentIndex = 0;
+    let tourIndex = 0;
+    let baseLap = 0;
     setCameraAngle(tourWaypoints[0].alpha, tourWaypoints[0].beta, 40);
 
     const interval = setInterval(() => {
-      currentIndex = (currentIndex + 1) % tourWaypoints.length;
-      const wp = tourWaypoints[currentIndex];
-      setCameraAngle(wp.alpha, wp.beta, 55); // Slower, smoother camera gliding animation
-    }, 2000); // Faster interval between perspective changes
+      tourIndex++;
+      if (tourIndex >= tourWaypoints.length) {
+        tourIndex = 0;
+        baseLap += 2 * Math.PI;
+      }
+      const wp = tourWaypoints[tourIndex];
+      setCameraAngle(baseLap + wp.alpha, wp.beta, 55); // Slower, smoother camera glide
+    }, 2000);
 
     return () => clearInterval(interval);
   }, [cinematicTour, isSceneReady, activeView, boothConfig]);
