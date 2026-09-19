@@ -14,7 +14,6 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   onClose,
   reportHtml,
   projectName,
-  docId,
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
