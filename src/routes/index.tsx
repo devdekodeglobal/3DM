@@ -157,7 +157,7 @@ function LandingPage() {
               color: 'var(--fg-soft)',
               lineHeight: 1.7,
               margin: '0',
-              maxWidth: 600,
+
             }}>
               Design your space, place your assets, and see it come to life in 3D - in real time.
             </p>
