@@ -195,8 +195,6 @@ export default function Preview3D({
     dirLight.intensity = 0.8;
     dirLight.diffuse = new BABYLON.Color3(1.0, 0.95, 0.85);
 
-    const isHQ = false;
-
     const shadowGenerator = new BABYLON.ShadowGenerator(1024, dirLight);
     shadowGeneratorRef.current = shadowGenerator;
     shadowGenerator.useBlurExponentialShadowMap = true;
