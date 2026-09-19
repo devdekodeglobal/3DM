@@ -4,8 +4,7 @@ import { getArchitecturalSymbolSvgString } from '../components/editor/Architectu
 export async function generateReport(
   boothConfig: any, 
   elements: any[], 
-  screenshots: Record<string, string>, 
-  targetWindow?: Window | null
+  screenshots: Record<string, string>
 ) {
   const docId = `KRAFC-${Date.now().toString(36).toUpperCase()}`;
   const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -148,8 +147,58 @@ export async function generateReport(
     }
   };
 
-  // Generate full-page drawing sheets
-  let drawingSheetNumber = 2;
+  // Wall Schedule Rows
+  const wallRows = walls.map(w => `
+    <tr>
+      <td class="bold"><code>${w.id.substring(0, 12)}</code></td>
+      <td>${w.isOuter ? '<span class="tag">Outer Structural</span>' : '<span class="tag inner">Internal Partition</span>'}</td>
+      <td><strong>${w.realWidth || (w.width / 100).toFixed(2)}m (W)</strong> × <strong>${(w.thickness / 100).toFixed(2)}m (T)</strong> × <strong>${(2.5 * (w.verticalScale || 1)).toFixed(2)}m (H)</strong></td>
+      <td>${w.material || 'Standard Matte'}${w.color ? ` (${w.color})` : ''}</td>
+      <td>${(w.wallElements || []).length > 0 ? (w.wallElements.map((we: any) => `${we.type === 'door' ? '🚪 Door' : we.type === 'window' ? '🪟 Window' : we.type} (${(we.width / 100).toFixed(2)}m)`).join(', ')) : 'Solid wall'}</td>
+    </tr>`).join('');
+
+  // Parametric & Core Structures Rows
+  const structureRows = structures.map(st => {
+    let typeTag = '<span class="tag brand">Structure</span>';
+    let details = '';
+    const wM = (st.realWidth || st.width / 100).toFixed(2);
+    const dM = (st.realDepth || st.height / 100).toFixed(2);
+    const hM = (st.realHeight || (st.type === 'pillar' ? 3.0 : st.type === 'caged-panel' ? 0.2 : 2.5)).toFixed(2);
+
+    if (st.type === 'caged-wall') {
+      typeTag = '<span class="tag brand">Caged Slat Wall</span>';
+      details = `${st.platesCount || 5} slats · Thick: ${((st.plateThickness || 0.05) * 100).toFixed(1)}cm · Gap: ${((st.plateGap ?? 0.2) * 100).toFixed(1)}cm`;
+    } else if (st.type === 'caged-panel') {
+      typeTag = '<span class="tag warm">Caged Roof</span>';
+      details = `Elev: ${(st.yOffset || 2.5).toFixed(2)}m · ${st.platesCount || 5} slats · Gap: ${((st.plateGap ?? 0.3) * 100).toFixed(1)}cm`;
+    } else if (st.type === 'pillar') {
+      typeTag = '<span class="tag">Structural Pillar</span>';
+      details = `Profile: ${st.profile === 'round' ? 'Round' : 'Square'} · Height: ${hM}m`;
+    } else if (st.type === 'panel') {
+      typeTag = '<span class="tag inner">Modular Panel</span>';
+      details = `Style: ${st.style || 'Flat'} · Thick: ${dM}m`;
+    }
+
+    return `
+    <tr>
+      <td class="bold"><code>${st.id.substring(0, 12)}</code></td>
+      <td>${typeTag}</td>
+      <td><strong>${wM}m (W)</strong> × <strong>${dM}m (D)</strong> × <strong>${hM}m (H)</strong></td>
+      <td>${st.fill || '#444444'}</td>
+      <td>${details}</td>
+    </tr>`;
+  }).join('');
+
+  // Mounted Fixtures Rows
+  const elemRows = [
+    ...allBanners.map(e => `<tr><td><span class="tag">Banner Graphic</span></td><td><code>${e.id.substring(0, 10)}</code></td><td>${e.width}px × ${e.height}px</td><td>${e.shape || 'Rectangle'}</td><td>Wall Graphic</td></tr>`),
+    ...allWindows.map(e => `<tr><td><span class="tag inner">Window / Cutout</span></td><td><code>${e.id.substring(0, 10)}</code></td><td>${e.width}px × ${e.height}px</td><td>${e.shape || 'Aperture'}</td><td>Architectural Aperture</td></tr>`),
+    ...allLogos.map(e => `<tr><td><span class="tag brand">3D Brand Logo</span></td><td><code>${e.id.substring(0, 10)}</code></td><td>${e.width}px × ${e.height}px</td><td>3D Illuminated</td><td>${e.logoStyle || 'Custom'}</td></tr>`),
+    ...allLights.map(e => `<tr><td><span class="tag warm">Lighting Fixture</span></td><td><code>${e.id.substring(0, 10)}</code></td><td>${e.width || '-'}px × ${e.height || '-'}px</td><td>Spotlight / Downlight</td><td>${e.color || '#fff8e7'}</td></tr>`),
+  ].join('');
+
+  // Count drawings and pages
+  let drawingSheetNumber = 1;
 
   // 2D Floor Plan Sheet
   const floorPlanSheetHtml = floorplan2D ? `
@@ -176,7 +225,7 @@ export async function generateReport(
       </div>
       <div class="tb-right">
         <span>PROJECT: <strong>${projectName}</strong></span>
-        <span>SHEET: <strong>DWG-02</strong></span>
+        <span>SHEET: <strong>DWG-01</strong></span>
       </div>
     </div>
   </div>` : '';
@@ -219,81 +268,93 @@ export async function generateReport(
     </div>`;
   }).join('');
 
-  // BOM Visual Catalog Cards
-  const bomCatalogHtml = Object.values(assetCounts).map(item => `
-    <div class="bom-card">
-      <div class="bom-card-header">
-        <div class="bom-card-thumb">${item.svgSymbol || ''}</div>
-        <span class="bom-card-qty">${item.count}×</span>
-        <div class="bom-card-title">
-          <h4>${item.label}</h4>
-          <span class="bom-card-cat">${item.category}</span>
+  // ── PAGINATED BOM SHEETS (6 cards per sheet in 2 columns × 3 rows) ──
+  const assetItems = Object.values(assetCounts);
+  const BOM_ITEMS_PER_PAGE = 6;
+  const totalBomPages = Math.max(1, Math.ceil(assetItems.length / BOM_ITEMS_PER_PAGE));
+  
+  const bomSheetsHtml = Array.from({ length: totalBomPages }).map((_, pageIdx) => {
+    const pageItems = assetItems.slice(pageIdx * BOM_ITEMS_PER_PAGE, (pageIdx + 1) * BOM_ITEMS_PER_PAGE);
+    const pageNum = pageIdx + 1;
+    
+    const pageCardsHtml = pageItems.map(item => `
+      <div class="bom-card">
+        <div class="bom-card-header">
+          <div class="bom-card-thumb">${item.svgSymbol || ''}</div>
+          <span class="bom-card-qty">${item.count}×</span>
+          <div class="bom-card-title">
+            <h4>${item.label}</h4>
+            <span class="bom-card-cat">${item.category}</span>
+          </div>
+        </div>
+        <div class="bom-card-body">
+          <div class="bom-card-row">
+            <label>Dimensions:</label>
+            <code>${item.dims}</code>
+          </div>
+          <div class="bom-card-row">
+            <label>Specifications:</label>
+            <span class="bom-card-specs" title="${item.specs}">${item.specs}</span>
+          </div>
         </div>
       </div>
-      <div class="bom-card-body">
-        <div class="bom-card-row">
-          <label>Dimensions:</label>
-          <code>${item.dims}</code>
-        </div>
-        <div class="bom-card-row">
-          <label>Specs:</label>
-          <span class="bom-card-specs">${item.specs}</span>
-        </div>
-      </div>
-    </div>
-  `).join('');
-
-  // Wall Schedule Rows
-  const wallRows = walls.map(w => `
-    <tr>
-      <td class="bold"><code>${w.id.substring(0, 12)}</code></td>
-      <td>${w.isOuter ? '<span class="tag">Outer Structural</span>' : '<span class="tag inner">Internal Partition</span>'}</td>
-      <td><strong>${w.realWidth || (w.width / 100).toFixed(2)}m (W)</strong> × <strong>${(w.thickness / 100).toFixed(2)}m (T)</strong> × <strong>${(2.5 * (w.verticalScale || 1)).toFixed(2)}m (H)</strong></td>
-      <td>${w.material || 'Standard Matte'}${w.color ? ` (${w.color})` : ''}</td>
-      <td>${(w.wallElements || []).length > 0 ? (w.wallElements.map((we: any) => `${we.type === 'door' ? '🚪 Door' : we.type === 'window' ? '🪟 Window' : we.type} (${(we.width / 100).toFixed(2)}m)`).join(', ')) : 'Solid full wall'}</td>
-    </tr>`).join('');
-
-  // Parametric & Core Structures Rows
-  const structureRows = structures.map(st => {
-    let typeTag = '<span class="tag brand">Structure</span>';
-    let details = '';
-    const wM = (st.realWidth || st.width / 100).toFixed(2);
-    const dM = (st.realDepth || st.height / 100).toFixed(2);
-    const hM = (st.realHeight || (st.type === 'pillar' ? 3.0 : st.type === 'caged-panel' ? 0.2 : 2.5)).toFixed(2);
-
-    if (st.type === 'caged-wall') {
-      typeTag = '<span class="tag brand">Caged Slat Wall</span>';
-      details = `${st.platesCount || 5} slats · Thickness: ${((st.plateThickness || 0.05) * 100).toFixed(1)}cm · Gap: ${((st.plateGap ?? 0.2) * 100).toFixed(1)}cm · ${st.orientation || 'horizontal'}`;
-    } else if (st.type === 'caged-panel') {
-      typeTag = '<span class="tag warm">Caged Roof / Canopy</span>';
-      details = `Elevation: ${(st.yOffset || 2.5).toFixed(2)}m · ${st.platesCount || 5} slats · Gap: ${((st.plateGap ?? 0.3) * 100).toFixed(1)}cm`;
-    } else if (st.type === 'pillar') {
-      typeTag = '<span class="tag">Structural Pillar</span>';
-      details = `Profile: ${st.profile === 'round' ? 'Cylindrical (Ø ' + wM + 'm)' : 'Square Section'} · Height: ${hM}m`;
-    } else if (st.type === 'panel') {
-      typeTag = '<span class="tag inner">Modular Panel</span>';
-      details = `Style: ${st.style || 'Flat'} · Thickness: ${dM}m`;
-    }
+    `).join('');
 
     return `
-    <tr>
-      <td class="bold"><code>${st.id.substring(0, 12)}</code></td>
-      <td>${typeTag}</td>
-      <td><strong>${wM}m (W)</strong> × <strong>${dM}m (D)</strong> × <strong>${hM}m (H)</strong></td>
-      <td>${st.fill || '#444444'}</td>
-      <td>${details}</td>
-    </tr>`;
+    <div class="sheet full-page">
+      <div class="sheet-header">
+        <div class="sheet-title-group">
+          <span class="sheet-tag">BOM SCHEDULE · PART ${pageNum} OF ${totalBomPages}</span>
+          <h2>Bill of Materials & Furniture Schedule</h2>
+          <p class="sheet-sub">Consolidated asset procurement breakdown with physical dimensions and model counts</p>
+        </div>
+        <div class="sheet-meta">
+          <div><label>Total Items</label><span>${allAssets.length}</span></div>
+          <div><label>Unique Models</label><span>${assetItems.length}</span></div>
+          <div><label>Schedule Page</label><span>${pageNum} / ${totalBomPages}</span></div>
+        </div>
+      </div>
+
+      <div class="bom-grid">
+        ${pageCardsHtml || '<p style="color:var(--soft);font-style:italic;grid-column:span 2;padding:24px 0;">No furniture assets placed in this design.</p>'}
+      </div>
+
+      <div class="sheet-title-block" style="margin-top: auto;">
+        <div class="tb-left"><strong>krafc</strong> · BILL OF MATERIALS & PROCUREMENT SCHEDULE</div>
+        <div class="tb-right"><span>PROJECT: <strong>${projectName}</strong></span><span>SCHEDULE PART ${pageNum} OF ${totalBomPages}</span></div>
+      </div>
+    </div>`;
   }).join('');
 
-  // Mounted Fixtures Rows
-  const elemRows = [
-    ...allBanners.map(e => `<tr><td><span class="tag">Banner</span></td><td><code>${e.id.substring(0, 10)}</code></td><td>${e.width}px × ${e.height}px</td><td>${e.shape || 'Rectangle'}</td><td>Wall Graphic</td></tr>`),
-    ...allWindows.map(e => `<tr><td><span class="tag inner">Window / Cutout</span></td><td><code>${e.id.substring(0, 10)}</code></td><td>${e.width}px × ${e.height}px</td><td>${e.shape || 'Aperture'}</td><td>Aperture</td></tr>`),
-    ...allLogos.map(e => `<tr><td><span class="tag brand">3D Brand Logo</span></td><td><code>${e.id.substring(0, 10)}</code></td><td>${e.width}px × ${e.height}px</td><td>3D Illuminated</td><td>${e.logoStyle || 'Custom'}</td></tr>`),
-    ...allLights.map(e => `<tr><td><span class="tag warm">Lighting Fixture</span></td><td><code>${e.id.substring(0, 10)}</code></td><td>${e.width || '-'}px × ${e.height || '-'}px</td><td>Spotlight / Downlight</td><td>${e.color || '#fff8e7'}</td></tr>`),
-  ].join('');
+  // ── MOUNTED FIXTURES SHEET (Dedicated page if fixtures exist) ──
+  const fixturesSheetHtml = elemRows ? `
+  <div class="sheet full-page">
+    <div class="sheet-header">
+      <div class="sheet-title-group">
+        <span class="sheet-tag">MOUNTED FIXTURES</span>
+        <h2>Mounted Wall Fixtures & Brand Elements</h2>
+        <p class="sheet-sub">Specifications for signage, architectural cutouts, banners, and lighting fixtures</p>
+      </div>
+      <div class="sheet-meta">
+        <div><label>Total Fixtures</label><span>${allBanners.length + allWindows.length + allLogos.length + allLights.length}</span></div>
+        <div><label>Doc Ref</label><span>${docId}</span></div>
+      </div>
+    </div>
 
-  const totalSheets = drawingSheetNumber + 1; // Cover (1) + Summary (1) + Drawings + BOM (1)
+    <div style="flex: 1 1 auto; overflow: hidden;">
+      <table>
+        <thead><tr><th style="width:18%;">Category</th><th style="width:20%;">Reference</th><th style="width:20%;">Dimensions</th><th style="width:20%;">Type / Finish</th><th>Specification</th></tr></thead>
+        <tbody>${elemRows}</tbody>
+      </table>
+    </div>
+
+    <div class="sheet-title-block" style="margin-top: auto;">
+      <div class="tb-left"><strong>krafc</strong> · MOUNTED FIXTURE SPECIFICATION</div>
+      <div class="tb-right"><span>PROJECT: <strong>${projectName}</strong></span><span>FIXTURES SCHEDULE</span></div>
+    </div>
+  </div>` : '';
+
+  const totalSheets = 2 + (elemRows ? 1 : 0) + (floorplan2D ? 1 : 0) + (drawingSheetNumber - (floorplan2D ? 2 : 1)) + totalBomPages;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -632,6 +693,7 @@ export async function generateReport(
     border-collapse: collapse; 
     font-size: 10.5px; 
     margin-top: 6px;
+    table-layout: auto;
   }
   thead tr { 
     background: var(--navy) !important; 
@@ -681,32 +743,36 @@ export async function generateReport(
   .tag.brand { background: var(--brand); color: white; }
   .tag.warm { background: var(--amber); color: var(--navy); }
 
-  /* ── BOM VISUAL CARDS GRID ── */
+  /* ── BOM VISUAL CARDS GRID (2 Columns × 3 Rows: 6 items per sheet) ── */
   .bom-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
     margin-top: 10px;
-    max-height: 540px;
-    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
   }
   .bom-card {
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 10px 12px;
+    padding: 10px 14px;
     background: var(--bg);
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: hidden;
   }
   .bom-card-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
+    gap: 10px;
+    margin-bottom: 8px;
     padding-bottom: 6px;
     border-bottom: 1px solid var(--border-light);
   }
   .bom-card-thumb {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     background: #ffffff;
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -714,7 +780,7 @@ export async function generateReport(
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    padding: 1px;
+    padding: 2px;
   }
   .bom-card-thumb svg {
     width: 100%;
@@ -727,16 +793,23 @@ export async function generateReport(
     font-family: 'JetBrains Mono', monospace;
     font-size: 13px;
     font-weight: 700;
-    padding: 2px 6px;
+    padding: 2px 8px;
     border-radius: 4px;
   }
+  .bom-card-title {
+    overflow: hidden;
+    min-width: 0;
+  }
   .bom-card-title h4 {
-    font-size: 11.5px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--navy);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .bom-card-cat {
-    font-size: 8px;
+    font-size: 8.5px;
     font-weight: 700;
     letter-spacing: 0.06em;
     color: var(--soft);
@@ -746,11 +819,13 @@ export async function generateReport(
     justify-content: space-between;
     align-items: center;
     font-size: 10.5px;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
+    gap: 10px;
   }
   .bom-card-row label {
     font-weight: 600;
     color: var(--soft);
+    flex-shrink: 0;
   }
   .bom-card-specs {
     font-size: 9.5px;
@@ -863,7 +938,7 @@ export async function generateReport(
     <div class="sheet-title-group">
       <span class="sheet-tag">PROJECT SUMMARY</span>
       <h2>Spatial Specifications & Metric Overview</h2>
-      <p class="sheet-sub">Comprehensive architectural metrics, wall schedule, and mounted fixtures</p>
+      <p class="sheet-sub">Comprehensive architectural metrics, boundary clearances, and wall schedules</p>
     </div>
     <div class="sheet-meta">
       <div><label>Project</label><span>${projectName}</span></div>
@@ -891,65 +966,38 @@ export async function generateReport(
   </div>
 
   ${walls.length > 0 ? `
-  <div style="margin-top: 16px;">
-    <h3 style="font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;color:var(--navy);">Structural & Partition Walls</h3>
+  <div style="margin-top: 14px;">
+    <h3 style="font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;margin-bottom:6px;color:var(--navy);">Structural & Partition Walls</h3>
     <table>
-      <thead><tr><th>Wall Reference</th><th>Classification</th><th>Real Dimensions (W × T × H)</th><th>Material Finish</th><th>Mounted Elements / Details</th></tr></thead>
+      <thead><tr><th style="width:20%;">Wall Reference</th><th style="width:18%;">Classification</th><th style="width:28%;">Real Dimensions (W × T × H)</th><th style="width:16%;">Material Finish</th><th>Openings / Details</th></tr></thead>
       <tbody>${wallRows}</tbody>
     </table>
   </div>` : ''}
 
   ${structures.length > 0 ? `
-  <div style="margin-top: 20px;">
-    <h3 style="font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;color:var(--navy);">Parametric & Core Structures</h3>
+  <div style="margin-top: 16px;">
+    <h3 style="font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;margin-bottom:6px;color:var(--navy);">Parametric & Core Structures</h3>
     <table>
-      <thead><tr><th>Element Reference</th><th>Structure Type</th><th>Real Dimensions (W × D × H)</th><th>Material / Color</th><th>Structural Specifications</th></tr></thead>
+      <thead><tr><th style="width:20%;">Element Reference</th><th style="width:18%;">Structure Type</th><th style="width:28%;">Real Dimensions (W × D × H)</th><th style="width:16%;">Color / Finish</th><th>Structural Specifications</th></tr></thead>
       <tbody>${structureRows}</tbody>
-    </table>
-  </div>` : ''}
-
-  ${elemRows ? `
-  <div style="margin-top: 24px;">
-    <h3 style="font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;color:var(--navy);">Mounted Wall Fixtures & Branding</h3>
-    <table>
-      <thead><tr><th>Category</th><th>Element Reference</th><th>Dimensions</th><th>Type / Style</th><th>Specification</th></tr></thead>
-      <tbody>${elemRows}</tbody>
     </table>
   </div>` : ''}
 
   <div class="sheet-title-block" style="margin-top: auto;">
     <div class="tb-left"><strong>krafc</strong> · EXECUTIVE SPECIFICATION</div>
-    <div class="tb-right"><span>REF: <strong>${docId}</strong></span><span>SHEET: <strong>DWG-01</strong></span></div>
+    <div class="tb-right"><span>REF: <strong>${docId}</strong></span><span>SHEET: <strong>DWG-SPEC-01</strong></span></div>
   </div>
 </div>
 
-<!-- 3. DRAWING SHEETS (2D FLOOR PLAN + 3D ORTHOGRAPHIC ELEVATIONS) -->
+<!-- 3. MOUNTED FIXTURES & BRAND GRAPHICS SHEET (IF PRESENT) -->
+${fixturesSheetHtml}
+
+<!-- 4. DRAWING SHEETS (2D FLOOR PLAN + 3D ORTHOGRAPHIC ELEVATIONS) -->
 ${floorPlanSheetHtml}
 ${blueprintSheetsHtml}
 
-<!-- 4. BILL OF MATERIALS (BOM) & ASSET PROCUREMENT CATALOG -->
-<div class="sheet full-page">
-  <div class="sheet-header">
-    <div class="sheet-title-group">
-      <span class="sheet-tag">SCHEDULE OF ASSETS</span>
-      <h2>Bill of Materials & Furniture Schedule</h2>
-      <p class="sheet-sub">Consolidated asset procurement breakdown with physical dimensions and quantities</p>
-    </div>
-    <div class="sheet-meta">
-      <div><label>Total Item Count</label><span>${allAssets.length}</span></div>
-      <div><label>Unique Models</label><span>${Object.keys(assetCounts).length}</span></div>
-    </div>
-  </div>
-
-  <div class="bom-grid">
-    ${bomCatalogHtml || '<p style="color:var(--soft);font-style:italic;grid-column:span 3;padding:24px 0;">No furniture assets placed in this design.</p>'}
-  </div>
-
-  <div class="sheet-title-block" style="margin-top: auto;">
-    <div class="tb-left"><strong>krafc</strong> · BILL OF MATERIALS & PROCUREMENT SCHEDULE</div>
-    <div class="tb-right"><span>PROJECT: <strong>${projectName}</strong></span><span>FINAL SCHEDULE</span></div>
-  </div>
-</div>
+<!-- 5. BILL OF MATERIALS (BOM) PAGINATED SHEETS -->
+${bomSheetsHtml}
 
 </body>
 </html>`;
