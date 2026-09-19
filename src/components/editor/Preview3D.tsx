@@ -1210,7 +1210,9 @@ export default function Preview3D({
         }
         
         if (mesh.rotationQuaternion) mesh.rotationQuaternion = null;
-        mesh.rotation.y = rotY + (mesh.metadata?.nativeOffset || 0) + BABYLON.Tools.ToRadians(el.facingOffset || 0);
+        const regEntry = ASSET_REGISTRY.find(a => a.id === el.assetName) as any;
+        const facingOffset = (regEntry?.facingOffset) ?? el.facingOffset ?? 0;
+        mesh.rotation.y = rotY + (mesh.metadata?.nativeOffset || 0) + BABYLON.Tools.ToRadians(facingOffset);
         if (el.type !== 'asset') {
           mesh.scaling.y = vScale;
         }
