@@ -1586,6 +1586,7 @@ export default function Preview3D({
           sideMat.diffuseColor = baseColor;
           sideMat.ambientColor = baseColor.scale(0.5);
           sideMat.backFaceCulling = false; // Sides visible from all angles
+          sideMat.twoSidedLighting = true; // Required by glTF when backFaceCulling is false
           if (el.logoStyle === 'chrome') { sideMat.specularColor = new BABYLON.Color3(1, 1, 1); sideMat.specularPower = 128; }
           if (el.logoStyle === 'glowing') { sideMat.emissiveColor = baseColor; }
 
