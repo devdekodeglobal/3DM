@@ -168,7 +168,7 @@ export function InteractiveWorkflowShowcase() {
                   activeView="perspective"
                   backgroundColor="#1e293b"
                   cameraDistanceScale={0.68}
-                  modelUrl="/models/showcase/trial3.glb?v=1789801350424"
+                  modelUrl="/models/showcase/trial3.glb?v=1789802319089"
                 />
               </div>
             </div>
