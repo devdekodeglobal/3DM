@@ -191,8 +191,6 @@ export default function Preview3D({
     );
     orbitCam.lowerRadiusLimit = 0.1;
     orbitCam.upperRadiusLimit = 100.0;
-    orbitCam.lowerBetaLimit = 0.1; // Never flip over the top pole
-    orbitCam.upperBetaLimit = Math.PI / 2.15; // Never dip below ground level
     orbitCam.wheelPrecision = 100;
     orbitCam.minZ = 0.1;
     orbitCam.maxZ = 200.0;
@@ -2529,23 +2527,21 @@ export default function Preview3D({
     );
   };
 
-  // 5. Continuous Smooth Orbit Tour with subtle 5-8° elevation transitions
+  // 5. Automatic Cinematic Tour between Preset Perspectives
   useEffect(() => {
     if (!cinematicTour || !isSceneReady || activeView !== "perspective") return;
     const scene = sceneRef.current;
     if (!scene) return;
 
-    // Continuous unidirectional orbit with gentle 5°-8° elevation wave
+    // Exact angles from Preview3D presets: Front, Right, Back, Left, Top Left, Top Right, Top
     const tourWaypoints = [
-      { alpha: -Math.PI * 0.50, beta: Math.PI / 3.10 }, // 1. South Side (Front) - 58° elevation
-      { alpha: -Math.PI * 0.25, beta: Math.PI / 3.60 }, // 2. Top-Right / South-East - 50° elevation (~8° lift)
-      { alpha: 0,               beta: Math.PI / 3.20 }, // 3. East Side (Right Profile) - 56° elevation
-      { alpha: Math.PI * 0.25,  beta: Math.PI / 3.55 }, // 4. North-East Angle - 51° elevation
-      { alpha: Math.PI * 0.50,  beta: Math.PI / 3.25 }, // 5. North Side (Back) - 55° elevation
-      { alpha: Math.PI * 0.75,  beta: Math.PI / 3.70 }, // 6. North-West Angle - 49° elevation
-      { alpha: Math.PI * 1.00,  beta: Math.PI / 3.20 }, // 7. West Side (Left Profile) - 56° elevation
-      { alpha: Math.PI * 1.25,  beta: Math.PI / 3.60 }, // 8. Top-Left / South-West - 50° elevation
-      { alpha: Math.PI * 1.50,  beta: Math.PI / 4.25 }, // 9. Bird's Eye Top Center - 42° elevation (~8° overhead)
+      { alpha: -Math.PI / 2, beta: Math.PI / 3 },      // Front
+      { alpha: 0, beta: Math.PI / 3 },                 // Right
+      { alpha: Math.PI / 2, beta: Math.PI / 3 },       // Back
+      { alpha: Math.PI, beta: Math.PI / 3 },           // Left
+      { alpha: -Math.PI * 0.75, beta: Math.PI / 3.5 }, // Top Left
+      { alpha: -Math.PI * 0.25, beta: Math.PI / 3.5 }, // Top Right
+      { alpha: -Math.PI / 2, beta: 0.01 },             // Top
     ];
 
     let currentIndex = 0;
@@ -2554,7 +2550,7 @@ export default function Preview3D({
     const interval = setInterval(() => {
       currentIndex = (currentIndex + 1) % tourWaypoints.length;
       const wp = tourWaypoints[currentIndex];
-      setCameraAngle(wp.alpha, wp.beta, 80); // ~1.33s ultra-smooth transition
+      setCameraAngle(wp.alpha, wp.beta, 60);
     }, 3200);
 
     return () => clearInterval(interval);
