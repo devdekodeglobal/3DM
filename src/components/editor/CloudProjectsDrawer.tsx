@@ -324,14 +324,20 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
   // Load a design into editor
   const handleSelectDesign = (design: Design) => {
     try {
-      const config = typeof design.config === 'string' ? JSON.parse(design.config) : design.config
-      const elements = typeof design.elements === 'string' ? JSON.parse(design.elements) : design.elements
+      let config = design.config;
+      while (typeof config === 'string') {
+        try { config = JSON.parse(config); } catch { break; }
+      }
+      let elements = design.elements;
+      while (typeof elements === 'string') {
+        try { elements = JSON.parse(elements); } catch { break; }
+      }
       if (design.project_id) {
         localStorage.setItem('current-project-id', design.project_id)
       } else {
         localStorage.removeItem('current-project-id')
       }
-      onLoadProject(config, elements, design.id, design.name)
+      onLoadProject(config, Array.isArray(elements) ? elements : [], design.id, design.name)
       onClose()
     } catch (e) {
       console.error('Failed to parse design data', e)

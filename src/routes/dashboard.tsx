@@ -133,8 +133,10 @@ function DesignCard({
   const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length]
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(design.name)
-  let config: any = null
-  try { config = JSON.parse(design.config) } catch { }
+  let config: any = design.config
+  while (typeof config === 'string') {
+    try { config = JSON.parse(config); } catch { break; }
+  }
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation()
