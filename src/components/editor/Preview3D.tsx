@@ -2535,15 +2535,15 @@ export default function Preview3D({
     const scene = sceneRef.current;
     if (!scene) return;
 
-    // Tour perspectives showing the open front and angled interior (no back wall or under-floor views)
+    // Tour sequence: South Side, East Side, North Side, West Side, Top-Left, Top-Right, Bird's Eye Top Center
     const tourWaypoints = [
-      { alpha: -Math.PI * 0.35, beta: Math.PI / 3.2 }, // Front-Right Isometric (~56° elevation)
-      { alpha: -Math.PI * 0.22, beta: Math.PI / 3.8 }, // Top-Right Overview (~47° elevation)
-      { alpha: -Math.PI * 0.08, beta: Math.PI / 3.1 }, // Right Side Perspective
-      { alpha: -Math.PI * 0.50, beta: Math.PI / 4.2 }, // Elevated Center Blueprint View (~43° elevation)
-      { alpha: -Math.PI * 0.92, beta: Math.PI / 3.1 }, // Left Side Perspective
-      { alpha: -Math.PI * 0.78, beta: Math.PI / 3.8 }, // Top-Left Overview (~47° elevation)
-      { alpha: -Math.PI * 0.65, beta: Math.PI / 3.2 }, // Front-Left Isometric (~56° elevation)
+      { alpha: -Math.PI / 2, beta: Math.PI / 3.0 },    // South Side (Front)
+      { alpha: 0, beta: Math.PI / 3.0 },              // East Side (Right)
+      { alpha: Math.PI / 2, beta: Math.PI / 3.4 },    // North Side (Back)
+      { alpha: -Math.PI, beta: Math.PI / 3.0 },       // West Side (Left)
+      { alpha: -Math.PI * 0.75, beta: Math.PI / 3.5 }, // Top-Left View
+      { alpha: -Math.PI * 0.25, beta: Math.PI / 3.5 }, // Top-Right View
+      { alpha: -Math.PI / 2, beta: 0.2 },             // Bird's Eye Top Center
     ];
 
     let currentIndex = 0;
