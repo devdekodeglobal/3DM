@@ -163,12 +163,29 @@ const WallShape = ({ shapeProps, isSelected, onSelect, onChange, isDarkMode }: a
   // Handle start vertex (x=0)
   const handleStartHandleDragMove = (e: any) => {
     e.cancelBubble = true
-    const node = e.target
-    const dxLocal = node.x()
-    // Constrain y to midline
-    node.y(wallThickness / 2)
+    const stage = e.target.getStage()
+    if (!stage) return
+    const pointer = stage.getPointerPosition()
+    if (!pointer) return
+    const stageScale = stage.scaleX()
+    const stageX = stage.x()
+    const stageY = stage.y()
+    const worldMouseX = (pointer.x - stageX) / stageScale
+    const worldMouseY = (pointer.y - stageY) / stageScale
 
-    const newWidth = Math.max(30, Math.round(wallWidth - dxLocal))
+    // Fixed end anchor
+    const endX = shapeProps.x + (wallWidth / 2) * cos
+    const endY = shapeProps.y + (wallWidth / 2) * sin
+
+    const dx = endX - worldMouseX
+    const dy = endY - worldMouseY
+    const proj = dx * cos + dy * sin
+
+    const minCutoutBoundary = wallElements.reduce((maxEdge: number, wel: any) => {
+      return Math.max(maxEdge, (wel.x || 0) + (wel.width || 0) + 5)
+    }, 30)
+
+    const newWidth = Math.max(minCutoutBoundary, Math.round(proj))
     const actualDx = wallWidth - newWidth
 
     const updatedWallElements = wallElements.map((wel: any) => ({
@@ -176,13 +193,13 @@ const WallShape = ({ shapeProps, isSelected, onSelect, onChange, isDarkMode }: a
       x: Math.max(0, Math.min(newWidth - wel.width, wel.x - actualDx))
     }))
 
-    const shiftX = (actualDx / 2) * cos
-    const shiftY = (actualDx / 2) * sin
+    const newCenterX = endX - (newWidth / 2) * cos
+    const newCenterY = endY - (newWidth / 2) * sin
 
     onChange({
       ...shapeProps,
-      x: shapeProps.x + shiftX,
-      y: shapeProps.y + shiftY,
+      x: newCenterX,
+      y: newCenterY,
       width: newWidth,
       wallElements: updatedWallElements,
       realWidth: Number((newWidth / 100).toFixed(2)),
@@ -200,27 +217,39 @@ const WallShape = ({ shapeProps, isSelected, onSelect, onChange, isDarkMode }: a
   // Handle end vertex (x=wallWidth)
   const handleEndHandleDragMove = (e: any) => {
     e.cancelBubble = true
-    const node = e.target
-    const currentEndLocal = node.x()
-    // Constrain y to midline
-    node.y(wallThickness / 2)
+    const stage = e.target.getStage()
+    if (!stage) return
+    const pointer = stage.getPointerPosition()
+    if (!pointer) return
+    const stageScale = stage.scaleX()
+    const stageX = stage.x()
+    const stageY = stage.y()
+    const worldMouseX = (pointer.x - stageX) / stageScale
+    const worldMouseY = (pointer.y - stageY) / stageScale
+
+    // Fixed start anchor
+    const startX = shapeProps.x - (wallWidth / 2) * cos
+    const startY = shapeProps.y - (wallWidth / 2) * sin
+
+    const dx = worldMouseX - startX
+    const dy = worldMouseY - startY
+    const proj = dx * cos + dy * sin
 
     const minCutoutBoundary = wallElements.reduce((maxEdge: number, wel: any) => {
       return Math.max(maxEdge, (wel.x || 0) + (wel.width || 0) + 5)
     }, 30)
 
-    const rawWidth = Math.max(minCutoutBoundary, Math.round(currentEndLocal))
-    const actualDw = rawWidth - wallWidth
+    const newWidth = Math.max(minCutoutBoundary, Math.round(proj))
 
-    const shiftX = (actualDw / 2) * cos
-    const shiftY = (actualDw / 2) * sin
+    const newCenterX = startX + (newWidth / 2) * cos
+    const newCenterY = startY + (newWidth / 2) * sin
 
     onChange({
       ...shapeProps,
-      x: shapeProps.x + shiftX,
-      y: shapeProps.y + shiftY,
-      width: rawWidth,
-      realWidth: Number((rawWidth / 100).toFixed(2)),
+      x: newCenterX,
+      y: newCenterY,
+      width: newWidth,
+      realWidth: Number((newWidth / 100).toFixed(2)),
       realDepth: Number(((shapeProps.thickness || 10) / 100).toFixed(2)),
       realHeight: Number((2.5 * (shapeProps.verticalScale || 1)).toFixed(2))
     })
@@ -638,7 +667,20 @@ const WallShape = ({ shapeProps, isSelected, onSelect, onChange, isDarkMode }: a
             shadowBlur={4}
             shadowOpacity={0.25}
             draggable
-            dragBoundFunc={(pos) => pos}
+            dragBoundFunc={function (this: any, pos: any) {
+              const stage = this.getStage()
+              if (!stage) return pos
+              const stageScale = stage.scaleX()
+              const centerX = stage.x() + shapeProps.x * stageScale
+              const centerY = stage.y() + shapeProps.y * stageScale
+              const vx = pos.x - centerX
+              const vy = pos.y - centerY
+              const proj = vx * cos + vy * sin
+              return {
+                x: centerX + proj * cos,
+                y: centerY + proj * sin
+              }
+            }}
             onDragMove={handleStartHandleDragMove}
             onDragEnd={handleStartHandleDragEnd}
             onMouseEnter={(e) => {
@@ -663,7 +705,20 @@ const WallShape = ({ shapeProps, isSelected, onSelect, onChange, isDarkMode }: a
             shadowBlur={4}
             shadowOpacity={0.25}
             draggable
-            dragBoundFunc={(pos) => pos}
+            dragBoundFunc={function (this: any, pos: any) {
+              const stage = this.getStage()
+              if (!stage) return pos
+              const stageScale = stage.scaleX()
+              const centerX = stage.x() + shapeProps.x * stageScale
+              const centerY = stage.y() + shapeProps.y * stageScale
+              const vx = pos.x - centerX
+              const vy = pos.y - centerY
+              const proj = vx * cos + vy * sin
+              return {
+                x: centerX + proj * cos,
+                y: centerY + proj * sin
+              }
+            }}
             onDragMove={handleEndHandleDragMove}
             onDragEnd={handleEndHandleDragEnd}
             onMouseEnter={(e) => {
@@ -681,10 +736,111 @@ const WallShape = ({ shapeProps, isSelected, onSelect, onChange, isDarkMode }: a
   )
 }
 
-
-const ParametricStructureShape = ({ shapeProps, onSelect, onChange }: any) => {
+const ParametricStructureShape = ({ shapeProps, onSelect, onChange, isSelected }: any) => {
   const isCaged = shapeProps.type === 'caged-wall' || shapeProps.type === 'caged-panel';
+  const isPillar = shapeProps.type === 'pillar';
   const isRound = shapeProps.profile === 'round';
+  const w = shapeProps.width
+  const h = shapeProps.height
+  const rad = ((shapeProps.rotation || 0) * Math.PI) / 180
+  const cos = Math.cos(rad)
+  const sin = Math.sin(rad)
+
+  // End (Right side) drag handle
+  const handleEndHandleDragMove = (e: any) => {
+    e.cancelBubble = true
+    const stage = e.target.getStage()
+    if (!stage) return
+    const pointer = stage.getPointerPosition()
+    if (!pointer) return
+    const stageScale = stage.scaleX()
+    const stageX = stage.x()
+    const stageY = stage.y()
+    const worldMouseX = (pointer.x - stageX) / stageScale
+    const worldMouseY = (pointer.y - stageY) / stageScale
+
+    // Left end is anchored in place
+    const leftX = shapeProps.x - (w / 2) * cos
+    const leftY = shapeProps.y - (w / 2) * sin
+
+    // Project mouse onto structure axis
+    const dx = worldMouseX - leftX
+    const dy = worldMouseY - leftY
+    const proj = dx * cos + dy * sin
+
+    const newWidth = Math.max(20, Math.round(proj))
+    const newCenterX = leftX + (newWidth / 2) * cos
+    const newCenterY = leftY + (newWidth / 2) * sin
+
+    const updates: any = {
+      ...shapeProps,
+      x: newCenterX,
+      y: newCenterY,
+      width: newWidth,
+      realWidth: Number((newWidth / 100).toFixed(2))
+    }
+
+    if (isPillar && isRound) {
+      updates.height = newWidth
+      updates.realDepth = Number((newWidth / 100).toFixed(2))
+    }
+
+    onChange(updates)
+  }
+
+  const handleEndHandleDragEnd = (e: any) => {
+    e.cancelBubble = true
+    e.target.x(w / 2)
+    e.target.y(0)
+  }
+
+  // Start (Left side) drag handle
+  const handleStartHandleDragMove = (e: any) => {
+    e.cancelBubble = true
+    const stage = e.target.getStage()
+    if (!stage) return
+    const pointer = stage.getPointerPosition()
+    if (!pointer) return
+    const stageScale = stage.scaleX()
+    const stageX = stage.x()
+    const stageY = stage.y()
+    const worldMouseX = (pointer.x - stageX) / stageScale
+    const worldMouseY = (pointer.y - stageY) / stageScale
+
+    // Right end is anchored in place
+    const rightX = shapeProps.x + (w / 2) * cos
+    const rightY = shapeProps.y + (w / 2) * sin
+
+    // Project mouse onto structure axis
+    const dx = rightX - worldMouseX
+    const dy = rightY - worldMouseY
+    const proj = dx * cos + dy * sin
+
+    const newWidth = Math.max(20, Math.round(proj))
+    const newCenterX = rightX - (newWidth / 2) * cos
+    const newCenterY = rightY - (newWidth / 2) * sin
+
+    const updates: any = {
+      ...shapeProps,
+      x: newCenterX,
+      y: newCenterY,
+      width: newWidth,
+      realWidth: Number((newWidth / 100).toFixed(2))
+    }
+
+    if (isPillar && isRound) {
+      updates.height = newWidth
+      updates.realDepth = Number((newWidth / 100).toFixed(2))
+    }
+
+    onChange(updates)
+  }
+
+  const handleStartHandleDragEnd = (e: any) => {
+    e.cancelBubble = true
+    e.target.x(-w / 2)
+    e.target.y(0)
+  }
 
   // Draw the actual cage plates in the plan view, mirroring the Preview3D geometry
   // (offsets step by plateThickness + plateGap so 2D and 3D always match).
@@ -694,7 +850,6 @@ const ParametricStructureShape = ({ shapeProps, onSelect, onChange }: any) => {
     const plateThickness = shapeProps.plateThickness || 0.05
     const plateGap = shapeProps.plateGap != null ? shapeProps.plateGap : (shapeProps.type === 'caged-wall' ? 0.2 : 0.3)
     const orientation = shapeProps.orientation || 'horizontal'
-    const w = shapeProps.width
     const d = shapeProps.height
     const step = plateThickness * PPM + plateGap * PPM
     const strokeWidth = Math.max(2, Math.round(plateThickness * PPM))
@@ -791,18 +946,99 @@ const ParametricStructureShape = ({ shapeProps, onSelect, onChange }: any) => {
     >
       {/* Background shape */}
       <Rect
-        x={-shapeProps.width / 2}
-        y={-shapeProps.height / 2}
-        width={shapeProps.width}
-        height={shapeProps.height}
+        x={-w / 2}
+        y={-h / 2}
+        width={w}
+        height={h}
         fill={isCaged ? 'transparent' : (shapeProps.fill || '#aaaaaa')}
         stroke={isCaged ? (shapeProps.fill || '#444') : undefined}
         strokeWidth={isCaged ? 2 : 0}
         dash={isCaged ? [5, 5] : undefined}
-        cornerRadius={isRound ? Math.max(shapeProps.width, shapeProps.height) : 0}
+        cornerRadius={isRound ? Math.max(w, h) : 0}
       />
       {/* Cage plate pattern */}
       {renderCagedPlates()}
+
+      {/* Interactive control dots (only shown when selected) */}
+      {isSelected && (
+        <Group>
+          {/* Start Handle (left side, x = -w/2) */}
+          <Circle
+            x={-w / 2}
+            y={0}
+            radius={7}
+            fill="#ffffff"
+            stroke="#0d7a75"
+            strokeWidth={2.5}
+            shadowColor="#000000"
+            shadowBlur={4}
+            shadowOpacity={0.25}
+            draggable
+            dragBoundFunc={function (this: any, pos: any) {
+              const stage = this.getStage()
+              if (!stage) return pos
+              const stageScale = stage.scaleX()
+              const centerX = stage.x() + shapeProps.x * stageScale
+              const centerY = stage.y() + shapeProps.y * stageScale
+              const vx = pos.x - centerX
+              const vy = pos.y - centerY
+              const proj = vx * cos + vy * sin
+              return {
+                x: centerX + proj * cos,
+                y: centerY + proj * sin
+              }
+            }}
+            onDragMove={handleStartHandleDragMove}
+            onDragEnd={handleStartHandleDragEnd}
+            onMouseEnter={(e) => {
+              const stage = e.target.getStage()
+              if (stage) stage.container().style.cursor = 'ew-resize'
+            }}
+            onMouseLeave={(e) => {
+              const stage = e.target.getStage()
+              if (stage) stage.container().style.cursor = 'default'
+            }}
+          />
+
+          {/* End Handle (right side, x = w/2) */}
+          <Circle
+            x={w / 2}
+            y={0}
+            radius={7}
+            fill="#ffffff"
+            stroke="#0d7a75"
+            strokeWidth={2.5}
+            shadowColor="#000000"
+            shadowBlur={4}
+            shadowOpacity={0.25}
+            draggable
+            dragBoundFunc={function (this: any, pos: any) {
+              const stage = this.getStage()
+              if (!stage) return pos
+              const stageScale = stage.scaleX()
+              const centerX = stage.x() + shapeProps.x * stageScale
+              const centerY = stage.y() + shapeProps.y * stageScale
+              const vx = pos.x - centerX
+              const vy = pos.y - centerY
+              const proj = vx * cos + vy * sin
+              return {
+                x: centerX + proj * cos,
+                y: centerY + proj * sin
+              }
+            }}
+            onDragMove={handleEndHandleDragMove}
+            onDragEnd={handleEndHandleDragEnd}
+            onMouseEnter={(e) => {
+              const stage = e.target.getStage()
+              if (stage) stage.container().style.cursor = 'ew-resize'
+            }}
+            onMouseLeave={(e) => {
+              const stage = e.target.getStage()
+              if (stage) stage.container().style.cursor = 'default'
+            }}
+          />
+        </Group>
+      )}
     </Group>
   )
 }
@@ -1371,16 +1607,7 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
                     shapeProps={{ ...obj, name: obj.id }}
                     onSelect={() => onSelect(obj.id)}
                     onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
-                  />
-                )
-              }
-              if (['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(obj.type)) {
-                return (
-                  <ParametricStructureShape
-                    key={obj.id}
-                    shapeProps={{ ...obj, name: obj.id }}
-                    onSelect={() => onSelect(obj.id)}
-                    onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
+                    isSelected={obj.id === selectedId}
                   />
                 )
               }
@@ -1435,8 +1662,8 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
               enabledAnchors={
                 selectedElement?.type === 'wall'
                   ? ['middle-left', 'middle-right']
-                  : selectedElement?.type === 'asset' || ['caged-wall', 'caged-panel'].includes(selectedElement?.type)
-                  ? [] // Resized via Properties panel only
+                  : ['asset', 'caged-wall', 'caged-panel', 'panel', 'pillar'].includes(selectedElement?.type)
+                  ? [] // Resized via custom drag dots and Properties panel only
                   : ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']
               }
               keepRatio={selectedElement?.type === 'asset'}

@@ -510,6 +510,38 @@ export default function Properties({
                       <option value="round">Round / Cylinder</option>
                     </select>
                   </div>
+                  {selectedElement.profile === 'round' ? (
+                    <div>
+                      <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-1">
+                        Radius (m)
+                      </label>
+                      <input
+                        type="number" min="0.05" max="5" step="0.05"
+                        value={((selectedElement.width || 40) / 200).toFixed(2)}
+                        onChange={(e) => {
+                          const radius = parseFloat(e.target.value) || 0.05
+                          const px = Math.round(radius * 200)
+                          onUpdate(selectedElement.id, { width: px, height: px, realWidth: radius, realDepth: radius })
+                        }}
+                        className="w-full bg-[var(--sand)] border border-[var(--line)] rounded-lg px-3 py-2 text-sm outline-none"
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-1">
+                        Width (m)
+                      </label>
+                      <input
+                        type="number" min="0.05" max="5" step="0.05"
+                        value={((selectedElement.width || 40) / 100).toFixed(2)}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0.05
+                          onUpdate(selectedElement.id, { width: Math.round(val * 100), realWidth: val })
+                        }}
+                        className="w-full bg-[var(--sand)] border border-[var(--line)] rounded-lg px-3 py-2 text-sm outline-none"
+                      />
+                    </div>
+                  )}
                   <div>
                     <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">
                       Material Color

@@ -21,15 +21,27 @@ export function calculateBlueprintMeasurements(
   const chains: MeasurementChain[] = [];
   const PPM = 100;
 
-  const items = elements.filter(el => el && ['asset', '3d_logo', 'wall'].includes(el.type) && !el.isOuter).map(el => {
-    const w = el.width / PPM;
-    const h = el.height / PPM;
+  const supportedTypes = ['asset', '3d_logo', 'wall', 'pillar', 'caged-wall', 'caged-panel', 'panel'];
+  const items = elements.filter(el => el && supportedTypes.includes(el.type) && !el.isOuter).map(el => {
+    const w = (el.realWidth !== undefined ? el.realWidth : el.width / PPM);
+    const h = (el.realDepth !== undefined ? el.realDepth : el.height / PPM);
     const x = el.x / PPM;
     const z = boothConfig.depth - (el.y / PPM);
     const rot = (el.rotation || 0) * (Math.PI / 180);
-    const baseH = el.type === 'wall' ? 2.5 : (el.specH || 1);
+    
+    let baseH = 1;
+    let yOff = el.yOffset || 0;
+    if (el.type === 'wall' || el.type === 'caged-wall' || el.type === 'panel') {
+      baseH = el.realHeight || 2.5;
+    } else if (el.type === 'pillar') {
+      baseH = el.realHeight || 3.0;
+    } else if (el.type === 'caged-panel') {
+      baseH = el.realHeight || 0.2;
+      if (el.yOffset === undefined) yOff = 2.5;
+    } else {
+      baseH = el.specH || 1;
+    }
     const vH = baseH * (el.verticalScale || 1);
-    const yOff = el.yOffset || 0;
 
     // Standard Rotated Corners (0:BL, 1:BR, 2:TR, 3:TL)
     const corners = [

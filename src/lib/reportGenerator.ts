@@ -1,16 +1,32 @@
-import pkg from 'file-saver';
-const { saveAs } = pkg;
 import { ASSET_REGISTRY } from './assetRegistry';
 import { getArchitecturalSymbolSvgString } from '../components/editor/ArchitecturalSymbolSVG';
 
+async function loadHtml2Pdf(): Promise<any> {
+  if (typeof window === 'undefined') return null;
+  if ((window as any).html2pdf) return (window as any).html2pdf;
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[src*="html2pdf"]');
+    if (existing) {
+      existing.addEventListener('load', () => resolve((window as any).html2pdf));
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    script.onload = () => resolve((window as any).html2pdf);
+    script.onerror = () => reject(new Error('Failed to load html2pdf'));
+    document.head.appendChild(script);
+  });
+}
+
 export async function generateReport(boothConfig: any, elements: any[], screenshots: Record<string, string>) {
-  const docId = `DKD-${Date.now().toString(36).toUpperCase()}`;
+  const docId = `KRAFC-${Date.now().toString(36).toUpperCase()}`;
   const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   const projectName = typeof window !== 'undefined' ? (localStorage.getItem('current-design-name') || 'Untitled Space Design') : 'Space Design';
 
   // BOM & Element Collection
   const walls = elements.filter(el => el.type === 'wall');
+  const structures = elements.filter(el => ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(el.type));
   const topLevelAssets = elements.filter(el => el.type === 'asset');
   const topLevelLogos = elements.filter(el => el.type === '3d_logo');
   const topLevelBanners = elements.filter(el => el.type === 'banner');
@@ -45,6 +61,49 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     specs: string;
     svgSymbol?: string;
   }> = {};
+
+  // Add structural items into BOM procurement schedule
+  structures.forEach(st => {
+    const key = `struct_${st.type}_${st.profile || ''}_${st.realWidth || (st.width / 100).toFixed(2)}x${st.realDepth || (st.height / 100).toFixed(2)}`;
+    let label = 'Modular Structure';
+    let cat = 'STRUCTURE';
+    let specs = 'Custom fabrication';
+    const wStr = (st.realWidth || st.width / 100).toFixed(2);
+    const dStr = (st.realDepth || st.height / 100).toFixed(2);
+    const hStr = (st.realHeight || (st.type === 'pillar' ? 3.0 : st.type === 'caged-panel' ? 0.2 : 2.5)).toFixed(2);
+    const dims = `${wStr}m × ${dStr}m × ${hStr}m`;
+
+    if (st.type === 'caged-wall') {
+      label = 'Caged Slat Wall';
+      cat = 'WALL FEATURE';
+      specs = `${st.platesCount || 5} slats · Thick: ${((st.plateThickness || 0.05) * 100).toFixed(1)}cm · Gap: ${((st.plateGap ?? 0.2) * 100).toFixed(1)}cm`;
+    } else if (st.type === 'caged-panel') {
+      label = 'Caged Roof / Slat Ceiling';
+      cat = 'OVERHEAD / CEILING';
+      specs = `Elevation: ${(st.yOffset || 2.5).toFixed(2)}m · ${st.platesCount || 5} slats · Gap: ${((st.plateGap ?? 0.3) * 100).toFixed(1)}cm`;
+    } else if (st.type === 'pillar') {
+      label = `Structural Pillar (${st.profile === 'round' ? 'Round' : 'Square'})`;
+      cat = 'COLUMNS & PILLARS';
+      specs = `Profile: ${st.profile === 'round' ? 'Cylindrical' : 'Square'} · Height: ${hStr}m`;
+    } else if (st.type === 'panel') {
+      label = 'Modular Architectural Panel';
+      cat = 'PARTITIONS & PANELS';
+      specs = `Style: ${st.style || 'Flat'} · Thick: ${dStr}m`;
+    }
+
+    if (!assetCounts[key]) {
+      assetCounts[key] = {
+        id: key,
+        count: 0,
+        label,
+        category: cat,
+        dims,
+        specs,
+        svgSymbol: getArchitecturalSymbolSvgString(cat, st.type)
+      };
+    }
+    assetCounts[key].count++;
+  });
 
   allAssets.forEach(a => {
     const key = a.assetName || a.id;
@@ -125,7 +184,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     </div>
     <div class="sheet-title-block">
       <div class="tb-left">
-        <strong>DEKODE SPACE DESIGNER</strong> · 2D ARCHITECTURAL FLOOR PLAN
+        <strong>krafc</strong> · 2D ARCHITECTURAL FLOOR PLAN
       </div>
       <div class="tb-right">
         <span>PROJECT: <strong>${projectName}</strong></span>
@@ -162,7 +221,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
       </div>
       <div class="sheet-title-block">
         <div class="tb-left">
-          <strong>DEKODE ARCHITECTURAL SYSTEM</strong> · ${title.toUpperCase()}
+          <strong>krafc</strong> · ${title.toUpperCase()}
         </div>
         <div class="tb-right">
           <span>PROJECT: <strong>${projectName}</strong></span>
@@ -201,10 +260,42 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     <tr>
       <td class="bold"><code>${w.id.substring(0, 12)}</code></td>
       <td>${w.isOuter ? '<span class="tag">Outer Structural</span>' : '<span class="tag inner">Internal Partition</span>'}</td>
-      <td><strong>${w.realWidth || (w.width / 100).toFixed(2)}m</strong> × <strong>${(w.thickness / 100).toFixed(2)}m</strong></td>
-      <td>${w.material || 'Standard Matte'}</td>
-      <td>${(w.wallElements || []).length} mounted fixture(s)</td>
+      <td><strong>${w.realWidth || (w.width / 100).toFixed(2)}m (W)</strong> × <strong>${(w.thickness / 100).toFixed(2)}m (T)</strong> × <strong>${(2.5 * (w.verticalScale || 1)).toFixed(2)}m (H)</strong></td>
+      <td>${w.material || 'Standard Matte'}${w.color ? ` (${w.color})` : ''}</td>
+      <td>${(w.wallElements || []).length > 0 ? (w.wallElements.map((we: any) => `${we.type === 'door' ? '🚪 Door' : we.type === 'window' ? '🪟 Window' : we.type} (${(we.width / 100).toFixed(2)}m)`).join(', ')) : 'Solid full wall'}</td>
     </tr>`).join('');
+
+  // Parametric & Core Structures Rows
+  const structureRows = structures.map(st => {
+    let typeTag = '<span class="tag brand">Structure</span>';
+    let details = '';
+    const wM = (st.realWidth || st.width / 100).toFixed(2);
+    const dM = (st.realDepth || st.height / 100).toFixed(2);
+    const hM = (st.realHeight || (st.type === 'pillar' ? 3.0 : st.type === 'caged-panel' ? 0.2 : 2.5)).toFixed(2);
+
+    if (st.type === 'caged-wall') {
+      typeTag = '<span class="tag brand">Caged Slat Wall</span>';
+      details = `${st.platesCount || 5} slats · Thickness: ${((st.plateThickness || 0.05) * 100).toFixed(1)}cm · Gap: ${((st.plateGap ?? 0.2) * 100).toFixed(1)}cm · ${st.orientation || 'horizontal'}`;
+    } else if (st.type === 'caged-panel') {
+      typeTag = '<span class="tag warm">Caged Roof / Canopy</span>';
+      details = `Elevation: ${(st.yOffset || 2.5).toFixed(2)}m · ${st.platesCount || 5} slats · Gap: ${((st.plateGap ?? 0.3) * 100).toFixed(1)}cm`;
+    } else if (st.type === 'pillar') {
+      typeTag = '<span class="tag">Structural Pillar</span>';
+      details = `Profile: ${st.profile === 'round' ? 'Cylindrical (Ø ' + wM + 'm)' : 'Square Section'} · Height: ${hM}m`;
+    } else if (st.type === 'panel') {
+      typeTag = '<span class="tag inner">Modular Panel</span>';
+      details = `Style: ${st.style || 'Flat'} · Thickness: ${dM}m`;
+    }
+
+    return `
+    <tr>
+      <td class="bold"><code>${st.id.substring(0, 12)}</code></td>
+      <td>${typeTag}</td>
+      <td><strong>${wM}m (W)</strong> × <strong>${dM}m (D)</strong> × <strong>${hM}m (H)</strong></td>
+      <td>${st.fill || '#444444'}</td>
+      <td>${details}</td>
+    </tr>`;
+  }).join('');
 
   // Mounted Fixtures Rows
   const elemRows = [
@@ -222,6 +313,10 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
 <title>Architectural Space Specification - ${projectName} - ${docId}</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
   :root {
     --navy: #090d16;
     --navy2: #111827;
@@ -242,9 +337,9 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
   body { 
     font-family: 'Inter', system-ui, -apple-system, sans-serif; 
     color: var(--text); 
-    background: #e2e8f0; 
-    font-size: 13px; 
-    line-height: 1.5; 
+    background: #cbd5e1; 
+    font-size: 12px; 
+    line-height: 1.4; 
   }
 
   /* ── PRINT & ACTION BUTTONS ── */
@@ -260,10 +355,10 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     background: var(--brand); 
     color: #fff; 
     border: none; 
-    padding: 12px 24px; 
+    padding: 10px 20px; 
     border-radius: 99px; 
     font-weight: 700; 
-    font-size: 14px; 
+    font-size: 13px; 
     cursor: pointer; 
     box-shadow: 0 4px 20px rgba(79,70,229,.4); 
     transition: all .2s; 
@@ -278,22 +373,31 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     background: #4338ca;
   }
 
-  /* ── FULL-PAGE SHEETS (A4/LANDSCAPE READY) ── */
+  /* ── FULL-PAGE SHEETS (EXACT A4 LANDSCAPE RATIO: 1080px × 720px) ── */
   .sheet {
-    max-width: 1200px;
-    margin: 32px auto;
+    width: 1080px;
+    height: 720px;
+    max-height: 720px;
+    margin: 24px auto;
     background: var(--white);
-    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-    border-radius: 8px;
-    padding: 44px 52px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    padding: 24px 32px;
     position: relative;
     display: flex;
     flex-direction: column;
-    min-height: 840px;
+    justify-content: space-between;
+    overflow: hidden;
+    page-break-after: always;
+    page-break-inside: avoid;
+    break-after: page;
+    break-inside: avoid;
   }
 
   /* ── COVER SHEET ── */
   .cover-sheet {
+    width: 1080px;
+    height: 720px;
+    max-height: 720px;
     background: #0f172a;
     color: white;
     padding: 0;
@@ -321,7 +425,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     pointer-events: none; 
   }
   .cover-body { 
-    padding: 72px 80px; 
+    padding: 48px 56px; 
     position: relative; 
     z-index: 1; 
   }
@@ -332,61 +436,61 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     letter-spacing: 0.15em; 
     color: var(--brand-light); 
     text-transform: uppercase; 
-    margin-bottom: 20px; 
+    margin-bottom: 16px; 
     font-family: 'JetBrains Mono', monospace;
     background: rgba(99, 102, 241, 0.15);
     padding: 4px 12px;
     border-radius: 4px;
     border: 1px solid rgba(99, 102, 241, 0.3);
   }
-  .cover h1 { 
-    font-size: 44px; 
+  .cover-body h1 { 
+    font-size: 40px; 
     font-weight: 800; 
     letter-spacing: -0.02em; 
     line-height: 1.15; 
-    margin-bottom: 12px; 
+    margin-bottom: 10px; 
     font-family: 'Outfit', sans-serif;
     color: #ffffff;
   }
-  .cover h1 span { 
+  .cover-body h1 span { 
     background: linear-gradient(135deg, #38bdf8, #818cf8);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
   .cover-project-title {
-    font-size: 22px;
+    font-size: 20px;
     color: #94a3b8;
     font-weight: 500;
-    margin-bottom: 48px;
+    margin-bottom: 36px;
   }
   .cover-meta-grid { 
     display: grid; 
     grid-template-columns: repeat(4, 1fr); 
-    gap: 24px; 
+    gap: 20px; 
     border-top: 1px solid rgba(255,255,255,0.12);
-    padding-top: 28px;
+    padding-top: 24px;
   }
   .cover-meta-item label { 
-    font-size: 10px; 
+    font-size: 9px; 
     text-transform: uppercase; 
     letter-spacing: 0.12em; 
     color: rgba(255,255,255,.5); 
     display: block; 
-    margin-bottom: 6px; 
+    margin-bottom: 4px; 
   }
   .cover-meta-item span { 
-    font-size: 14px; 
+    font-size: 13px; 
     font-weight: 600; 
     font-family: 'JetBrains Mono', monospace; 
     color: #f8fafc; 
   }
   .cover-footer { 
     background: #090d16; 
-    padding: 20px 80px; 
+    padding: 16px 56px; 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    font-size: 11px; 
+    font-size: 10.5px; 
     color: rgba(255,255,255,.45); 
     letter-spacing: 0.05em; 
     position: relative; 
@@ -399,14 +503,14 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
   .stats-grid { 
     display: grid; 
     grid-template-columns: repeat(4, 1fr); 
-    gap: 16px; 
-    margin: 28px 0 36px; 
+    gap: 12px; 
+    margin: 12px 0 16px; 
   }
   .stat-card { 
     background: var(--bg); 
     border: 1px solid var(--border); 
-    border-radius: 12px; 
-    padding: 20px; 
+    border-radius: 8px; 
+    padding: 12px 14px; 
     position: relative; 
     overflow: hidden; 
   }
@@ -416,7 +520,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     top: 0; 
     left: 0; 
     right: 0; 
-    height: 4px; 
+    height: 3px; 
     background: var(--brand); 
     border-radius: 2px 2px 0 0; 
   }
@@ -424,25 +528,25 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
   .stat-card.green::before { background: var(--green); }
   .stat-card.amber::before { background: var(--amber); }
   .stat-label { 
-    font-size: 11px; 
+    font-size: 9.5px; 
     font-weight: 700; 
     text-transform: uppercase; 
-    letter-spacing: 0.1em; 
+    letter-spacing: 0.08em; 
     color: var(--soft); 
-    margin-bottom: 8px; 
+    margin-bottom: 4px; 
   }
   .stat-value { 
-    font-size: 32px; 
+    font-size: 24px; 
     font-weight: 800; 
     color: var(--text); 
     line-height: 1; 
     font-family: 'Outfit', sans-serif;
   }
   .stat-unit { 
-    font-size: 14px; 
+    font-size: 12px; 
     font-weight: 500; 
     color: var(--soft); 
-    margin-left: 3px; 
+    margin-left: 2px; 
   }
 
   /* ── DRAWING SHEET HEADERS & FRAMES ── */
@@ -450,40 +554,41 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    border-bottom: 2px solid var(--navy);
-    padding-bottom: 16px;
-    margin-bottom: 20px;
+    border-bottom: 1.5px solid var(--navy);
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
   }
   .sheet-tag {
     display: inline-block;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     color: var(--brand);
     background: rgba(79,70,229,0.08);
-    padding: 3px 8px;
-    border-radius: 4px;
-    margin-bottom: 6px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-bottom: 4px;
   }
   .sheet-title-group h2 {
     font-family: 'Outfit', sans-serif;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 800;
     color: var(--navy);
     line-height: 1.2;
   }
   .sheet-sub {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--soft);
-    margin-top: 4px;
+    margin-top: 2px;
   }
   .sheet-meta {
     display: flex;
-    gap: 20px;
+    gap: 16px;
     text-align: right;
   }
   .sheet-meta label {
-    font-size: 9px;
+    font-size: 8.5px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--soft);
@@ -492,21 +597,23 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
   }
   .sheet-meta span {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+    font-size: 11.5px;
     font-weight: 700;
     color: var(--navy);
   }
 
   .drawing-frame {
-    flex: 1;
+    flex: 1 1 auto;
+    height: 520px;
+    max-height: 520px;
+    min-height: 500px;
     border: 1.5px solid var(--border);
-    border-radius: 8px;
+    border-radius: 6px;
     overflow: hidden;
-    background: #0d1117;
+    background: #0b0f19;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 580px;
     position: relative;
   }
   .drawing-canvas-wrap {
@@ -515,50 +622,50 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px;
-  }
-  .drawing-canvas-wrap.blueprint-dark {
-    background: #0b0f19;
+    padding: 10px;
   }
   .blueprint-img {
     max-width: 100%;
-    max-height: 600px;
+    max-height: 500px;
+    width: auto;
+    height: auto;
     object-fit: contain;
     display: block;
   }
 
   /* ── SHEET TITLE BLOCK ── */
   .sheet-title-block {
-    margin-top: 16px;
-    border-top: 2px solid var(--navy);
-    padding-top: 10px;
+    margin-top: 10px;
+    border-top: 1.5px solid var(--navy);
+    padding-top: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 11px;
+    font-size: 10px;
     color: var(--soft);
+    flex-shrink: 0;
   }
   .tb-left strong { color: var(--navy); }
-  .tb-right { display: flex; gap: 24px; }
+  .tb-right { display: flex; gap: 20px; }
   .tb-right strong { color: var(--navy); }
 
   /* ── TABLES & SCHEDULES ── */
   table { 
     width: 100%; 
     border-collapse: collapse; 
-    font-size: 12px; 
-    margin-top: 12px;
+    font-size: 10.5px; 
+    margin-top: 6px;
   }
   thead tr { 
     background: var(--navy); 
     color: white; 
   }
   thead th { 
-    padding: 12px 16px; 
+    padding: 6px 10px; 
     text-align: left; 
-    font-size: 10px; 
+    font-size: 9px; 
     font-weight: 700; 
-    letter-spacing: 0.1em; 
+    letter-spacing: 0.08em; 
     text-transform: uppercase; 
     font-family: 'Outfit', sans-serif;
   }
@@ -569,7 +676,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     background: #f8fafc; 
   }
   td { 
-    padding: 12px 16px; 
+    padding: 6px 10px; 
     vertical-align: middle; 
   }
   td.bold { font-weight: 600; color: var(--navy); }
@@ -577,19 +684,19 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     font-family: 'JetBrains Mono', monospace; 
     background: #eef2ff; 
     color: var(--brand); 
-    padding: 2px 6px; 
-    border-radius: 4px; 
-    font-size: 11px; 
+    padding: 1px 4px; 
+    border-radius: 3px; 
+    font-size: 9.5px; 
   }
   .tag { 
     display: inline-block; 
     background: var(--navy); 
     color: white; 
-    font-size: 9px; 
+    font-size: 8.5px; 
     font-weight: 700; 
-    padding: 3px 8px; 
-    border-radius: 4px; 
-    letter-spacing: 0.05em; 
+    padding: 2px 6px; 
+    border-radius: 3px; 
+    letter-spacing: 0.04em; 
     text-transform: uppercase; 
   }
   .tag.inner { background: var(--cyan); color: var(--navy); }
@@ -599,35 +706,37 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
   /* ── BOM VISUAL CARDS GRID ── */
   .bom-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    margin-top: 16px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+    max-height: 540px;
+    overflow: hidden;
   }
   .bom-card {
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px 18px;
+    border-radius: 8px;
+    padding: 10px 12px;
     background: var(--bg);
   }
   .bom-card-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
     border-bottom: 1px solid var(--border-light);
   }
   .bom-card-thumb {
-    width: 48px;
-    height: 48px;
+    width: 32px;
+    height: 32px;
     background: #ffffff;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    padding: 2px;
+    padding: 1px;
   }
   .bom-card-thumb svg {
     width: 100%;
@@ -638,60 +747,97 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
     background: var(--brand);
     color: white;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 6px;
+    padding: 2px 6px;
+    border-radius: 4px;
   }
   .bom-card-title h4 {
-    font-size: 14px;
+    font-size: 11.5px;
     font-weight: 700;
     color: var(--navy);
   }
   .bom-card-cat {
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     color: var(--soft);
   }
   .bom-card-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 12px;
-    margin-bottom: 4px;
+    font-size: 10.5px;
+    margin-bottom: 2px;
   }
   .bom-card-row label {
     font-weight: 600;
     color: var(--soft);
   }
   .bom-card-specs {
-    font-size: 11px;
+    font-size: 9.5px;
     color: var(--soft);
     max-width: 65%;
     text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  /* ── PRINT RULES (PAGE-BREAK PER SHEET) ── */
+  /* ── PRINT MEDIA RULES (EXACT 1-PAGE PER SHEET IN A4 LANDSCAPE) ── */
   @media print {
-    body { background: white; }
-    .no-print, .action-bar { display: none !important; }
-    .sheet {
+    @page {
+      size: A4 landscape;
       margin: 0;
-      padding: 24px 32px;
-      box-shadow: none;
-      border-radius: 0;
-      min-height: 100vh;
-      page-break-after: always;
-      break-after: page;
+    }
+    html, body {
+      width: 297mm;
+      height: 210mm;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #ffffff !important;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
+    .no-print, .action-bar {
+      display: none !important;
+    }
+    .sheet {
+      width: 297mm !important;
+      height: 210mm !important;
+      max-height: 210mm !important;
+      box-sizing: border-box !important;
+      margin: 0 !important;
+      padding: 12mm 16mm !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      page-break-after: always !important;
+      break-after: page !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      overflow: hidden !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+    }
+    .cover-sheet {
+      padding: 0 !important;
+    }
+    .cover-body {
+      padding: 16mm 20mm !important;
+    }
+    .cover-footer {
+      padding: 6mm 20mm !important;
+    }
     .drawing-frame {
-      min-height: 720px;
+      flex: 1 1 auto !important;
+      height: 128mm !important;
+      max-height: 128mm !important;
+      min-height: 128mm !important;
     }
     .blueprint-img {
-      max-height: 700px;
+      max-width: 100% !important;
+      max-height: 124mm !important;
     }
   }
 </style>
@@ -710,7 +856,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
   <div class="cover-accent"></div>
   <div class="cover-grid"></div>
   <div class="cover-body">
-    <div class="cover-tag">DEKODE SPACE DESIGNER · ARCHITECTURAL SPECIFICATION</div>
+    <div class="cover-tag">krafc · ARCHITECTURAL SPECIFICATION</div>
     <h1>Architectural Space<br><span>Technical Report</span></h1>
     <div class="cover-project-title">${projectName}</div>
     
@@ -723,7 +869,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
   </div>
   <div class="cover-footer">
     <span>OFFICIAL SPECIFICATION DOCUMENT</span>
-    <strong>DEKODE SPACE DESIGNER</strong>
+    <strong>krafc</strong>
     <span>PAGE 1 OF ${drawingSheetNumber}</span>
   </div>
 </div>
@@ -756,8 +902,8 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
       <div class="stat-value">${allAssets.length}</div>
     </div>
     <div class="stat-card amber">
-      <div class="stat-label">Structural Walls</div>
-      <div class="stat-value">${walls.length}</div>
+      <div class="stat-label">Structural Elements</div>
+      <div class="stat-value">${walls.length + structures.length}</div>
     </div>
   </div>
 
@@ -765,8 +911,17 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
   <div style="margin-top: 16px;">
     <h3 style="font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;color:var(--navy);">Structural & Partition Walls</h3>
     <table>
-      <thead><tr><th>Wall Reference</th><th>Classification</th><th>Real Dimensions (W × T)</th><th>Material Finish</th><th>Mounted Elements</th></tr></thead>
+      <thead><tr><th>Wall Reference</th><th>Classification</th><th>Real Dimensions (W × T × H)</th><th>Material Finish</th><th>Mounted Elements / Details</th></tr></thead>
       <tbody>${wallRows}</tbody>
+    </table>
+  </div>` : ''}
+
+  ${structures.length > 0 ? `
+  <div style="margin-top: 20px;">
+    <h3 style="font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;color:var(--navy);">Parametric & Core Structures</h3>
+    <table>
+      <thead><tr><th>Element Reference</th><th>Structure Type</th><th>Real Dimensions (W × D × H)</th><th>Material / Color</th><th>Structural Specifications</th></tr></thead>
+      <tbody>${structureRows}</tbody>
     </table>
   </div>` : ''}
 
@@ -780,7 +935,7 @@ export async function generateReport(boothConfig: any, elements: any[], screensh
   </div>` : ''}
 
   <div class="sheet-title-block" style="margin-top: auto;">
-    <div class="tb-left"><strong>DEKODE ARCHITECTURAL SYSTEM</strong> · EXECUTIVE SPECIFICATION</div>
+    <div class="tb-left"><strong>krafc</strong> · EXECUTIVE SPECIFICATION</div>
     <div class="tb-right"><span>REF: <strong>${docId}</strong></span><span>SHEET: <strong>DWG-01</strong></span></div>
   </div>
 </div>
@@ -804,11 +959,11 @@ ${blueprintSheetsHtml}
   </div>
 
   <div class="bom-grid">
-    ${bomCatalogHtml || '<p style="color:var(--soft);font-style:italic;grid-column:span 2;padding:24px 0;">No furniture assets placed in this design.</p>'}
+    ${bomCatalogHtml || '<p style="color:var(--soft);font-style:italic;grid-column:span 3;padding:24px 0;">No furniture assets placed in this design.</p>'}
   </div>
 
   <div class="sheet-title-block" style="margin-top: auto;">
-    <div class="tb-left"><strong>DEKODE SPACE DESIGNER</strong> · BILL OF MATERIALS & PROCUREMENT SCHEDULE</div>
+    <div class="tb-left"><strong>krafc</strong> · BILL OF MATERIALS & PROCUREMENT SCHEDULE</div>
     <div class="tb-right"><span>PROJECT: <strong>${projectName}</strong></span><span>FINAL SCHEDULE</span></div>
   </div>
 </div>
@@ -816,5 +971,42 @@ ${blueprintSheetsHtml}
 </body>
 </html>`;
 
-  saveAs(new Blob([html], { type: 'text/html' }), `space_report_${docId}.html`);
+  try {
+    const html2pdf = await loadHtml2Pdf();
+    if (html2pdf) {
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'fixed';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.top = '0';
+      tempDiv.style.width = '1080px';
+      tempDiv.innerHTML = html;
+      document.body.appendChild(tempDiv);
+
+      const opt = {
+        margin: 0,
+        filename: `krafc_report_${docId}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1080 },
+        jsPDF: { unit: 'px', format: [1080, 720], orientation: 'landscape', hotfixes: ['px_scaling'] },
+        pagebreak: { mode: ['css', 'legacy'], after: '.sheet' }
+      };
+
+      await html2pdf().set(opt).from(tempDiv).save();
+      document.body.removeChild(tempDiv);
+      return;
+    }
+  } catch (err) {
+    console.warn('Direct PDF export fallback:', err);
+  }
+
+  // Fallback: Trigger native browser print-to-PDF dialog
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
+  }
 }

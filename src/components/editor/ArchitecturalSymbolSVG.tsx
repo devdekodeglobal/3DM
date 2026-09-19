@@ -144,6 +144,54 @@ export const ArchitecturalSymbolSVG: React.FC<SymbolThumbnailProps> = ({
     )
   }
 
+  // 7. Structural Components & Parametric Elements
+  if (normCat.includes('caged') || normCat.includes('pillar') || normCat.includes('structure') || normName.includes('caged') || normName.includes('pillar') || normName.includes('panel')) {
+    if (normName.includes('pillar') || normCat.includes('pillar')) {
+      const isRound = normName.includes('round')
+      if (isRound) {
+        return (
+          <svg viewBox="0 0 32 32" className={className} fill="none" stroke="currentColor" strokeWidth="1.5">
+            <circle cx="16" cy="16" r="10" className="fill-slate-100 dark:fill-slate-800 stroke-slate-700 dark:stroke-slate-300" strokeWidth="2" />
+            <circle cx="16" cy="16" r="4" className="stroke-slate-400" />
+            <line x1="16" y1="2" x2="16" y2="30" className="stroke-slate-400" strokeDasharray="2 2" />
+            <line x1="2" y1="16" x2="30" y2="16" className="stroke-slate-400" strokeDasharray="2 2" />
+          </svg>
+        )
+      }
+      return (
+        <svg viewBox="0 0 32 32" className={className} fill="none" stroke="currentColor" strokeWidth="1.5">
+          <rect x="7" y="7" width="18" height="18" rx="1" className="fill-slate-100 dark:fill-slate-800 stroke-slate-700 dark:stroke-slate-300" strokeWidth="2" />
+          <line x1="7" y1="7" x2="25" y2="25" className="stroke-slate-400" />
+          <line x1="25" y1="7" x2="7" y2="25" className="stroke-slate-400" />
+        </svg>
+      )
+    }
+
+    if (normName.includes('caged-panel') || normName.includes('roof') || normCat.includes('caged-panel')) {
+      return (
+        <svg viewBox="0 0 32 32" className={className} fill="none" stroke="currentColor" strokeWidth="1.5">
+          <rect x="4" y="4" width="24" height="24" rx="2" className="fill-slate-100 dark:fill-slate-800 stroke-slate-700 dark:stroke-slate-300" />
+          <line x1="4" y1="10" x2="28" y2="10" className="stroke-slate-500 dark:stroke-slate-400" />
+          <line x1="4" y1="16" x2="28" y2="16" className="stroke-slate-500 dark:stroke-slate-400" />
+          <line x1="4" y1="22" x2="28" y2="22" className="stroke-slate-500 dark:stroke-slate-400" />
+          <line x1="10" y1="4" x2="10" y2="28" className="stroke-slate-400" strokeDasharray="2 2" />
+          <line x1="22" y1="4" x2="22" y2="28" className="stroke-slate-400" strokeDasharray="2 2" />
+        </svg>
+      )
+    }
+
+    // Caged Wall / Slatted Wall
+    return (
+      <svg viewBox="0 0 32 32" className={className} fill="none" stroke="currentColor" strokeWidth="1.5">
+        <rect x="3" y="8" width="26" height="16" rx="2" className="fill-slate-100 dark:fill-slate-800 stroke-slate-700 dark:stroke-slate-300" />
+        <line x1="8" y1="8" x2="8" y2="24" className="stroke-slate-700 dark:stroke-slate-300" strokeWidth="1.5" />
+        <line x1="13" y1="8" x2="13" y2="24" className="stroke-slate-700 dark:stroke-slate-300" strokeWidth="1.5" />
+        <line x1="18" y1="8" x2="18" y2="24" className="stroke-slate-700 dark:stroke-slate-300" strokeWidth="1.5" />
+        <line x1="23" y1="8" x2="23" y2="24" className="stroke-slate-700 dark:stroke-slate-300" strokeWidth="1.5" />
+      </svg>
+    )
+  }
+
   // Fallback
   return (
     <svg viewBox="0 0 32 32" className={className} fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -251,6 +299,44 @@ export function getArchitecturalSymbolSvgString(category: string = '', assetName
       <rect x="4" y="7" width="24" height="6" fill="#e2e8f0" stroke="#334155"/>
       <line x1="9" y1="8.5" x2="13" y2="11.5" stroke="#94a3b8"/>
       <line x1="16" y1="13" x2="16" y2="25" stroke="#94a3b8" stroke-dasharray="2 2"/>
+    </svg>`
+  }
+
+  if (normCat.includes('caged') || normCat.includes('pillar') || normCat.includes('structure') || normName.includes('caged') || normName.includes('pillar') || normName.includes('panel')) {
+    if (normName.includes('pillar') || normCat.includes('pillar')) {
+      const isRound = normName.includes('round')
+      if (isRound) {
+        return `<svg viewBox="0 0 32 32" width="48" height="48" fill="none" stroke="#334155" stroke-width="1.5">
+          <circle cx="16" cy="16" r="10" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+          <circle cx="16" cy="16" r="4" stroke="#94a3b8"/>
+          <line x1="16" y1="2" x2="16" y2="30" stroke="#94a3b8" stroke-dasharray="2 2"/>
+          <line x1="2" y1="16" x2="30" y2="16" stroke="#94a3b8" stroke-dasharray="2 2"/>
+        </svg>`
+      }
+      return `<svg viewBox="0 0 32 32" width="48" height="48" fill="none" stroke="#334155" stroke-width="1.5">
+        <rect x="7" y="7" width="18" height="18" rx="1" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+        <line x1="7" y1="7" x2="25" y2="25" stroke="#94a3b8"/>
+        <line x1="25" y1="7" x2="7" y2="25" stroke="#94a3b8"/>
+      </svg>`
+    }
+
+    if (normName.includes('caged-panel') || normName.includes('roof') || normCat.includes('caged-panel')) {
+      return `<svg viewBox="0 0 32 32" width="48" height="48" fill="none" stroke="#334155" stroke-width="1.5">
+        <rect x="4" y="4" width="24" height="24" rx="2" fill="#f8fafc" stroke="#334155"/>
+        <line x1="4" y1="10" x2="28" y2="10" stroke="#64748b"/>
+        <line x1="4" y1="16" x2="28" y2="16" stroke="#64748b"/>
+        <line x1="4" y1="22" x2="28" y2="22" stroke="#64748b"/>
+        <line x1="10" y1="4" x2="10" y2="28" stroke="#94a3b8" stroke-dasharray="2 2"/>
+        <line x1="22" y1="4" x2="22" y2="28" stroke="#94a3b8" stroke-dasharray="2 2"/>
+      </svg>`
+    }
+
+    return `<svg viewBox="0 0 32 32" width="48" height="48" fill="none" stroke="#334155" stroke-width="1.5">
+      <rect x="3" y="8" width="26" height="16" rx="2" fill="#f8fafc" stroke="#334155"/>
+      <line x1="8" y1="8" x2="8" y2="24" stroke="#334155" stroke-width="1.5"/>
+      <line x1="13" y1="8" x2="13" y2="24" stroke="#334155" stroke-width="1.5"/>
+      <line x1="18" y1="8" x2="18" y2="24" stroke="#334155" stroke-width="1.5"/>
+      <line x1="23" y1="8" x2="23" y2="24" stroke="#334155" stroke-width="1.5"/>
     </svg>`
   }
 
