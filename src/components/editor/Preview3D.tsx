@@ -1195,6 +1195,7 @@ export default function Preview3D({
             mesh.metadata.svgData !== el.svgData ||
             mesh.metadata.depth !== el.depth ||
             mesh.metadata.logoStyle !== el.logoStyle ||
+            mesh.metadata.logoColor !== el.logoColor ||
             mesh.metadata.width !== el.width ||
             mesh.metadata.height !== el.height ||
             mesh.metadata.verticalScale !== el.verticalScale ||
@@ -1654,6 +1655,7 @@ export default function Preview3D({
             svgData: el.svgData, 
             depth: el.depth, 
             logoStyle: el.logoStyle,
+            logoColor: el.logoColor,
             width: el.width,
             height: el.height,
             verticalScale: el.verticalScale,

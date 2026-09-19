@@ -127,7 +127,6 @@ function OverviewPage() {
                     activeView="perspective"
                     backgroundColor="#1e293b"
                     cameraDistanceScale={0.7}
-                    modelUrl="/models/showcase/trial3.glb"
                   />
                 </div>
               </div>

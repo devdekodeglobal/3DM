@@ -660,7 +660,7 @@ export default function Properties({
                               const img = new Image();
                               img.onload = () => {
                                 const canvas = document.createElement('canvas');
-                                const MAX_SIZE = 800;
+                                const MAX_SIZE = 1200;
                                 let width = img.width;
                                 let height = img.height;
                                 
@@ -681,7 +681,7 @@ export default function Properties({
                                 const ctx = canvas.getContext('2d');
                                 if (ctx) {
                                   ctx.drawImage(img, 0, 0, width, height);
-                                  const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                                  const dataUrl = canvas.toDataURL('image/png');
                                   const aspect = width / height;
                                   onUpdate(selectedElement.id, {
                                     svgData: dataUrl,
