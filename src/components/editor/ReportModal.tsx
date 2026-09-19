@@ -74,8 +74,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
             ref={iframeRef}
             srcDoc={reportHtml}
             title="Architectural Space Specification Report"
-            className="w-full h-full border-0 bg-[#e2e8f0]"
-            sandbox="allow-same-origin allow-scripts allow-modals allow-popups"
+            className="w-full h-full border-0 bg-[#cbd5e1]"
           />
         </div>
       </div>
