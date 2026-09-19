@@ -1006,41 +1006,12 @@ ${blueprintSheetsHtml}
   </div>
 </div>
 
-<script>
-  window.addEventListener('load', async () => {
-    try {
-      if (document.fonts && document.fonts.ready) {
-        await document.fonts.ready;
-      }
-      const imgs = Array.from(document.images);
-      await Promise.all(imgs.map(img => {
-        if (img.complete) return Promise.resolve();
-        return new Promise(res => {
-          img.onload = res;
-          img.onerror = res;
-        });
-      }));
-    } catch (e) {
-      console.warn('Document asset preparation note:', e);
-    }
-    // Auto-trigger print preview once layout & assets are fully ready
-    setTimeout(() => {
-      window.focus();
-      window.print();
-    }, 400);
-  });
-</script>
-
 </body>
 </html>`;
-
-  const blob = typeof window !== 'undefined' ? new Blob([html], { type: 'text/html;charset=utf-8' }) : null;
-  const blobUrl = blob ? URL.createObjectURL(blob) : '';
 
   return {
     html,
     docId,
     projectName,
-    blobUrl,
   };
 }
