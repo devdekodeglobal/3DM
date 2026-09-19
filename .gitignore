@@ -22,3 +22,8 @@ temp/
 
 *.docx
 docs/
+*.sql
+*.diff
+*.patch
+trial*.json
+patch_showcase.js
