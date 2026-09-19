@@ -195,32 +195,18 @@ export default function Preview3D({
     dirLight.intensity = 0.8;
     dirLight.diffuse = new BABYLON.Color3(1.0, 0.95, 0.85);
 
-    const isHQ = window.localStorage.getItem('hq_3d') === 'true';
+    const isHQ = false;
 
-    const shadowGenerator = new BABYLON.ShadowGenerator(isHQ ? 2048 : 1024, dirLight);
+    const shadowGenerator = new BABYLON.ShadowGenerator(1024, dirLight);
     shadowGeneratorRef.current = shadowGenerator;
     shadowGenerator.useBlurExponentialShadowMap = true;
-    shadowGenerator.blurKernel = isHQ ? 16 : 8;
+    shadowGenerator.blurKernel = 8;
 
-    // --- Premium Rendering Pipeline (SSAO + Bloom) ---
+    // --- Standard Rendering Pipeline ---
     const pipeline = new BABYLON.DefaultRenderingPipeline("default", true, scene, [orbitCam, flightCam, blueprintCam]);
-    pipeline.samples = isHQ ? 4 : 2;
-    pipeline.sharpenEnabled = true;
-    pipeline.sharpen.edgeAmount = 0.2;
+    pipeline.samples = 1;
+    pipeline.sharpenEnabled = false;
 
-    if (isHQ) {
-      pipeline.bloomEnabled = true;
-      pipeline.bloomThreshold = 0.8;
-      pipeline.bloomWeight = 0.3;
-      pipeline.bloomKernel = 64;
-
-      // SSAO uses its own pipeline in BabylonJS (forceGeometryBuffer = true prevents WebGL2 MRT draw buffers conflict on custom materials)
-      const ssao = new BABYLON.SSAO2RenderingPipeline("ssao", scene, { ssaoRatio: 0.5, blurRatio: 1 }, [orbitCam], true);
-      ssao.radius = 3.5;
-      ssao.totalStrength = 1.2;
-      ssao.expensiveBlur = true;
-      ssao.samples = 16;
-    }
 
     const gui = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
     guiRef.current = gui;
