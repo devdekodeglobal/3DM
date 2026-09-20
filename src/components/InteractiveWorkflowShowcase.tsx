@@ -22,7 +22,7 @@ export function InteractiveWorkflowShowcase() {
       num: "01",
       title: "1. Set Your Space",
       subtitle: "Define dimensions & outer walls",
-      desc: "Set room footprint and boundary walls.",
+      desc: "Set the dimensions and layout of your space.",
     },
     {
       num: "02",
