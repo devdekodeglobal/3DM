@@ -5,7 +5,7 @@ import { getCachedImage } from '../../lib/imageCache'
 import ColorPickerPanel from './ColorPickerPanel'
 
 // Sub-component for the actual wall elements to prevent re-renders during transformation/drag labels
-const WallElements = React.memo(({ elements, activeSide, wallWidth, selectedId, onSelect, onDragMove, onDragEnd, onTransform, onTransformEnd }: any) => {
+const WallElements = React.memo(({ elements, activeSide, selectedId, onSelect, onDragMove, onDragEnd, onTransform, onTransformEnd }: any) => {
   const ELEMENT_TYPES: Record<string, any> = {
     door: { color: 'rgba(139,100,60,0.35)', stroke: '#7c5c3a' },
     window: { color: 'rgba(100,200,255,0.35)', stroke: '#00BFFF' },
@@ -44,7 +44,6 @@ const WallElements = React.memo(({ elements, activeSide, wallWidth, selectedId, 
         // Light color handling
         const lightFill = el.type === 'light' ? (el.lightColor || '#fff8e7') : (el.color || cfg.color)
         const lightOpacity = el.type === 'light' ? 0.6 : (el.opacity ?? 1.0)
-        const renderX = el.x
 
         // Diagonal Paint rendering
         if (el.type === 'diagonal_paint') {
@@ -813,7 +812,6 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
                 <WallElements
                   elements={elements}
                   activeSide={activeSide}
-                  wallWidth={wallWidth}
                   selectedId={selectedId}
                   onSelect={setSelectedId}
                   onDragMove={handleDragMove}
