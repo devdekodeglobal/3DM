@@ -19,6 +19,7 @@ todos.json
 3ddown/
 temp/
 *.glb
+!public/models/**/*.glb
 
 *.docx
 docs/

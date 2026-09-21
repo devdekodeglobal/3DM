@@ -196,82 +196,84 @@ export default function Properties({
                   </div>
                 </div>
 
-                <div className="col-span-2 border-t border-[var(--line)] pt-4 mt-2">
-                  <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-3">
-                    Elevation &amp; Vertical Scale
-                  </label>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <label htmlFor="y-offset" className="text-[10px] text-[var(--sea-ink-soft)] font-bold">HEIGHT FROM FLOOR (m)</label>
-                        <span className="text-[10px] font-mono text-[var(--lagoon-deep)]">{(selectedElement.yOffset || 0).toFixed(2)}m</span>
+                {selectedElement.type !== 'carpet' && (
+                  <div className="col-span-2 border-t border-[var(--line)] pt-4 mt-2">
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-3">
+                      Elevation &amp; Vertical Scale
+                    </label>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <label htmlFor="y-offset" className="text-[10px] text-[var(--sea-ink-soft)] font-bold">HEIGHT FROM FLOOR (m)</label>
+                          <span className="text-[10px] font-mono text-[var(--lagoon-deep)]">{(selectedElement.yOffset || 0).toFixed(2)}m</span>
+                        </div>
+                        <input
+                          id="y-offset" name="y-offset"
+                          type="range" min="0" max="4" step="0.05"
+                          value={selectedElement.yOffset || 0}
+                          onChange={(e) => onUpdate(selectedElement.id, { yOffset: parseFloat(e.target.value) })}
+                          className="w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)]"
+                        />
                       </div>
-                      <input
-                        id="y-offset" name="y-offset"
-                        type="range" min="0" max="4" step="0.05"
-                        value={selectedElement.yOffset || 0}
-                        onChange={(e) => onUpdate(selectedElement.id, { yOffset: parseFloat(e.target.value) })}
-                        className="w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)]"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <label htmlFor="v-scale" className="text-[10px] text-[var(--sea-ink-soft)] font-bold">
-                          {selectedElement.type === 'wall' ? 'WALL HEIGHT (m)' : ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? 'HEIGHT (m)' : 'VERTICAL SCALE (x)'}
-                        </label>
-                        <span className="text-[10px] font-mono text-[var(--lagoon-deep)]">
-                          {selectedElement.type === 'wall' 
-                            ? `${(2.5 * (selectedElement.verticalScale || 1)).toFixed(1)}m` 
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <label htmlFor="v-scale" className="text-[10px] text-[var(--sea-ink-soft)] font-bold">
+                            {selectedElement.type === 'wall' ? 'WALL HEIGHT (m)' : ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? 'HEIGHT (m)' : 'VERTICAL SCALE (x)'}
+                          </label>
+                          <span className="text-[10px] font-mono text-[var(--lagoon-deep)]">
+                            {selectedElement.type === 'wall' 
+                              ? `${(2.5 * (selectedElement.verticalScale || 1)).toFixed(1)}m` 
+                              : ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type)
+                              ? `${(selectedElement.realHeight || 2.5).toFixed(1)}m`
+                              : `${(selectedElement.verticalScale || 1).toFixed(2)}x`}
+                          </span>
+                        </div>
+                        <input
+                          id="v-scale" name="v-scale"
+                          type="range" 
+                          min={selectedElement.type === 'wall' || ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? "0.5" : "0.05"} 
+                          max={selectedElement.type === 'wall' || ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? "10" : "5"} 
+                          step={selectedElement.type === 'wall' || ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? "0.1" : "0.05"}
+                          value={selectedElement.type === 'wall' 
+                            ? (2.5 * (selectedElement.verticalScale || 1))
                             : ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type)
-                            ? `${(selectedElement.realHeight || 2.5).toFixed(1)}m`
-                            : `${(selectedElement.verticalScale || 1).toFixed(2)}x`}
-                        </span>
-                      </div>
-                      <input
-                        id="v-scale" name="v-scale"
-                        type="range" 
-                        min={selectedElement.type === 'wall' || ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? "0.5" : "0.05"} 
-                        max={selectedElement.type === 'wall' || ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? "10" : "5"} 
-                        step={selectedElement.type === 'wall' || ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? "0.1" : "0.05"}
-                        value={selectedElement.type === 'wall' 
-                          ? (2.5 * (selectedElement.verticalScale || 1))
-                          : ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type)
-                          ? (selectedElement.realHeight || 2.5)
-                          : (selectedElement.verticalScale || 1)}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value);
-                          
-                          if (['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type)) {
-                            onUpdate(selectedElement.id, { realHeight: val });
-                            return;
-                          }
+                            ? (selectedElement.realHeight || 2.5)
+                            : (selectedElement.verticalScale || 1)}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            
+                            if (['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type)) {
+                              onUpdate(selectedElement.id, { realHeight: val });
+                              return;
+                            }
 
-                          const newScale = selectedElement.type === 'wall' ? val / 2.5 : val;
-                          const oldScale = selectedElement.verticalScale || 1;
-                          if (newScale === oldScale) return;
-                          
-                          const heightDiffMeters = (newScale - oldScale) * 2.5;
-                          const heightDiffPixels = heightDiffMeters * 100;
-                          
-                          let updatedWallElements = selectedElement.wallElements;
-                          if (updatedWallElements && updatedWallElements.length > 0) {
-                            updatedWallElements = updatedWallElements.map((wel: any) => ({
-                              ...wel,
-                              y: wel.y + heightDiffPixels
-                            }));
-                          }
-                          
-                          onUpdate(selectedElement.id, {
-                            verticalScale: newScale,
-                            ...(updatedWallElements ? { wallElements: updatedWallElements } : {})
-                          });
-                        }}
-                        disabled={selectedElement.type === 'asset'}
-                        className={`w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)] ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      />
+                            const newScale = selectedElement.type === 'wall' ? val / 2.5 : val;
+                            const oldScale = selectedElement.verticalScale || 1;
+                            if (newScale === oldScale) return;
+                            
+                            const heightDiffMeters = (newScale - oldScale) * 2.5;
+                            const heightDiffPixels = heightDiffMeters * 100;
+                            
+                            let updatedWallElements = selectedElement.wallElements;
+                            if (updatedWallElements && updatedWallElements.length > 0) {
+                              updatedWallElements = updatedWallElements.map((wel: any) => ({
+                                ...wel,
+                                y: wel.y + heightDiffPixels
+                              }));
+                            }
+                            
+                            onUpdate(selectedElement.id, {
+                              verticalScale: newScale,
+                              ...(updatedWallElements ? { wallElements: updatedWallElements } : {})
+                            });
+                          }}
+                          disabled={selectedElement.type === 'asset'}
+                          className={`w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)] ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* 3D Model Facing Correction */}
@@ -648,6 +650,161 @@ export default function Properties({
                     <div className="mt-2 p-3 bg-[var(--sand)] rounded-lg border border-dashed border-[var(--line)] text-center">
                       <p className="text-[10px] font-bold text-[var(--sea-ink-soft)]">Texture Upload (Coming Soon)</p>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Carpet / Floor Zone specific controls */}
+              {selectedElement.type === 'carpet' && (
+                <div className="space-y-4 mt-4 pt-4 border-t border-[var(--line)]">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--sea-ink-soft)]">
+                    Floor Rug / Inset Settings
+                  </p>
+
+                  {/* Shape Switcher */}
+                  <div>
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">
+                      Shape
+                    </label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        { id: 'rect', label: 'Rectangle' },
+                        { id: 'circle', label: 'Circle' },
+                        { id: 'polygon', label: 'Diagonal Split' },
+                      ].map((sh) => (
+                        <button
+                          key={sh.id}
+                          onClick={() => onUpdate(selectedElement.id, { shape: sh.id })}
+                          className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition ${
+                            (selectedElement.shape || 'rect') === sh.id
+                              ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
+                              : 'bg-[var(--sand)] text-[var(--sea-ink)] border-[var(--line)] hover:border-[var(--lagoon)]'
+                          }`}
+                        >
+                          {sh.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Texture Type Preset */}
+                  <div>
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">
+                      Surface Finish
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        { id: 'solid', label: 'Solid Color' },
+                        { id: 'carpet', label: 'Soft Carpet' },
+                        { id: 'marble', label: 'Polished Marble' },
+                        { id: 'hardwood', label: 'Parquet Wood' },
+                      ].map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => onUpdate(selectedElement.id, { textureType: t.id, url: null })}
+                          className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition ${
+                            (selectedElement.textureType || 'solid') === t.id && !selectedElement.url
+                              ? 'bg-[var(--lagoon-deep)] text-white border-[var(--lagoon-deep)] shadow-sm'
+                              : 'bg-[var(--sand)] text-[var(--sea-ink)] border-[var(--line)] hover:border-[var(--lagoon)]'
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Color Picker */}
+                  <div>
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-2">
+                      Color / Accent Tint
+                    </label>
+                    <ColorPickerPanel
+                      initialColor={selectedElement.fill || '#f59e0b'}
+                      onChange={(c) => onUpdate(selectedElement.id, { fill: c })}
+                    />
+                  </div>
+
+                  {/* Opacity Slider */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <label htmlFor="carpet-opacity" className="text-[10px] text-[var(--sea-ink-soft)] font-bold uppercase">
+                        Opacity ({Math.round((selectedElement.opacity ?? 1) * 100)}%)
+                      </label>
+                    </div>
+                    <input
+                      id="carpet-opacity"
+                      type="range"
+                      min="0.1"
+                      max="1"
+                      step="0.05"
+                      value={selectedElement.opacity ?? 1}
+                      onChange={(e) => onUpdate(selectedElement.id, { opacity: parseFloat(e.target.value) })}
+                      className="w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)] cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Image Graphic Upload */}
+                  <div>
+                    <label className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wider block mb-1">
+                      Custom Texture / Rug Pattern
+                    </label>
+                    {selectedElement.url && (
+                      <div className="relative group rounded-lg overflow-hidden border border-[var(--line)] h-20 bg-black/5 mb-2">
+                        <img src={selectedElement.url} alt="Rug Graphic" className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => onUpdate(selectedElement.id, { url: null })}
+                          className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold"
+                        >
+                          Remove Pattern
+                        </button>
+                      </div>
+                    )}
+                    <label className="cursor-pointer w-full py-2 rounded-lg bg-[var(--sand)] border border-[var(--line)] text-[10px] font-bold text-[var(--sea-ink)] text-center hover:bg-[var(--chip-bg)] hover:border-[var(--lagoon)] transition block">
+                      {selectedElement.url ? 'Replace Rug Pattern' : '+ Upload Rug Image / Logo'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            const reader = new FileReader()
+                            reader.onload = (re) => {
+                              const img = new Image()
+                              img.onload = () => {
+                                const canvas = document.createElement('canvas')
+                                const MAX_SIZE = 1200
+                                let width = img.width
+                                let height = img.height
+                                if (width > height) {
+                                  if (width > MAX_SIZE) {
+                                    height *= MAX_SIZE / width
+                                    width = MAX_SIZE
+                                  }
+                                } else {
+                                  if (height > MAX_SIZE) {
+                                    width *= MAX_SIZE / height
+                                    height = MAX_SIZE
+                                  }
+                                }
+                                canvas.width = width
+                                canvas.height = height
+                                const ctx = canvas.getContext('2d')
+                                if (ctx) {
+                                  ctx.drawImage(img, 0, 0, width, height)
+                                  const isPng = file.type.includes('png') || file.name.toLowerCase().endsWith('.png')
+                                  const mime = isPng ? 'image/png' : 'image/jpeg'
+                                  onUpdate(selectedElement.id, { url: canvas.toDataURL(mime, isPng ? undefined : 0.8) })
+                                }
+                              }
+                              img.src = re.target?.result as string
+                            }
+                            reader.readAsDataURL(file)
+                          }
+                        }}
+                      />
+                    </label>
                   </div>
                 </div>
               )}

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Box, PlusSquare, ChevronDown, ChevronRight, ChevronLeft, LayoutGrid, Search, Trash2, Palette, Plus, Folder, FileText, DoorClosed, AppWindow, Copy, X } from 'lucide-react'
+import { Box, PlusSquare, ChevronDown, ChevronRight, ChevronLeft, LayoutGrid, Search, Trash2, Palette, Plus, Folder, FileText, DoorClosed, AppWindow, Copy, X, Circle } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import { ASSET_DIMENSIONS, ASSET_CATEGORIES, ASSET_REGISTRY } from '../../lib/assetRegistry'
 import ColorPickerPanel from './ColorPickerPanel'
@@ -225,6 +225,23 @@ export default function Sidebar({
       plateGap: 0.3,
       orientation: 'horizontal',
       fill: '#444444'
+    })
+  }
+
+  const addCarpet = (shape: 'rect' | 'circle' | 'polygon' = 'rect', fill: string = '#f59e0b') => {
+    addElement({
+      id: uuidv4(),
+      type: 'carpet',
+      shape, // 'rect' | 'circle' | 'polygon'
+      x: 150, y: 150,
+      width: 200, height: 150,
+      rotation: 0,
+      fill,
+      textureType: 'solid', // 'solid' | 'carpet' | 'marble' | 'hardwood' | 'custom'
+      roughness: 0.8,
+      metallic: 0.05,
+      opacity: 1.0,
+      url: null,
     })
   }
 
@@ -510,6 +527,14 @@ export default function Sidebar({
               <button onClick={addWallWithWindow} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group cursor-pointer">
                 <AppWindow className="h-4 w-4 mb-0.5 opacity-70 group-hover:opacity-100 transition-opacity" />
                 <span className="text-[10px] font-bold tracking-wide text-center">Window Wall</span>
+              </button>
+              <button onClick={() => addCarpet('rect', '#f59e0b')} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group cursor-pointer">
+                <LayoutGrid className="h-4 w-4 mb-0.5 text-amber-500 opacity-80 group-hover:opacity-100 transition-opacity" />
+                <span className="text-[10px] font-bold tracking-wide text-center">Floor Rug / Inset</span>
+              </button>
+              <button onClick={() => addCarpet('circle', '#0ea5e9')} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group cursor-pointer">
+                <Circle className="h-4 w-4 mb-0.5 text-sky-500 opacity-80 group-hover:opacity-100 transition-opacity" />
+                <span className="text-[10px] font-bold tracking-wide text-center">Circle Rug</span>
               </button>
               <button onClick={add3DLogo} className="col-span-2 flex items-center justify-center gap-2 p-2.5 mt-1 bg-[var(--surface-light)] border border-[var(--line)] text-[var(--sea-ink)] rounded-lg hover:border-[var(--brand)] hover:bg-[var(--sand)] hover:text-[var(--brand)] transition group cursor-pointer">
                 <PlusSquare className="h-4 w-4 opacity-70 group-hover:opacity-100 transition-opacity" />

@@ -100,6 +100,101 @@ const LetterMarkAsset = ({ shapeProps, onSelect, onChange, isDarkMode }: any) =>
   )
 }
 
+const CarpetShape = ({ shapeProps, isSelected, onSelect, onChange, isDarkMode }: any) => {
+  const w = shapeProps.width || 200
+  const h = shapeProps.height || 150
+  const isCircle = shapeProps.shape === 'circle'
+  const isPolygon = shapeProps.shape === 'polygon'
+  const fill = shapeProps.fill || '#f59e0b'
+  const opacity = shapeProps.opacity !== undefined ? shapeProps.opacity : 1.0
+
+  return (
+    <Group
+      name={shapeProps.name}
+      x={shapeProps.x}
+      y={shapeProps.y}
+      width={w}
+      height={h}
+      rotation={shapeProps.rotation || 0}
+      offsetX={w / 2}
+      offsetY={h / 2}
+      draggable
+      onClick={onSelect}
+      onTap={onSelect}
+      onDragEnd={(e: any) => onChange({ ...shapeProps, x: e.target.x(), y: e.target.y() })}
+      onTransformEnd={(e: any) => {
+        const node = e.target
+        const scaleX = node.scaleX()
+        const scaleY = node.scaleY()
+        node.scaleX(1)
+        node.scaleY(1)
+        onChange({
+          ...shapeProps,
+          x: node.x(),
+          y: node.y(),
+          rotation: node.rotation(),
+          width: Math.max(20, node.width() * scaleX),
+          height: Math.max(20, node.height() * scaleY),
+        })
+      }}
+    >
+      {isCircle ? (
+        <Circle
+          x={w / 2}
+          y={h / 2}
+          radius={Math.min(w, h) / 2}
+          fill={fill}
+          opacity={opacity}
+          stroke={isSelected ? '#0ea5e9' : 'rgba(0,0,0,0.15)'}
+          strokeWidth={isSelected ? 2.5 : 1}
+          dash={[4, 4]}
+          shadowColor={isSelected ? '#0ea5e9' : 'rgba(0,0,0,0.1)'}
+          shadowBlur={isSelected ? 10 : 4}
+          shadowOffsetY={2}
+        />
+      ) : isPolygon ? (
+        <Line
+          points={[0, 0, w, 0, 0, h]}
+          closed
+          fill={fill}
+          opacity={opacity}
+          stroke={isSelected ? '#0ea5e9' : 'rgba(0,0,0,0.15)'}
+          strokeWidth={isSelected ? 2.5 : 1}
+          dash={[4, 4]}
+        />
+      ) : (
+        <Rect
+          x={0}
+          y={0}
+          width={w}
+          height={h}
+          fill={fill}
+          opacity={opacity}
+          cornerRadius={4}
+          stroke={isSelected ? '#0ea5e9' : 'rgba(0,0,0,0.15)'}
+          strokeWidth={isSelected ? 2.5 : 1}
+          dash={[4, 4]}
+          shadowColor={isSelected ? '#0ea5e9' : 'rgba(0,0,0,0.1)'}
+          shadowBlur={isSelected ? 10 : 4}
+          shadowOffsetY={2}
+        />
+      )}
+      <Text
+        x={0}
+        y={h / 2 - 6}
+        width={w}
+        text={shapeProps.label || (isCircle ? 'CIRCLE RUG' : 'FLOOR ZONE')}
+        fontSize={9}
+        fontFamily="Outfit, Inter, sans-serif"
+        fontStyle="bold"
+        fill="rgba(0,0,0,0.6)"
+        align="center"
+        listening={false}
+      />
+    </Group>
+  )
+}
+
 const WallShape = ({ shapeProps, isSelected, onSelect, onChange, isDarkMode }: any) => {
   const wallWidth = shapeProps.width || 100
   const wallThickness = shapeProps.thickness || 10
@@ -1598,55 +1693,77 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
               </Group>
             </Group>
 
-            {/* Render Elements */}
-            {elements.map((obj, i) => {
-              if (obj.type === 'wall') {
-                return (
-                  <WallShape
-                    key={obj.id}
-                    shapeProps={{ ...obj, name: obj.id, fill: obj.material === 'custom_color' ? (obj.color || '#f0f0f0') : obj.fill }}
-                    isSelected={obj.id === selectedId}
-                    onSelect={() => onSelect(obj.id)}
-                    onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
-                    isDarkMode={isDarkMode}
-                  />
-                )
-              }
-              if (['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(obj.type)) {
-                return (
-                  <ParametricStructureShape
-                    key={obj.id}
-                    shapeProps={{ ...obj, name: obj.id }}
-                    onSelect={() => onSelect(obj.id)}
-                    onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
-                    isSelected={obj.id === selectedId}
-                  />
-                )
-              }
-              if (obj.type === 'asset') {
-                return (
-                  <LetterMarkAsset
-                    key={obj.id}
-                    shapeProps={{ ...obj, name: obj.id }}
-                    onSelect={() => onSelect(obj.id)}
-                    onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
-                    isDarkMode={isDarkMode}
-                  />
-                )
-              }
-
-              if (obj.type === '3d_logo') {
-                return (
-                  <Logo3DShape
-                    key={obj.id}
-                    shapeProps={{ ...obj, name: obj.id }}
-                    onSelect={() => onSelect(obj.id)}
-                    onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
-                  />
-                )
-              }
-              return null
-            })}
+            {/* Render Elements: Floor Carpets on bottom layer, then walls/structures, then assets/logos */}
+            {[...elements]
+              .map((obj, i) => ({ obj, i }))
+              .sort((a, b) => {
+                const layerOrder = (type: string) => {
+                  if (type === 'carpet') return 0;
+                  if (type === 'wall' || ['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(type)) return 1;
+                  if (type === 'asset') return 2;
+                  return 3;
+                };
+                return layerOrder(a.obj.type) - layerOrder(b.obj.type);
+              })
+              .map(({ obj, i }) => {
+                if (obj.type === 'carpet') {
+                  return (
+                    <CarpetShape
+                      key={obj.id}
+                      shapeProps={{ ...obj, name: obj.id }}
+                      isSelected={obj.id === selectedId}
+                      onSelect={() => onSelect(obj.id)}
+                      onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
+                      isDarkMode={isDarkMode}
+                    />
+                  )
+                }
+                if (obj.type === 'wall') {
+                  return (
+                    <WallShape
+                      key={obj.id}
+                      shapeProps={{ ...obj, name: obj.id, fill: obj.material === 'custom_color' ? (obj.color || '#f0f0f0') : obj.fill }}
+                      isSelected={obj.id === selectedId}
+                      onSelect={() => onSelect(obj.id)}
+                      onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
+                      isDarkMode={isDarkMode}
+                    />
+                  )
+                }
+                if (['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(obj.type)) {
+                  return (
+                    <ParametricStructureShape
+                      key={obj.id}
+                      shapeProps={{ ...obj, name: obj.id }}
+                      onSelect={() => onSelect(obj.id)}
+                      onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
+                      isSelected={obj.id === selectedId}
+                    />
+                  )
+                }
+                if (obj.type === 'asset') {
+                  return (
+                    <LetterMarkAsset
+                      key={obj.id}
+                      shapeProps={{ ...obj, name: obj.id }}
+                      onSelect={() => onSelect(obj.id)}
+                      onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
+                      isDarkMode={isDarkMode}
+                    />
+                  )
+                }
+                if (obj.type === '3d_logo') {
+                  return (
+                    <Logo3DShape
+                      key={obj.id}
+                      shapeProps={{ ...obj, name: obj.id }}
+                      onSelect={() => onSelect(obj.id)}
+                      onChange={(newProps: any) => handleDragEndAndSnap(i, newProps)}
+                    />
+                  )
+                }
+                return null
+              })}
 
             {/* Transformer */}
             <Transformer

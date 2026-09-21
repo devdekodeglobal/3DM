@@ -192,6 +192,41 @@ export const ArchitecturalSymbolSVG: React.FC<SymbolThumbnailProps> = ({
     )
   }
 
+  // 8. Custom & Botanical / Lighting / Architectural Features
+  if (normName.includes('plant') || normName.includes('pampas')) {
+    return (
+      <svg viewBox="0 0 32 32" className={className} fill="none" stroke="currentColor" strokeWidth="1.5">
+        <circle cx="16" cy="16" r="11" className="fill-emerald-50 dark:fill-emerald-950/40 stroke-emerald-700 dark:stroke-emerald-400" />
+        <circle cx="16" cy="16" r="5" className="fill-amber-100 dark:fill-amber-900/60 stroke-amber-700 dark:stroke-amber-400" />
+        <path d="M16 5 C16 11, 11 16, 5 16" className="stroke-emerald-600 dark:stroke-emerald-400" />
+        <path d="M16 5 C16 11, 21 16, 27 16" className="stroke-emerald-600 dark:stroke-emerald-400" />
+        <path d="M16 27 C16 21, 11 16, 5 16" className="stroke-emerald-600 dark:stroke-emerald-400" />
+        <path d="M16 27 C16 21, 21 16, 27 16" className="stroke-emerald-600 dark:stroke-emerald-400" />
+      </svg>
+    )
+  }
+
+  if (normName.includes('lamp') || normName.includes('light')) {
+    return (
+      <svg viewBox="0 0 32 32" className={className} fill="none" stroke="currentColor" strokeWidth="1.5">
+        <circle cx="16" cy="16" r="10" className="fill-amber-50 dark:fill-amber-950/40 stroke-amber-600 dark:stroke-amber-400" />
+        <circle cx="16" cy="16" r="4" className="fill-amber-400 dark:fill-amber-300 stroke-amber-700" />
+        <line x1="16" y1="6" x2="16" y2="2" className="stroke-amber-500" strokeWidth="2" />
+        <line x1="7.5" y1="21" x2="4" y2="24.5" className="stroke-amber-500" strokeWidth="2" />
+        <line x1="24.5" y1="21" x2="28" y2="24.5" className="stroke-amber-500" strokeWidth="2" />
+      </svg>
+    )
+  }
+
+  if (normName.includes('angular') || normName.includes('wall')) {
+    return (
+      <svg viewBox="0 0 32 32" className={className} fill="none" stroke="currentColor" strokeWidth="1.5">
+        <polygon points="5,8 27,8 21,24 5,24" className="fill-slate-100 dark:fill-slate-800 stroke-slate-700 dark:stroke-slate-300" strokeWidth="1.5" />
+        <line x1="5" y1="16" x2="24" y2="16" className="stroke-slate-400" strokeDasharray="2 2" />
+      </svg>
+    )
+  }
+
   // Fallback
   return (
     <svg viewBox="0 0 32 32" className={className} fill="none" stroke="currentColor" strokeWidth="1.5">

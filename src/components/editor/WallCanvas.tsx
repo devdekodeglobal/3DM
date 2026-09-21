@@ -13,13 +13,15 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
     banner: { color: 'rgba(80,120,255,0.35)', stroke: '#4a6aff' },
     frame: { color: 'rgba(255,255,255,0.4)', stroke: '#444444' },
     light: { color: 'rgba(255,255,0,0.4)', stroke: '#FFD700', model: 'wall_light_1' },
+    paint: { color: '#0ea5e9', stroke: '#0284c7' },
+    diagonal_paint: { color: '#ec4899', stroke: '#db2777' },
   }
 
   const [images, setImages] = useState<Record<string, HTMLImageElement>>({})
 
   useEffect(() => {
     elements.forEach((el: any) => {
-      if ((el.type === 'banner' || el.type === 'frame') && el.url && !images[el.url]) {
+      if ((el.type === 'banner' || el.type === 'frame' || el.type === 'paint') && el.url && !images[el.url]) {
         getCachedImage(el.url, (img) => {
           setImages(prev => ({ ...prev, [el.url]: img }))
         });
@@ -32,12 +34,61 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
       {elements.map((el: any, i: number) => {
         const cfg = ELEMENT_TYPES[el.type] || ELEMENT_TYPES.window
         const isSelected = selectedId === el.id
-        const hasImage = (el.type === 'banner' || el.type === 'frame') && el.url && images[el.url]
+        const hasImage = (el.type === 'banner' || el.type === 'frame' || el.type === 'paint') && el.url && images[el.url]
         const patternImg = hasImage ? images[el.url] : undefined
         
         // Light color handling
         const lightFill = el.type === 'light' ? (el.lightColor || '#fff8e7') : (el.color || cfg.color)
-        const lightOpacity = el.type === 'light' ? 0.6 : 1.0
+        const lightOpacity = el.type === 'light' ? 0.6 : (el.opacity ?? 1.0)
+
+        // Diagonal Paint rendering
+        if (el.type === 'diagonal_paint') {
+          const dir = el.direction || 'top-left' // 'top-left', 'top-right', 'bottom-left', 'bottom-right'
+          let points: number[] = [0, 0, el.width, 0, 0, el.height]
+          if (dir === 'top-right') points = [0, 0, el.width, 0, el.width, el.height]
+          else if (dir === 'bottom-left') points = [0, 0, 0, el.height, el.width, el.height]
+          else if (dir === 'bottom-right') points = [el.width, 0, 0, el.height, el.width, el.height]
+
+          return (
+            <Group
+              key={el.id}
+              id={'el-' + el.id}
+              x={el.x}
+              y={el.y}
+              draggable
+              onMouseDown={() => onSelect(el.id)}
+              onClick={() => onSelect(el.id)}
+              onTap={() => onSelect(el.id)}
+              onDragMove={(e) => onDragMove(i, e)}
+              onDragEnd={(e) => onDragEnd(i, e)}
+              onTransform={(e) => onTransform(i, e)}
+              onTransformEnd={(e) => onTransformEnd(i, e)}
+            >
+              <Line
+                points={points}
+                closed
+                fill={el.color || cfg.color}
+                opacity={el.opacity ?? 1.0}
+                stroke={isSelected ? '#0d7a75' : cfg.stroke}
+                strokeWidth={isSelected ? 2.5 : 1}
+                shadowEnabled={isSelected}
+                shadowColor="#0d7a75"
+                shadowBlur={10}
+                shadowOpacity={0.4}
+              />
+              <Text
+                x={el.width * 0.15}
+                y={el.height * 0.4}
+                text="DIAGONAL ACCENT"
+                fontSize={9}
+                fontFamily="monospace"
+                fontStyle="bold"
+                fill="rgba(255,255,255,0.85)"
+                listening={false}
+              />
+            </Group>
+          )
+        }
 
         if ((el.type === 'frame' && el.shape === 'circle') || (el.type === 'light' && el.model === 'wall_light_2')) {
           return (
@@ -143,6 +194,8 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
     door: { label: 'Door', emoji: '🚪', defaultW: 0.9, defaultH: 2.0, defaultY: 'floor' },
     window: { label: 'Window', emoji: '🪟', defaultW: 1.2, defaultH: 1.0, defaultY: 'mid' },
     shelf: { label: 'Shelf', emoji: '📦', defaultW: 1.0, defaultH: 0.1, defaultY: 'mid' },
+    paint: { label: 'Paint Inset', emoji: '🎨', defaultW: 1.2, defaultH: 1.5, defaultY: 'mid' },
+    diagonal_paint: { label: 'Diagonal Split', emoji: '📐', defaultW: 1.5, defaultH: 2.5, defaultY: 'floor' },
     banner: { label: 'Banner', emoji: '🖼️', defaultW: 1.5, defaultH: 0.8, defaultY: 'top' },
     frame: { label: 'Frame', emoji: '🖼️', defaultW: 0.6, defaultH: 0.6, defaultY: 'mid', shape: 'square' },
     light: { label: 'Light', emoji: '💡', defaultW: 0.2, defaultH: 0.2, defaultY: 'top' },
@@ -463,12 +516,61 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
                   </>
                 )}
 
-                {(selectedEl.type === 'door' || selectedEl.type === 'window' || selectedEl.type === 'shelf') && (
+                {(selectedEl.type === 'door' || selectedEl.type === 'window' || selectedEl.type === 'shelf' || selectedEl.type === 'paint' || selectedEl.type === 'diagonal_paint') && (
                   <div className="pt-2">
-                    <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold block mb-1">Color</label>
+                    <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold block mb-1">
+                      {selectedEl.type === 'paint' || selectedEl.type === 'diagonal_paint' ? 'Paint Color' : 'Color'}
+                    </label>
                     <ColorPickerPanel
-                      initialColor={selectedEl.color || ELEMENT_TYPES[selectedEl.type]?.stroke || '#ffffff'}
+                      initialColor={selectedEl.color || (selectedEl.type === 'diagonal_paint' ? '#ec4899' : selectedEl.type === 'paint' ? '#0ea5e9' : ELEMENT_TYPES[selectedEl.type]?.stroke || '#ffffff')}
                       onChange={(c) => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, color: c } : el))}
+                    />
+                  </div>
+                )}
+
+                {/* Diagonal direction picker */}
+                {selectedEl.type === 'diagonal_paint' && (
+                  <div className="pt-2">
+                    <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold block mb-1">Diagonal Split Corner</label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        { id: 'top-left', label: 'Top-Left ◤' },
+                        { id: 'top-right', label: 'Top-Right ◥' },
+                        { id: 'bottom-left', label: 'Bottom-Left ◣' },
+                        { id: 'bottom-right', label: 'Bottom-Right ◢' },
+                      ].map(dir => (
+                        <button
+                          key={dir.id}
+                          onClick={() => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, direction: dir.id } : el))}
+                          className={`py-1.5 px-2 rounded-lg border text-[10px] font-bold transition ${
+                            (selectedEl.direction || 'top-left') === dir.id
+                              ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
+                              : 'bg-[var(--sand)] text-[var(--sea-ink)] border-[var(--line)] hover:border-[var(--lagoon)]'
+                          }`}
+                        >
+                          {dir.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Opacity slider for paint */}
+                {(selectedEl.type === 'paint' || selectedEl.type === 'diagonal_paint') && (
+                  <div className="pt-2">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold">
+                        Paint Opacity ({Math.round((selectedEl.opacity ?? 1) * 100)}%)
+                      </label>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="1"
+                      step="0.05"
+                      value={selectedEl.opacity ?? 1}
+                      onChange={(e) => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, opacity: parseFloat(e.target.value) } : el))}
+                      className="w-full accent-[var(--lagoon-deep)] h-1.5 rounded-full appearance-none bg-[var(--sand)] cursor-pointer"
                     />
                   </div>
                 )}
@@ -513,13 +615,15 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
                   </div>
                 )}
 
-                {(selectedEl.type === 'banner' || selectedEl.type === 'frame') && (
+                {(selectedEl.type === 'banner' || selectedEl.type === 'frame' || selectedEl.type === 'paint') && (
                   <div className="pt-2">
-                    <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold block mb-1">Upload Graphic</label>
+                    <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold block mb-1">
+                      {selectedEl.type === 'paint' ? 'Custom Mural / Texture' : 'Upload Graphic'}
+                    </label>
                     <div className="flex flex-col gap-2">
                       {selectedEl.url && (
                         <div className="relative group rounded-lg overflow-hidden border border-[var(--line)] h-20 bg-black/5">
-                          <img src={selectedEl.url} className="w-full h-full object-contain" alt="Banner Preview" />
+                          <img src={selectedEl.url} className="w-full h-full object-contain" alt="Preview" />
                           <button
                             onClick={() => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, url: null } : el))}
                             className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold"
@@ -563,7 +667,9 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
                                   const ctx = canvas.getContext('2d')
                                   if (ctx) {
                                     ctx.drawImage(img, 0, 0, width, height)
-                                    const dataUrl = canvas.toDataURL('image/jpeg', 0.6)
+                                    const isPng = file.type.includes('png') || file.name.toLowerCase().endsWith('.png')
+                                    const mime = isPng ? 'image/png' : 'image/jpeg'
+                                    const dataUrl = canvas.toDataURL(mime, isPng ? undefined : 0.8)
                                     setElements(prev => prev.map(el => el.id === selectedId ? { ...el, url: dataUrl } : el))
                                   }
                                 }

@@ -24,6 +24,8 @@
     "@tanstack/react-router-devtools": "latest",
     "@tanstack/react-router-ssr-query": "latest",
     "@tanstack/router-plugin": "^1.167.35",
+    "@types/earcut": "^3.0.0",
+    "earcut": "^3.2.3",
     "file-saver": "^2.0.5",
     "konva": "^10.2.3",
     "lucide-react": "^1.16.0",

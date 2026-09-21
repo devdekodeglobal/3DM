@@ -169,6 +169,7 @@ export default function RoofCanvas({ boothConfig, onSave, onClose }: RoofCanvasP
   }
 
   const selectedLight = lights.find(l => l.id === selectedId)
+  const selectedPanel = panels.find(p => p.id === selectedId)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -553,10 +554,150 @@ export default function RoofCanvas({ boothConfig, onSave, onClose }: RoofCanvasP
             </div>
           </div>
 
-          {/* Section 2: Selected Element Settings */}
+          {/* Section 2: Roof Panels & Lights List */}
+          <div className="pt-4 border-t border-slate-100 space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-black tracking-wider uppercase text-slate-400">Ceiling Elements ({panels.length + lights.length})</h4>
+            </div>
+
+            {panels.length === 0 && lights.length === 0 ? (
+              <div className="p-3 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center">
+                <p className="text-[11px] text-slate-500 font-medium">No roof panels or lights yet.</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Click "Add Roof Panel" or "+ Light" above.</p>
+              </div>
+            ) : (
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                {panels.map((p, idx) => {
+                  const isSelected = p.id === selectedId
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => setSelectedId(p.id)}
+                      className={`p-2.5 rounded-xl border transition cursor-pointer flex items-center justify-between ${
+                        isSelected
+                          ? 'bg-[var(--lagoon-subtle)] border-[var(--lagoon-deep)] text-[var(--lagoon-deep)] font-bold shadow-xs'
+                          : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-xs ${isSelected ? 'bg-[var(--lagoon-deep)]' : 'bg-slate-400'}`} />
+                        <span className="text-xs font-semibold">Panel #{idx + 1}</span>
+                        <span className="text-[10px] opacity-70 font-mono">
+                          {((p.width || 0) / PPM).toFixed(1)}m × {((p.height || 0) / PPM).toFixed(1)}m
+                        </span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setPanels(prev => prev.filter(item => item.id !== p.id))
+                          if (selectedId === p.id) setSelectedId(null)
+                        }}
+                        className="p-1 rounded-md hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition"
+                        title="Delete panel"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )
+                })}
+
+                {lights.map((l, idx) => {
+                  const isSelected = l.id === selectedId
+                  return (
+                    <div
+                      key={l.id}
+                      onClick={() => setSelectedId(l.id)}
+                      className={`p-2.5 rounded-xl border transition cursor-pointer flex items-center justify-between ${
+                        isSelected
+                          ? 'bg-amber-50 border-amber-400 text-amber-900 font-bold shadow-xs'
+                          : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Lightbulb className={`w-3.5 h-3.5 ${isSelected ? 'text-amber-500' : 'text-slate-400'}`} />
+                        <span className="text-xs font-semibold capitalize">{l.type} Light #{idx + 1}</span>
+                        <span className="text-[10px] opacity-70 font-mono">
+                          {l.intensity}x
+                        </span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setLights(prev => prev.filter(item => item.id !== l.id))
+                          if (selectedId === l.id) setSelectedId(null)
+                        }}
+                        className="p-1 rounded-md hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition"
+                        title="Delete light"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Section 3: Selected Roof Panel Settings */}
+          {selectedPanel && (
+            <div className="pt-4 border-t border-slate-100 space-y-4 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-black tracking-wider uppercase text-slate-400">Selected Panel</h4>
+                <button onClick={deleteSelected} className="text-rose-500 hover:text-rose-700 text-[10px] font-bold flex items-center gap-1">
+                  <Trash2 className="w-3.5 h-3.5" /> Remove
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Width (m)</label>
+                  <input
+                    type="number" step="0.1" min="0.2"
+                    value={((selectedPanel.width || 0) / PPM).toFixed(2)}
+                    onChange={(e) => handleUpdatePanel(selectedPanel.id, { width: Math.max(10, Math.round(parseFloat(e.target.value || '0') * PPM)) })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Depth (m)</label>
+                  <input
+                    type="number" step="0.1" min="0.2"
+                    value={((selectedPanel.height || 0) / PPM).toFixed(2)}
+                    onChange={(e) => handleUpdatePanel(selectedPanel.id, { height: Math.max(10, Math.round(parseFloat(e.target.value || '0') * PPM)) })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Pos X (m)</label>
+                  <input
+                    type="number" step="0.1"
+                    value={((selectedPanel.x || 0) / PPM).toFixed(2)}
+                    onChange={(e) => handleUpdatePanel(selectedPanel.id, { x: Math.round(parseFloat(e.target.value || '0') * PPM) })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Pos Y (m)</label>
+                  <input
+                    type="number" step="0.1"
+                    value={((selectedPanel.y || 0) / PPM).toFixed(2)}
+                    onChange={(e) => handleUpdatePanel(selectedPanel.id, { y: Math.round(parseFloat(e.target.value || '0') * PPM) })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Section 4: Selected Light Settings */}
           {selectedLight && (
             <div className="pt-4 border-t border-slate-100 space-y-4 animate-in fade-in duration-200">
-              <h4 className="text-xs font-black tracking-wider uppercase text-slate-400">Ceiling Light Settings</h4>
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-black tracking-wider uppercase text-slate-400">Selected Light Settings</h4>
+                <button onClick={deleteSelected} className="text-rose-500 hover:text-rose-700 text-[10px] font-bold flex items-center gap-1">
+                  <Trash2 className="w-3.5 h-3.5" /> Remove
+                </button>
+              </div>
               
               <div className="p-3 bg-amber-50/50 border border-amber-200/50 rounded-xl flex items-center gap-2">
                 <Lightbulb className="w-5 h-5 text-amber-500" />
@@ -593,8 +734,8 @@ export default function RoofCanvas({ boothConfig, onSave, onClose }: RoofCanvasP
           )}
 
           {!selectedId && (
-            <div className="text-center text-[10px] text-slate-400 pt-4 border-t border-slate-100">
-              Select a roof panel or light fixture to edit its specific properties.
+            <div className="text-center text-[10px] text-slate-400 pt-2 border-t border-slate-100">
+              Click a panel or light from the list or canvas above to configure its parameters.
             </div>
           )}
         </div>

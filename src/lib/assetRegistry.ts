@@ -2,6 +2,7 @@
 // Rest of catalog is preserved commented out below for easy re-enabling.
 
 export const ASSET_CATEGORIES = [
+  { id: 'custom', label: 'Custom' },
   { id: 'sofas', label: 'Sofas & Lounges' },
   { id: 'chairs', label: 'Chairs & Seating' },
   { id: 'stools', label: 'Stools & High Chairs' },
@@ -12,6 +13,10 @@ export const ASSET_CATEGORIES = [
 ];
 
 export const ASSET_REGISTRY = [
+  { id: "red-tripod-side-table", category: "custom", categoryFolder: "custom", label: "Red Tripod Side Table", details: "Length/dept: 72 cm; Width: 72 cm; Height: 66 cm; Modern red tripod accent side table", w: 1, h: 1, specW: 0.72, specD: 0.72, specH: 0.66 },
+  { id: "potted-pampas-plant", category: "custom", categoryFolder: "custom", label: "Potted Pampas Plant", details: "Length/dept: 100 cm; Width: 100 cm; Height: 282 cm; Decorative potted pampas grass botanical", w: 1, h: 1, specW: 1.0, specD: 1.0, specH: 2.82 },
+  { id: "angular-exhibition-wall", category: "custom", categoryFolder: "custom", label: "Angular Exhibition Wall", details: "Length/dept: 115 cm; Width: 304 cm; Height: 450 cm; Architectural angular exhibition feature wall", w: 1, h: 0.3783, specW: 3.04, specD: 1.15, specH: 4.5 },
+  { id: "black-tripod-floor-lamp", category: "custom", categoryFolder: "custom", label: "Black Tripod Floor Lamp", details: "Length/dept: 86 cm; Width: 100 cm; Height: 248 cm; Contemporary matte black tripod floor lamp", w: 1, h: 0.86, specW: 1.0, specD: 0.86, specH: 2.48 },
   { id: "aiko_(kunstleder)", category: "sofas", categoryFolder: "armchairs-sofas-and-lounges", label: "AIKO (KUNSTLEDER)", details: "Length/dept: 57 cm; Width: 66 cm; Height: 69 cm; Sit height: 46 cm; Stackable: No; Swivel: No; Linkable: No; Frame: Chrome Plated; Sustainable: No; Designer: Susanne Gronlund; Seating: artificial leather", w: 1, h: 0.8175, specW: 0.66, specD: 0.57, specH: 0.69 },
   { id: "alcove", category: "sofas", categoryFolder: "armchairs-sofas-and-lounges", label: "ALCOVE", details: "Length/dept: 84 cm; Width: 164 cm; Height: 136 cm; Sit height: 46 cm; Stackable: No; Swivel: No; Linkable: No; Frame: Chrome Plated; Sustainable: No; Designer: Ronan & Erwan Bouroullec; Seating: Upholstered", w: 1, h: 0.5471, specW: 1.64, specD: 0.84, specH: 1.36 },
   { id: "baggio_i", category: "sofas", categoryFolder: "armchairs-sofas-and-lounges", label: "BAGGIO I STOFF", details: "Length/dept: 81 cm; Width: 79 cm; Height: 77 cm; Sit height: 41 cm; Stackable: No; Swivel: No; Linkable: No; Frame: Chrome Plated; Sustainable: No; Seating: Upholstered", w: 0.918, h: 1, specW: 0.79, specD: 0.81, specH: 0.77, facingOffset: -90 },
@@ -221,6 +226,10 @@ export const INACTIVE_ASSET_REGISTRY = [
 */
 
 export const ASSET_DIMENSIONS: Record<string, { w: number; h: number; specW?: number | null; specD?: number | null; specH?: number | null; facingOffset?: number }> = {
+  "red-tripod-side-table": { "w": 1, "h": 1, "specW": 0.72, "specD": 0.72, "specH": 0.66 },
+  "potted-pampas-plant": { "w": 1, "h": 1, "specW": 1.0, "specD": 1.0, "specH": 2.82 },
+  "angular-exhibition-wall": { "w": 1, "h": 0.3783, "specW": 3.04, "specD": 1.15, "specH": 4.5 },
+  "black-tripod-floor-lamp": { "w": 1, "h": 0.86, "specW": 1.0, "specD": 0.86, "specH": 2.48 },
   "aiko_(kunstleder)": {"w":1,"h":0.8175,"specW":0.66,"specD":0.57,"specH":0.69},
   "alcove": {"w":1,"h":0.5471,"specW":1.64,"specD":0.84,"specH":1.36},
   "avila": {"w":0.9684,"h":1,"specW":0.55,"specD":0.57,"specH":0.75},

@@ -8,6 +8,11 @@ import * as GUI from "@babylonjs/gui";
 import { calculateBlueprintMeasurements } from "../../lib/blueprintMath";
 import { GridMaterial } from "@babylonjs/materials";
 import { ASSET_REGISTRY } from "../../lib/assetRegistry";
+import earcut from "earcut";
+
+if (typeof window !== "undefined") {
+  (window as any).earcut = earcut;
+}
 
 interface Preview3DProps {
   boothConfig: any;
@@ -1194,6 +1199,9 @@ export default function Preview3D({
           pivotMesh.rotation.y = startRotY + (deltaX * Math.PI) / 180;
         } else {
           pivotMesh.position.addInPlace(evt.delta);
+          if (pivotMesh.metadata?.isCarpet) {
+            pivotMesh.position.y = 0.002;
+          }
         }
       });
 
@@ -1360,6 +1368,8 @@ export default function Preview3D({
         new BABYLON.PBRMaterial(el.id + "_mat", scene);
       mat.roughness = 0.4;
       mat.metallic = 0.05;
+      mat.backFaceCulling = false;
+      mat.twoSidedLighting = true;
       const vScale = el.verticalScale || 1;
 
       if (el.material === "Glass Wall") {
@@ -1504,6 +1514,21 @@ export default function Preview3D({
           if (!mesh.metadata || mesh.metadata.geometryState !== stateStr) {
             needsRecreate = true;
           }
+        } else if (el.type === "carpet") {
+          const carpetState = JSON.stringify({
+            w: el.width,
+            h: el.height,
+            shape: el.shape || 'rect',
+            fill: el.fill,
+            textureType: el.textureType,
+            opacity: el.opacity,
+            url: el.url,
+            roughness: el.roughness,
+            metallic: el.metallic
+          });
+          if (!mesh.metadata || mesh.metadata.carpetState !== carpetState) {
+            needsRecreate = true;
+          }
         }
       }
 
@@ -1526,7 +1551,9 @@ export default function Preview3D({
         mesh.position.x = x;
         mesh.position.z = z;
 
-        if (el.type === "asset") {
+        if (el.type === "carpet") {
+          mesh.position.y = 0.002;
+        } else if (el.type === "asset") {
           mesh.position.y = el.yOffset || 0;
         } else {
           mesh.position.y = (hActual * vScale) / 2 + (el.yOffset || 0);
@@ -1683,6 +1710,91 @@ export default function Preview3D({
                 spot.range = 4.0; // Localized light reach
                 spot.falloffType = BABYLON.Light.FALLOFF_PHYSICAL;
                 spot.parent = mount;
+              } else if (wel.type === "diagonal_paint") {
+                const dir = wel.direction || "top-left";
+                let corners: BABYLON.Vector3[];
+                if (dir === "top-right") {
+                  corners = [
+                    new BABYLON.Vector3(-cutW / 2, cutH / 2, 0),
+                    new BABYLON.Vector3(cutW / 2, cutH / 2, 0),
+                    new BABYLON.Vector3(cutW / 2, -cutH / 2, 0),
+                  ];
+                } else if (dir === "bottom-left") {
+                  corners = [
+                    new BABYLON.Vector3(-cutW / 2, cutH / 2, 0),
+                    new BABYLON.Vector3(-cutW / 2, -cutH / 2, 0),
+                    new BABYLON.Vector3(cutW / 2, -cutH / 2, 0),
+                  ];
+                } else if (dir === "bottom-right") {
+                  corners = [
+                    new BABYLON.Vector3(cutW / 2, cutH / 2, 0),
+                    new BABYLON.Vector3(-cutW / 2, -cutH / 2, 0),
+                    new BABYLON.Vector3(cutW / 2, -cutH / 2, 0),
+                  ];
+                } else {
+                  // top-left default
+                  corners = [
+                    new BABYLON.Vector3(-cutW / 2, cutH / 2, 0),
+                    new BABYLON.Vector3(cutW / 2, cutH / 2, 0),
+                    new BABYLON.Vector3(-cutW / 2, -cutH / 2, 0),
+                  ];
+                }
+
+                mount = BABYLON.MeshBuilder.CreatePolygon(
+                  "diag_paint_" + index,
+                  {
+                    shape: corners,
+                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                  },
+                  scene,
+                );
+                mount.position.set(
+                  localX,
+                  localY,
+                  -dValW / 2 - (0.004 + index * 0.002),
+                );
+                const pMat = new BABYLON.PBRMaterial("diag_pmat_" + index, scene);
+                pMat.zOffset = -index * 3 - 2;
+                pMat.backFaceCulling = false;
+                pMat.twoSidedLighting = true;
+                pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#ec4899");
+                pMat.alpha = wel.opacity ?? 1.0;
+                pMat.roughness = 0.6;
+                pMat.metallic = 0.05;
+                mount.material = pMat;
+              } else if (wel.type === "paint") {
+                mount = BABYLON.MeshBuilder.CreatePlane(
+                  "wall_paint_" + index,
+                  {
+                    width: cutW,
+                    height: cutH,
+                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                  },
+                  scene,
+                );
+                mount.position.set(
+                  localX,
+                  localY,
+                  -dValW / 2 - (0.004 + index * 0.002),
+                );
+                const pMat = new BABYLON.PBRMaterial("pmat_" + index, scene);
+                pMat.zOffset = -index * 3 - 2;
+                pMat.backFaceCulling = false;
+                pMat.twoSidedLighting = true;
+                pMat.roughness = 0.55;
+                pMat.metallic = 0.05;
+                if (wel.url) {
+                  const tex = new BABYLON.Texture(wel.url, scene);
+                  tex.hasAlpha = true;
+                  pMat.albedoTexture = tex;
+                  pMat.useAlphaFromAlbedoTexture = true;
+                  pMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
+                  pMat.albedoColor = BABYLON.Color3.White();
+                } else {
+                  pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#0ea5e9");
+                }
+                pMat.alpha = wel.opacity ?? 1.0;
+                mount.material = pMat;
               } else {
                 mount = BABYLON.MeshBuilder.CreatePlane(
                   "banner_" + index,
@@ -1696,16 +1808,19 @@ export default function Preview3D({
                 mount.position.set(
                   localX,
                   localY,
-                  -dValW / 2 - (0.003 + index * 0.002),
+                  -dValW / 2 - (0.005 + index * 0.002),
                 );
                 const bMat = new BABYLON.PBRMaterial("bm_ex_" + index, scene);
                 bMat.zOffset = -index * 2;
+                bMat.backFaceCulling = false;
+                bMat.twoSidedLighting = true;
                 if (wel.url) {
                   const tex = new BABYLON.Texture(wel.url, scene);
                   tex.hasAlpha = true;
                   bMat.albedoTexture = tex;
                   bMat.useAlphaFromAlbedoTexture = true;
-                  bMat.transparencyMode = 2;
+                  bMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
+                  bMat.albedoColor = BABYLON.Color3.White();
                   bMat.roughness = 0.5;
                   bMat.metallic = 0.1;
                 } else {
@@ -2021,6 +2136,91 @@ export default function Preview3D({
                 spot.range = 4.0; // Localized light reach
                 spot.falloffType = BABYLON.Light.FALLOFF_PHYSICAL;
                 spot.parent = mount;
+              } else if (wel.type === "diagonal_paint") {
+                const dir = wel.direction || "top-left";
+                let corners: BABYLON.Vector3[];
+                if (dir === "top-right") {
+                  corners = [
+                    new BABYLON.Vector3(-cutW / 2, cutH / 2, 0),
+                    new BABYLON.Vector3(cutW / 2, cutH / 2, 0),
+                    new BABYLON.Vector3(cutW / 2, -cutH / 2, 0),
+                  ];
+                } else if (dir === "bottom-left") {
+                  corners = [
+                    new BABYLON.Vector3(-cutW / 2, cutH / 2, 0),
+                    new BABYLON.Vector3(-cutW / 2, -cutH / 2, 0),
+                    new BABYLON.Vector3(cutW / 2, -cutH / 2, 0),
+                  ];
+                } else if (dir === "bottom-right") {
+                  corners = [
+                    new BABYLON.Vector3(cutW / 2, cutH / 2, 0),
+                    new BABYLON.Vector3(-cutW / 2, -cutH / 2, 0),
+                    new BABYLON.Vector3(cutW / 2, -cutH / 2, 0),
+                  ];
+                } else {
+                  // top-left default
+                  corners = [
+                    new BABYLON.Vector3(-cutW / 2, cutH / 2, 0),
+                    new BABYLON.Vector3(cutW / 2, cutH / 2, 0),
+                    new BABYLON.Vector3(-cutW / 2, -cutH / 2, 0),
+                  ];
+                }
+
+                mount = BABYLON.MeshBuilder.CreatePolygon(
+                  "diag_paint_" + index,
+                  {
+                    shape: corners,
+                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                  },
+                  scene,
+                );
+                mount.position.set(
+                  localX,
+                  localY,
+                  -dVal / 2 - (0.004 + index * 0.002),
+                );
+                const pMat = new BABYLON.PBRMaterial("diag_pmat_" + index, scene);
+                pMat.zOffset = -index * 3 - 2;
+                pMat.backFaceCulling = false;
+                pMat.twoSidedLighting = true;
+                pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#ec4899");
+                pMat.alpha = wel.opacity ?? 1.0;
+                pMat.roughness = 0.6;
+                pMat.metallic = 0.05;
+                mount.material = pMat;
+              } else if (wel.type === "paint") {
+                mount = BABYLON.MeshBuilder.CreatePlane(
+                  "wall_paint_" + index,
+                  {
+                    width: cutW,
+                    height: cutH,
+                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                  },
+                  scene,
+                );
+                mount.position.set(
+                  localX,
+                  localY,
+                  -dVal / 2 - (0.004 + index * 0.002),
+                );
+                const pMat = new BABYLON.PBRMaterial("pmat_" + index, scene);
+                pMat.zOffset = -index * 3 - 2;
+                pMat.backFaceCulling = false;
+                pMat.twoSidedLighting = true;
+                pMat.roughness = 0.55;
+                pMat.metallic = 0.05;
+                if (wel.url) {
+                  const tex = new BABYLON.Texture(wel.url, scene);
+                  tex.hasAlpha = true;
+                  pMat.albedoTexture = tex;
+                  pMat.useAlphaFromAlbedoTexture = true;
+                  pMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
+                  pMat.albedoColor = BABYLON.Color3.White();
+                } else {
+                  pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#0ea5e9");
+                }
+                pMat.alpha = wel.opacity ?? 1.0;
+                mount.material = pMat;
               } else {
                 mount = BABYLON.MeshBuilder.CreatePlane(
                   "banner",
@@ -2031,16 +2231,19 @@ export default function Preview3D({
                   },
                   scene,
                 );
-                const layerOffset = 0.003 + index * 0.002;
+                const layerOffset = 0.005 + index * 0.002;
                 mount.position.set(localX, localY, -dVal / 2 - layerOffset);
                 const bMat = new BABYLON.PBRMaterial("bm_" + index, scene);
                 bMat.zOffset = -index * 2;
+                bMat.backFaceCulling = false;
+                bMat.twoSidedLighting = true;
                 if (wel.url) {
                   const tex = new BABYLON.Texture(wel.url, scene);
                   tex.hasAlpha = true;
                   bMat.albedoTexture = tex;
                   bMat.useAlphaFromAlbedoTexture = true;
-                  bMat.transparencyMode = 2;
+                  bMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
+                  bMat.albedoColor = BABYLON.Color3.White();
                   bMat.roughness = 0.5;
                   bMat.metallic = 0.1;
                 } else {
@@ -2345,6 +2548,130 @@ export default function Preview3D({
           };
           registry.set(el.id, mesh);
           attachDragBehavior(mesh, el.id);
+        } else if (el.type === "carpet") {
+          const w = el.width / PPM;
+          const d = el.height / PPM; // height in 2D is depth in 3D
+          const shape = el.shape || "rect";
+          const carpetState = JSON.stringify({
+            w: el.width,
+            h: el.height,
+            shape: el.shape || 'rect',
+            fill: el.fill,
+            textureType: el.textureType,
+            opacity: el.opacity,
+            url: el.url,
+            roughness: el.roughness,
+            metallic: el.metallic
+          });
+
+          let mesh: BABYLON.Mesh;
+          const existing = registry.get(el.id);
+
+          if (existing && existing.metadata?.carpetState === carpetState) {
+            mesh = existing as BABYLON.Mesh;
+          } else {
+            existing?.dispose();
+
+            if (shape === "circle") {
+              const radius = Math.min(w, d) / 2;
+              mesh = BABYLON.MeshBuilder.CreateDisc(
+                el.id,
+                { radius, tessellation: 64, sideOrientation: BABYLON.Mesh.DOUBLESIDE },
+                scene,
+              );
+              mesh.rotation.x = Math.PI / 2;
+            } else if (shape === "polygon") {
+              // Diagonal triangle rug
+              const corners = [
+                new BABYLON.Vector3(-w / 2, 0, d / 2),
+                new BABYLON.Vector3(w / 2, 0, d / 2),
+                new BABYLON.Vector3(-w / 2, 0, -d / 2),
+              ];
+              mesh = BABYLON.MeshBuilder.CreatePolygon(
+                el.id,
+                { shape: corners, sideOrientation: BABYLON.Mesh.DOUBLESIDE },
+                scene,
+              );
+            } else {
+              // Rectangle rug
+              mesh = BABYLON.MeshBuilder.CreatePlane(
+                el.id,
+                { width: w, height: d, sideOrientation: BABYLON.Mesh.DOUBLESIDE },
+                scene,
+              );
+              mesh.rotation.x = Math.PI / 2;
+            }
+
+            const cMat = new BABYLON.PBRMaterial(el.id + "_mat", scene);
+            cMat.zOffset = -2;
+            cMat.backFaceCulling = false;
+            cMat.twoSidedLighting = true;
+            cMat.roughness = el.roughness ?? 0.8;
+            cMat.metallic = el.metallic ?? 0.05;
+
+            if (el.url) {
+              // Custom uploaded graphic/texture (PNG, JPG)
+              const tex = new BABYLON.Texture(el.url, scene);
+              tex.hasAlpha = true;
+              cMat.albedoTexture = tex;
+              cMat.useAlphaFromAlbedoTexture = true;
+              cMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
+              cMat.albedoColor = BABYLON.Color3.White();
+              cMat.emissiveTexture = tex;
+              cMat.emissiveColor = new BABYLON.Color3(0.6, 0.6, 0.6);
+              cMat.roughness = 0.5;
+              cMat.metallic = 0.0;
+            } else if (el.textureType === 'marble') {
+              const texUrl = `/assets/textures/marble.png`;
+              let cachedTex = textureCacheRef.current.get(texUrl);
+              if (!cachedTex) {
+                cachedTex = new BABYLON.Texture(texUrl, scene);
+                textureCacheRef.current.set(texUrl, cachedTex);
+              }
+              const tex = cachedTex.clone();
+              tex.uScale = Math.max(1, w / 2);
+              tex.vScale = Math.max(1, d / 2);
+              cMat.albedoTexture = tex;
+              cMat.roughness = 0.08;
+              cMat.clearCoat.isEnabled = true;
+              cMat.clearCoat.intensity = 0.8;
+            } else if (el.textureType === 'hardwood') {
+              const texUrl = `/assets/textures/hardwood.png`;
+              let cachedTex = textureCacheRef.current.get(texUrl);
+              if (!cachedTex) {
+                cachedTex = new BABYLON.Texture(texUrl, scene);
+                textureCacheRef.current.set(texUrl, cachedTex);
+              }
+              const tex = cachedTex.clone();
+              tex.uScale = Math.max(1, w / 2);
+              tex.vScale = Math.max(1, d / 2);
+              cMat.albedoTexture = tex;
+              cMat.roughness = 0.3;
+            } else if (el.textureType === 'carpet') {
+              cMat.albedoColor = BABYLON.Color3.FromHexString(el.fill || "#f59e0b");
+              cMat.roughness = 0.95;
+            } else {
+              // Solid
+              cMat.albedoColor = BABYLON.Color3.FromHexString(el.fill || "#f59e0b");
+              cMat.roughness = 0.5;
+            }
+
+            cMat.alpha = el.opacity ?? 1.0;
+            mesh.material = cMat;
+            mesh.receiveShadows = true;
+
+            mesh.metadata = {
+              carpetState,
+              isCarpet: true,
+            };
+
+            registry.set(el.id, mesh);
+            attachDragBehavior(mesh, el.id);
+          }
+
+          // In 2D Konva, carpet x,y is the center of the shape
+          mesh.position.set(x, 0.002, z);
+          mesh.rotation.y = rotY;
         } else if (el.type === "asset") {
           // Preserve original case for filename (e.g. Fridge.glb, MicrowaveOven.glb, WallOven.glb)
           const modelFileName = el.assetName || "box";
