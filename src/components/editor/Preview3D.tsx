@@ -1644,8 +1644,12 @@ export default function Preview3D({
             decorationsW.forEach((wel: any, index: number) => {
               const cutW = wel.width / PPM,
                 cutH = wel.height / PPM;
-              const localX = wel.x / PPM - wValW / 2 + cutW / 2;
+              const isBack = wel.side === "back";
+              const localX = isBack
+                ? wValW / 2 - wel.x / PPM - cutW / 2
+                : wel.x / PPM - wValW / 2 + cutW / 2;
               const localY = wallHeightW / 2 - wel.y / PPM - cutH / 2;
+              const zSign = isBack ? 1 : -1;
               let mount: BABYLON.Mesh;
 
               if (wel.type === "shelf") {
@@ -1654,7 +1658,7 @@ export default function Preview3D({
                   { width: cutW, height: 0.03, depth: 0.3 },
                   scene,
                 );
-                mount.position.set(localX, localY, -dValW / 2 - 0.15);
+                mount.position.set(localX, localY, zSign * (dValW / 2 + 0.15));
                 const sMat = new BABYLON.StandardMaterial(
                   "sMat_" + index,
                   scene,
@@ -1695,12 +1699,12 @@ export default function Preview3D({
                 lMat.albedoColor = lColor;
                 lMat.roughness = 0.2;
                 mount.material = lMat;
-                mount.position.set(localX, localY, -dValW / 2 - 0.025);
+                mount.position.set(localX, localY, zSign * (dValW / 2 + 0.025));
 
                 const spot = new BABYLON.SpotLight(
                   "spot_" + index,
-                  new BABYLON.Vector3(0, 0, -0.05),
-                  new BABYLON.Vector3(0, 0, -1),
+                  new BABYLON.Vector3(0, 0, zSign * 0.05),
+                  new BABYLON.Vector3(0, 0, zSign),
                   Math.PI / 3, // 60 degree soft cone
                   1.5, // soft penumbra
                   scene,
@@ -1751,8 +1755,9 @@ export default function Preview3D({
                 mount.position.set(
                   localX,
                   localY,
-                  -dValW / 2 - (0.004 + index * 0.002),
+                  zSign * (dValW / 2 + 0.004 + index * 0.002),
                 );
+                if (isBack) mount.rotation.y = Math.PI;
                 const pMat = new BABYLON.PBRMaterial("diag_pmat_" + index, scene);
                 pMat.zOffset = -index * 3 - 2;
                 pMat.backFaceCulling = false;
@@ -1775,8 +1780,9 @@ export default function Preview3D({
                 mount.position.set(
                   localX,
                   localY,
-                  -dValW / 2 - (0.004 + index * 0.002),
+                  zSign * (dValW / 2 + 0.004 + index * 0.002),
                 );
+                if (isBack) mount.rotation.y = Math.PI;
                 const pMat = new BABYLON.PBRMaterial("pmat_" + index, scene);
                 pMat.zOffset = -index * 3 - 2;
                 pMat.backFaceCulling = false;
@@ -1808,8 +1814,9 @@ export default function Preview3D({
                 mount.position.set(
                   localX,
                   localY,
-                  -dValW / 2 - (0.005 + index * 0.002),
+                  zSign * (dValW / 2 + 0.005 + index * 0.002),
                 );
+                if (isBack) mount.rotation.y = Math.PI;
                 const bMat = new BABYLON.PBRMaterial("bm_ex_" + index, scene);
                 bMat.zOffset = -index * 2;
                 bMat.backFaceCulling = false;
@@ -2071,8 +2078,12 @@ export default function Preview3D({
             decorations.forEach((wel: any, index: number) => {
               const cutW = wel.width / PPM,
                 cutH = wel.height / PPM;
-              const localX = (wel.x + delta1) / PPM - wVal / 2 + cutW / 2;
+              const isBack = wel.side === "back";
+              const localX = isBack
+                ? wVal / 2 - (wel.x + delta1) / PPM - cutW / 2
+                : (wel.x + delta1) / PPM - wVal / 2 + cutW / 2;
               const localY = wallHeight / 2 - wel.y / PPM - cutH / 2;
+              const zSign = isBack ? 1 : -1;
               let mount: BABYLON.Mesh;
 
               if (wel.type === "shelf") {
@@ -2081,7 +2092,7 @@ export default function Preview3D({
                   { width: cutW, height: 0.03, depth: 0.3 },
                   scene,
                 );
-                mount.position.set(localX, localY, -dVal / 2 - 0.15);
+                mount.position.set(localX, localY, zSign * (dVal / 2 + 0.15));
                 const sMat = new BABYLON.StandardMaterial("sMat", scene);
                 sMat.diffuseColor = wel.color
                   ? BABYLON.Color3.FromHexString(wel.color)
@@ -2121,12 +2132,12 @@ export default function Preview3D({
                 lMat.albedoColor = lColor;
                 lMat.roughness = 0.2;
                 mount.material = lMat;
-                mount.position.set(localX, localY, -dVal / 2 - 0.025);
+                mount.position.set(localX, localY, zSign * (dVal / 2 + 0.025));
 
                 const spot = new BABYLON.SpotLight(
                   "spot",
-                  new BABYLON.Vector3(0, 0, -0.05),
-                  new BABYLON.Vector3(0, 0, -1),
+                  new BABYLON.Vector3(0, 0, zSign * 0.05),
+                  new BABYLON.Vector3(0, 0, zSign),
                   Math.PI / 3, // 60 degree soft cone
                   1.5, // soft penumbra
                   scene,
@@ -2177,8 +2188,9 @@ export default function Preview3D({
                 mount.position.set(
                   localX,
                   localY,
-                  -dVal / 2 - (0.004 + index * 0.002),
+                  zSign * (dVal / 2 + 0.004 + index * 0.002),
                 );
+                if (isBack) mount.rotation.y = Math.PI;
                 const pMat = new BABYLON.PBRMaterial("diag_pmat_" + index, scene);
                 pMat.zOffset = -index * 3 - 2;
                 pMat.backFaceCulling = false;
@@ -2201,8 +2213,9 @@ export default function Preview3D({
                 mount.position.set(
                   localX,
                   localY,
-                  -dVal / 2 - (0.004 + index * 0.002),
+                  zSign * (dVal / 2 + 0.004 + index * 0.002),
                 );
+                if (isBack) mount.rotation.y = Math.PI;
                 const pMat = new BABYLON.PBRMaterial("pmat_" + index, scene);
                 pMat.zOffset = -index * 3 - 2;
                 pMat.backFaceCulling = false;
@@ -2232,7 +2245,8 @@ export default function Preview3D({
                   scene,
                 );
                 const layerOffset = 0.005 + index * 0.002;
-                mount.position.set(localX, localY, -dVal / 2 - layerOffset);
+                mount.position.set(localX, localY, zSign * (dVal / 2 + layerOffset));
+                if (isBack) mount.rotation.y = Math.PI;
                 const bMat = new BABYLON.PBRMaterial("bm_" + index, scene);
                 bMat.zOffset = -index * 2;
                 bMat.backFaceCulling = false;

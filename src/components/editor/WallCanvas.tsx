@@ -5,7 +5,7 @@ import { getCachedImage } from '../../lib/imageCache'
 import ColorPickerPanel from './ColorPickerPanel'
 
 // Sub-component for the actual wall elements to prevent re-renders during transformation/drag labels
-const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, onDragEnd, onTransform, onTransformEnd }: any) => {
+const WallElements = React.memo(({ elements, activeSide, wallWidth, selectedId, onSelect, onDragMove, onDragEnd, onTransform, onTransformEnd }: any) => {
   const ELEMENT_TYPES: Record<string, any> = {
     door: { color: 'rgba(139,100,60,0.35)', stroke: '#7c5c3a' },
     window: { color: 'rgba(100,200,255,0.35)', stroke: '#00BFFF' },
@@ -32,6 +32,10 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
   return (
     <>
       {elements.map((el: any, i: number) => {
+        const isCutout = el.type === 'door' || el.type === 'window'
+        const elSide = el.side || 'front'
+        if (!isCutout && elSide !== activeSide) return null
+
         const cfg = ELEMENT_TYPES[el.type] || ELEMENT_TYPES.window
         const isSelected = selectedId === el.id
         const hasImage = (el.type === 'banner' || el.type === 'frame' || el.type === 'paint') && el.url && images[el.url]
@@ -40,6 +44,7 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
         // Light color handling
         const lightFill = el.type === 'light' ? (el.lightColor || '#fff8e7') : (el.color || cfg.color)
         const lightOpacity = el.type === 'light' ? 0.6 : (el.opacity ?? 1.0)
+        const renderX = el.x
 
         // Diagonal Paint rendering
         if (el.type === 'diagonal_paint') {
@@ -55,6 +60,8 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
               id={'el-' + el.id}
               x={el.x}
               y={el.y}
+              width={el.width}
+              height={el.height}
               draggable
               onMouseDown={() => onSelect(el.id)}
               onClick={() => onSelect(el.id)}
@@ -176,6 +183,7 @@ const WallElements = React.memo(({ elements, selectedId, onSelect, onDragMove, o
 export default function WallCanvas({ wall, onSave, onClose }: any) {
   const [elements, setElements] = useState<any[]>(wall.wallElements || [])
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [activeSide, setActiveSide] = useState<'front' | 'back'>('front')
   const [dragLabel, setDragLabel] = useState<any | null>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -237,7 +245,7 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
       transformerRef.current.nodes([])
     }
     transformerRef.current.getLayer()?.batchDraw()
-  }, [selectedId, elements])
+  }, [selectedId, elements, activeSide])
 
   const snap = (v: number) => Math.round(v / SNAP) * SNAP
   const clamp = (val: number, min: number, max: number) => Math.max(min, Math.min(max, val))
@@ -255,9 +263,11 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
       model: 'wall_light_1'
     } : {}
 
+    const isCutout = ['door', 'window'].includes(type)
     setElements(prev => [...prev, {
       id: Math.random().toString(36).substr(2, 9),
       type,
+      side: isCutout ? 'both' : activeSide,
       x: snap(wallWidth / 2 - w / 2),
       y: snap(y),
       width: w,
@@ -289,25 +299,34 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
   const handleTransform = (index: number, e: any) => {
     const node = e.target
     const el = elements[index]
+    const baseW = node.width ? node.width() : el.width
+    const baseH = node.height ? node.height() : el.height
     setDragLabel({
       id: el.id,
       x: node.x(),
       y: node.y(),
-      width: node.width() * node.scaleX(),
-      height: node.height() * node.scaleY()
+      width: Math.abs(baseW * (node.scaleX?.() ?? 1)),
+      height: Math.abs(baseH * (node.scaleY?.() ?? 1))
     })
   }
 
   const handleTransformEnd = (index: number, e: any) => {
     const node = e.target
     const el = elements[index]
-    const scaleX = node.scaleX()
-    const scaleY = node.scaleY()
-    node.scaleX(1)
-    node.scaleY(1)
+    const scaleX = node.scaleX ? node.scaleX() : 1
+    const scaleY = node.scaleY ? node.scaleY() : 1
+    const baseW = (node.width && typeof node.width === 'function') ? node.width() : el.width
+    const baseH = (node.height && typeof node.height === 'function') ? node.height() : el.height
+    if (node.scaleX) node.scaleX(1)
+    if (node.scaleY) node.scaleY(1)
 
-    const newW = Math.max(10, snap(node.width() * scaleX))
-    const newH = Math.max(10, snap(node.height() * scaleY))
+    const rawW = (baseW || el.width) * Math.abs(scaleX)
+    const rawH = (baseH || el.height) * Math.abs(scaleY)
+    const newW = Math.max(10, snap(rawW))
+    const newH = Math.max(10, snap(rawH))
+    if (node.width && typeof node.width === 'function') node.width(newW)
+    if (node.height && typeof node.height === 'function') node.height(newH)
+
     const nx = clamp(snap(node.x()), 0, wallWidth - newW)
     const ny = clamp(snap(node.y()), 0, wallHeight - newH)
 
@@ -382,6 +401,31 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
             {(wallWidth / PPM).toFixed(1)}m × {actualHeightMeters.toFixed(1)}m
           </span>
         </div>
+
+        {/* Face Switcher: Front (Interior) vs Back (Exterior) */}
+        <div className="flex items-center bg-[var(--sand)] p-1 rounded-xl border border-[var(--line)] shadow-inner">
+          <button
+            onClick={() => { setActiveSide('front'); setSelectedId(null) }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+              activeSide === 'front'
+                ? 'bg-[var(--brand)] text-white shadow-sm'
+                : 'text-[var(--sea-ink-soft)] hover:text-[var(--sea-ink)]'
+            }`}
+          >
+            <span>◨</span> Front Face (Interior)
+          </button>
+          <button
+            onClick={() => { setActiveSide('back'); setSelectedId(null) }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+              activeSide === 'back'
+                ? 'bg-[var(--brand)] text-white shadow-sm'
+                : 'text-[var(--sea-ink-soft)] hover:text-[var(--sea-ink)]'
+            }`}
+          >
+            <span>◧</span> Back Face (Exterior)
+          </button>
+        </div>
+
         <div className="flex items-center gap-2">
           <button onClick={() => onSave(elements)} className="px-4 py-1.5 rounded-lg bg-[var(--lagoon-deep)] text-white text-xs font-bold flex items-center gap-2 hover:bg-[var(--palm)] transition shadow-sm">
             <Save className="w-4 h-4" /> Save Wall
@@ -394,7 +438,7 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
 
       <div className="flex flex-1 overflow-hidden">
         <div className="w-52 shrink-0 border-r border-[var(--line)] bg-[var(--surface-strong)] flex flex-col p-3 gap-2 overflow-y-auto">
-          <p className="text-[10px] font-bold text-[var(--sea-ink-soft)] uppercase tracking-widest mb-1">Add to Wall</p>
+          <p className="text-[10px] font-bold text-[var(--sea-ink-soft)] uppercase tracking-widest mb-1">Add to Wall ({activeSide === 'front' ? 'Front' : 'Back'})</p>
           {Object.entries(ELEMENT_TYPES).map(([type, cfg]: [string, any]) => (
             <button key={type} onClick={() => handleAdd(type)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[var(--sand)] border border-[var(--line)] text-left hover:border-[var(--lagoon)] hover:bg-[var(--chip-bg)] transition">
               <span className="text-xl leading-none">{cfg.emoji}</span>
@@ -409,6 +453,38 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
             <div className="mt-3 pt-3 border-t border-[var(--line)]">
               <p className="text-[10px] font-bold text-[var(--sea-ink-soft)] uppercase tracking-widest mb-2">Selected: {ELEMENT_TYPES[selectedEl.type]?.label}</p>
               <div className="space-y-2">
+                {/* Face Selector for Decorations */}
+                {!['door', 'window'].includes(selectedEl.type) && (
+                  <div className="pb-1">
+                    <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold block mb-1">Wall Face</label>
+                    <div className="grid grid-cols-2 gap-1">
+                      <button
+                        onClick={() => {
+                          setElements(prev => prev.map(el => el.id === selectedId ? { ...el, side: 'front' } : el))
+                        }}
+                        className={`py-1 px-2 rounded-lg border text-[10px] font-bold transition ${
+                          (selectedEl.side || 'front') === 'front'
+                            ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
+                            : 'bg-[var(--sand)] text-[var(--sea-ink)] border-[var(--line)]'
+                        }`}
+                      >
+                        Front
+                      </button>
+                      <button
+                        onClick={() => {
+                          setElements(prev => prev.map(el => el.id === selectedId ? { ...el, side: 'back' } : el))
+                        }}
+                        className={`py-1 px-2 rounded-lg border text-[10px] font-bold transition ${
+                          selectedEl.side === 'back'
+                            ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
+                            : 'bg-[var(--sand)] text-[var(--sea-ink)] border-[var(--line)]'
+                        }`}
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {[
                   { label: 'X pos (m)', key: 'x' },
                   { label: 'Y pos (m)', key: 'y' },
@@ -736,6 +812,8 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
 
                 <WallElements
                   elements={elements}
+                  activeSide={activeSide}
+                  wallWidth={wallWidth}
                   selectedId={selectedId}
                   onSelect={setSelectedId}
                   onDragMove={handleDragMove}
@@ -746,6 +824,10 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
 
                 {/* Live overlay labels layer - this updates via dragLabel state without re-rendering WallElements */}
                 {elements.map(el => {
+                  const isCutout = el.type === 'door' || el.type === 'window'
+                  const elSide = el.side || 'front'
+                  if (!isCutout && elSide !== activeSide) return null
+
                   const isSelected = selectedId === el.id
                   const isActive = dragLabel?.id === el.id
                   const displayX = isActive ? dragLabel.x : el.x
