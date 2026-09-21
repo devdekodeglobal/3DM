@@ -70,10 +70,13 @@ export default function RoofCanvas({ boothConfig, onSave, onClose }: RoofCanvasP
   // Resize handler to fit stage nicely
   useEffect(() => {
     if (!containerRef.current) return
-    const observer = new ResizeObserver(() => {
+
+    const updateSize = () => {
       if (!containerRef.current) return
       const w = containerRef.current.offsetWidth
       const h = containerRef.current.offsetHeight
+      if (w <= 0 || h <= 0) return
+
       setDimensions({ width: w, height: h })
 
       // Leave a border margin of 100px around the booth bounds
@@ -86,6 +89,12 @@ export default function RoofCanvas({ boothConfig, onSave, onClose }: RoofCanvasP
         x: (w - boothWidthPx * idealScale) / 2,
         y: (h - boothDepthPx * idealScale) / 2,
       })
+    }
+
+    updateSize()
+
+    const observer = new ResizeObserver(() => {
+      updateSize()
     })
     observer.observe(containerRef.current)
     return () => observer.disconnect()
@@ -94,8 +103,10 @@ export default function RoofCanvas({ boothConfig, onSave, onClose }: RoofCanvasP
   // Transformer node sync
   useEffect(() => {
     if (!transformerRef.current) return
+    if (dimensions.width <= 0 || dimensions.height <= 0) return
     if (selectedId) {
       const stage = transformerRef.current.getStage()
+      if (!stage) return
       const node = stage.findOne('#el-' + selectedId)
       if (node) {
         transformerRef.current.nodes([node])
@@ -106,7 +117,7 @@ export default function RoofCanvas({ boothConfig, onSave, onClose }: RoofCanvasP
       transformerRef.current.nodes([])
     }
     transformerRef.current.getLayer()?.batchDraw()
-  }, [selectedId, panels, lights])
+  }, [selectedId, panels, lights, dimensions])
 
   const snap = (v: number) => Math.round(v / SNAP) * SNAP
 
@@ -227,231 +238,265 @@ export default function RoofCanvas({ boothConfig, onSave, onClose }: RoofCanvasP
           </button>
         )}
 
-        <Stage
-          width={dimensions.width}
-          height={dimensions.height}
-          scaleX={stageScale}
-          scaleY={stageScale}
-          x={stagePos.x}
-          y={stagePos.y}
-          onClick={(e) => {
-            if (e.target === e.target.getStage()) {
-              setSelectedId(null)
-            }
-          }}
-        >
-          <Layer>
-            {/* Background Grid */}
-            {gridLines}
+        {dimensions.width > 0 && dimensions.height > 0 && (
+          <Stage
+            width={dimensions.width}
+            height={dimensions.height}
+            scaleX={stageScale}
+            scaleY={stageScale}
+            x={stagePos.x}
+            y={stagePos.y}
+            onClick={(e) => {
+              if (e.target === e.target.getStage()) {
+                setSelectedId(null)
+              }
+            }}
+          >
+            <Layer>
+              {/* Background Grid */}
+              {gridLines}
 
-            {/* Booth Floor Outline / Wall reference */}
-            <Rect
-              x={0}
-              y={0}
-              width={boothWidthPx}
-              height={boothDepthPx}
-              stroke="#0d7a75"
-              strokeWidth={3}
-              dash={[6, 4]}
-              opacity={0.7}
-              listening={false}
-            />
-            <Text
-              x={10}
-              y={10}
-              text="SPACE WALL BOUNDS"
-              fontSize={11}
-              fontFamily="Outfit, Inter, sans-serif"
-              fontStyle="bold"
-              fill="#0d7a75"
-              opacity={0.7}
-            />
+              {/* Booth Floor Outline / Wall reference */}
+              <Rect
+                x={0}
+                y={0}
+                width={boothWidthPx}
+                height={boothDepthPx}
+                stroke="#0d7a75"
+                strokeWidth={3}
+                dash={[6, 4]}
+                opacity={0.7}
+                listening={false}
+              />
+              <Text
+                x={10}
+                y={10}
+                text="SPACE WALL BOUNDS"
+                fontSize={11}
+                fontFamily="Outfit, Inter, sans-serif"
+                fontStyle="bold"
+                fill="#0d7a75"
+                opacity={0.8}
+                listening={false}
+              />
 
-            {/* Render Roof Panels */}
-            {panels.map((p) => {
-              const isSelected = selectedId === p.id
-              return (
-                <Rect
-                  key={p.id}
-                  id={'el-' + p.id}
-                  x={p.x}
-                  y={p.y}
-                  width={p.width}
-                  height={p.height}
-                  fill={roofColor}
-                  stroke={isSelected ? '#0d7a75' : '#475569'}
-                  strokeWidth={isSelected ? 3 : 1.5}
-                  opacity={0.8}
-                  draggable
-                  onMouseDown={() => setSelectedId(p.id)}
-                  onDragMove={(e) => {
-                    const nx = snap(e.target.x())
-                    const ny = snap(e.target.y())
-                    e.target.x(nx)
-                    e.target.y(ny)
-                    setDragLabel({ x: nx, y: ny, w: p.width, h: p.height })
-                  }}
-                  onDragEnd={(e) => {
-                    const nx = snap(e.target.x())
-                    const ny = snap(e.target.y())
-                    handleUpdatePanel(p.id, { x: nx, y: ny })
-                    setDragLabel(null)
-                  }}
-                  onTransform={(e) => {
-                    const node = e.target
-                    const scaleX = node.scaleX()
-                    const scaleY = node.scaleY()
-                    setDragLabel({
-                      x: snap(node.x()),
-                      y: snap(node.y()),
-                      w: snap(node.width() * scaleX),
-                      h: snap(node.height() * scaleY),
-                    })
-                  }}
-                  onTransformEnd={(e) => {
-                    const node = e.target
-                    const scaleX = node.scaleX()
-                    const scaleY = node.scaleY()
-                    node.scaleX(1)
-                    node.scaleY(1)
-                    handleUpdatePanel(p.id, {
-                      x: snap(node.x()),
-                      y: snap(node.y()),
-                      width: snap(node.width() * scaleX),
-                      height: snap(node.height() * scaleY),
-                    })
-                    setDragLabel(null)
-                  }}
-                />
-              )
-            })}
+              {/* Panels */}
+              {panels.map((p) => {
+                const isSelected = p.id === selectedId
+                return (
+                  <Rect
+                    key={p.id}
+                    id={'el-' + p.id}
+                    x={p.x}
+                    y={p.y}
+                    width={p.width}
+                    height={p.height}
+                    fill={roofColor}
+                    opacity={0.85}
+                    stroke={isSelected ? '#0d7a75' : '#94a3b8'}
+                    strokeWidth={isSelected ? 3 : 1.5}
+                    dash={isSelected ? [] : [4, 4]}
+                    draggable
+                    shadowEnabled={isSelected}
+                    shadowColor="#0d7a75"
+                    shadowBlur={10}
+                    shadowOpacity={0.4}
+                    onClick={() => setSelectedId(p.id)}
+                    onTap={() => setSelectedId(p.id)}
+                    onDragMove={(e) => {
+                      const nx = snap(e.target.x())
+                      const ny = snap(e.target.y())
+                      e.target.x(nx)
+                      e.target.y(ny)
+                      setDragLabel({
+                        id: p.id,
+                        x: nx,
+                        y: ny,
+                        w: p.width,
+                        h: p.height,
+                      })
+                    }}
+                    onDragEnd={(e) => {
+                      const nx = snap(e.target.x())
+                      const ny = snap(e.target.y())
+                      handleUpdatePanel(p.id, { x: nx, y: ny })
+                      setDragLabel(null)
+                    }}
+                    onTransform={(e) => {
+                      const node = e.target
+                      const scaleX = node.scaleX()
+                      const scaleY = node.scaleY()
+                      node.scaleX(1)
+                      node.scaleY(1)
+                      const nw = snap(Math.max(20, node.width() * scaleX))
+                      const nh = snap(Math.max(20, node.height() * scaleY))
+                      node.width(nw)
+                      node.height(nh)
+                      setDragLabel({
+                        id: p.id,
+                        x: node.x(),
+                        y: node.y(),
+                        w: nw,
+                        h: nh,
+                      })
+                    }}
+                    onTransformEnd={(e) => {
+                      const node = e.target
+                      const nw = snap(Math.max(20, node.width()))
+                      const nh = snap(Math.max(20, node.height()))
+                      const nx = snap(node.x())
+                      const ny = snap(node.y())
+                      handleUpdatePanel(p.id, {
+                        x: nx,
+                        y: ny,
+                        width: nw,
+                        height: nh,
+                      })
+                      setDragLabel(null)
+                    }}
+                  />
+                )
+              })}
 
-            {/* Render Ceiling Lights */}
-            {lights.map((l) => {
-              const isSelected = selectedId === l.id
-              const isCircular = l.type === 'circular'
-              const colorVal = l.color || '#ffffff'
+              {/* Ceiling Lights */}
+              {lights.map((l) => {
+                const isSelected = l.id === selectedId
+                const isCircular = l.type === 'circular'
+                const colorVal = l.color || '#ffffff'
 
-              return (
-                <Group
-                  key={l.id}
-                  id={'el-' + l.id}
-                  x={l.x}
-                  y={l.y}
-                  width={l.width}
-                  height={l.height}
-                  draggable
-                  onMouseDown={() => setSelectedId(l.id)}
-                  onDragMove={(e) => {
-                    const nx = snap(e.target.x())
-                    const ny = snap(e.target.y())
-                    e.target.x(nx)
-                    e.target.y(ny)
-                    setDragLabel({ x: nx, y: ny, w: l.width, h: l.height })
-                  }}
-                  onDragEnd={(e) => {
-                    const nx = snap(e.target.x())
-                    const ny = snap(e.target.y())
-                    handleUpdateLight(l.id, { x: nx, y: ny })
-                    setDragLabel(null)
-                  }}
-                  onTransform={(e) => {
-                    const node = e.target
-                    setDragLabel({
-                      x: snap(node.x()),
-                      y: snap(node.y()),
-                      w: snap(l.width * node.scaleX()),
-                      h: snap(l.height * node.scaleY()),
-                    })
-                  }}
-                  onTransformEnd={(e) => {
-                    const node = e.target
-                    const scaleX = node.scaleX()
-                    const scaleY = node.scaleY()
-                    node.scaleX(1)
-                    node.scaleY(1)
-                    const newW = Math.max(10, snap(l.width * scaleX))
-                    const newH = Math.max(10, snap(l.height * scaleY))
-                    handleUpdateLight(l.id, {
-                      x: snap(node.x()),
-                      y: snap(node.y()),
-                      width: newW,
-                      height: newH,
-                    })
-                    setDragLabel(null)
-                  }}
-                >
-                  {isCircular ? (
-                    <Circle
-                      x={l.width / 2}
-                      y={l.height / 2}
-                      radius={Math.min(l.width, l.height) / 2}
-                      fill={colorVal}
-                      stroke={isSelected ? '#0d7a75' : '#f59e0b'}
-                      strokeWidth={isSelected ? 3 : 1.5}
-                      shadowColor={colorVal}
-                      shadowBlur={10}
-                      shadowOpacity={0.8}
-                    />
-                  ) : (
-                    <Rect
+                return (
+                  <Group
+                    key={l.id}
+                    id={'el-' + l.id}
+                    x={l.x}
+                    y={l.y}
+                    draggable
+                    onClick={() => setSelectedId(l.id)}
+                    onTap={() => setSelectedId(l.id)}
+                    onDragMove={(e) => {
+                      const nx = snap(e.target.x())
+                      const ny = snap(e.target.y())
+                      e.target.x(nx)
+                      e.target.y(ny)
+                      setDragLabel({
+                        id: l.id,
+                        x: nx,
+                        y: ny,
+                        w: l.width,
+                        h: l.height,
+                      })
+                    }}
+                    onDragEnd={(e) => {
+                      const nx = snap(e.target.x())
+                      const ny = snap(e.target.y())
+                      handleUpdateLight(l.id, { x: nx, y: ny })
+                      setDragLabel(null)
+                    }}
+                    onTransform={(e) => {
+                      const node = e.target
+                      const scaleX = node.scaleX()
+                      const scaleY = node.scaleY()
+                      node.scaleX(1)
+                      node.scaleY(1)
+                      const nw = snap(Math.max(10, node.width() * scaleX))
+                      const nh = snap(Math.max(10, node.height() * scaleY))
+                      node.width(nw)
+                      node.height(nh)
+                      setDragLabel({
+                        id: l.id,
+                        x: node.x(),
+                        y: node.y(),
+                        w: nw,
+                        h: nh,
+                      })
+                    }}
+                    onTransformEnd={(e) => {
+                      const node = e.target
+                      const nw = snap(Math.max(10, node.width()))
+                      const nh = snap(Math.max(10, node.height()))
+                      const nx = snap(node.x())
+                      const ny = snap(node.y())
+                      handleUpdateLight(l.id, {
+                        x: nx,
+                        y: ny,
+                        width: nw,
+                        height: nh,
+                      })
+                      setDragLabel(null)
+                    }}
+                  >
+                    {isCircular ? (
+                      <Circle
+                        x={l.width / 2}
+                        y={l.height / 2}
+                        radius={Math.min(l.width, l.height) / 2}
+                        fill={colorVal}
+                        stroke={isSelected ? '#0d7a75' : '#f59e0b'}
+                        strokeWidth={isSelected ? 3 : 1.5}
+                        shadowColor={colorVal}
+                        shadowBlur={10}
+                        shadowOpacity={0.8}
+                      />
+                    ) : (
+                      <Rect
+                        x={0}
+                        y={0}
+                        width={l.width}
+                        height={l.height}
+                        fill={colorVal}
+                        stroke={isSelected ? '#0d7a75' : '#f59e0b'}
+                        strokeWidth={isSelected ? 3 : 1.5}
+                        cornerRadius={l.type === 'tube' ? 4 : 1}
+                        shadowColor={colorVal}
+                        shadowBlur={10}
+                        shadowOpacity={0.8}
+                      />
+                    )}
+                    <Text
                       x={0}
-                      y={0}
+                      y={l.height + 4}
                       width={l.width}
-                      height={l.height}
-                      fill={colorVal}
-                      stroke={isSelected ? '#0d7a75' : '#f59e0b'}
-                      strokeWidth={isSelected ? 3 : 1.5}
-                      cornerRadius={l.type === 'tube' ? 4 : 1}
-                      shadowColor={colorVal}
-                      shadowBlur={10}
-                      shadowOpacity={0.8}
+                      text={l.type.toUpperCase()}
+                      fontSize={8}
+                      align="center"
+                      fontStyle="bold"
+                      fill="#334155"
                     />
-                  )}
+                  </Group>
+                )
+              })}
+
+              {/* Transformer */}
+              <Transformer
+                ref={transformerRef}
+                boundBoxFunc={(oldBox, newBox) => {
+                  if (newBox.width < 10 || newBox.height < 10) return oldBox
+                  return newBox
+                }}
+                rotateEnabled={false}
+              />
+
+              {/* Ruler label during dragging */}
+              {dragLabel && (
+                <Group x={dragLabel.x} y={dragLabel.y - 25}>
+                  <Rect
+                    fill="rgba(15,23,42,0.85)"
+                    height={20}
+                    width={110}
+                    cornerRadius={4}
+                  />
                   <Text
-                    x={0}
-                    y={l.height + 4}
-                    width={l.width}
-                    text={l.type.toUpperCase()}
-                    fontSize={8}
-                    align="center"
+                    text={`${(dragLabel.w / PPM).toFixed(1)}m x ${(dragLabel.h / PPM).toFixed(1)}m`}
+                    fill="white"
+                    fontSize={10}
                     fontStyle="bold"
-                    fill="#334155"
+                    padding={5}
                   />
                 </Group>
-              )
-            })}
-
-            {/* Transformer */}
-            <Transformer
-              ref={transformerRef}
-              boundBoxFunc={(oldBox, newBox) => {
-                if (newBox.width < 10 || newBox.height < 10) return oldBox
-                return newBox
-              }}
-              rotateEnabled={false}
-            />
-
-            {/* Ruler label during dragging */}
-            {dragLabel && (
-              <Group x={dragLabel.x} y={dragLabel.y - 25}>
-                <Rect
-                  fill="rgba(15,23,42,0.85)"
-                  height={20}
-                  width={110}
-                  cornerRadius={4}
-                />
-                <Text
-                  text={`${(dragLabel.w / PPM).toFixed(1)}m x ${(dragLabel.h / PPM).toFixed(1)}m`}
-                  fill="white"
-                  fontSize={10}
-                  fontStyle="bold"
-                  padding={5}
-                />
-              </Group>
-            )}
-          </Layer>
-        </Stage>
+              )}
+            </Layer>
+          </Stage>
+        )}
       </div>
 
       {/* Editor Control Sidebar */}

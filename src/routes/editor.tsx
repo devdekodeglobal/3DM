@@ -115,8 +115,6 @@ function EditorPage() {
 
 
   const [elements, setElements] = useState<any[]>(initialData.elements || [])
-  const [history, setHistory] = useState<any[][]>(initialData.elements ? [initialData.elements] : [])
-  const [historyStep, setHistoryStep] = useState(initialData.elements ? 0 : -1)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [gridVisible, setGridVisible] = useState(true)
   const [currentDesignId, setCurrentDesignId] = useState<string | null>(initialData.id || null)
@@ -553,80 +551,135 @@ function EditorPage() {
     return () => clearTimeout(handler);
   }, [boothConfig, elements, projectName, currentDesignId, sessionUser, cloudIdValidated]);
 
-  const saveToHistory = useCallback((newElements: any[]) => {
-    if (!Array.isArray(newElements)) return;
-    setHistory(prev => {
-      const nextHistory = prev.slice(0, Math.max(0, historyStep + 1))
-      return [...nextHistory, newElements]
-    })
-    setHistoryStep(prev => prev + 1)
-  }, [historyStep])
+  interface HistorySnapshot {
+    boothConfig: any;
+    elements: any[];
+  }
+
+  const [history, setHistory] = useState<HistorySnapshot[]>(() => {
+    if (initialData.config || initialData.elements) {
+      return [{
+        boothConfig: JSON.parse(JSON.stringify(initialData.config || null)),
+        elements: JSON.parse(JSON.stringify(initialData.elements || [])),
+      }];
+    }
+    return [];
+  });
+  const [historyStep, setHistoryStep] = useState(initialData.config || initialData.elements ? 0 : -1);
+  const isUndoingRef = useRef(false);
+
+  // Push state snapshot to history
+  const saveToHistory = useCallback((newConfig: any, newElements: any[]) => {
+    if (isUndoingRef.current) return;
+    try {
+      const snap: HistorySnapshot = {
+        boothConfig: newConfig ? JSON.parse(JSON.stringify(newConfig)) : null,
+        elements: Array.isArray(newElements) ? JSON.parse(JSON.stringify(newElements)) : [],
+      };
+
+      setHistory(prev => {
+        const next = prev.slice(0, historyStep + 1);
+        // Avoid duplicate identical snapshots
+        if (next.length > 0) {
+          const last = next[next.length - 1];
+          if (
+            JSON.stringify(last.boothConfig) === JSON.stringify(snap.boothConfig) &&
+            JSON.stringify(last.elements) === JSON.stringify(snap.elements)
+          ) {
+            return prev;
+          }
+        }
+        return [...next, snap];
+      });
+      setHistoryStep(prev => prev + 1);
+    } catch (e) {
+      console.warn('Failed to snapshot history:', e);
+    }
+  }, [historyStep]);
 
   const undo = () => {
     if (historyStep > 0) {
-      const prev = history[historyStep - 1]
-      if (Array.isArray(prev)) {
-        setElements(prev)
-        setHistoryStep(historyStep - 1)
-        setSelectedId(null)
+      const targetStep = historyStep - 1;
+      const targetSnap = history[targetStep];
+      if (targetSnap) {
+        isUndoingRef.current = true;
+        if (targetSnap.boothConfig) setBoothConfig(JSON.parse(JSON.stringify(targetSnap.boothConfig)));
+        setElements(JSON.parse(JSON.stringify(targetSnap.elements || [])));
+        setHistoryStep(targetStep);
+        setSelectedId(null);
+        setTimeout(() => {
+          isUndoingRef.current = false;
+        }, 50);
       }
     }
-  }
+  };
 
   const redo = () => {
     if (historyStep < history.length - 1) {
-      const next = history[historyStep + 1]
-      if (Array.isArray(next)) {
-        setElements(next)
-        setHistoryStep(historyStep + 1)
-        setSelectedId(null)
+      const targetStep = historyStep + 1;
+      const targetSnap = history[targetStep];
+      if (targetSnap) {
+        isUndoingRef.current = true;
+        if (targetSnap.boothConfig) setBoothConfig(JSON.parse(JSON.stringify(targetSnap.boothConfig)));
+        setElements(JSON.parse(JSON.stringify(targetSnap.elements || [])));
+        setHistoryStep(targetStep);
+        setSelectedId(null);
+        setTimeout(() => {
+          isUndoingRef.current = false;
+        }, 50);
       }
     }
-  }
+  };
 
   const handleUpdateElement = useCallback((id: string, newProps: any) => {
     setElements(prev => {
-      const updated = prev.map((el) => (el.id === id ? { ...el, ...newProps } : el))
-      saveToHistory(updated)
-      return updated
-    })
-  }, [saveToHistory])
+      const updated = prev.map((el) => (el.id === id ? { ...el, ...newProps } : el));
+      saveToHistory(boothConfigRef.current, updated);
+      return updated;
+    });
+  }, [saveToHistory]);
 
   const handleDeleteElement = useCallback((id: string) => {
     setElements(prev => {
-      const filtered = prev.filter((el) => el.id !== id)
-      saveToHistory(filtered)
-      return filtered
-    })
-    if (selectedId === id) setSelectedId(null)
-  }, [selectedId, saveToHistory])
+      const filtered = prev.filter((el) => el.id !== id);
+      saveToHistory(boothConfigRef.current, filtered);
+      return filtered;
+    });
+    if (selectedId === id) setSelectedId(null);
+  }, [selectedId, saveToHistory]);
 
   const addElement = useCallback((newEl: any) => {
     setElements(prev => {
-      const updated = [...prev, newEl]
-      saveToHistory(updated)
-      return updated
-    })
-  }, [saveToHistory])
+      const updated = [...prev, newEl];
+      saveToHistory(boothConfigRef.current, updated);
+      return updated;
+    });
+  }, [saveToHistory]);
+
+  // Wrapper for canvas setElements so drag & transform are recorded in history
+  const handleCanvasSetElements = useCallback((newElements: any[]) => {
+    setElements(newElements);
+    saveToHistory(boothConfigRef.current, newElements);
+  }, [saveToHistory]);
 
   // Handle Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Undo / Redo
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
-        if (e.shiftKey) redo()
-        else undo()
+        if (e.shiftKey) redo();
+        else undo();
       }
 
       // Deletion
       if ((e.key === 'Backspace' || e.key === 'Delete') && selectedId && !editingWallId) {
-        if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return
-        handleDeleteElement(selectedId)
+        if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+        handleDeleteElement(selectedId);
       }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedId, historyStep, history, editingWallId])
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedId, historyStep, history, editingWallId]);
 
   const reportScreenshotsRef = useRef<Record<string, string>>({})
 
@@ -1322,7 +1375,7 @@ function EditorPage() {
         `}>
           <Canvas
             elements={elements}
-            setElements={setElements}
+            setElements={handleCanvasSetElements}
             selectedId={selectedId}
             onSelect={handleSelect}
             boothConfig={boothConfig}
@@ -1340,7 +1393,13 @@ function EditorPage() {
               onEditElevation={() => setEditingWallId(selectedId)}
               onViewElevation={() => setBlueprintView(`elevation_${selectedId}` as any)}
               boothConfig={boothConfig}
-              onBoothConfigUpdate={(updates: any) => setBoothConfig((prev: any) => ({ ...prev, ...updates }))}
+              onBoothConfigUpdate={(updates: any) => {
+                setBoothConfig((prev: any) => {
+                  const updated = { ...prev, ...updates };
+                  saveToHistory(updated, elementsRef.current);
+                  return updated;
+                });
+              }}
               onEditRoof={() => setEditingRoof(true)}
             />
           </div>
@@ -1662,8 +1721,12 @@ function EditorPage() {
             <RoofCanvas
               boothConfig={boothConfig}
               onSave={(roofConfig: any) => {
-                setBoothConfig((prev: any) => ({ ...prev, roof: roofConfig }))
-                setEditingRoof(false)
+                setBoothConfig((prev: any) => {
+                  const updated = { ...prev, roof: roofConfig };
+                  saveToHistory(updated, elementsRef.current);
+                  return updated;
+                });
+                setEditingRoof(false);
               }}
               onClose={() => setEditingRoof(false)}
             />

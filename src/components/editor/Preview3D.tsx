@@ -244,32 +244,94 @@ export default function Preview3D({
       new BABYLON.Vector3(0, 1, 0),
       scene,
     );
-    hemi.intensity = 0.6;
+    hemi.intensity = 0.55;
     hemi.diffuse = new BABYLON.Color3(1.0, 0.98, 0.95);
-    hemi.groundColor = new BABYLON.Color3(0.4, 0.35, 0.28);
+    hemi.groundColor = new BABYLON.Color3(0.25, 0.22, 0.2);
 
     const dirLight = new BABYLON.DirectionalLight(
       "dir",
       new BABYLON.Vector3(-1, -2, -1),
       scene,
     );
-    dirLight.intensity = 0.8;
-    dirLight.diffuse = new BABYLON.Color3(1.0, 0.95, 0.85);
+    dirLight.intensity = 1.1;
+    dirLight.diffuse = new BABYLON.Color3(1.0, 0.96, 0.9);
 
-    const shadowGenerator = new BABYLON.ShadowGenerator(1024, dirLight);
+    // Warm fill light for natural studio depth
+    const fillLight = new BABYLON.DirectionalLight(
+      "dirFill",
+      new BABYLON.Vector3(1, -1.2, 1),
+      scene,
+    );
+    fillLight.intensity = 0.35;
+    fillLight.diffuse = new BABYLON.Color3(0.85, 0.92, 1.0);
+
+    const isStudioHQ = localStorage.getItem("hq_3d") !== "false";
+
+    // Setup HDR Studio Environment for realistic PBR reflections & lighting
+    try {
+      const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
+        "https://assets.babylonjs.com/environments/studio.env",
+        scene,
+      );
+      hdrTexture.name = "studio_hdr_env";
+      scene.environmentTexture = hdrTexture;
+      scene.environmentIntensity = 0.75;
+    } catch {
+      // Fallback if network offline
+    }
+
+    const shadowMapSize = isStudioHQ ? 2048 : 1024;
+    const shadowGenerator = new BABYLON.ShadowGenerator(shadowMapSize, dirLight);
     shadowGeneratorRef.current = shadowGenerator;
     shadowGenerator.useBlurExponentialShadowMap = true;
-    shadowGenerator.blurKernel = 8;
+    shadowGenerator.blurKernel = isStudioHQ ? 16 : 8;
+    shadowGenerator.bias = 0.002;
+    shadowGenerator.normalBias = 0.01;
 
-    // --- Standard Rendering Pipeline ---
+    // --- Cinematic Post-Processing Pipeline (Studio Quality) ---
     const pipeline = new BABYLON.DefaultRenderingPipeline(
       "default",
       true,
       scene,
       [orbitCam, flightCam, blueprintCam],
     );
-    pipeline.samples = 1;
-    pipeline.sharpenEnabled = false;
+    pipeline.samples = isStudioHQ ? 4 : 1;
+    pipeline.fxaaEnabled = isStudioHQ;
+
+    // Bloom for emissive neon, ceiling lights & glowing graphics
+    pipeline.bloomEnabled = true;
+    pipeline.bloomThreshold = 0.82;
+    pipeline.bloomWeight = 0.28;
+    pipeline.bloomKernel = 32;
+    pipeline.bloomScale = 0.5;
+
+    // Studio Tone Mapping (ACES-style dynamic range) & Contrast
+    pipeline.imageProcessingEnabled = true;
+    if (pipeline.imageProcessing) {
+      pipeline.imageProcessing.toneMappingEnabled = true;
+      pipeline.imageProcessing.toneMappingType =
+        BABYLON.ImageProcessingConfiguration.TONEMAPPING_ACES;
+      pipeline.imageProcessing.contrast = 1.12;
+      pipeline.imageProcessing.exposure = 1.05;
+      pipeline.imageProcessing.vignetteEnabled = true;
+      pipeline.imageProcessing.vignetteWeight = 1.2;
+      pipeline.imageProcessing.vignetteColor = new BABYLON.Color4(0, 0, 0, 0);
+      pipeline.imageProcessing.vignetteCameraFov = 0.45;
+    }
+
+    // High quality sharpen
+    pipeline.sharpenEnabled = isStudioHQ;
+    if (pipeline.sharpen) {
+      pipeline.sharpen.edgeAmount = 0.18;
+      pipeline.sharpen.colorAmount = 1.0;
+    }
+
+    // Subtle film sensor grain (eliminates color banding on white exhibition walls)
+    pipeline.grainEnabled = true;
+    if (pipeline.grain) {
+      pipeline.grain.intensity = 5.0;
+      pipeline.grain.animated = false;
+    }
 
     const gui = GUI.AdvancedDynamicTexture.CreateFullscreenUI(
       "UI",
@@ -429,8 +491,13 @@ export default function Preview3D({
       }
     }
 
-    // Add environmental reflection (simulated)
+    // Add physical environmental reflection & ClearCoat lacquer (studio gloss)
     floorMat.reflectionColor = new BABYLON.Color3(1, 1, 1);
+    if (floorType !== "carpet") {
+      floorMat.clearCoat.isEnabled = true;
+      floorMat.clearCoat.intensity = floorType === "marble" ? 0.9 : 0.45;
+      floorMat.clearCoat.roughness = floorType === "marble" ? 0.05 : 0.15;
+    }
 
     floor.material = floorMat;
     structureRegistryRef.current.push(floor);
@@ -558,18 +625,19 @@ export default function Preview3D({
         lightMesh.material = lightMat;
         structureRegistryRef.current.push(lightMesh);
 
-        // Add real spotlight pointing down
+        // Add real physical spotlight pointing down
         const spotLight = new BABYLON.SpotLight(
           "ceilingSpot_" + light.id,
           new BABYLON.Vector3(cX, cY - 0.02, cZ),
           new BABYLON.Vector3(0, -1, 0),
           Math.PI / 3, // 60 degree cone
-          2.0, // falloff exponent
+          1.5, // soft penumbra
           scene,
         );
         spotLight.diffuse = lColor;
-        spotLight.intensity = (light.intensity || 1.0) * 6.0;
-        spotLight.range = 8.0;
+        spotLight.intensity = (light.intensity || 1.0) * 8.0;
+        spotLight.range = 10.0;
+        spotLight.falloffType = BABYLON.Light.FALLOFF_PHYSICAL;
 
         ceilingLightsRef.current.push(spotLight);
       });
@@ -1308,9 +1376,18 @@ export default function Preview3D({
         else if (el.material === "Brick") texName = "brick";
         else if (el.material === "Marble") {
           texName = "marble";
-          mat.roughness = 0.1;
-          mat.metallic = 0.2;
-        } else if (el.material === "Concrete") texName = "concrete";
+          mat.roughness = 0.08;
+          mat.metallic = 0.15;
+          mat.clearCoat.isEnabled = true;
+          mat.clearCoat.intensity = 0.8;
+          mat.clearCoat.roughness = 0.05;
+        } else if (el.material === "Concrete") {
+          texName = "concrete";
+          mat.roughness = 0.7;
+          mat.clearCoat.isEnabled = false;
+        } else {
+          mat.clearCoat.isEnabled = false;
+        }
 
         if (el.material === "custom_color" || el.color) {
           mat.albedoColor = BABYLON.Color3.FromHexString(el.color || "#f0f0f0");
@@ -1587,20 +1664,24 @@ export default function Preview3D({
                 }
                 const lMat = new BABYLON.PBRMaterial("lm_" + index, scene);
                 lMat.emissiveColor = lColor;
-                lMat.emissiveIntensity = lIntensity * 2;
+                lMat.emissiveIntensity = Math.min(1.0, lIntensity * 0.85);
                 lMat.albedoColor = lColor;
+                lMat.roughness = 0.2;
                 mount.material = lMat;
                 mount.position.set(localX, localY, -dValW / 2 - 0.025);
+
                 const spot = new BABYLON.SpotLight(
                   "spot_" + index,
                   new BABYLON.Vector3(0, 0, -0.05),
                   new BABYLON.Vector3(0, 0, -1),
-                  Math.PI / 2,
-                  2,
+                  Math.PI / 3, // 60 degree soft cone
+                  1.5, // soft penumbra
                   scene,
                 );
                 spot.diffuse = lColor;
-                spot.intensity = lIntensity * 5;
+                spot.intensity = lIntensity * 2.2;
+                spot.range = 4.0; // Localized light reach
+                spot.falloffType = BABYLON.Light.FALLOFF_PHYSICAL;
                 spot.parent = mount;
               } else {
                 mount = BABYLON.MeshBuilder.CreatePlane(
@@ -1921,8 +2002,9 @@ export default function Preview3D({
 
                 const lMat = new BABYLON.PBRMaterial("lm", scene);
                 lMat.emissiveColor = lColor;
-                lMat.emissiveIntensity = lIntensity * 2;
+                lMat.emissiveIntensity = Math.min(1.0, lIntensity * 0.85);
                 lMat.albedoColor = lColor;
+                lMat.roughness = 0.2;
                 mount.material = lMat;
                 mount.position.set(localX, localY, -dVal / 2 - 0.025);
 
@@ -1930,12 +2012,14 @@ export default function Preview3D({
                   "spot",
                   new BABYLON.Vector3(0, 0, -0.05),
                   new BABYLON.Vector3(0, 0, -1),
-                  Math.PI / 2,
-                  2,
+                  Math.PI / 3, // 60 degree soft cone
+                  1.5, // soft penumbra
                   scene,
                 );
                 spot.diffuse = lColor;
-                spot.intensity = lIntensity * 5;
+                spot.intensity = lIntensity * 2.2;
+                spot.range = 4.0; // Localized light reach
+                spot.falloffType = BABYLON.Light.FALLOFF_PHYSICAL;
                 spot.parent = mount;
               } else {
                 mount = BABYLON.MeshBuilder.CreatePlane(
