@@ -1808,7 +1808,7 @@ export default function Preview3D({
                 } else if (wel.idbKey) {
                   pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#0ea5e9").toLinearSpace();
                   getWallImageDataUrl(wel.idbKey).then((dataUrl) => {
-                    if (dataUrl && !pMat.isDisposed()) {
+                    if (dataUrl && !pMat.isDisposed && !mount.isDisposed()) {
                       const tex = new BABYLON.Texture(dataUrl, scene);
                       tex.hasAlpha = true;
                       pMat.albedoTexture = tex;
@@ -1854,7 +1854,7 @@ export default function Preview3D({
                 } else if (wel.idbKey) {
                   bMat.albedoColor = wel.type === "frame" ? new BABYLON.Color3(0.8, 0.8, 0.8) : BABYLON.Color3.Blue();
                   getWallImageDataUrl(wel.idbKey).then((dataUrl) => {
-                    if (dataUrl && !bMat.isDisposed()) {
+                    if (dataUrl && !bMat.isDisposed && !mount.isDisposed()) {
                       const tex = new BABYLON.Texture(dataUrl, scene);
                       tex.hasAlpha = true;
                       bMat.albedoTexture = tex;
@@ -2263,7 +2263,7 @@ export default function Preview3D({
                 } else if (wel.idbKey) {
                   pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#0ea5e9").toLinearSpace();
                   getWallImageDataUrl(wel.idbKey).then((dataUrl) => {
-                    if (dataUrl && !pMat.isDisposed()) {
+                    if (dataUrl && !pMat.isDisposed && !mount.isDisposed()) {
                       const tex = new BABYLON.Texture(dataUrl, scene);
                       tex.hasAlpha = true;
                       pMat.albedoTexture = tex;
@@ -2305,7 +2305,7 @@ export default function Preview3D({
                 } else if (wel.idbKey) {
                   bMat.albedoColor = wel.type === "frame" ? new BABYLON.Color3(0.8, 0.8, 0.8) : BABYLON.Color3.Blue();
                   getWallImageDataUrl(wel.idbKey).then((dataUrl) => {
-                    if (dataUrl && !bMat.isDisposed()) {
+                    if (dataUrl && !bMat.isDisposed && !mount.isDisposed()) {
                       const tex = new BABYLON.Texture(dataUrl, scene);
                       tex.hasAlpha = true;
                       bMat.albedoTexture = tex;
