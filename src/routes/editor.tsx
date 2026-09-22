@@ -1472,7 +1472,7 @@ function EditorPage() {
                   boothConfig={boothConfig}
                   elements={elements}
                   activeView={blueprintView}
-                  onExportComplete={onExportComplete}
+                  onExportComplete={handleExportComplete}
                   onUpdateElement={handleUpdateElement}
                   onSelectElement={handleSelect}
                   selectedId={selectedId}
@@ -1601,7 +1601,7 @@ function EditorPage() {
                   boothConfig={boothConfig}
                   elements={elements}
                   activeView={blueprintView}
-                  onExportComplete={onExportComplete}
+                  onExportComplete={handleExportComplete}
                   onUpdateElement={handleUpdateElement}
                   onSelectElement={handleSelect}
                   selectedId={selectedId}
