@@ -135,6 +135,7 @@ function EditorPage() {
     return els.map(el => {
       if (!el) return el;
       let cleaned = { ...el };
+      // Strip top-level data: URLs
       if (typeof cleaned.customTexture === 'string' && cleaned.customTexture.startsWith('data:')) {
         delete cleaned.customTexture;
       }
@@ -147,6 +148,21 @@ function EditorPage() {
       if (typeof cleaned.svgData === 'string' && cleaned.svgData.length > 500000) {
         // truncate oversized uncompressed image data URLs attached to 3D logos
         delete cleaned.svgData;
+      }
+      // Strip data: URLs nested inside wallElements (banners, frames, etc.)
+      // These can be multi-MB base64 strings that blow the D1 payload limit
+      if (Array.isArray(cleaned.wallElements)) {
+        cleaned.wallElements = cleaned.wallElements.map((wel: any) => {
+          if (!wel) return wel;
+          const cleanedWel = { ...wel };
+          if (typeof cleanedWel.url === 'string' && cleanedWel.url.startsWith('data:')) {
+            delete cleanedWel.url;
+          }
+          if (typeof cleanedWel.customTexture === 'string' && cleanedWel.customTexture.startsWith('data:')) {
+            delete cleanedWel.customTexture;
+          }
+          return cleanedWel;
+        });
       }
       return cleaned;
     });
@@ -533,6 +549,20 @@ function EditorPage() {
           }
           if (cleaned.assetUrl?.startsWith('data:')) {
             delete cleaned.assetUrl;
+          }
+          if (cleaned.url?.startsWith('data:')) {
+            delete cleaned.url;
+          }
+          if (Array.isArray(cleaned.wallElements)) {
+            cleaned.wallElements = cleaned.wallElements.map((wel: any) => {
+              if (wel?.url && typeof wel.url === 'string' && wel.url.startsWith('data:image/')) {
+                // If data url is too large for local storage, don't let it blow the 5MB quota
+                if (wel.url.length > 100000) {
+                  return { ...wel, url: null };
+                }
+              }
+              return wel;
+            });
           }
           return cleaned;
         });
