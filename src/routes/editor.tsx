@@ -545,17 +545,22 @@ function EditorPage() {
     }
     if (!Array.isArray(cleanElements)) cleanElements = [];
 
+    boothConfigRef.current = cleanConfig;
     setBoothConfig(cleanConfig)
     if (!cleanConfig) {
       setWizardStep(1)
       localStorage.removeItem('stall-config')
     }
+    elementsRef.current = cleanElements;
     setElements(cleanElements)
-    setHistory([{
+    const initialSnap = {
       boothConfig: cleanConfig ? JSON.parse(JSON.stringify(cleanConfig)) : null,
       elements: JSON.parse(JSON.stringify(cleanElements)),
-    }])
-    setHistoryStep(0)
+    };
+    historyRef.current = [initialSnap];
+    historyStepRef.current = 0;
+    setHistory([initialSnap]);
+    setHistoryStep(0);
     if (designId) {
       setCurrentDesignId(designId)
       localStorage.setItem('current-design-id', designId)
@@ -683,124 +688,150 @@ function EditorPage() {
     elements: any[];
   }
 
-  const [history, setHistory] = useState<HistorySnapshot[]>(() => {
-    if (initialData.config || initialData.elements) {
-      return [{
+  const initialSnap: HistorySnapshot[] = (initialData.config || initialData.elements)
+    ? [{
         boothConfig: JSON.parse(JSON.stringify(initialData.config || null)),
         elements: JSON.parse(JSON.stringify(initialData.elements || [])),
-      }];
-    }
-    return [];
-  });
-  const [historyStep, setHistoryStep] = useState(initialData.config || initialData.elements ? 0 : -1);
+      }]
+    : [];
+  const initialStep = initialSnap.length > 0 ? 0 : -1;
+
+  const [history, setHistory] = useState<HistorySnapshot[]>(initialSnap);
+  const [historyStep, setHistoryStep] = useState(initialStep);
+  const historyRef = useRef<HistorySnapshot[]>(initialSnap);
+  const historyStepRef = useRef<number>(initialStep);
   const isUndoingRef = useRef(false);
 
   // Push state snapshot to history
   const saveToHistory = useCallback((newConfig: any, newElements: any[]) => {
     if (isUndoingRef.current) return;
     try {
-      const snap: HistorySnapshot = {
-        boothConfig: newConfig ? JSON.parse(JSON.stringify(newConfig)) : null,
-        elements: Array.isArray(newElements) ? JSON.parse(JSON.stringify(newElements)) : [],
-      };
+      const snapConfig = newConfig ? JSON.parse(JSON.stringify(newConfig)) : null;
+      const snapElements = Array.isArray(newElements) ? JSON.parse(JSON.stringify(newElements)) : [];
+      const currentStep = historyStepRef.current;
+      const currentHist = historyRef.current;
+      const next = currentHist.slice(0, currentStep + 1);
 
-      setHistory(prev => {
-        const next = prev.slice(0, historyStep + 1);
-        // Avoid duplicate identical snapshots
-        if (next.length > 0) {
-          const last = next[next.length - 1];
-          if (
-            JSON.stringify(last.boothConfig) === JSON.stringify(snap.boothConfig) &&
-            JSON.stringify(last.elements) === JSON.stringify(snap.elements)
-          ) {
-            return prev;
-          }
+      // Avoid duplicate identical snapshots
+      if (next.length > 0) {
+        const last = next[next.length - 1];
+        if (
+          JSON.stringify(last.boothConfig) === JSON.stringify(snapConfig) &&
+          JSON.stringify(last.elements) === JSON.stringify(snapElements)
+        ) {
+          return;
         }
-        return [...next, snap];
-      });
-      setHistoryStep(prev => prev + 1);
+      }
+
+      const updatedHistory = [...next, { boothConfig: snapConfig, elements: snapElements }];
+      const nextStep = updatedHistory.length - 1;
+
+      historyRef.current = updatedHistory;
+      historyStepRef.current = nextStep;
+      setHistory(updatedHistory);
+      setHistoryStep(nextStep);
     } catch (e) {
       console.warn('Failed to snapshot history:', e);
     }
-  }, [historyStep]);
+  }, []);
 
-  const undo = () => {
-    if (historyStep > 0) {
-      const targetStep = historyStep - 1;
-      const targetSnap = history[targetStep];
+  const undo = useCallback(() => {
+    const currentStep = historyStepRef.current;
+    const currentHist = historyRef.current;
+    if (currentStep > 0) {
+      const targetStep = currentStep - 1;
+      const targetSnap = currentHist[targetStep];
       if (targetSnap) {
         isUndoingRef.current = true;
-        if (targetSnap.boothConfig) setBoothConfig(JSON.parse(JSON.stringify(targetSnap.boothConfig)));
-        setElements(JSON.parse(JSON.stringify(targetSnap.elements || [])));
+        historyStepRef.current = targetStep;
         setHistoryStep(targetStep);
+
+        const targetCfg = targetSnap.boothConfig ? JSON.parse(JSON.stringify(targetSnap.boothConfig)) : null;
+        boothConfigRef.current = targetCfg;
+        setBoothConfig(targetCfg);
+
+        const targetEls = JSON.parse(JSON.stringify(targetSnap.elements || []));
+        elementsRef.current = targetEls;
+        setElements(targetEls);
+
         setSelectedId(null);
         setTimeout(() => {
           isUndoingRef.current = false;
-        }, 50);
+        }, 100);
       }
     }
-  };
+  }, []);
 
-  const redo = () => {
-    if (historyStep < history.length - 1) {
-      const targetStep = historyStep + 1;
-      const targetSnap = history[targetStep];
+  const redo = useCallback(() => {
+    const currentStep = historyStepRef.current;
+    const currentHist = historyRef.current;
+    if (currentStep < currentHist.length - 1) {
+      const targetStep = currentStep + 1;
+      const targetSnap = currentHist[targetStep];
       if (targetSnap) {
         isUndoingRef.current = true;
-        if (targetSnap.boothConfig) setBoothConfig(JSON.parse(JSON.stringify(targetSnap.boothConfig)));
-        setElements(JSON.parse(JSON.stringify(targetSnap.elements || [])));
+        historyStepRef.current = targetStep;
         setHistoryStep(targetStep);
+
+        const targetCfg = targetSnap.boothConfig ? JSON.parse(JSON.stringify(targetSnap.boothConfig)) : null;
+        boothConfigRef.current = targetCfg;
+        setBoothConfig(targetCfg);
+
+        const targetEls = JSON.parse(JSON.stringify(targetSnap.elements || []));
+        elementsRef.current = targetEls;
+        setElements(targetEls);
+
         setSelectedId(null);
         setTimeout(() => {
           isUndoingRef.current = false;
-        }, 50);
+        }, 100);
       }
     }
-  };
+  }, []);
 
   const handleUpdateElement = useCallback((id: string, newProps: any) => {
-    setElements(prev => {
-      const updated = prev.map((el) => (el.id === id ? { ...el, ...newProps } : el));
-      saveToHistory(boothConfigRef.current, updated);
-      return updated;
-    });
+    const prev = elementsRef.current;
+    const updated = prev.map((el) => (el.id === id ? { ...el, ...newProps } : el));
+    elementsRef.current = updated;
+    setElements(updated);
+    saveToHistory(boothConfigRef.current, updated);
   }, [saveToHistory]);
 
   const handleDeleteElement = useCallback((id: string) => {
-    setElements(prev => {
-      const filtered = prev.filter((el) => el.id !== id);
-      const deletedEl = prev.find(el => el.id === id);
-      if (deletedEl?.isOuter && boothConfigRef.current?.walls) {
-        const wallKey = id === 'outer-north' ? 'north' : id === 'outer-south' ? 'south' : id === 'outer-west' ? 'west' : id === 'outer-east' ? 'east' : null;
-        if (wallKey) {
-          const updatedConfig = {
-            ...boothConfigRef.current,
-            walls: {
-              ...boothConfigRef.current.walls,
-              [wallKey]: false
-            }
-          };
-          setBoothConfig(updatedConfig);
-          saveToHistory(updatedConfig, filtered);
-          return filtered;
-        }
+    const prev = elementsRef.current;
+    const filtered = prev.filter((el) => el.id !== id);
+    const deletedEl = prev.find(el => el.id === id);
+    let targetConfig = boothConfigRef.current;
+    if (deletedEl?.isOuter && boothConfigRef.current?.walls) {
+      const wallKey = id === 'outer-north' ? 'north' : id === 'outer-south' ? 'south' : id === 'outer-west' ? 'west' : id === 'outer-east' ? 'east' : null;
+      if (wallKey) {
+        targetConfig = {
+          ...boothConfigRef.current,
+          walls: {
+            ...boothConfigRef.current.walls,
+            [wallKey]: false
+          }
+        };
+        boothConfigRef.current = targetConfig;
+        setBoothConfig(targetConfig);
       }
-      saveToHistory(boothConfigRef.current, filtered);
-      return filtered;
-    });
+    }
+    elementsRef.current = filtered;
+    setElements(filtered);
+    saveToHistory(targetConfig, filtered);
     if (selectedId === id) setSelectedId(null);
   }, [selectedId, saveToHistory]);
 
   const addElement = useCallback((newEl: any) => {
-    setElements(prev => {
-      const updated = [...prev, newEl];
-      saveToHistory(boothConfigRef.current, updated);
-      return updated;
-    });
+    const updated = [...elementsRef.current, newEl];
+    elementsRef.current = updated;
+    setElements(updated);
+    saveToHistory(boothConfigRef.current, updated);
   }, [saveToHistory]);
 
   // Wrapper for canvas setElements so drag & transform are recorded in history
   const handleCanvasSetElements = useCallback((newElements: any[]) => {
+    elementsRef.current = newElements;
     setElements(newElements);
     saveToHistory(boothConfigRef.current, newElements);
   }, [saveToHistory]);
@@ -808,21 +839,33 @@ function EditorPage() {
   // Handle Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const isInput = document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA';
+
       // Undo / Redo
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
-        if (e.shiftKey) redo();
-        else undo();
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z')) {
+        if (!isInput) {
+          e.preventDefault();
+          if (e.shiftKey) redo();
+          else undo();
+        }
+      } else if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || e.key === 'Y')) {
+        if (!isInput) {
+          e.preventDefault();
+          redo();
+        }
       }
 
       // Deletion
       if ((e.key === 'Backspace' || e.key === 'Delete') && selectedId && !editingWallId) {
-        if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
-        handleDeleteElement(selectedId);
+        if (!isInput) {
+          e.preventDefault();
+          handleDeleteElement(selectedId);
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, historyStep, history, editingWallId]);
+  }, [selectedId, editingWallId, undo, redo, handleDeleteElement]);
 
   const reportScreenshotsRef = useRef<Record<string, string>>({})
 

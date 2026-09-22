@@ -337,8 +337,12 @@ export const CloudProjectsDrawer: React.FC<CloudProjectsDrawerProps> = ({
       } else {
         localStorage.removeItem('current-project-id')
       }
-      onLoadProject(config, Array.isArray(elements) ? elements : [], design.id, design.name)
-      onClose()
+      if (typeof onLoadProject === 'function') {
+        onLoadProject(config, Array.isArray(elements) ? elements : [], design.id, design.name)
+      }
+      if (typeof onClose === 'function') {
+        onClose()
+      }
     } catch (e) {
       console.error('Failed to parse design data', e)
       alert('Error loading design data')
