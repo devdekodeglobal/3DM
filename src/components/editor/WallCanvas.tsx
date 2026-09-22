@@ -53,20 +53,33 @@ const WallElements = React.memo(({ elements, activeSide, selectedId, onSelect, o
           else if (dir === 'bottom-left') points = [0, 0, 0, el.height, el.width, el.height]
           else if (dir === 'bottom-right') points = [el.width, 0, 0, el.height, el.width, el.height]
 
+          const rot = el.rotation || 0
+
           return (
             <Group
               key={el.id}
               id={'el-' + el.id}
-              x={el.x}
-              y={el.y}
+              x={el.x + el.width / 2}
+              y={el.y + el.height / 2}
+              offsetX={el.width / 2}
+              offsetY={el.height / 2}
+              rotation={rot}
               width={el.width}
               height={el.height}
               draggable
               onMouseDown={() => onSelect(el.id)}
               onClick={() => onSelect(el.id)}
               onTap={() => onSelect(el.id)}
-              onDragMove={(e) => onDragMove(i, e)}
-              onDragEnd={(e) => onDragEnd(i, e)}
+              onDragMove={(e) => {
+                const nx = e.target.x() - el.width / 2
+                const ny = e.target.y() - el.height / 2
+                onDragMove(i, { target: { x: () => nx, y: () => ny } })
+              }}
+              onDragEnd={(e) => {
+                const nx = e.target.x() - el.width / 2
+                const ny = e.target.y() - el.height / 2
+                onDragEnd(i, { target: { x: () => nx, y: () => ny } })
+              }}
               onTransform={(e) => onTransform(i, e)}
               onTransformEnd={(e) => onTransformEnd(i, e)}
             >
@@ -604,28 +617,60 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
                 )}
 
                 {/* Diagonal direction picker */}
+                {/* Diagonal direction picker & rotation */}
                 {selectedEl.type === 'diagonal_paint' && (
-                  <div className="pt-2">
-                    <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold block mb-1">Diagonal Split Corner</label>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {[
-                        { id: 'top-left', label: 'Top-Left ◤' },
-                        { id: 'top-right', label: 'Top-Right ◥' },
-                        { id: 'bottom-left', label: 'Bottom-Left ◣' },
-                        { id: 'bottom-right', label: 'Bottom-Right ◢' },
-                      ].map(dir => (
+                  <div className="pt-2 space-y-2">
+                    <div>
+                      <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold block mb-1">Diagonal Split Corner</label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { id: 'top-left', label: 'Top-Left ◤' },
+                          { id: 'top-right', label: 'Top-Right ◥' },
+                          { id: 'bottom-left', label: 'Bottom-Left ◣' },
+                          { id: 'bottom-right', label: 'Bottom-Right ◢' },
+                        ].map(dir => (
+                          <button
+                            key={dir.id}
+                            onClick={() => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, direction: dir.id } : el))}
+                            className={`py-1.5 px-2 rounded-lg border text-[10px] font-bold transition ${
+                              (selectedEl.direction || 'top-left') === dir.id
+                                ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
+                                : 'bg-[var(--sand)] text-[var(--sea-ink)] border-[var(--line)] hover:border-[var(--lagoon)]'
+                            }`}
+                          >
+                            {dir.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold">Rotation ({selectedEl.rotation || 0}°)</label>
                         <button
-                          key={dir.id}
-                          onClick={() => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, direction: dir.id } : el))}
-                          className={`py-1.5 px-2 rounded-lg border text-[10px] font-bold transition ${
-                            (selectedEl.direction || 'top-left') === dir.id
-                              ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
-                              : 'bg-[var(--sand)] text-[var(--sea-ink)] border-[var(--line)] hover:border-[var(--lagoon)]'
-                          }`}
+                          type="button"
+                          onClick={() => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, rotation: ((el.rotation || 0) + 90) % 360 } : el))}
+                          className="text-[10px] text-[var(--lagoon-deep)] font-bold hover:underline flex items-center gap-1"
                         >
-                          {dir.label}
+                          ↻ Rotate +90°
                         </button>
-                      ))}
+                      </div>
+                      <div className="grid grid-cols-4 gap-1">
+                        {[0, 90, 180, 270].map(deg => (
+                          <button
+                            key={deg}
+                            type="button"
+                            onClick={() => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, rotation: deg } : el))}
+                            className={`py-1 px-1 rounded-lg border text-[10px] font-bold text-center transition ${
+                              (selectedEl.rotation || 0) === deg
+                                ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
+                                : 'bg-[var(--sand)] text-[var(--sea-ink)] border-[var(--line)] hover:border-[var(--lagoon)]'
+                            }`}
+                          >
+                            {deg}°
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}

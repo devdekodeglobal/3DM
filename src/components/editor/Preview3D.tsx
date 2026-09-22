@@ -1734,7 +1734,12 @@ export default function Preview3D({
                   localY,
                   zSign * (dValW / 2 + 0.004 + index * 0.002),
                 );
-                if (isBack) mount.rotation.y = Math.PI;
+                if (isBack) {
+                  mount.rotation.y = Math.PI;
+                  mount.rotation.z = BABYLON.Tools.ToRadians(wel.rotation || 0);
+                } else {
+                  mount.rotation.z = -BABYLON.Tools.ToRadians(wel.rotation || 0);
+                }
                 const pMat = new BABYLON.PBRMaterial("diag_pmat_" + index, scene);
                 pMat.zOffset = -index * 3 - 2;
                 pMat.backFaceCulling = false;
@@ -2166,7 +2171,12 @@ export default function Preview3D({
                   localY,
                   zSign * (dVal / 2 + 0.004 + index * 0.002),
                 );
-                if (isBack) mount.rotation.y = Math.PI;
+                if (isBack) {
+                  mount.rotation.y = Math.PI;
+                  mount.rotation.z = BABYLON.Tools.ToRadians(wel.rotation || 0);
+                } else {
+                  mount.rotation.z = -BABYLON.Tools.ToRadians(wel.rotation || 0);
+                }
                 const pMat = new BABYLON.PBRMaterial("diag_pmat_" + index, scene);
                 pMat.zOffset = -index * 3 - 2;
                 pMat.backFaceCulling = false;
