@@ -272,7 +272,9 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
     const lightProps = type === 'light' ? {
       lightColor: '#fff8e7',
       intensity: 1.2,
-      model: 'wall_light_1'
+      model: 'wall_light_1',
+      lightDirection: 'down',
+      softGlow: true
     } : {}
 
     const isCutout = ['door', 'window'].includes(type)
@@ -581,6 +583,54 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
                           )
                         })}
                       </div>
+                    </div>
+
+                    {/* --- Light Direction (Wall Wash / Downlight) --- */}
+                    <div className="pt-2">
+                      <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold block mb-1.5">Light Direction</label>
+                      <div className="grid grid-cols-3 gap-1">
+                        {[
+                          { val: 'down', label: 'Downlight ⮟', sub: 'Wall Wash' },
+                          { val: 'forward', label: 'Forward ⮞', sub: 'Spotlight' },
+                          { val: 'up', label: 'Uplight ⮝', sub: 'Ceiling Wash' },
+                        ].map(dirOpt => {
+                          const isActive = (selectedEl.lightDirection || 'down') === dirOpt.val
+                          return (
+                            <button
+                              key={dirOpt.val}
+                              type="button"
+                              onClick={() => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, lightDirection: dirOpt.val } : el))}
+                              className={`py-1.5 px-1 rounded-lg border text-center transition-all ${
+                                isActive
+                                  ? 'bg-[var(--brand)] text-white border-[var(--brand)] shadow-sm font-bold'
+                                  : 'bg-[var(--sand)] text-[var(--sea-ink)] border-[var(--line)] hover:border-[var(--lagoon)]'
+                              }`}
+                            >
+                              <div className="text-[10px] leading-tight">{dirOpt.label}</div>
+                              <div className={`text-[8px] ${isActive ? 'text-white/80' : 'text-[var(--sea-ink-soft)]'}`}>{dirOpt.sub}</div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* --- Soft Wall Scallop Glow --- */}
+                    <div className="pt-2 flex items-center justify-between">
+                      <div>
+                        <label className="text-[10px] text-[var(--sea-ink-soft)] font-bold block">Soft Wall Scallop</label>
+                        <span className="text-[9px] text-[var(--sea-ink-soft)] opacity-70">Feathered gradient on wall</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, softGlow: selectedEl.softGlow === false ? true : false } : el))}
+                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold transition-all ${
+                          (selectedEl.softGlow ?? true)
+                            ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
+                            : 'bg-[var(--sand)] text-[var(--sea-ink)] border-[var(--line)]'
+                        }`}
+                      >
+                        {(selectedEl.softGlow ?? true) ? 'Enabled ✓' : 'Off'}
+                      </button>
                     </div>
 
                     {/* --- Luminosity Slider --- */}

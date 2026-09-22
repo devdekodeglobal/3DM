@@ -1354,6 +1354,58 @@ export default function Preview3D({
     }
     // --- END SMART BUTT JOINT CALCULATION ---
 
+    // Soft downward wall wash scallop texture generator (cached per color)
+    const scallopTextureCache = new Map<string, BABYLON.Texture>();
+    const getOrCreateScallopTexture = (colorHex: string, dir: string) => {
+      const cacheKey = `${colorHex}_${dir}`;
+      if (scallopTextureCache.has(cacheKey)) {
+        return scallopTextureCache.get(cacheKey)!;
+      }
+      const cs = 512;
+      const cv = document.createElement("canvas");
+      cv.width = cs;
+      cv.height = cs;
+      const ctx = cv.getContext("2d")!;
+      ctx.clearRect(0, 0, cs, cs);
+
+      const isUp = dir === "up";
+      const originX = cs / 2;
+      const originY = isUp ? cs - 20 : 20;
+      const rad = cs * 0.95;
+
+      const grad = ctx.createRadialGradient(originX, originY, 5, originX, originY, rad);
+      grad.addColorStop(0, "rgba(255,255,255,0.95)");
+      grad.addColorStop(0.12, "rgba(255,255,255,0.80)");
+      grad.addColorStop(0.35, "rgba(255,255,255,0.45)");
+      grad.addColorStop(0.65, "rgba(255,255,255,0.15)");
+      grad.addColorStop(1.0, "rgba(255,255,255,0.0)");
+
+      ctx.save();
+      ctx.fillStyle = grad;
+
+      // Scallop parabolic mask clipping
+      ctx.beginPath();
+      if (isUp) {
+        ctx.moveTo(originX, originY);
+        ctx.lineTo(cs * 0.05, 0);
+        ctx.lineTo(cs * 0.95, 0);
+      } else {
+        ctx.moveTo(originX, originY);
+        ctx.lineTo(cs * 0.05, cs);
+        ctx.lineTo(cs * 0.95, cs);
+      }
+      ctx.closePath();
+      ctx.clip();
+
+      ctx.fillRect(0, 0, cs, cs);
+      ctx.restore();
+
+      const tex = new BABYLON.Texture(cv.toDataURL(), scene);
+      tex.hasAlpha = true;
+      scallopTextureCache.set(cacheKey, tex);
+      return tex;
+    };
+
     const applyWallMaterial = (
       mesh: BABYLON.AbstractMesh,
       el: any,
@@ -1703,19 +1755,72 @@ export default function Preview3D({
                 mount.material = lMat;
                 mount.position.set(localX, localY, zSign * (dValW / 2 + 0.025));
 
+                const lDir = wel.lightDirection || "down";
+                const hasSoftGlow = wel.softGlow !== false;
+
+                // Configure physical SpotLight direction and cone based on chosen lightDirection
+                let spotDir = new BABYLON.Vector3(0, 0, zSign);
+                let spotAngle = Math.PI / 3;
+                let spotPenumbra = 1.5;
+
+                if (lDir === "down") {
+                  // Grazing downwards along wall with slight outward offset
+                  spotDir = new BABYLON.Vector3(0, -0.92, zSign * 0.38).normalize();
+                  spotAngle = Math.PI / 2.2;
+                  spotPenumbra = 1.8;
+                } else if (lDir === "up") {
+                  // Grazing upwards along wall towards ceiling
+                  spotDir = new BABYLON.Vector3(0, 0.92, zSign * 0.38).normalize();
+                  spotAngle = Math.PI / 2.2;
+                  spotPenumbra = 1.8;
+                }
+
                 const spot = new BABYLON.SpotLight(
                   "spot_" + index,
                   new BABYLON.Vector3(0, 0, zSign * 0.05),
-                  new BABYLON.Vector3(0, 0, zSign),
-                  Math.PI / 3, // 60 degree soft cone
-                  1.5, // soft penumbra
+                  spotDir,
+                  spotAngle,
+                  spotPenumbra,
                   scene,
                 );
                 spot.diffuse = lColor;
-                spot.intensity = lIntensity * 2.2;
-                spot.range = 4.0; // Localized light reach
+                spot.intensity = lIntensity * 2.5;
+                spot.range = 4.5;
                 spot.falloffType = BABYLON.Light.FALLOFF_PHYSICAL;
                 spot.parent = mount;
+
+                // If soft wall scallop glow is enabled for down/up lights, add a luminous feathered decal plane on wall
+                if (hasSoftGlow && (lDir === "down" || lDir === "up")) {
+                  const scallopW = Math.max(0.6, cutW * 3.2);
+                  const scallopH = Math.max(0.9, cutH * 4.5);
+                  const scallopPlane = BABYLON.MeshBuilder.CreatePlane(
+                    "scallop_" + index,
+                    { width: scallopW, height: scallopH },
+                    scene,
+                  );
+                  const yShift = lDir === "down" ? -scallopH / 2 + 0.02 : scallopH / 2 - 0.02;
+                  scallopPlane.position.set(
+                    localX,
+                    localY + yShift,
+                    zSign * (dValW / 2 + 0.003),
+                  );
+                  if (isBack) scallopPlane.rotation.y = Math.PI;
+
+                  const scMat = new BABYLON.PBRMaterial("scallop_mat_" + index, scene);
+                  scMat.zOffset = -15;
+                  scMat.backFaceCulling = false;
+                  scMat.twoSidedLighting = true;
+                  scMat.roughness = 1.0;
+                  scMat.metallic = 0.0;
+                  scMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+                  scMat.alphaMode = BABYLON.Engine.ALPHA_ADD; // Soft luminous additive wash
+                  scMat.emissiveColor = lColor;
+                  scMat.emissiveIntensity = Math.min(1.2, lIntensity * 0.7);
+                  scMat.opacityTexture = getOrCreateScallopTexture(wel.lightColor || "#fff8e7", lDir);
+                  scallopPlane.material = scMat;
+                  scallopPlane.parent = mesh;
+                  newDecorations.push(scallopPlane);
+                }
               } else if (wel.type === "diagonal_paint") {
                 // Same CreatePlane as paint, but with a canvas triangle texture
                 // so only the triangular half is visible (transparent outside)
@@ -2141,20 +2246,68 @@ export default function Preview3D({
                 lMat.roughness = 0.2;
                 mount.material = lMat;
                 mount.position.set(localX, localY, zSign * (dVal / 2 + 0.025));
+                const lDir = wel.lightDirection || "down";
+                const hasSoftGlow = wel.softGlow !== false;
+
+                let spotDir = new BABYLON.Vector3(0, 0, zSign);
+                let spotAngle = Math.PI / 3;
+                let spotPenumbra = 1.5;
+
+                if (lDir === "down") {
+                  spotDir = new BABYLON.Vector3(0, -0.92, zSign * 0.38).normalize();
+                  spotAngle = Math.PI / 2.2;
+                  spotPenumbra = 1.8;
+                } else if (lDir === "up") {
+                  spotDir = new BABYLON.Vector3(0, 0.92, zSign * 0.38).normalize();
+                  spotAngle = Math.PI / 2.2;
+                  spotPenumbra = 1.8;
+                }
 
                 const spot = new BABYLON.SpotLight(
-                  "spot",
+                  "spot_" + index,
                   new BABYLON.Vector3(0, 0, zSign * 0.05),
-                  new BABYLON.Vector3(0, 0, zSign),
-                  Math.PI / 3, // 60 degree soft cone
-                  1.5, // soft penumbra
+                  spotDir,
+                  spotAngle,
+                  spotPenumbra,
                   scene,
                 );
                 spot.diffuse = lColor;
-                spot.intensity = lIntensity * 2.2;
-                spot.range = 4.0; // Localized light reach
+                spot.intensity = lIntensity * 2.5;
+                spot.range = 4.5;
                 spot.falloffType = BABYLON.Light.FALLOFF_PHYSICAL;
                 spot.parent = mount;
+
+                if (hasSoftGlow && (lDir === "down" || lDir === "up")) {
+                  const scallopW = Math.max(0.6, cutW * 3.2);
+                  const scallopH = Math.max(0.9, cutH * 4.5);
+                  const scallopPlane = BABYLON.MeshBuilder.CreatePlane(
+                    "scallop_" + index,
+                    { width: scallopW, height: scallopH },
+                    scene,
+                  );
+                  const yShift = lDir === "down" ? -scallopH / 2 + 0.02 : scallopH / 2 - 0.02;
+                  scallopPlane.position.set(
+                    localX,
+                    localY + yShift,
+                    zSign * (dVal / 2 + 0.003),
+                  );
+                  if (isBack) scallopPlane.rotation.y = Math.PI;
+
+                  const scMat = new BABYLON.PBRMaterial("scallop_mat_" + index, scene);
+                  scMat.zOffset = -15;
+                  scMat.backFaceCulling = false;
+                  scMat.twoSidedLighting = true;
+                  scMat.roughness = 1.0;
+                  scMat.metallic = 0.0;
+                  scMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+                  scMat.alphaMode = BABYLON.Engine.ALPHA_ADD;
+                  scMat.emissiveColor = lColor;
+                  scMat.emissiveIntensity = Math.min(1.2, lIntensity * 0.7);
+                  scMat.opacityTexture = getOrCreateScallopTexture(wel.lightColor || "#fff8e7", lDir);
+                  scallopPlane.material = scMat;
+                  scallopPlane.parent = mesh;
+                  newDecorations.push(scallopPlane);
+                }
               } else if (wel.type === "diagonal_paint") {
                 const dir = wel.direction || "top-left";
                 mount = BABYLON.MeshBuilder.CreatePlane(
