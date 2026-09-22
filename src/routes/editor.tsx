@@ -129,10 +129,33 @@ function EditorPage() {
   const projectNameRef = useRef(projectName)
   projectNameRef.current = projectName
 
+  // Clean elements to keep cloud design payloads compact
+  const sanitizeDesignElements = (els: any[]) => {
+    if (!Array.isArray(els)) return [];
+    return els.map(el => {
+      if (!el) return el;
+      let cleaned = { ...el };
+      if (typeof cleaned.customTexture === 'string' && cleaned.customTexture.startsWith('data:')) {
+        delete cleaned.customTexture;
+      }
+      if (typeof cleaned.assetUrl === 'string' && cleaned.assetUrl.startsWith('data:')) {
+        delete cleaned.assetUrl;
+      }
+      if (typeof cleaned.url === 'string' && cleaned.url.startsWith('data:')) {
+        delete cleaned.url;
+      }
+      if (typeof cleaned.svgData === 'string' && cleaned.svgData.length > 500000) {
+        // truncate oversized uncompressed image data URLs attached to 3D logos
+        delete cleaned.svgData;
+      }
+      return cleaned;
+    });
+  };
+
   // Helper to sync or resume current editor design into user's account
   const syncCurrentDesignToProfile = useCallback(async (user: any, reason: 'login' | 'space_cleared' = 'login', existingDesigns?: any[]) => {
     const activeConfig = boothConfigRef.current
-    const activeElements = elementsRef.current
+    const activeElements = sanitizeDesignElements(elementsRef.current)
     const activeDesignId = currentDesignIdRef.current
     const activeProjectName = projectNameRef.current
 
@@ -535,7 +558,7 @@ function EditorPage() {
         await updateDesign(currentDesignId, {
           name: projectName || 'Untitled Design',
           config: boothConfig,
-          elements: elements || []
+          elements: sanitizeDesignElements(elements || [])
         });
         setSyncStatus('saved')
       } catch (err: any) {

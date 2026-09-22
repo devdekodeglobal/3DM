@@ -1395,8 +1395,10 @@ export default function Preview3D({
         }
 
         if (el.material === "custom_color" || el.color) {
-          mat.albedoColor = BABYLON.Color3.FromHexString(el.color || "#f0f0f0");
+          mat.albedoColor = BABYLON.Color3.FromHexString(el.color || "#f0f0f0").toLinearSpace();
           mat.albedoTexture = null;
+          mat.roughness = 0.75;
+          mat.metallic = 0.0;
         } else if (texName) {
           const texUrl = `/assets/textures/${texName}.png`;
           if (
@@ -1416,8 +1418,10 @@ export default function Preview3D({
             currentTex.vScale = (hVal * vScale) / 2;
           }
         } else {
-          mat.albedoColor = new BABYLON.Color3(0.92, 0.92, 0.92);
+          mat.albedoColor = new BABYLON.Color3(0.92, 0.92, 0.92).toLinearSpace();
           mat.albedoTexture = null;
+          mat.roughness = 0.75;
+          mat.metallic = 0.0;
         }
       }
       mesh.material = mat;
@@ -1784,8 +1788,8 @@ export default function Preview3D({
                 pMat.zOffset = -index * 3 - 2;
                 pMat.backFaceCulling = false;
                 pMat.twoSidedLighting = true;
-                pMat.roughness = 0.55;
-                pMat.metallic = 0.05;
+                pMat.roughness = 0.75;
+                pMat.metallic = 0.0;
                 if (wel.url) {
                   const tex = new BABYLON.Texture(wel.url, scene);
                   tex.hasAlpha = true;
@@ -1794,7 +1798,7 @@ export default function Preview3D({
                   pMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
                   pMat.albedoColor = BABYLON.Color3.White();
                 } else {
-                  pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#0ea5e9");
+                  pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#0ea5e9").toLinearSpace();
                 }
                 pMat.alpha = wel.opacity ?? 1.0;
                 mount.material = pMat;
@@ -2213,8 +2217,8 @@ export default function Preview3D({
                 pMat.zOffset = -index * 3 - 2;
                 pMat.backFaceCulling = false;
                 pMat.twoSidedLighting = true;
-                pMat.roughness = 0.55;
-                pMat.metallic = 0.05;
+                pMat.roughness = 0.75;
+                pMat.metallic = 0.0;
                 if (wel.url) {
                   const tex = new BABYLON.Texture(wel.url, scene);
                   tex.hasAlpha = true;
@@ -2223,7 +2227,7 @@ export default function Preview3D({
                   pMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
                   pMat.albedoColor = BABYLON.Color3.White();
                 } else {
-                  pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#0ea5e9");
+                  pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#0ea5e9").toLinearSpace();
                 }
                 pMat.alpha = wel.opacity ?? 1.0;
                 mount.material = pMat;

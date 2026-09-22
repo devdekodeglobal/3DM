@@ -9,7 +9,7 @@ interface Env {
   DB: D1Database
 }
 
-const MAX_DESIGN_PAYLOAD_SIZE = 2 * 1024 * 1024 // 2MB
+const MAX_DESIGN_PAYLOAD_SIZE = 10 * 1024 * 1024 // 10MB
 
 // GET /api/designs — list all designs for current user
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {

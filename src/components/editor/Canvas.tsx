@@ -58,8 +58,12 @@ const LetterMarkAsset = ({ shapeProps, onSelect, onChange, isDarkMode }: any) =>
         const scaleY = node.scaleY()
         node.scaleX(1)
         node.scaleY(1)
-        const newW = Math.max(10, node.width() * scaleX)
-        const newH = Math.max(10, node.height() * scaleY)
+        const newW = Math.max(10, Math.round(node.width() * scaleX))
+        const newH = Math.max(10, Math.round(node.height() * scaleY))
+        node.width(newW)
+        node.height(newH)
+        node.offsetX(newW / 2)
+        node.offsetY(newH / 2)
         onChange({
           ...shapeProps,
           x: node.x(),
@@ -1439,8 +1443,13 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
       height: snapToGrid(newProps.height)
     }
 
-    const newElements = elements.slice()
-    newElements[index] = snappedProps
+    const targetId = newProps?.id;
+    const newElements = elements.map((el, idx) => {
+      if (targetId ? el.id === targetId : idx === index) {
+        return snappedProps;
+      }
+      return el;
+    });
     setElements(newElements)
   }
 
@@ -1798,7 +1807,9 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
                   : ['caged-wall', 'caged-panel', 'panel', 'pillar'].includes(selectedElement?.type)
                   ? [] // Resized via custom drag dots and Properties panel only
                   : selectedElement?.type === 'asset'
-                  ? ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+                  ? (selectedElement?.categoryFolder === 'custom' || selectedElement?.isCustomAsset
+                      ? ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+                      : [])
                   : ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']
               }
               keepRatio={selectedElement?.type === 'asset'}

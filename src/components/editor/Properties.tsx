@@ -146,7 +146,8 @@ export default function Properties({
                             ...(selectedElement.type === 'asset' ? { realWidth: Number((targetWidth / 100).toFixed(2)) } : {})
                           });
                         }}
-                        className="w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none"
+                        disabled={selectedElement.type === 'asset' && !(selectedElement.categoryFolder === 'custom' || selectedElement.isCustomAsset)}
+                        className={`w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none ${selectedElement.type === 'asset' && !(selectedElement.categoryFolder === 'custom' || selectedElement.isCustomAsset) ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
                     </div>
                     <div className="flex items-center gap-2">
@@ -163,7 +164,8 @@ export default function Properties({
                             ...(selectedElement.type === 'asset' ? { realDepth: Number(val.toFixed(2)) } : {})
                           });
                         }}
-                        className="w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none"
+                        disabled={selectedElement.type === 'asset' && !(selectedElement.categoryFolder === 'custom' || selectedElement.isCustomAsset)}
+                        className={`w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none ${selectedElement.type === 'asset' && !(selectedElement.categoryFolder === 'custom' || selectedElement.isCustomAsset) ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
                     </div>
                   </div>
