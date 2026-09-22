@@ -1749,6 +1749,7 @@ export default function Preview3D({
                   {
                     shape: corners,
                     sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                    earcutInjection: earcut,
                   },
                   scene,
                 );
@@ -2182,6 +2183,7 @@ export default function Preview3D({
                   {
                     shape: corners,
                     sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                    earcutInjection: earcut,
                   },
                   scene,
                 );

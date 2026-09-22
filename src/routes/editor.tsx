@@ -53,10 +53,9 @@ function getInitialData() {
   }
   if (!Array.isArray(parsedElements)) parsedElements = [];
 
-  // MIGRATION: If old save has structural walls in config but not in elements, convert them
-  if (parsedElements.length > 0 && config && typeof config === 'object' && config.width && config.depth) {
-    const hasOuterWalls = parsedElements.some((el: any) => el?.isOuter);
-    if (!hasOuterWalls && config.walls) {
+  // MIGRATION: Only convert old structural walls in config if savedElements was never created (initial load of an old save format)
+  if (savedElements === null && config && typeof config === 'object' && config.width && config.depth) {
+    if (config.walls) {
       const PPM = 100;
       const W = config.width * PPM;
       const D = config.depth * PPM;
@@ -642,6 +641,22 @@ function EditorPage() {
   const handleDeleteElement = useCallback((id: string) => {
     setElements(prev => {
       const filtered = prev.filter((el) => el.id !== id);
+      const deletedEl = prev.find(el => el.id === id);
+      if (deletedEl?.isOuter && boothConfigRef.current?.walls) {
+        const wallKey = id === 'outer-north' ? 'north' : id === 'outer-south' ? 'south' : id === 'outer-west' ? 'west' : id === 'outer-east' ? 'east' : null;
+        if (wallKey) {
+          const updatedConfig = {
+            ...boothConfigRef.current,
+            walls: {
+              ...boothConfigRef.current.walls,
+              [wallKey]: false
+            }
+          };
+          setBoothConfig(updatedConfig);
+          saveToHistory(updatedConfig, filtered);
+          return filtered;
+        }
+      }
       saveToHistory(boothConfigRef.current, filtered);
       return filtered;
     });
