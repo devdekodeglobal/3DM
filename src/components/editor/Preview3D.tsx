@@ -469,11 +469,13 @@ export default function Preview3D({
 
     if (floorType === "custom_color") {
       const cHex = boothConfig.floorColor || "#ffffff";
-      floorMat.albedoColor = BABYLON.Color3.FromHexString(cHex);
-      floorMat.roughness = 0.5;
+      floorMat.albedoColor = BABYLON.Color3.FromHexString(cHex).toLinearSpace();
+      floorMat.roughness = 0.65;
+      floorMat.metallic = 0.0;
     } else if (floorType === "carpet") {
-      floorMat.albedoColor = new BABYLON.Color3(0.18, 0.25, 0.31);
+      floorMat.albedoColor = new BABYLON.Color3(0.18, 0.25, 0.31).toLinearSpace();
       floorMat.roughness = 0.9; // Matte
+      floorMat.metallic = 0.0;
     } else {
       const texPath = `/assets/textures/${floorType}.png`;
       const texture = new BABYLON.Texture(texPath, scene);
@@ -2416,7 +2418,7 @@ export default function Preview3D({
           const w = (el.width / PPM) * Math.abs(el.scaleX || 1);
           const h = el.realHeight || 2.5;
           const d = el.realDepth || 0.1;
-          const baseColor = BABYLON.Color3.FromHexString(el.fill || "#aaaaaa");
+          const baseColor = BABYLON.Color3.FromHexString(el.fill || "#aaaaaa").toLinearSpace();
 
           let mesh: BABYLON.Mesh;
 
@@ -2471,11 +2473,13 @@ export default function Preview3D({
                 plate.receiveShadows = true;
                 offset += plateThickness + plateGap;
 
-                const pMat = new BABYLON.StandardMaterial(
+                const pMat = new BABYLON.PBRMaterial(
                   `${plateName}_mat`,
                   scene,
                 );
-                pMat.diffuseColor = baseColor;
+                pMat.albedoColor = baseColor;
+                pMat.roughness = 0.65;
+                pMat.metallic = 0.05;
                 plate.material = pMat;
               }
             } else {
@@ -2509,11 +2513,13 @@ export default function Preview3D({
                 plate.receiveShadows = true;
                 offset += plateThickness + plateGap;
 
-                const pMat = new BABYLON.StandardMaterial(
+                const pMat = new BABYLON.PBRMaterial(
                   `${plateName}_mat`,
                   scene,
                 );
-                pMat.diffuseColor = baseColor;
+                pMat.albedoColor = baseColor;
+                pMat.roughness = 0.65;
+                pMat.metallic = 0.05;
                 plate.material = pMat;
               }
             }
@@ -2530,8 +2536,10 @@ export default function Preview3D({
           mesh.rotation.y = rotY;
 
           if (el.type !== "caged-wall" && el.type !== "caged-panel") {
-            const mat = new BABYLON.StandardMaterial(el.id + "_mat", scene);
-            mat.diffuseColor = baseColor;
+            const mat = new BABYLON.PBRMaterial(el.id + "_mat", scene);
+            mat.albedoColor = baseColor;
+            mat.roughness = 0.65;
+            mat.metallic = 0.05;
             mesh.material = mat;
             shadowGenerator.addShadowCaster(mesh);
             mesh.receiveShadows = true;
@@ -2659,12 +2667,14 @@ export default function Preview3D({
               cMat.albedoTexture = tex;
               cMat.roughness = 0.3;
             } else if (el.textureType === 'carpet') {
-              cMat.albedoColor = BABYLON.Color3.FromHexString(el.fill || "#f59e0b");
+              cMat.albedoColor = BABYLON.Color3.FromHexString(el.fill || "#f59e0b").toLinearSpace();
               cMat.roughness = 0.95;
+              cMat.metallic = 0.0;
             } else {
               // Solid
-              cMat.albedoColor = BABYLON.Color3.FromHexString(el.fill || "#f59e0b");
-              cMat.roughness = 0.5;
+              cMat.albedoColor = BABYLON.Color3.FromHexString(el.fill || "#f59e0b").toLinearSpace();
+              cMat.roughness = 0.8;
+              cMat.metallic = 0.0;
             }
 
             cMat.alpha = el.opacity ?? 1.0;
