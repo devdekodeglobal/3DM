@@ -383,7 +383,6 @@ function EditorPage() {
   // Report Generation State
   const [isCapturingReport, setIsCapturingReport] = useState(false)
   const [captureQueue, setCaptureQueue] = useState<string[]>([])
-  const [reportScreenshots, setReportScreenshots] = useState<Record<string, string>>({})
   const [backgroundColor, setBackgroundColor] = useState('#1d1f21')
   const [reportModalData, setReportModalData] = useState<{
     isOpen: boolean;
@@ -476,7 +475,10 @@ function EditorPage() {
       localStorage.removeItem('stall-config')
     }
     setElements(cleanElements)
-    setHistory([cleanElements])
+    setHistory([{
+      boothConfig: cleanConfig ? JSON.parse(JSON.stringify(cleanConfig)) : null,
+      elements: JSON.parse(JSON.stringify(cleanElements)),
+    }])
     setHistoryStep(0)
     if (designId) {
       setCurrentDesignId(designId)
@@ -719,7 +721,6 @@ function EditorPage() {
     if (floorplan2D) {
       reportScreenshotsRef.current['floorplan_2d'] = floorplan2D
     }
-    setReportScreenshots(reportScreenshotsRef.current)
 
     // Queue: 1m metric grid top view + standard top view + standard directional elevations + specific wall elevations
     const queue = ['grid_top', 'top', 'north', 'south', 'east', 'west'];
@@ -763,20 +764,20 @@ function EditorPage() {
             projectName: res.projectName,
             docId: res.docId,
           });
-        }).catch(err => {
+        }).catch((err) => {
           console.error('[Report] Generation failed:', err);
-          showAlert('Failed to generate report.', 'error', 'Report Failed');
+          showAlert('Failed to compile engineering report. Please try again.', 'error', 'Report Error');
         });
-      }, 400);
+      }, 300);
     }
-  }, [captureQueue.length, isCapturingReport]);
+  }, [captureQueue, isCapturingReport, boothConfig, elements]);
 
-  const onExportComplete = useCallback((baseView: string, data?: string) => {
-    if (isCapturingReport && data) {
-      reportScreenshotsRef.current[baseView] = data;
-      setReportScreenshots(prev => ({ ...prev, [baseView]: data }))
+  const handleExportComplete = useCallback((baseView: any, base64Data?: string) => {
+    if (isCapturingReport && base64Data) {
+      reportScreenshotsRef.current[baseView] = base64Data
+      console.log(`[Report] Successfully captured: ${baseView}`)
       setCaptureQueue(prev => prev.slice(1))
-    } else {
+    } else if (!isCapturingReport) {
       setBlueprintView(baseView as any)
     }
   }, [isCapturingReport])
@@ -791,7 +792,7 @@ function EditorPage() {
         setBoothConfig(null)
         setWizardStep(1)
         setElements([])
-        saveToHistory([])
+        saveToHistory(null, [])
         setCurrentDesignId(null)
         setProjectName('Untitled Design')
         localStorage.setItem('is-fresh-guest-design', 'true')
@@ -814,7 +815,7 @@ function EditorPage() {
       confirmText: 'Clear',
       onConfirm: () => {
         setElements([])
-        saveToHistory([])
+        saveToHistory(boothConfigRef.current, [])
         setCurrentDesignId(null)
         setProjectName('Untitled Design')
         localStorage.removeItem('stall-elements')
@@ -855,7 +856,7 @@ function EditorPage() {
                 ]
                 setBoothConfig(newConfig)
                 setElements(initialWalls)
-                saveToHistory(initialWalls)
+                saveToHistory(newConfig, initialWalls)
 
                 if (sessionUser) {
                   if (currentDesignId) {
@@ -1122,7 +1123,7 @@ function EditorPage() {
                     const newConfig = { width: setupWidth, depth: setupDepth, wallThickness: setupWallThickness, walls: setupWalls, floorType: setupFloorType, floorColor: setupFloorColor }
                     setBoothConfig(newConfig)
                     setElements(initialElements)
-                    saveToHistory(initialElements)
+                    saveToHistory(newConfig, initialElements)
 
                     if (sessionUser) {
                       if (currentDesignId) {
