@@ -1725,11 +1725,11 @@ export default function Preview3D({
                   {
                     width: cutW,
                     height: cutH,
-                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                    sideOrientation: BABYLON.Mesh.FRONTSIDE,
                   },
                   scene,
                 );
-                const layerOffset = 0.006 + index * 0.003;
+                const layerOffset = 0.003 + index * 0.002;
                 mount.position.set(
                   localX,
                   localY,
@@ -1742,9 +1742,8 @@ export default function Preview3D({
                   mount.rotation.z = -BABYLON.Tools.ToRadians(wel.rotation || 0);
                 }
                 const pMat = new BABYLON.PBRMaterial("diag_pmat_" + index, scene);
-                pMat.zOffset = -10 - index * 4;
-                pMat.backFaceCulling = false;
-                pMat.twoSidedLighting = true;
+                pMat.zOffset = -1;
+                pMat.backFaceCulling = true;
                 pMat.roughness = 0.6;
                 pMat.metallic = 0.05;
                 // Draw triangle on canvas — transparent background, colored triangle
@@ -1782,11 +1781,11 @@ export default function Preview3D({
                   {
                     width: cutW,
                     height: cutH,
-                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                    sideOrientation: BABYLON.Mesh.FRONTSIDE,
                   },
                   scene,
                 );
-                const layerOffset = 0.006 + index * 0.003;
+                const layerOffset = 0.003 + index * 0.002;
                 mount.position.set(
                   localX,
                   localY,
@@ -1794,9 +1793,8 @@ export default function Preview3D({
                 );
                 if (isBack) mount.rotation.y = Math.PI;
                 const pMat = new BABYLON.PBRMaterial("pmat_" + index, scene);
-                pMat.zOffset = -10 - index * 4;
-                pMat.backFaceCulling = false;
-                pMat.twoSidedLighting = true;
+                pMat.zOffset = -1;
+                pMat.backFaceCulling = true;
                 pMat.roughness = 0.75;
                 pMat.metallic = 0.0;
                 if (wel.url) {
@@ -1817,11 +1815,11 @@ export default function Preview3D({
                   {
                     width: cutW,
                     height: cutH,
-                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                    sideOrientation: BABYLON.Mesh.FRONTSIDE,
                   },
                   scene,
                 );
-                const layerOffset = 0.008 + index * 0.003;
+                const layerOffset = 0.004 + index * 0.002;
                 mount.position.set(
                   localX,
                   localY,
@@ -1829,9 +1827,8 @@ export default function Preview3D({
                 );
                 if (isBack) mount.rotation.y = Math.PI;
                 const bMat = new BABYLON.PBRMaterial("bm_ex_" + index, scene);
-                bMat.zOffset = -12 - index * 4;
-                bMat.backFaceCulling = false;
-                bMat.twoSidedLighting = true;
+                bMat.zOffset = -1;
+                bMat.backFaceCulling = true;
                 if (wel.url) {
                   const tex = new BABYLON.Texture(wel.url, scene);
                   tex.hasAlpha = true;
@@ -2162,11 +2159,11 @@ export default function Preview3D({
                   {
                     width: cutW,
                     height: cutH,
-                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                    sideOrientation: BABYLON.Mesh.FRONTSIDE,
                   },
                   scene,
                 );
-                const layerOffset = 0.006 + index * 0.003;
+                const layerOffset = 0.003 + index * 0.002;
                 mount.position.set(
                   localX,
                   localY,
@@ -2179,9 +2176,8 @@ export default function Preview3D({
                   mount.rotation.z = -BABYLON.Tools.ToRadians(wel.rotation || 0);
                 }
                 const pMat = new BABYLON.PBRMaterial("diag_pmat_" + index, scene);
-                pMat.zOffset = -10 - index * 4;
-                pMat.backFaceCulling = false;
-                pMat.twoSidedLighting = true;
+                pMat.zOffset = -1;
+                pMat.backFaceCulling = true;
                 pMat.roughness = 0.6;
                 pMat.metallic = 0.05;
                 const cs = 256;
@@ -2216,11 +2212,11 @@ export default function Preview3D({
                   {
                     width: cutW,
                     height: cutH,
-                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                    sideOrientation: BABYLON.Mesh.FRONTSIDE,
                   },
                   scene,
                 );
-                const layerOffset = 0.006 + index * 0.003;
+                const layerOffset = 0.003 + index * 0.002;
                 mount.position.set(
                   localX,
                   localY,
@@ -2228,9 +2224,8 @@ export default function Preview3D({
                 );
                 if (isBack) mount.rotation.y = Math.PI;
                 const pMat = new BABYLON.PBRMaterial("pmat_" + index, scene);
-                pMat.zOffset = -10 - index * 4;
-                pMat.backFaceCulling = false;
-                pMat.twoSidedLighting = true;
+                pMat.zOffset = -1;
+                pMat.backFaceCulling = true;
                 pMat.roughness = 0.75;
                 pMat.metallic = 0.0;
                 if (wel.url) {
@@ -2251,17 +2246,16 @@ export default function Preview3D({
                   {
                     width: cutW,
                     height: cutH,
-                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                    sideOrientation: BABYLON.Mesh.FRONTSIDE,
                   },
                   scene,
                 );
-                const layerOffset = 0.008 + index * 0.003;
+                const layerOffset = 0.004 + index * 0.002;
                 mount.position.set(localX, localY, zSign * (dVal / 2 + layerOffset));
                 if (isBack) mount.rotation.y = Math.PI;
                 const bMat = new BABYLON.PBRMaterial("bm_" + index, scene);
-                bMat.zOffset = -12 - index * 4;
-                bMat.backFaceCulling = false;
-                bMat.twoSidedLighting = true;
+                bMat.zOffset = -1;
+                bMat.backFaceCulling = true;
                 if (wel.url) {
                   const tex = new BABYLON.Texture(wel.url, scene);
                   tex.hasAlpha = true;
@@ -2788,10 +2782,10 @@ export default function Preview3D({
                 worldOffset,
                 invPivotMatrix,
               );
-              wrapper.position.x -= localOffset.x;
-              wrapper.position.z -= localOffset.z;
-              // Floor the model to ground level (bbox.min.y is world-space bottom before scaling)
-              wrapper.position.y -= bbox.min.y;
+              // Align model bottom to pivot local origin (so pivot world Y is exactly model bottom)
+              const worldBottomDiff = bbox.min.y - pivot.position.y;
+              const localBottomDiff = sY > 0 ? worldBottomDiff / sY : worldBottomDiff;
+              wrapper.position.y -= localBottomDiff;
             }
           };
 

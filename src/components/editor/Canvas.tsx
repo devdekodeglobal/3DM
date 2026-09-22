@@ -1446,7 +1446,7 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
     const targetId = newProps?.id;
     const newElements = elements.map((el, idx) => {
       if (targetId ? el.id === targetId : idx === index) {
-        return snappedProps;
+        return { ...el, ...snappedProps };
       }
       return el;
     });
