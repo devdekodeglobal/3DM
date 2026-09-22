@@ -1729,10 +1729,11 @@ export default function Preview3D({
                   },
                   scene,
                 );
+                const layerOffset = 0.006 + index * 0.003;
                 mount.position.set(
                   localX,
                   localY,
-                  zSign * (dValW / 2 + 0.004 + index * 0.002),
+                  zSign * (dValW / 2 + layerOffset),
                 );
                 if (isBack) {
                   mount.rotation.y = Math.PI;
@@ -1741,7 +1742,7 @@ export default function Preview3D({
                   mount.rotation.z = -BABYLON.Tools.ToRadians(wel.rotation || 0);
                 }
                 const pMat = new BABYLON.PBRMaterial("diag_pmat_" + index, scene);
-                pMat.zOffset = -index * 3 - 2;
+                pMat.zOffset = -10 - index * 4;
                 pMat.backFaceCulling = false;
                 pMat.twoSidedLighting = true;
                 pMat.roughness = 0.6;
@@ -1785,14 +1786,15 @@ export default function Preview3D({
                   },
                   scene,
                 );
+                const layerOffset = 0.006 + index * 0.003;
                 mount.position.set(
                   localX,
                   localY,
-                  zSign * (dValW / 2 + 0.004 + index * 0.002),
+                  zSign * (dValW / 2 + layerOffset),
                 );
                 if (isBack) mount.rotation.y = Math.PI;
                 const pMat = new BABYLON.PBRMaterial("pmat_" + index, scene);
-                pMat.zOffset = -index * 3 - 2;
+                pMat.zOffset = -10 - index * 4;
                 pMat.backFaceCulling = false;
                 pMat.twoSidedLighting = true;
                 pMat.roughness = 0.75;
@@ -1819,14 +1821,15 @@ export default function Preview3D({
                   },
                   scene,
                 );
+                const layerOffset = 0.008 + index * 0.003;
                 mount.position.set(
                   localX,
                   localY,
-                  zSign * (dValW / 2 + 0.005 + index * 0.002),
+                  zSign * (dValW / 2 + layerOffset),
                 );
                 if (isBack) mount.rotation.y = Math.PI;
                 const bMat = new BABYLON.PBRMaterial("bm_ex_" + index, scene);
-                bMat.zOffset = -index * 2;
+                bMat.zOffset = -12 - index * 4;
                 bMat.backFaceCulling = false;
                 bMat.twoSidedLighting = true;
                 if (wel.url) {
@@ -2163,10 +2166,11 @@ export default function Preview3D({
                   },
                   scene,
                 );
+                const layerOffset = 0.006 + index * 0.003;
                 mount.position.set(
                   localX,
                   localY,
-                  zSign * (dVal / 2 + 0.004 + index * 0.002),
+                  zSign * (dVal / 2 + layerOffset),
                 );
                 if (isBack) {
                   mount.rotation.y = Math.PI;
@@ -2175,26 +2179,26 @@ export default function Preview3D({
                   mount.rotation.z = -BABYLON.Tools.ToRadians(wel.rotation || 0);
                 }
                 const pMat = new BABYLON.PBRMaterial("diag_pmat_" + index, scene);
-                pMat.zOffset = -index * 3 - 2;
+                pMat.zOffset = -10 - index * 4;
                 pMat.backFaceCulling = false;
                 pMat.twoSidedLighting = true;
                 pMat.roughness = 0.6;
                 pMat.metallic = 0.05;
-                const cs2 = 256;
+                const cs = 256;
                 const triCanvas2 = document.createElement("canvas");
-                triCanvas2.width = cs2; triCanvas2.height = cs2;
+                triCanvas2.width = cs; triCanvas2.height = cs;
                 const tCtx2 = triCanvas2.getContext("2d")!;
-                tCtx2.clearRect(0, 0, cs2, cs2);
+                tCtx2.clearRect(0, 0, cs, cs);
                 tCtx2.fillStyle = wel.color || "#ec4899";
                 tCtx2.beginPath();
                 if (dir === "top-right") {
-                  tCtx2.moveTo(0, 0); tCtx2.lineTo(cs2, 0); tCtx2.lineTo(cs2, cs2);
+                  tCtx2.moveTo(0, 0); tCtx2.lineTo(cs, 0); tCtx2.lineTo(cs, cs);
                 } else if (dir === "bottom-left") {
-                  tCtx2.moveTo(0, 0); tCtx2.lineTo(0, cs2); tCtx2.lineTo(cs2, cs2);
+                  tCtx2.moveTo(0, 0); tCtx2.lineTo(0, cs); tCtx2.lineTo(cs, cs);
                 } else if (dir === "bottom-right") {
-                  tCtx2.moveTo(cs2, 0); tCtx2.lineTo(0, cs2); tCtx2.lineTo(cs2, cs2);
+                  tCtx2.moveTo(cs, 0); tCtx2.lineTo(0, cs); tCtx2.lineTo(cs, cs);
                 } else {
-                  tCtx2.moveTo(0, 0); tCtx2.lineTo(cs2, 0); tCtx2.lineTo(0, cs2);
+                  tCtx2.moveTo(0, 0); tCtx2.lineTo(cs, 0); tCtx2.lineTo(0, cs);
                 }
                 tCtx2.closePath();
                 tCtx2.fill();
@@ -2216,14 +2220,15 @@ export default function Preview3D({
                   },
                   scene,
                 );
+                const layerOffset = 0.006 + index * 0.003;
                 mount.position.set(
                   localX,
                   localY,
-                  zSign * (dVal / 2 + 0.004 + index * 0.002),
+                  zSign * (dVal / 2 + layerOffset),
                 );
                 if (isBack) mount.rotation.y = Math.PI;
                 const pMat = new BABYLON.PBRMaterial("pmat_" + index, scene);
-                pMat.zOffset = -index * 3 - 2;
+                pMat.zOffset = -10 - index * 4;
                 pMat.backFaceCulling = false;
                 pMat.twoSidedLighting = true;
                 pMat.roughness = 0.75;
@@ -2250,11 +2255,11 @@ export default function Preview3D({
                   },
                   scene,
                 );
-                const layerOffset = 0.005 + index * 0.002;
+                const layerOffset = 0.008 + index * 0.003;
                 mount.position.set(localX, localY, zSign * (dVal / 2 + layerOffset));
                 if (isBack) mount.rotation.y = Math.PI;
                 const bMat = new BABYLON.PBRMaterial("bm_" + index, scene);
-                bMat.zOffset = -index * 2;
+                bMat.zOffset = -12 - index * 4;
                 bMat.backFaceCulling = false;
                 bMat.twoSidedLighting = true;
                 if (wel.url) {
