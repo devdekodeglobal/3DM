@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { Stage, Layer, Rect, Text, Transformer, Line, Group, Circle } from 'react-konva'
 import { X, Save, Layers, ChevronsUp, ChevronsDown } from 'lucide-react'
 import { getCachedImage } from '../../lib/imageCache'
+import { saveWallImageDataUrl, getWallImageDataUrl } from '../../lib/customAssetDB'
 import ColorPickerPanel from './ColorPickerPanel'
 
 // Sub-component for the actual wall elements to prevent re-renders during transformation/drag labels
@@ -197,6 +198,28 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front')
   const [dragLabel, setDragLabel] = useState<any | null>(null)
+
+  // On open, restore any banner/frame data URLs from IndexedDB
+  // (they are stripped from localStorage/cloud to avoid quota/payload issues,
+  //  but saved to IDB by idbKey when the image is first uploaded)
+  useEffect(() => {
+    let cancelled = false;
+    const restoreImages = async () => {
+      const updated = await Promise.all(
+        (wall.wallElements || []).map(async (el: any) => {
+          if (el.idbKey && !el.url) {
+            const dataUrl = await getWallImageDataUrl(el.idbKey);
+            if (dataUrl && !cancelled) return { ...el, url: dataUrl };
+          }
+          return el;
+        })
+      );
+      if (!cancelled) setElements(updated);
+    };
+    restoreImages();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wall.id]);
 
   const containerRef = useRef<HTMLDivElement>(null)
   const transformerRef = useRef<any>(null)
@@ -840,7 +863,12 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
                                     const isPng = file.type.includes('png') || file.name.toLowerCase().endsWith('.png')
                                     const mime = isPng ? 'image/png' : 'image/jpeg'
                                     const dataUrl = canvas.toDataURL(mime, isPng ? undefined : 0.8)
-                                    setElements(prev => prev.map(el => el.id === selectedId ? { ...el, url: dataUrl } : el))
+                                    // Save full data URL to IndexedDB so it survives page reload
+                                    // Store a stable key on the element; the data URL itself is stripped
+                                    // from localStorage and cloud saves to avoid quota/payload limits.
+                                    const idbKey = `wel_${selectedId}_${Date.now()}`
+                                    saveWallImageDataUrl(idbKey, dataUrl)
+                                    setElements(prev => prev.map(el => el.id === selectedId ? { ...el, url: dataUrl, idbKey } : el))
                                   }
                                 }
                                 img.src = re.target?.result as string

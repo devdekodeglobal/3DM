@@ -85,12 +85,17 @@ export const onRequestPut: PagesFunction<Env> = async ({ request, env, params })
 
   bindings.push(id, user.id)
 
-  const { results } = await env.DB.prepare(
-    `UPDATE designs SET ${updateParts.join(', ')} WHERE id = ? AND user_id = ? RETURNING id, project_id, name, updated_at`
-  ).bind(...bindings).all()
+  try {
+    const { results } = await env.DB.prepare(
+      `UPDATE designs SET ${updateParts.join(', ')} WHERE id = ? AND user_id = ? RETURNING id, project_id, name, updated_at`
+    ).bind(...bindings).all()
 
-  if (!results.length) return jsonError('Design not found', 404)
-  return json({ design: results[0] })
+    if (!results.length) return jsonError('Design not found', 404)
+    return json({ design: results[0] })
+  } catch (err: any) {
+    console.error('Update design failed:', err?.message || err)
+    return jsonError(err?.message || 'Database error while updating design', 500)
+  }
 }
 
 // DELETE /api/designs/[id] — delete a design
