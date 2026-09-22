@@ -15,7 +15,7 @@ import { generateReport } from '../lib/reportGenerator'
 import { getCurrentUser, saveDesign, updateDesign, listProjects, listDesigns } from '../lib/authClient'
 import { AuthModal } from '../components/editor/AuthModal'
 import { CloudProjectsDrawer } from '../components/editor/CloudProjectsDrawer'
-import { saveAssetBlob, getAssetBlob, deleteAssetBlob } from '../lib/customAssetDB'
+import { saveAssetBlob, getAssetBlob, deleteAssetBlob, getWallImageDataUrl } from '../lib/customAssetDB'
 import { ConfirmModal } from '../components/editor/ConfirmModal'
 import { ReportModal } from '../components/editor/ReportModal'
 
@@ -302,6 +302,43 @@ function EditorPage() {
     } catch (err) {
       console.warn('Failed to load custom assets metadata', err);
     }
+
+    // Hydrate wall banner/frame images from IndexedDB for initial elements
+    (async () => {
+      try {
+        const currentEls = initialData.elements || [];
+        let hasAnyMissingUrls = false;
+        const restored = await Promise.all(
+          currentEls.map(async (el: any) => {
+            if (el && el.type === 'wall' && Array.isArray(el.wallElements)) {
+              let wallChanged = false;
+              const updatedWallElements = await Promise.all(
+                el.wallElements.map(async (wel: any) => {
+                  if (wel && wel.idbKey && !wel.url) {
+                    const dataUrl = await getWallImageDataUrl(wel.idbKey);
+                    if (dataUrl) {
+                      wallChanged = true;
+                      hasAnyMissingUrls = true;
+                      return { ...wel, url: dataUrl };
+                    }
+                  }
+                  return wel;
+                })
+              );
+              if (wallChanged) {
+                return { ...el, wallElements: updatedWallElements };
+              }
+            }
+            return el;
+          })
+        );
+        if (hasAnyMissingUrls) {
+          setElements(restored);
+        }
+      } catch (err) {
+        console.warn('Failed to restore initial wall images from IDB:', err);
+      }
+    })();
   }, []);
 
   const handleUploadCustomAsset = async (file: File) => {
@@ -529,6 +566,42 @@ function EditorPage() {
     }
     const currentProj = localStorage.getItem('current-project-id') || ''
     setSelectedProjectId(currentProj)
+
+    // Hydrate wall banner/frame images from IndexedDB
+    (async () => {
+      try {
+        let hasAnyMissingUrls = false;
+        const restored = await Promise.all(
+          cleanElements.map(async (el: any) => {
+            if (el && el.type === 'wall' && Array.isArray(el.wallElements)) {
+              let wallChanged = false;
+              const updatedWallElements = await Promise.all(
+                el.wallElements.map(async (wel: any) => {
+                  if (wel && wel.idbKey && !wel.url) {
+                    const dataUrl = await getWallImageDataUrl(wel.idbKey);
+                    if (dataUrl) {
+                      wallChanged = true;
+                      hasAnyMissingUrls = true;
+                      return { ...wel, url: dataUrl };
+                    }
+                  }
+                  return wel;
+                })
+              );
+              if (wallChanged) {
+                return { ...el, wallElements: updatedWallElements };
+              }
+            }
+            return el;
+          })
+        );
+        if (hasAnyMissingUrls) {
+          setElements(restored);
+        }
+      } catch (err) {
+        console.warn('Failed to restore cloud design wall images from IDB:', err);
+      }
+    })();
 
     // Force canvas refresh
     setTimeout(() => {
