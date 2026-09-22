@@ -10,97 +10,202 @@ interface AssetModelThumbnailProps {
   className?: string
 }
 
-/** Renders the real GLB model used by the editor as a lightweight picker preview. */
-export default function AssetModelThumbnail({
-  assetName,
-  categoryFolder,
-  label,
-  className = '',
-}: AssetModelThumbnailProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [failedToLoad, setFailedToLoad] = useState(false)
+// In-memory dataURL cache for rendered thumbnails so we only render each GLB snapshot once per session
+const thumbnailDataUrlCache = new Map<string, string>()
 
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+// Simple queue to render thumbnails sequentially with a single shared offscreen canvas/engine
+type RenderTask = {
+  key: string
+  assetName: string
+  categoryFolder: string
+  resolve: (dataUrl: string | null) => void
+}
 
-    let disposed = false
-    const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true }, false)
-    const scene = new BABYLON.Scene(engine)
+const renderQueue: RenderTask[] = []
+let isProcessingQueue = false
+let sharedEngine: BABYLON.NullEngine | BABYLON.Engine | null = null
+let sharedCanvas: HTMLCanvasElement | null = null
+
+async function processNextThumbnailTask() {
+  if (renderQueue.length === 0) {
+    isProcessingQueue = false
+    if (sharedEngine) {
+      sharedEngine.dispose()
+      sharedEngine = null
+    }
+    if (sharedCanvas) {
+      sharedCanvas = null
+    }
+    return
+  }
+
+  isProcessingQueue = true
+  const task = renderQueue.shift()!
+
+  if (thumbnailDataUrlCache.has(task.key)) {
+    task.resolve(thumbnailDataUrlCache.get(task.key)!)
+    processNextThumbnailTask()
+    return
+  }
+
+  try {
+    if (!sharedCanvas) {
+      sharedCanvas = document.createElement('canvas')
+      sharedCanvas.width = 160
+      sharedCanvas.height = 160
+    }
+    if (!sharedEngine || sharedEngine.isDisposed) {
+      sharedEngine = new BABYLON.Engine(sharedCanvas, true, {
+        preserveDrawingBuffer: true,
+        stencil: false,
+        powerPreference: 'low-power',
+        failIfMajorPerformanceCaveat: false,
+      }, false)
+    }
+
+    const scene = new BABYLON.Scene(sharedEngine)
     scene.clearColor = new BABYLON.Color4(0, 0, 0, 0)
 
     const camera = new BABYLON.ArcRotateCamera(
-      'asset-thumbnail-camera',
+      'thumb-cam',
       -Math.PI / 4,
       Math.PI / 3,
       3,
       BABYLON.Vector3.Zero(),
       scene,
     )
-    camera.lowerRadiusLimit = 0.1
-    camera.upperRadiusLimit = 100
     camera.fov = 0.75
 
-    const ambientLight = new BABYLON.HemisphericLight('asset-thumbnail-ambient', new BABYLON.Vector3(0, 1, 0), scene)
-    ambientLight.intensity = 1.25
-    const keyLight = new BABYLON.DirectionalLight('asset-thumbnail-key', new BABYLON.Vector3(-1, -2, 1), scene)
+    const ambientLight = new BABYLON.HemisphericLight('thumb-amb', new BABYLON.Vector3(0, 1, 0), scene)
+    ambientLight.intensity = 1.3
+    const keyLight = new BABYLON.DirectionalLight('thumb-key', new BABYLON.Vector3(-1, -2, 1), scene)
     keyLight.position = new BABYLON.Vector3(4, 7, -4)
     keyLight.intensity = 1.1
 
-    BABYLON.SceneLoader.ImportMeshAsync(
+    const { meshes } = await BABYLON.SceneLoader.ImportMeshAsync(
       '',
-      `/models/${categoryFolder}/`,
-      `${assetName}.glb`,
+      `/models/${task.categoryFolder}/`,
+      `${task.assetName}.glb`,
       scene,
-    ).then(({ meshes }) => {
-      if (disposed) return
+    )
 
-      const renderableMeshes = meshes.filter(mesh => mesh.getTotalVertices() > 0)
-      if (renderableMeshes.length === 0) {
-        setFailedToLoad(true)
-        return
-      }
+    const renderableMeshes = meshes.filter(mesh => mesh.getTotalVertices() > 0)
+    if (renderableMeshes.length === 0) {
+      scene.dispose()
+      task.resolve(null)
+      processNextThumbnailTask()
+      return
+    }
 
-      let min = new BABYLON.Vector3(Infinity, Infinity, Infinity)
-      let max = new BABYLON.Vector3(-Infinity, -Infinity, -Infinity)
-      renderableMeshes.forEach(mesh => {
-        mesh.computeWorldMatrix(true)
-        const bounds = mesh.getBoundingInfo().boundingBox
-        min = BABYLON.Vector3.Minimize(min, bounds.minimumWorld)
-        max = BABYLON.Vector3.Maximize(max, bounds.maximumWorld)
-      })
-
-      const center = min.add(max).scale(0.5)
-      const span = max.subtract(min)
-      camera.target = center
-      camera.radius = Math.max(span.length() * 1.45, 0.5)
-
-      engine.runRenderLoop(() => {
-        if (!scene.isDisposed) scene.render()
-      })
-    }).catch(() => {
-      if (!disposed) setFailedToLoad(true)
+    let min = new BABYLON.Vector3(Infinity, Infinity, Infinity)
+    let max = new BABYLON.Vector3(-Infinity, -Infinity, -Infinity)
+    renderableMeshes.forEach(mesh => {
+      mesh.computeWorldMatrix(true)
+      const bounds = mesh.getBoundingInfo().boundingBox
+      min = BABYLON.Vector3.Minimize(min, bounds.minimumWorld)
+      max = BABYLON.Vector3.Maximize(max, bounds.maximumWorld)
     })
 
-    const resizeObserver = new ResizeObserver(() => engine.resize())
-    resizeObserver.observe(canvas)
+    const center = min.add(max).scale(0.5)
+    const span = max.subtract(min)
+    camera.target = center
+    camera.radius = Math.max(span.length() * 1.45, 0.5)
+
+    // Render 2 frames to ensure materials are fully uploaded and drawn
+    scene.render()
+    scene.render()
+
+    const dataUrl = sharedCanvas.toDataURL('image/png')
+    scene.dispose()
+
+    if (dataUrl && dataUrl.length > 500) {
+      thumbnailDataUrlCache.set(task.key, dataUrl)
+      task.resolve(dataUrl)
+    } else {
+      task.resolve(null)
+    }
+  } catch (err) {
+    console.warn('Thumbnail generation failed for', task.assetName, err)
+    task.resolve(null)
+  }
+
+  // Small delay before next task to prevent browser rendering starvation
+  setTimeout(processNextThumbnailTask, 16)
+}
+
+function requestThumbnail(assetName: string, categoryFolder: string): Promise<string | null> {
+  const key = `${categoryFolder}/${assetName}`
+  if (thumbnailDataUrlCache.has(key)) {
+    return Promise.resolve(thumbnailDataUrlCache.get(key)!)
+  }
+
+  return new Promise((resolve) => {
+    renderQueue.push({ key, assetName, categoryFolder, resolve })
+    if (!isProcessingQueue) {
+      processNextThumbnailTask()
+    }
+  })
+}
+
+/** Renders the real GLB model as an optimized cached image snapshot without holding persistent WebGL contexts. */
+export default function AssetModelThumbnail({
+  assetName,
+  categoryFolder,
+  label,
+  className = '',
+}: AssetModelThumbnailProps) {
+  const [thumbUrl, setThumbUrl] = useState<string | null>(() => {
+    const key = `${categoryFolder}/${assetName}`
+    return thumbnailDataUrlCache.get(key) || null
+  })
+  const [failedToLoad, setFailedToLoad] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    const key = `${categoryFolder}/${assetName}`
+    if (thumbnailDataUrlCache.has(key)) {
+      setThumbUrl(thumbnailDataUrlCache.get(key)!)
+      setFailedToLoad(false)
+      return
+    }
+
+    requestThumbnail(assetName, categoryFolder).then((url) => {
+      if (cancelled) return
+      if (url) {
+        setThumbUrl(url)
+        setFailedToLoad(false)
+      } else {
+        setFailedToLoad(true)
+      }
+    })
 
     return () => {
-      disposed = true
-      resizeObserver.disconnect()
-      engine.stopRenderLoop()
-      scene.dispose()
-      engine.dispose()
+      cancelled = true
     }
   }, [assetName, categoryFolder])
 
   if (failedToLoad) {
     return (
       <div className={`flex items-center justify-center text-[var(--sea-ink-soft)] ${className}`} title={`${label} preview unavailable`}>
-        <Box className="w-12 h-12" />
+        <Box className="w-10 h-10 opacity-60" />
       </div>
     )
   }
 
-  return <canvas ref={canvasRef} className={`block ${className}`} aria-label={`${label} 3D preview`} />
+  if (!thumbUrl) {
+    return (
+      <div className={`flex items-center justify-center text-[var(--sea-ink-soft)] ${className}`}>
+        <div className="w-6 h-6 border-2 border-[var(--brand)]/30 border-t-[var(--brand)] rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  return (
+    <img
+      src={thumbUrl}
+      alt={`${label} 3D preview`}
+      className={`block object-contain pointer-events-none select-none ${className}`}
+      loading="lazy"
+    />
+  )
 }
