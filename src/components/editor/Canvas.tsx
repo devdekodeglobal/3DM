@@ -58,13 +58,17 @@ const LetterMarkAsset = ({ shapeProps, onSelect, onChange, isDarkMode }: any) =>
         const scaleY = node.scaleY()
         node.scaleX(1)
         node.scaleY(1)
+        const newW = Math.max(10, node.width() * scaleX)
+        const newH = Math.max(10, node.height() * scaleY)
         onChange({
           ...shapeProps,
           x: node.x(),
           y: node.y(),
           rotation: node.rotation(),
-          width: Math.max(10, node.width() * scaleX),
-          height: Math.max(10, node.height() * scaleY),
+          width: newW,
+          height: newH,
+          realWidth: Number((newW / 100).toFixed(2)),
+          realDepth: Number((newH / 100).toFixed(2)),
         })
       }}
     >
@@ -1791,8 +1795,10 @@ export default function Canvas({ elements, setElements, selectedId, onSelect, bo
               enabledAnchors={
                 selectedElement?.type === 'wall'
                   ? ['middle-left', 'middle-right']
-                  : ['asset', 'caged-wall', 'caged-panel', 'panel', 'pillar'].includes(selectedElement?.type)
+                  : ['caged-wall', 'caged-panel', 'panel', 'pillar'].includes(selectedElement?.type)
                   ? [] // Resized via custom drag dots and Properties panel only
+                  : selectedElement?.type === 'asset'
+                  ? ['top-left', 'top-right', 'bottom-left', 'bottom-right']
                   : ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']
               }
               keepRatio={selectedElement?.type === 'asset'}

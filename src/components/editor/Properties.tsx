@@ -142,11 +142,11 @@ export default function Properties({
                           onUpdate(selectedElement.id, { 
                             width: targetWidth,
                             ...(updatedWallElements ? { wallElements: updatedWallElements } : {}),
-                            ...(['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? { realWidth: targetWidth / 100 } : {})
+                            ...(['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? { realWidth: targetWidth / 100 } : {}),
+                            ...(selectedElement.type === 'asset' ? { realWidth: Number((targetWidth / 100).toFixed(2)) } : {})
                           });
                         }}
-                        disabled={selectedElement.type === 'asset'}
-                        className={`w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className="w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none"
                       />
                     </div>
                     <div className="flex items-center gap-2">
@@ -159,11 +159,11 @@ export default function Properties({
                           const val = parseFloat(e.target.value) || 0;
                           onUpdate(selectedElement.id, { 
                             height: val * 100,
-                            ...(['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? { realDepth: val } : {})
+                            ...(['pillar', 'caged-wall', 'caged-panel', 'panel'].includes(selectedElement.type) ? { realDepth: val } : {}),
+                            ...(selectedElement.type === 'asset' ? { realDepth: Number(val.toFixed(2)) } : {})
                           });
                         }}
-                        disabled={selectedElement.type === 'asset'}
-                        className={`w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none ${selectedElement.type === 'asset' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className="w-full bg-[var(--sand)] border border-[var(--line)] focus:border-[var(--lagoon)] rounded-lg px-2 py-1.5 text-xs outline-none"
                       />
                     </div>
                   </div>

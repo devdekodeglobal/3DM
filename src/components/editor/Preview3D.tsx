@@ -1584,11 +1584,12 @@ export default function Preview3D({
               mesh.metadata.nativeHeight &&
               mesh.metadata.nativeHeight > 0
             ) {
-              sY = el.specH / mesh.metadata.nativeHeight;
+              sY = (el.specH / mesh.metadata.nativeHeight) * (el.verticalScale || 1);
             }
             mesh.scaling = new BABYLON.Vector3(s, sY, s);
           } else {
-            const s = el.customScale || 1.0;
+            const targetDim = (el.width && el.height) ? Math.max(el.width, el.height) / PPM : null;
+            const s = targetDim ? (targetDim / mesh.metadata.nativeLength) : (el.customScale || 1.0);
             const sY = s * (el.verticalScale || 1);
             mesh.scaling = new BABYLON.Vector3(s, sY, s);
           }
@@ -2738,12 +2739,14 @@ export default function Preview3D({
               let s = 1.0;
               if (!el.isCustomAsset) {
                 s = Math.max(el.width, el.height) / PPM / longest;
+              } else if (el.width && el.height) {
+                s = Math.max(el.width, el.height) / PPM / longest;
               } else if (el.customScale) {
                 s = el.customScale;
               }
               let sY = s * (el.verticalScale || 1);
               if (!el.isCustomAsset && el.specH && sz.y > 0) {
-                sY = el.specH / sz.y;
+                sY = (el.specH / sz.y) * (el.verticalScale || 1);
               }
               pivot.scaling.set(s, sY, s);
 
