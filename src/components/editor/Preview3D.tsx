@@ -8,11 +8,6 @@ import * as GUI from "@babylonjs/gui";
 import { calculateBlueprintMeasurements } from "../../lib/blueprintMath";
 import { GridMaterial } from "@babylonjs/materials";
 import { ASSET_REGISTRY } from "../../lib/assetRegistry";
-import earcut from "earcut";
-
-if (typeof window !== "undefined") {
-  (window as any).earcut = earcut;
-}
 
 interface Preview3DProps {
   boothConfig: any;
@@ -1715,41 +1710,15 @@ export default function Preview3D({
                 spot.falloffType = BABYLON.Light.FALLOFF_PHYSICAL;
                 spot.parent = mount;
               } else if (wel.type === "diagonal_paint") {
+                // Same CreatePlane as paint, but with a canvas triangle texture
+                // so only the triangular half is visible (transparent outside)
                 const dir = wel.direction || "top-left";
-                let corners: BABYLON.Vector3[];
-                if (dir === "top-right") {
-                  corners = [
-                    new BABYLON.Vector3(-cutW / 2, cutH / 2, 0),
-                    new BABYLON.Vector3(cutW / 2, cutH / 2, 0),
-                    new BABYLON.Vector3(cutW / 2, -cutH / 2, 0),
-                  ];
-                } else if (dir === "bottom-left") {
-                  corners = [
-                    new BABYLON.Vector3(-cutW / 2, cutH / 2, 0),
-                    new BABYLON.Vector3(-cutW / 2, -cutH / 2, 0),
-                    new BABYLON.Vector3(cutW / 2, -cutH / 2, 0),
-                  ];
-                } else if (dir === "bottom-right") {
-                  corners = [
-                    new BABYLON.Vector3(cutW / 2, cutH / 2, 0),
-                    new BABYLON.Vector3(-cutW / 2, -cutH / 2, 0),
-                    new BABYLON.Vector3(cutW / 2, -cutH / 2, 0),
-                  ];
-                } else {
-                  // top-left default
-                  corners = [
-                    new BABYLON.Vector3(-cutW / 2, cutH / 2, 0),
-                    new BABYLON.Vector3(cutW / 2, cutH / 2, 0),
-                    new BABYLON.Vector3(-cutW / 2, -cutH / 2, 0),
-                  ];
-                }
-
-                mount = BABYLON.MeshBuilder.CreatePolygon(
+                mount = BABYLON.MeshBuilder.CreatePlane(
                   "diag_paint_" + index,
                   {
-                    shape: corners,
+                    width: cutW,
+                    height: cutH,
                     sideOrientation: BABYLON.Mesh.DOUBLESIDE,
-                    earcutInjection: earcut,
                   },
                   scene,
                 );
@@ -1763,10 +1732,36 @@ export default function Preview3D({
                 pMat.zOffset = -index * 3 - 2;
                 pMat.backFaceCulling = false;
                 pMat.twoSidedLighting = true;
-                pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#ec4899");
-                pMat.alpha = wel.opacity ?? 1.0;
                 pMat.roughness = 0.6;
                 pMat.metallic = 0.05;
+                // Draw triangle on canvas — transparent background, colored triangle
+                const cs = 256;
+                const triCanvas = document.createElement("canvas");
+                triCanvas.width = cs; triCanvas.height = cs;
+                const tCtx = triCanvas.getContext("2d")!;
+                tCtx.clearRect(0, 0, cs, cs);
+                tCtx.fillStyle = wel.color || "#ec4899";
+                tCtx.beginPath();
+                // Canvas (0,0)=top-left. UV Y is flipped relative to canvas Y.
+                if (dir === "top-right") {
+                  tCtx.moveTo(0, 0); tCtx.lineTo(cs, 0); tCtx.lineTo(cs, cs);
+                } else if (dir === "bottom-left") {
+                  tCtx.moveTo(0, 0); tCtx.lineTo(0, cs); tCtx.lineTo(cs, cs);
+                } else if (dir === "bottom-right") {
+                  tCtx.moveTo(cs, 0); tCtx.lineTo(0, cs); tCtx.lineTo(cs, cs);
+                } else {
+                  // top-left (default)
+                  tCtx.moveTo(0, 0); tCtx.lineTo(cs, 0); tCtx.lineTo(0, cs);
+                }
+                tCtx.closePath();
+                tCtx.fill();
+                const triTex = new BABYLON.Texture(triCanvas.toDataURL(), scene);
+                triTex.hasAlpha = true;
+                pMat.albedoTexture = triTex;
+                pMat.albedoColor = BABYLON.Color3.White();
+                pMat.useAlphaFromAlbedoTexture = true;
+                pMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
+                pMat.alpha = wel.opacity ?? 1.0;
                 mount.material = pMat;
               } else if (wel.type === "paint") {
                 mount = BABYLON.MeshBuilder.CreatePlane(
@@ -2150,40 +2145,12 @@ export default function Preview3D({
                 spot.parent = mount;
               } else if (wel.type === "diagonal_paint") {
                 const dir = wel.direction || "top-left";
-                let corners: BABYLON.Vector3[];
-                if (dir === "top-right") {
-                  corners = [
-                    new BABYLON.Vector3(-cutW / 2, cutH / 2, 0),
-                    new BABYLON.Vector3(cutW / 2, cutH / 2, 0),
-                    new BABYLON.Vector3(cutW / 2, -cutH / 2, 0),
-                  ];
-                } else if (dir === "bottom-left") {
-                  corners = [
-                    new BABYLON.Vector3(-cutW / 2, cutH / 2, 0),
-                    new BABYLON.Vector3(-cutW / 2, -cutH / 2, 0),
-                    new BABYLON.Vector3(cutW / 2, -cutH / 2, 0),
-                  ];
-                } else if (dir === "bottom-right") {
-                  corners = [
-                    new BABYLON.Vector3(cutW / 2, cutH / 2, 0),
-                    new BABYLON.Vector3(-cutW / 2, -cutH / 2, 0),
-                    new BABYLON.Vector3(cutW / 2, -cutH / 2, 0),
-                  ];
-                } else {
-                  // top-left default
-                  corners = [
-                    new BABYLON.Vector3(-cutW / 2, cutH / 2, 0),
-                    new BABYLON.Vector3(cutW / 2, cutH / 2, 0),
-                    new BABYLON.Vector3(-cutW / 2, -cutH / 2, 0),
-                  ];
-                }
-
-                mount = BABYLON.MeshBuilder.CreatePolygon(
+                mount = BABYLON.MeshBuilder.CreatePlane(
                   "diag_paint_" + index,
                   {
-                    shape: corners,
+                    width: cutW,
+                    height: cutH,
                     sideOrientation: BABYLON.Mesh.DOUBLESIDE,
-                    earcutInjection: earcut,
                   },
                   scene,
                 );
@@ -2197,10 +2164,33 @@ export default function Preview3D({
                 pMat.zOffset = -index * 3 - 2;
                 pMat.backFaceCulling = false;
                 pMat.twoSidedLighting = true;
-                pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#ec4899");
-                pMat.alpha = wel.opacity ?? 1.0;
                 pMat.roughness = 0.6;
                 pMat.metallic = 0.05;
+                const cs2 = 256;
+                const triCanvas2 = document.createElement("canvas");
+                triCanvas2.width = cs2; triCanvas2.height = cs2;
+                const tCtx2 = triCanvas2.getContext("2d")!;
+                tCtx2.clearRect(0, 0, cs2, cs2);
+                tCtx2.fillStyle = wel.color || "#ec4899";
+                tCtx2.beginPath();
+                if (dir === "top-right") {
+                  tCtx2.moveTo(0, 0); tCtx2.lineTo(cs2, 0); tCtx2.lineTo(cs2, cs2);
+                } else if (dir === "bottom-left") {
+                  tCtx2.moveTo(0, 0); tCtx2.lineTo(0, cs2); tCtx2.lineTo(cs2, cs2);
+                } else if (dir === "bottom-right") {
+                  tCtx2.moveTo(cs2, 0); tCtx2.lineTo(0, cs2); tCtx2.lineTo(cs2, cs2);
+                } else {
+                  tCtx2.moveTo(0, 0); tCtx2.lineTo(cs2, 0); tCtx2.lineTo(0, cs2);
+                }
+                tCtx2.closePath();
+                tCtx2.fill();
+                const triTex2 = new BABYLON.Texture(triCanvas2.toDataURL(), scene);
+                triTex2.hasAlpha = true;
+                pMat.albedoTexture = triTex2;
+                pMat.albedoColor = BABYLON.Color3.White();
+                pMat.useAlphaFromAlbedoTexture = true;
+                pMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
+                pMat.alpha = wel.opacity ?? 1.0;
                 mount.material = pMat;
               } else if (wel.type === "paint") {
                 mount = BABYLON.MeshBuilder.CreatePlane(
