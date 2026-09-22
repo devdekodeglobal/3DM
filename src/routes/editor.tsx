@@ -333,6 +333,7 @@ function EditorPage() {
           })
         );
         if (hasAnyMissingUrls) {
+          elementsRef.current = restored;
           setElements(restored);
         }
       } catch (err) {
@@ -601,6 +602,7 @@ function EditorPage() {
           })
         );
         if (hasAnyMissingUrls) {
+          elementsRef.current = restored;
           setElements(restored);
         }
       } catch (err) {

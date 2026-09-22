@@ -8,6 +8,7 @@ import * as GUI from "@babylonjs/gui";
 import { calculateBlueprintMeasurements } from "../../lib/blueprintMath";
 import { GridMaterial } from "@babylonjs/materials";
 import { ASSET_REGISTRY } from "../../lib/assetRegistry";
+import { getWallImageDataUrl } from "../../lib/customAssetDB";
 
 interface Preview3DProps {
   boothConfig: any;
@@ -1804,6 +1805,18 @@ export default function Preview3D({
                   pMat.useAlphaFromAlbedoTexture = true;
                   pMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
                   pMat.albedoColor = BABYLON.Color3.White();
+                } else if (wel.idbKey) {
+                  pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#0ea5e9").toLinearSpace();
+                  getWallImageDataUrl(wel.idbKey).then((dataUrl) => {
+                    if (dataUrl && !pMat.isDisposed()) {
+                      const tex = new BABYLON.Texture(dataUrl, scene);
+                      tex.hasAlpha = true;
+                      pMat.albedoTexture = tex;
+                      pMat.useAlphaFromAlbedoTexture = true;
+                      pMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
+                      pMat.albedoColor = BABYLON.Color3.White();
+                    }
+                  });
                 } else {
                   pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#0ea5e9").toLinearSpace();
                 }
@@ -1829,6 +1842,8 @@ export default function Preview3D({
                 const bMat = new BABYLON.PBRMaterial("bm_ex_" + index, scene);
                 bMat.zOffset = -1;
                 bMat.backFaceCulling = true;
+                bMat.roughness = 0.5;
+                bMat.metallic = 0.1;
                 if (wel.url) {
                   const tex = new BABYLON.Texture(wel.url, scene);
                   tex.hasAlpha = true;
@@ -1836,8 +1851,18 @@ export default function Preview3D({
                   bMat.useAlphaFromAlbedoTexture = true;
                   bMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
                   bMat.albedoColor = BABYLON.Color3.White();
-                  bMat.roughness = 0.5;
-                  bMat.metallic = 0.1;
+                } else if (wel.idbKey) {
+                  bMat.albedoColor = wel.type === "frame" ? new BABYLON.Color3(0.8, 0.8, 0.8) : BABYLON.Color3.Blue();
+                  getWallImageDataUrl(wel.idbKey).then((dataUrl) => {
+                    if (dataUrl && !bMat.isDisposed()) {
+                      const tex = new BABYLON.Texture(dataUrl, scene);
+                      tex.hasAlpha = true;
+                      bMat.albedoTexture = tex;
+                      bMat.useAlphaFromAlbedoTexture = true;
+                      bMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
+                      bMat.albedoColor = BABYLON.Color3.White();
+                    }
+                  });
                 } else {
                   bMat.albedoColor =
                     wel.type === "frame"
@@ -2235,6 +2260,18 @@ export default function Preview3D({
                   pMat.useAlphaFromAlbedoTexture = true;
                   pMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
                   pMat.albedoColor = BABYLON.Color3.White();
+                } else if (wel.idbKey) {
+                  pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#0ea5e9").toLinearSpace();
+                  getWallImageDataUrl(wel.idbKey).then((dataUrl) => {
+                    if (dataUrl && !pMat.isDisposed()) {
+                      const tex = new BABYLON.Texture(dataUrl, scene);
+                      tex.hasAlpha = true;
+                      pMat.albedoTexture = tex;
+                      pMat.useAlphaFromAlbedoTexture = true;
+                      pMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
+                      pMat.albedoColor = BABYLON.Color3.White();
+                    }
+                  });
                 } else {
                   pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#0ea5e9").toLinearSpace();
                 }
@@ -2256,6 +2293,8 @@ export default function Preview3D({
                 const bMat = new BABYLON.PBRMaterial("bm_" + index, scene);
                 bMat.zOffset = -1;
                 bMat.backFaceCulling = true;
+                bMat.roughness = 0.5;
+                bMat.metallic = 0.1;
                 if (wel.url) {
                   const tex = new BABYLON.Texture(wel.url, scene);
                   tex.hasAlpha = true;
@@ -2263,8 +2302,18 @@ export default function Preview3D({
                   bMat.useAlphaFromAlbedoTexture = true;
                   bMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
                   bMat.albedoColor = BABYLON.Color3.White();
-                  bMat.roughness = 0.5;
-                  bMat.metallic = 0.1;
+                } else if (wel.idbKey) {
+                  bMat.albedoColor = wel.type === "frame" ? new BABYLON.Color3(0.8, 0.8, 0.8) : BABYLON.Color3.Blue();
+                  getWallImageDataUrl(wel.idbKey).then((dataUrl) => {
+                    if (dataUrl && !bMat.isDisposed()) {
+                      const tex = new BABYLON.Texture(dataUrl, scene);
+                      tex.hasAlpha = true;
+                      bMat.albedoTexture = tex;
+                      bMat.useAlphaFromAlbedoTexture = true;
+                      bMat.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND;
+                      bMat.albedoColor = BABYLON.Color3.White();
+                    }
+                  });
                 } else {
                   bMat.albedoColor =
                     wel.type === "frame"
