@@ -28,19 +28,19 @@ export function InteractiveWorkflowShowcase() {
       num: "02",
       title: "2. Place Assets",
       subtitle: "Drag & drop scaled 2D symbols",
-      desc: "Position furniture with automatic snap alignment.",
+      desc: "Position symbols with automatic snap alignment.",
     },
     {
       num: "03",
       title: "3. Preview in 3D",
       subtitle: "Instant 3D spatial walkthrough",
-      desc: "Materialize your blueprint in 3D.",
+      desc: "See your space in 3D.",
     },
     {
       num: "04",
       title: "4. Save to Cloud",
       subtitle: "Instant sync & device access",
-      desc: "Sync and access your layout anywhere.",
+      desc: "Access your space anywhere.",
     },
   ];
 
@@ -187,7 +187,7 @@ export function InteractiveWorkflowShowcase() {
                   </h5>
                 </div>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
-                  Auto-Sync Active
+                  Auto-Save Active
                 </div>
               </div>
             </div>
