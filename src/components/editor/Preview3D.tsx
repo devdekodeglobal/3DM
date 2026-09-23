@@ -1726,7 +1726,7 @@ export default function Preview3D({
                   {
                     width: cutW,
                     height: cutH,
-                    sideOrientation: BABYLON.Mesh.FRONTSIDE,
+                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
                   },
                   scene,
                 );
@@ -1744,7 +1744,8 @@ export default function Preview3D({
                 }
                 const pMat = new BABYLON.PBRMaterial("diag_pmat_" + index, scene);
                 pMat.zOffset = -1;
-                pMat.backFaceCulling = true;
+                pMat.backFaceCulling = false;
+                pMat.twoSidedLighting = true;
                 pMat.roughness = 0.6;
                 pMat.metallic = 0.05;
                 // Draw triangle on canvas — transparent background, colored triangle
@@ -1782,7 +1783,7 @@ export default function Preview3D({
                   {
                     width: cutW,
                     height: cutH,
-                    sideOrientation: BABYLON.Mesh.FRONTSIDE,
+                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
                   },
                   scene,
                 );
@@ -1795,7 +1796,8 @@ export default function Preview3D({
                 if (isBack) mount.rotation.y = Math.PI;
                 const pMat = new BABYLON.PBRMaterial("pmat_" + index, scene);
                 pMat.zOffset = -1;
-                pMat.backFaceCulling = true;
+                pMat.backFaceCulling = false;
+                pMat.twoSidedLighting = true;
                 pMat.roughness = 0.75;
                 pMat.metallic = 0.0;
                 if (wel.url) {
@@ -1828,7 +1830,7 @@ export default function Preview3D({
                   {
                     width: cutW,
                     height: cutH,
-                    sideOrientation: BABYLON.Mesh.FRONTSIDE,
+                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
                   },
                   scene,
                 );
@@ -1841,7 +1843,8 @@ export default function Preview3D({
                 if (isBack) mount.rotation.y = Math.PI;
                 const bMat = new BABYLON.PBRMaterial("bm_ex_" + index, scene);
                 bMat.zOffset = -1;
-                bMat.backFaceCulling = true;
+                bMat.backFaceCulling = false;
+                bMat.twoSidedLighting = true;
                 bMat.roughness = 0.5;
                 bMat.metallic = 0.1;
                 if (wel.url) {
@@ -2088,6 +2091,12 @@ export default function Preview3D({
 
               const finalMesh = wallCSG.toMesh(el.id, null, scene);
               mesh.getChildren().forEach((child) => (child.parent = finalMesh));
+              // Re-parent any existing wall decorations to the new mesh before disposing the old one
+              if (wallDecorationRegistryRef.current.has(el.id)) {
+                wallDecorationRegistryRef.current
+                  .get(el.id)
+                  ?.forEach((d) => { d.parent = finalMesh; });
+              }
               mesh.dispose();
               mesh = finalMesh as BABYLON.Mesh;
             }
@@ -2184,7 +2193,7 @@ export default function Preview3D({
                   {
                     width: cutW,
                     height: cutH,
-                    sideOrientation: BABYLON.Mesh.FRONTSIDE,
+                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
                   },
                   scene,
                 );
@@ -2202,7 +2211,8 @@ export default function Preview3D({
                 }
                 const pMat = new BABYLON.PBRMaterial("diag_pmat_" + index, scene);
                 pMat.zOffset = -1;
-                pMat.backFaceCulling = true;
+                pMat.backFaceCulling = false;
+                pMat.twoSidedLighting = true;
                 pMat.roughness = 0.6;
                 pMat.metallic = 0.05;
                 const cs = 256;
@@ -2237,7 +2247,7 @@ export default function Preview3D({
                   {
                     width: cutW,
                     height: cutH,
-                    sideOrientation: BABYLON.Mesh.FRONTSIDE,
+                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
                   },
                   scene,
                 );
@@ -2250,7 +2260,8 @@ export default function Preview3D({
                 if (isBack) mount.rotation.y = Math.PI;
                 const pMat = new BABYLON.PBRMaterial("pmat_" + index, scene);
                 pMat.zOffset = -1;
-                pMat.backFaceCulling = true;
+                pMat.backFaceCulling = false;
+                pMat.twoSidedLighting = true;
                 pMat.roughness = 0.75;
                 pMat.metallic = 0.0;
                 if (wel.url) {
@@ -2283,7 +2294,7 @@ export default function Preview3D({
                   {
                     width: cutW,
                     height: cutH,
-                    sideOrientation: BABYLON.Mesh.FRONTSIDE,
+                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
                   },
                   scene,
                 );
@@ -2292,7 +2303,8 @@ export default function Preview3D({
                 if (isBack) mount.rotation.y = Math.PI;
                 const bMat = new BABYLON.PBRMaterial("bm_" + index, scene);
                 bMat.zOffset = -1;
-                bMat.backFaceCulling = true;
+                bMat.backFaceCulling = false;
+                bMat.twoSidedLighting = true;
                 bMat.roughness = 0.5;
                 bMat.metallic = 0.1;
                 if (wel.url) {
