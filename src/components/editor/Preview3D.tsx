@@ -1177,6 +1177,10 @@ export default function Preview3D({
       let isRotating = false;
       let startRotY = 0;
       let startX = 0;
+      // Track drag start position to detect pure clicks (no meaningful movement)
+      let dragStartPosX = 0;
+      let dragStartPosZ = 0;
+      let hasDragged = false;
 
       dragBehavior.onDragStartObservable.add(() => {
         const activeCam = scene.activeCamera;
@@ -1188,6 +1192,10 @@ export default function Preview3D({
         isRotating = isShiftPressedRef.current;
         startRotY = pivotMesh.rotation.y;
         startX = scene.pointerX;
+        // Snapshot position at drag start
+        dragStartPosX = pivotMesh.position.x;
+        dragStartPosZ = pivotMesh.position.z;
+        hasDragged = false;
       });
 
       dragBehavior.onDragObservable.add((evt) => {
@@ -1195,11 +1203,16 @@ export default function Preview3D({
           const deltaX = scene.pointerX - startX;
           // Roughly 1 degree per pixel
           pivotMesh.rotation.y = startRotY + (deltaX * Math.PI) / 180;
+          hasDragged = true;
         } else {
           pivotMesh.position.addInPlace(evt.delta);
           if (pivotMesh.metadata?.isCarpet) {
             pivotMesh.position.y = 0.002;
           }
+          // Mark as dragged only when movement exceeds a small threshold
+          const movedX = Math.abs(pivotMesh.position.x - dragStartPosX);
+          const movedZ = Math.abs(pivotMesh.position.z - dragStartPosZ);
+          if (movedX > 0.005 || movedZ > 0.005) hasDragged = true;
         }
       });
 
@@ -1209,7 +1222,18 @@ export default function Preview3D({
           activeCam.attachControl(canvasRef.current, true);
         }
 
-        if (isRotating) {
+        const wasRotating = isRotating;
+        // Reset shift state after drag ends just in case
+        isRotating = false;
+        isShiftPressedRef.current = false;
+
+        // Skip onUpdateElement for pure clicks — no actual movement or rotation occurred.
+        // Without this guard, a click causes onDragEnd to fire onUpdateElement with the
+        // wall's adjusted world position (shifted by connection deltas), which differs
+        // from el.x/el.y, triggering a false needsRecreate and disposing wall decorations.
+        if (!hasDragged) return;
+
+        if (wasRotating) {
           const nativeOffset = pivotMesh.metadata?.nativeOffset || 0;
           const facingOffsetRad = BABYLON.Tools.ToRadians(
             pivotMesh.metadata?.facingOffset || 0,
@@ -1235,10 +1259,6 @@ export default function Preview3D({
             y: snapToGrid(newY),
           });
         }
-
-        // Reset shift state after drag ends just in case
-        isRotating = false;
-        isShiftPressedRef.current = false;
       });
 
       pivotMesh.addBehavior(dragBehavior);
