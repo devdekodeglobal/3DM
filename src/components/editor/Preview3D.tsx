@@ -1750,7 +1750,7 @@ export default function Preview3D({
                   },
                   scene,
                 );
-                const layerOffset = 0.003 + index * 0.002;
+                const layerOffset = 0.015 + index * 0.002;
                 mount.position.set(
                   localX,
                   localY,
@@ -1763,7 +1763,7 @@ export default function Preview3D({
                   mount.rotation.z = -BABYLON.Tools.ToRadians(wel.rotation || 0);
                 }
                 const pMat = new BABYLON.PBRMaterial("diag_pmat_" + index, scene);
-                pMat.zOffset = -1;
+                pMat.zOffset = -3;
                 pMat.backFaceCulling = false;
                 pMat.twoSidedLighting = true;
                 pMat.roughness = 0.6;
@@ -1807,7 +1807,7 @@ export default function Preview3D({
                   },
                   scene,
                 );
-                const layerOffset = 0.003 + index * 0.002;
+                const layerOffset = 0.015 + index * 0.002;
                 mount.position.set(
                   localX,
                   localY,
@@ -1815,7 +1815,7 @@ export default function Preview3D({
                 );
                 if (isBack) mount.rotation.y = Math.PI;
                 const pMat = new BABYLON.PBRMaterial("pmat_" + index, scene);
-                pMat.zOffset = -1;
+                pMat.zOffset = -3;
                 pMat.backFaceCulling = false;
                 pMat.twoSidedLighting = true;
                 pMat.roughness = 0.75;
@@ -1854,7 +1854,7 @@ export default function Preview3D({
                   },
                   scene,
                 );
-                const layerOffset = 0.004 + index * 0.002;
+                const layerOffset = 0.015 + index * 0.002;
                 mount.position.set(
                   localX,
                   localY,
@@ -1862,7 +1862,7 @@ export default function Preview3D({
                 );
                 if (isBack) mount.rotation.y = Math.PI;
                 const bMat = new BABYLON.PBRMaterial("bm_ex_" + index, scene);
-                bMat.zOffset = -1;
+                bMat.zOffset = -3;
                 bMat.backFaceCulling = false;
                 bMat.twoSidedLighting = true;
                 bMat.roughness = 0.5;
