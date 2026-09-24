@@ -195,7 +195,7 @@ const CarpetShape = ({ shapeProps, isSelected, onSelect, onChange, isDarkMode }:
         fontSize={9}
         fontFamily="Outfit, Inter, sans-serif"
         fontStyle="bold"
-        fill="rgba(0,0,0,0.6)"
+        fill={isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)'}
         align="center"
         listening={false}
       />

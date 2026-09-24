@@ -1830,7 +1830,7 @@ export default function Preview3D({
                 } else if (wel.idbKey) {
                   pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#0ea5e9").toLinearSpace();
                   getWallImageDataUrl(wel.idbKey).then((dataUrl) => {
-                    if (dataUrl && !pMat.isDisposed && !mount.isDisposed()) {
+                    if (dataUrl && !mount.isDisposed()) {
                       const tex = new BABYLON.Texture(dataUrl, scene);
                       tex.hasAlpha = true;
                       pMat.albedoTexture = tex;
@@ -1877,7 +1877,7 @@ export default function Preview3D({
                 } else if (wel.idbKey) {
                   bMat.albedoColor = wel.type === "frame" ? new BABYLON.Color3(0.8, 0.8, 0.8) : BABYLON.Color3.Blue();
                   getWallImageDataUrl(wel.idbKey).then((dataUrl) => {
-                    if (dataUrl && !bMat.isDisposed && !mount.isDisposed()) {
+                    if (dataUrl && !mount.isDisposed()) {
                       const tex = new BABYLON.Texture(dataUrl, scene);
                       tex.hasAlpha = true;
                       bMat.albedoTexture = tex;
@@ -2294,7 +2294,7 @@ export default function Preview3D({
                 } else if (wel.idbKey) {
                   pMat.albedoColor = BABYLON.Color3.FromHexString(wel.color || "#0ea5e9").toLinearSpace();
                   getWallImageDataUrl(wel.idbKey).then((dataUrl) => {
-                    if (dataUrl && !pMat.isDisposed && !mount.isDisposed()) {
+                    if (dataUrl && !mount.isDisposed()) {
                       const tex = new BABYLON.Texture(dataUrl, scene);
                       tex.hasAlpha = true;
                       pMat.albedoTexture = tex;
@@ -2337,7 +2337,7 @@ export default function Preview3D({
                 } else if (wel.idbKey) {
                   bMat.albedoColor = wel.type === "frame" ? new BABYLON.Color3(0.8, 0.8, 0.8) : BABYLON.Color3.Blue();
                   getWallImageDataUrl(wel.idbKey).then((dataUrl) => {
-                    if (dataUrl && !bMat.isDisposed && !mount.isDisposed()) {
+                    if (dataUrl && !mount.isDisposed()) {
                       const tex = new BABYLON.Texture(dataUrl, scene);
                       tex.hasAlpha = true;
                       bMat.albedoTexture = tex;
@@ -2851,18 +2851,6 @@ export default function Preview3D({
               }
               pivot.scaling.set(s, sY, s);
 
-              // Use inverse pivot world matrix to correctly convert world-space bbox center
-              // to pivot-local space, accounting for pivot position and scale.
-              // Without this, wrapper.position -= center.x/z subtracts world coords
-              // instead of the local offset, causing assets to fly to wrong positions.
-              const center = bbox.min.add(sz.scale(0.5));
-              const worldOffset = center.subtract(pivot.position);
-              const invPivotMatrix = new BABYLON.Matrix();
-              pivot.getWorldMatrix().invertToRef(invPivotMatrix);
-              const localOffset = BABYLON.Vector3.TransformNormal(
-                worldOffset,
-                invPivotMatrix,
-              );
               // Align model bottom to pivot local origin (so pivot world Y is exactly model bottom)
               const worldBottomDiff = bbox.min.y - pivot.position.y;
               const localBottomDiff = sY > 0 ? worldBottomDiff / sY : worldBottomDiff;

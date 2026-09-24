@@ -571,7 +571,7 @@ function EditorPage() {
       localStorage.setItem('current-design-name', designName)
     }
     const currentProj = localStorage.getItem('current-project-id') || ''
-    setSelectedProjectId(currentProj)
+    setSelectedProjectId(currentProj);
 
     // Hydrate wall banner/frame images from IndexedDB
     (async () => {
