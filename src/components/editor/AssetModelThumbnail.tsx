@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Box } from 'lucide-react'
 import * as BABYLON from '@babylonjs/core'
 import '@babylonjs/loaders/glTF'
@@ -111,8 +111,8 @@ async function processNextThumbnailTask() {
     camera.target = center
     camera.radius = Math.max(span.length() * 1.45, 0.5)
 
-    // Render 2 frames to ensure materials are fully uploaded and drawn
-    scene.render()
+    // Wait for all textures, shaders, and materials to finish compiling/uploading before rendering
+    await scene.whenReadyAsync()
     scene.render()
 
     const dataUrl = sharedCanvas.toDataURL('image/png')
