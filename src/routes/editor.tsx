@@ -149,17 +149,23 @@ function EditorPage() {
         // truncate oversized uncompressed image data URLs attached to 3D logos
         delete cleaned.svgData;
       }
-      // Strip data: URLs nested inside wallElements (banners, frames, etc.)
-      // These can be multi-MB base64 strings that blow the D1 payload limit
+      // Preserve compressed data: URLs under 250KB so banner textures sync to cloud designs.
+      // Only strip oversized uncompressed base64 strings that would exceed the D1 SQLite payload limit.
+      const MAX_PAYLOAD_IMAGE_LENGTH = 250000;
+
       if (Array.isArray(cleaned.wallElements)) {
         cleaned.wallElements = cleaned.wallElements.map((wel: any) => {
           if (!wel) return wel;
           const cleanedWel = { ...wel };
           if (typeof cleanedWel.url === 'string' && cleanedWel.url.startsWith('data:')) {
-            delete cleanedWel.url;
+            if (cleanedWel.url.length > MAX_PAYLOAD_IMAGE_LENGTH) {
+              delete cleanedWel.url;
+            }
           }
           if (typeof cleanedWel.customTexture === 'string' && cleanedWel.customTexture.startsWith('data:')) {
-            delete cleanedWel.customTexture;
+            if (cleanedWel.customTexture.length > MAX_PAYLOAD_IMAGE_LENGTH) {
+              delete cleanedWel.customTexture;
+            }
           }
           return cleanedWel;
         });

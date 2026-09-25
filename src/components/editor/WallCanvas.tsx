@@ -805,17 +805,22 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
                                     }
                                   }
 
-                                  canvas.width = width
+                                   canvas.width = width
                                   canvas.height = height
                                   const ctx = canvas.getContext('2d')
                                   if (ctx) {
                                     ctx.drawImage(img, 0, 0, width, height)
-                                    const isPng = file.type.includes('png') || file.name.toLowerCase().endsWith('.png')
-                                    const mime = isPng ? 'image/png' : 'image/jpeg'
-                                    const dataUrl = canvas.toDataURL(mime, isPng ? undefined : 0.8)
+                                    // Use WebP with fallback to jpeg for maximum compression efficiency
+                                    let dataUrl = ''
+                                    try {
+                                      dataUrl = canvas.toDataURL('image/webp', 0.82)
+                                    } catch {
+                                      const isPng = file.type.includes('png') || file.name.toLowerCase().endsWith('.png')
+                                      dataUrl = canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.8)
+                                    }
                                     // Save full data URL to IndexedDB so it survives page reload
-                                    // Store a stable key on the element; the data URL itself is stripped
-                                    // from localStorage and cloud saves to avoid quota/payload limits.
+                                    // Store a stable key on the element; compact data URLs (<150KB)
+                                    // will now also safely sync to cloud D1 designs.
                                     const idbKey = `wel_${selectedId}_${Date.now()}`
                                     saveWallImageDataUrl(idbKey, dataUrl)
                                     setElements(prev => prev.map(el => el.id === selectedId ? { ...el, url: dataUrl, idbKey } : el))
