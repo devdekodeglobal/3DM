@@ -551,7 +551,7 @@ export default function Sidebar({
             className="w-full p-4 flex items-center justify-between group hover:bg-[var(--surface-light)] transition-colors shrink-0"
           >
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--sea-ink)]">
-              3D Models
+              3D Assets
             </p>
             {isModelsOpen ? <ChevronDown className="h-4 w-4 text-[var(--sea-ink-soft)]" /> : <ChevronRight className="h-4 w-4 text-[var(--sea-ink-soft)]" />}
           </button>
