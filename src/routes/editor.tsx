@@ -8,14 +8,14 @@ import Preview3D from '../components/editor/Preview3D'
 import ColorPickerPanel from '../components/editor/ColorPickerPanel'
 import RoofCanvas from '../components/editor/RoofCanvas'
 import UserMenuDropdown from '../components/UserMenuDropdown'
-import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, LogIn, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil, LayoutGrid, Sliders, Monitor, Folder, CloudCheck, Loader2, Copy } from 'lucide-react'
+import { PanelLeftClose, PanelRightClose, Check, RotateCcw, RotateCw, Trash2, Box, ArrowRight, Settings, LogIn, X, Lock, AlertCircle, CheckCircle, AlertTriangle, Info, Pencil, LayoutGrid, Sliders, Monitor, Folder, CloudCheck, Loader2, Copy, Download } from 'lucide-react'
 import { ASSET_DIMENSIONS, ASSET_REGISTRY } from '../lib/assetRegistry'
 import { getWallMaterialProps } from '../lib/materials'
 import { generateReport } from '../lib/reportGenerator'
 import { getCurrentUser, saveDesign, updateDesign, listProjects, listDesigns } from '../lib/authClient'
 import { AuthModal } from '../components/editor/AuthModal'
 import { CloudProjectsDrawer } from '../components/editor/CloudProjectsDrawer'
-import { saveAssetBlob, getAssetBlob, deleteAssetBlob, getWallImageDataUrl } from '../lib/customAssetDB'
+import { saveAssetBlob, getAssetBlob, deleteAssetBlob, getWallImageDataUrl, saveWallImageDataUrl } from '../lib/customAssetDB'
 import { ConfirmModal } from '../components/editor/ConfirmModal'
 import { ReportModal } from '../components/editor/ReportModal'
 
@@ -149,9 +149,9 @@ function EditorPage() {
         // truncate oversized uncompressed image data URLs attached to 3D logos
         delete cleaned.svgData;
       }
-      // Preserve compressed data: URLs under 250KB so banner textures sync to cloud designs.
-      // Only strip oversized uncompressed base64 strings that would exceed the D1 SQLite payload limit.
-      const MAX_PAYLOAD_IMAGE_LENGTH = 250000;
+      // Preserve compressed data: URLs under 350KB so banner & mural textures sync to cloud designs.
+      // This allows crisp WebP textures while keeping D1 SQLite storage costs minimal.
+      const MAX_PAYLOAD_IMAGE_LENGTH = 350000;
 
       if (Array.isArray(cleaned.wallElements)) {
         cleaned.wallElements = cleaned.wallElements.map((wel: any) => {
@@ -320,7 +320,15 @@ function EditorPage() {
               let wallChanged = false;
               const updatedWallElements = await Promise.all(
                 el.wallElements.map(async (wel: any) => {
-                  if (wel && wel.idbKey && !wel.url) {
+                  if (!wel) return wel;
+                  // If element has URL and idbKey, cache it into local IndexedDB
+                  if (wel.url && wel.idbKey && typeof wel.url === 'string' && wel.url.startsWith('data:')) {
+                    try {
+                      saveWallImageDataUrl(wel.idbKey, wel.url);
+                    } catch {}
+                  }
+                  // If element is missing URL, restore from local IndexedDB
+                  if (wel.idbKey && !wel.url) {
                     const dataUrl = await getWallImageDataUrl(wel.idbKey);
                     if (dataUrl) {
                       wallChanged = true;
@@ -579,7 +587,9 @@ function EditorPage() {
     const currentProj = localStorage.getItem('current-project-id') || ''
     setSelectedProjectId(currentProj);
 
-    // Hydrate wall banner/frame images from IndexedDB
+    // Two-way image hydration between Cloud D1 and local IndexedDB:
+    // 1. If images arrive from cloud (new PC), cache them into local IndexedDB for fast offline rendering.
+    // 2. If elements are missing URLs, restore them from local IndexedDB and sync to cloud.
     (async () => {
       try {
         let hasAnyMissingUrls = false;
@@ -589,7 +599,15 @@ function EditorPage() {
               let wallChanged = false;
               const updatedWallElements = await Promise.all(
                 el.wallElements.map(async (wel: any) => {
-                  if (wel && wel.idbKey && !wel.url) {
+                  if (!wel) return wel;
+                  // Case A: Cloud has image URL, cache into this machine's IndexedDB
+                  if (wel.url && wel.idbKey && wel.url.startsWith('data:')) {
+                    try {
+                      saveWallImageDataUrl(wel.idbKey, wel.url);
+                    } catch {}
+                  }
+                  // Case B: Element is missing URL, restore from this machine's IndexedDB
+                  if (wel.idbKey && !wel.url) {
                     const dataUrl = await getWallImageDataUrl(wel.idbKey);
                     if (dataUrl) {
                       wallChanged = true;
@@ -610,6 +628,13 @@ function EditorPage() {
         if (hasAnyMissingUrls) {
           elementsRef.current = restored;
           setElements(restored);
+          // If we restored images from local IDB for a cloud design, sync to D1 so other devices get them
+          if (designId && sessionUser) {
+            updateDesign(designId, {
+              config: cleanConfig,
+              elements: sanitizeDesignElements(restored)
+            }).catch(e => console.warn('Background sync of restored images failed:', e));
+          }
         }
       } catch (err) {
         console.warn('Failed to restore cloud design wall images from IDB:', err);
@@ -1485,6 +1510,41 @@ function EditorPage() {
               <PanelRightClose className="w-3.5 h-3.5" />
             </button>
           </div>
+
+          <div className="w-px h-5 bg-[var(--line)]" />
+
+          {/* Download Full JSON Button */}
+          <button
+            onClick={() => {
+              try {
+                const exportData = {
+                  id: currentDesignId || 'booth_design_' + Date.now(),
+                  name: projectName || 'Untitled Design',
+                  config: boothConfig,
+                  elements: elements
+                };
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const safeName = (projectName || 'booth_design').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                a.href = url;
+                a.download = `${safeName}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showAlert('Booth design JSON exported with all elements & textures!', 'success', 'Export Complete');
+              } catch (err) {
+                console.error(err);
+                showAlert('Failed to export JSON', 'error', 'Export Failed');
+              }
+            }}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--sand)] hover:bg-[var(--chip-bg)] text-[var(--sea-ink)] text-xs font-semibold transition cursor-pointer shadow-xs"
+            title="Download full booth design JSON (including images & textures)"
+          >
+            <Download className="w-3.5 h-3.5 text-[var(--brand)]" />
+            <span>Export JSON</span>
+          </button>
 
           <div className="w-px h-5 bg-[var(--line)]" />
 

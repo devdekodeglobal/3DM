@@ -805,21 +805,23 @@ export default function WallCanvas({ wall, onSave, onClose }: any) {
                                     }
                                   }
 
-                                   canvas.width = width
-                                  canvas.height = height
+                                   canvas.width = Math.round(width)
+                                  canvas.height = Math.round(height)
                                   const ctx = canvas.getContext('2d')
                                   if (ctx) {
-                                    ctx.drawImage(img, 0, 0, width, height)
-                                    // Use WebP with fallback to jpeg for maximum compression efficiency
+                                    ctx.imageSmoothingEnabled = true
+                                    ctx.imageSmoothingQuality = 'high'
+                                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+                                    // Use WebP with fallback to jpeg for maximum compression efficiency (keeps textures sharp under 70KB)
                                     let dataUrl = ''
                                     try {
-                                      dataUrl = canvas.toDataURL('image/webp', 0.82)
+                                      dataUrl = canvas.toDataURL('image/webp', 0.78)
                                     } catch {
                                       const isPng = file.type.includes('png') || file.name.toLowerCase().endsWith('.png')
-                                      dataUrl = canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.8)
+                                      dataUrl = canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.75)
                                     }
                                     // Save full data URL to IndexedDB so it survives page reload
-                                    // Store a stable key on the element; compact data URLs (<150KB)
+                                    // Store a stable key on the element; compact data URLs (<350KB)
                                     // will now also safely sync to cloud D1 designs.
                                     const idbKey = `wel_${selectedId}_${Date.now()}`
                                     saveWallImageDataUrl(idbKey, dataUrl)
